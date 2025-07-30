@@ -17,21 +17,73 @@ export const FolderStructure = () => {
   const [folders, setFolders] = useState<FolderItem[]>([
     {
       id: '1',
-      name: 'uploads',
-      type: 'folder',
-      children: []
+      name: 'auth.js',
+      type: 'file'
     },
     {
       id: '2',
-      name: 'documents',
-      type: 'folder',
-      children: []
+      name: 'clients.js',
+      type: 'file'
     },
     {
       id: '3',
-      name: 'images',
-      type: 'folder',
-      children: []
+      name: 'database.js',
+      type: 'file'
+    },
+    {
+      id: '4',
+      name: 'financial.js',
+      type: 'file'
+    },
+    {
+      id: '5',
+      name: 'forms.js',
+      type: 'file'
+    },
+    {
+      id: '6',
+      name: 'funcionarios.js',
+      type: 'file'
+    },
+    {
+      id: '7',
+      name: 'index.html',
+      type: 'file'
+    },
+    {
+      id: '8',
+      name: 'main.js',
+      type: 'file'
+    },
+    {
+      id: '9',
+      name: 'schedule.js',
+      type: 'file'
+    },
+    {
+      id: '10',
+      name: 'stock.js',
+      type: 'file'
+    },
+    {
+      id: '11',
+      name: 'style.css',
+      type: 'file'
+    },
+    {
+      id: '12',
+      name: 'ui.js',
+      type: 'file'
+    },
+    {
+      id: '13',
+      name: 'utils.js',
+      type: 'file'
+    },
+    {
+      id: '14',
+      name: 'websim.config.json',
+      type: 'file'
     }
   ]);
   
