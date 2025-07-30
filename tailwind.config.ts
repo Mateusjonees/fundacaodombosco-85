@@ -61,7 +61,11 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				'upload-zone': 'hsl(var(--upload-zone))',
+				'upload-zone-border': 'hsl(var(--upload-zone-border))',
+				'upload-zone-hover': 'hsl(var(--upload-zone-hover))',
+				'primary-glow': 'hsl(var(--primary-glow))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
