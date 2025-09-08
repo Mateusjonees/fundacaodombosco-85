@@ -2,92 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 120 100% 94%;
+    --foreground: 210 24% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 24% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 24% 16%;
 
-    --primary: 247 84% 57%;
+    --primary: 142 76% 36%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 247 84% 67%;
+    --primary-hover: 142 71% 45%;
+    --primary-glow: 142 76% 46%;
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 215 16% 47%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --success: 150 86% 65%;
+    --warning: 45 93% 47%;
+    --destructive: 0 84% 60%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --muted: 215 16% 47%;
+    --muted-foreground: 210 40% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 120 60% 88%;
+    --accent-foreground: 210 24% 16%;
 
-    --border: 240 5.9% 90%;
+    --border: 142 68% 70%;
     --input: 240 5.9% 90%;
-    --ring: 247 84% 57%;
+    --ring: 142 76% 36%;
 
-    --upload-zone: 247 84% 97%;
-    --upload-zone-border: 247 84% 87%;
-    --upload-zone-hover: 247 84% 95%;
+    --login-bg-start: 120 100% 94%;
+    --login-bg-end: 120 60% 88%;
+    --login-form-bg: 0 0% 100%;
+    --login-text: 142 76% 36%;
+    --login-input-border: 142 68% 70%;
+    --login-input-focus: 142 71% 45%;
 
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.2);
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.3);
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
-
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
@@ -109,5 +97,63 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-family);
   }
 }
+
+@layer components {
+  .login-container {
+    @apply flex justify-center items-center min-h-screen w-full fixed top-0 left-0 z-50;
+    background: linear-gradient(135deg, hsl(var(--login-bg-start)), hsl(var(--login-bg-end)));
+  }
+
+  .login-form {
+    @apply bg-card p-10 rounded-xl shadow-lg w-full max-w-md text-center border;
+    border-color: hsl(var(--login-input-border));
+  }
+
+  .login-form h1 {
+    @apply text-3xl font-bold mb-2;
+    color: hsl(var(--login-text));
+  }
+
+  .login-form .login-subtitle {
+    @apply text-muted-foreground mb-6 text-sm;
+  }
+
+  .login-form .form-group {
+    @apply text-left mb-5;
+  }
+
+  .login-form .form-group label {
+    @apply block mb-2 font-medium text-foreground;
+  }
+
+  .login-form .form-group input {
+    @apply w-full px-4 py-3 border rounded-lg text-sm bg-card transition-all;
+    border-color: hsl(var(--login-input-border));
+  }
+
+  .login-form .form-group input:focus {
+    @apply outline-none;
+    border-color: hsl(var(--login-input-focus));
+    box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
+  }
+
+  .login-bubble {
+    @apply absolute rounded-full opacity-70;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .bubble-1 {
+    @apply w-48 h-48 -top-12 -left-20;
+  }
+
+  .bubble-2 {
+    @apply w-72 h-72 -bottom-24 -right-28;
+  }
+
+  .bubble-3 {
+    @apply w-28 h-28 bottom-2/5 left-1/5;
+  }
+}</layer>
