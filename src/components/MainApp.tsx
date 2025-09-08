@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useAuditLog } from '@/hooks/useAuditLog';
+import { EmployeeManager } from '@/components/EmployeeManager';
 import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus } from 'lucide-react';
 
 interface Profile {
@@ -39,6 +40,7 @@ const ROLE_LABELS: Record<string, string> = {
 export const MainApp = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logAction } = useAuditLog();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
@@ -105,6 +107,12 @@ export const MainApp = () => {
 
   const handleLogout = async () => {
     try {
+      await logAction({
+        entityType: 'auth',
+        action: 'logout_attempted',
+        metadata: { user_email: user?.email }
+      });
+
       const { error } = await supabase.auth.signOut();
       if (error) {
         toast({
@@ -113,6 +121,12 @@ export const MainApp = () => {
           description: error.message,
         });
       } else {
+        await logAction({
+          entityType: 'auth',
+          action: 'logout_success',
+          metadata: { user_email: user?.email }
+        });
+        
         toast({
           title: "Logout realizado com sucesso",
           description: "Até logo!",
@@ -281,59 +295,7 @@ export const MainApp = () => {
         )}
 
         {activeTab === 'employees' && canViewEmployees && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-bold">Funcionários</h2>
-              <Button onClick={loadEmployees} disabled={loading}>
-                {loading ? 'Carregando...' : 'Atualizar Lista'}
-              </Button>
-            </div>
-            
-            <Card>
-              <CardContent className="p-6">
-                {loading ? (
-                  <p className="text-muted-foreground text-center py-8">Carregando funcionários...</p>
-                ) : profiles.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">Nenhum funcionário encontrado.</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Função</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Telefone</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Data de Contratação</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {profiles.map((profile) => (
-                        <TableRow key={profile.id}>
-                          <TableCell className="font-medium">{profile.name}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {ROLE_LABELS[profile.employee_role] || profile.employee_role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{profile.user_id}</TableCell>
-                          <TableCell>{profile.phone || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant={profile.is_active ? "default" : "secondary"}>
-                              {profile.is_active ? 'Ativo' : 'Inativo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {profile.hire_date ? new Date(profile.hire_date).toLocaleDateString('pt-BR') : '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <EmployeeManager />
         )}
 
         {activeTab === 'clients' && (

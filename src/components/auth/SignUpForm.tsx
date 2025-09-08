@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AuditService } from '@/services/auditService';
 
 interface SignUpFormProps {
   onSuccess: () => void;
@@ -42,6 +43,17 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
     setIsLoading(true);
 
     try {
+      // Log signup attempt
+      await AuditService.logAction({
+        entityType: 'auth',
+        action: 'signup_attempted',
+        metadata: { 
+          user_email: email,
+          employee_role: employeeRole,
+          name: name
+        }
+      });
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -56,6 +68,16 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
       });
 
       if (error) {
+        // Log failed signup
+        await AuditService.logAction({
+          entityType: 'auth',
+          action: 'signup_failed',
+          metadata: { 
+            user_email: email,
+            error_message: error.message
+          }
+        });
+
         toast({
           variant: "destructive",
           title: "Erro no Cadastro",
@@ -63,6 +85,18 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         });
         return;
       }
+
+      // Log successful signup
+      await AuditService.logAction({
+        entityType: 'auth',
+        action: 'signup_success',
+        metadata: { 
+          user_email: email,
+          employee_role: employeeRole,
+          name: name,
+          requires_email_confirmation: !data.session
+        }
+      });
 
       if (data.user && !data.session) {
         toast({
@@ -78,6 +112,16 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         onSuccess();
       }
     } catch (error) {
+      // Log unexpected error
+      await AuditService.logAction({
+        entityType: 'auth',
+        action: 'signup_error',
+        metadata: { 
+          user_email: email,
+          error: 'unexpected_error'
+        }
+      });
+
       toast({
         variant: "destructive",
         title: "Erro",

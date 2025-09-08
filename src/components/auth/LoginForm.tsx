@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AuditService } from '@/services/auditService';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -22,12 +23,29 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
+      // Log login attempt
+      await AuditService.logAction({
+        entityType: 'auth',
+        action: 'login_attempted',
+        metadata: { user_email: email }
+      });
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        // Log failed login
+        await AuditService.logAction({
+          entityType: 'auth',
+          action: 'login_failed',
+          metadata: { 
+            user_email: email,
+            error_message: error.message
+          }
+        });
+
         toast({
           variant: "destructive",
           title: "Erro no Login",
@@ -43,6 +61,16 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
       
       onSuccess();
     } catch (error) {
+      // Log unexpected error
+      await AuditService.logAction({
+        entityType: 'auth',
+        action: 'login_error',
+        metadata: { 
+          user_email: email,
+          error: 'unexpected_error'
+        }
+      });
+
       toast({
         variant: "destructive",
         title: "Erro",

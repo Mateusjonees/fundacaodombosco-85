@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { AuditService } from '@/services/auditService';
 
 interface AuthContextType {
   user: User | null;
@@ -38,8 +39,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // If user just signed up, update their profile with additional data
+        // Log authentication events
         if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(() => {
+            AuditService.logAction({
+              entityType: 'auth',
+              action: 'login_success',
+              metadata: { 
+                user_email: session.user.email,
+                login_method: 'email_password'
+              }
+            });
+            AuditService.updateUserActivity();
+          }, 0);
+          
           const userData = session.user.user_metadata;
           
           if (userData?.employee_role) {
@@ -62,6 +75,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               console.error('AuthProvider: Unexpected error updating profile', error);
             }
           }
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          setTimeout(() => {
+            AuditService.logAction({
+              entityType: 'auth',
+              action: 'logout_completed',
+              metadata: { timestamp: new Date().toISOString() }
+            });
+          }, 0);
         }
         
         setLoading(false);
