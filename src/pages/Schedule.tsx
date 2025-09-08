@@ -354,327 +354,344 @@ export default function Schedule() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Agenda do Dia - {format(selectedDate, "dd/MM/yyyy")}</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2" onClick={() => {
-              setEditingSchedule(null);
-              setNewAppointment({
-                client_id: '',
-                employee_id: '',
-                title: 'Consulta',
-                start_time: '',
-                end_time: '',
-                notes: ''
-              });
-            }}>
-              <Plus className="h-4 w-4" />
-              Novo Agendamento
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editingSchedule ? 'Editar' : 'Novo'} Agendamento</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="client_id">Cliente</Label>
-                <Select value={newAppointment.client_id} onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map(client => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <div className="flex flex-col space-y-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Agenda</h1>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Coluna da esquerda - Calendário */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                {format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                locale={ptBR}
+                className="rounded-md border"
+              />
+            </CardContent>
+          </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="employee_id">Profissional</Label>
-                <Select value={newAppointment.employee_id} onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um profissional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(employee => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name} ({employee.employee_role})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="start_time">Data e Hora Início</Label>
-                <Input
-                  id="start_time"
-                  type="datetime-local"
-                  value={newAppointment.start_time}
-                  onChange={(e) => setNewAppointment({ ...newAppointment, start_time: e.target.value })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="end_time">Data e Hora Fim</Label>
-                <Input
-                  id="end_time"
-                  type="datetime-local"
-                  value={newAppointment.end_time}
-                  onChange={(e) => setNewAppointment({ ...newAppointment, end_time: e.target.value })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  value={newAppointment.title}
-                  onChange={(e) => setNewAppointment({ ...newAppointment, title: e.target.value })}
-                  placeholder="Título do agendamento"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  value={newAppointment.notes}
-                  onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
-                  placeholder="Informações adicionais sobre o agendamento"
-                />
-              </div>
+          {/* Coluna da direita - Filtros e Botão */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Data selecionada */}
+            <div className="flex items-center gap-2 text-lg font-medium">
+              <span>{format(selectedDate, "dd/MM/yyyy")}</span>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateAppointment}>
-                {editingSchedule ? 'Atualizar' : 'Agendar'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
 
-      {/* Filtros - Apenas para Coordenadores e Diretores */}
-      {isCoordinatorOrDirector && (
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="filterRole">Filtrar por Cargo:</Label>
-                <Select value={filterRole} onValueChange={setFilterRole}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os Cargos</SelectItem>
-                    {uniqueRoles.map(role => (
-                      <SelectItem key={role} value={role}>
-                        {role === 'director' ? 'Diretor' :
-                         role === 'coordinator_madre' ? 'Coordenador Madre' :
-                         role === 'coordinator_floresta' ? 'Coordenador Floresta' :
-                         role === 'administrative' ? 'Administrativo' : 'Staff'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="filterEmployee">Ver agenda de:</Label>
-                <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os Profissionais</SelectItem>
-                    {departmentEmployees.map(employee => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="filterUnit">Filtrar por Unidade:</Label>
-                <Select value={filterUnit} onValueChange={setFilterUnit}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as Unidades</SelectItem>
-                    <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                    <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              Selecionar Data
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              locale={ptBR}
-              className="rounded-md border"
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Agenda do Dia - {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-muted-foreground text-center py-8">Carregando agendamentos...</p>
-            ) : todaySchedules.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Nenhum agendamento para esta data.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {todaySchedules.map((schedule) => (
-                  <div key={schedule.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {new Date(schedule.start_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - {new Date(schedule.end_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
-                        </span>
-                        <Badge variant="outline">{schedule.title}</Badge>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <User className="h-3 w-3" />
-                        <span>Cliente: {schedule.clients?.name || 'N/A'}</span>
-                        <span>•</span>
-                        <span>Profissional: {schedule.profiles?.name || 'N/A'}</span>
-                      </div>
-                      {schedule.notes && (
-                        <p className="text-sm text-muted-foreground">{schedule.notes}</p>
-                      )}
+            {/* Filtros - Apenas para Diretores */}
+            {userProfile?.employee_role === 'director' && (
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium text-green-800">Filtrar por Cargo:</Label>
+                      <Select value={filterRole} onValueChange={setFilterRole}>
+                        <SelectTrigger className="bg-white border-green-300">
+                          <SelectValue placeholder="Todos os Cargos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os Cargos</SelectItem>
+                          {uniqueRoles.map(role => (
+                            <SelectItem key={role} value={role}>
+                              {role === 'director' ? 'Diretor' :
+                               role === 'coordinator_madre' ? 'Coordenador Madre' :
+                               role === 'coordinator_floresta' ? 'Coordenador Floresta' :
+                               role === 'administrative' ? 'Administrativo' : 'Staff'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getStatusColor(schedule.status)}>
-                        {getStatusLabel(schedule.status)}
-                      </Badge>
-                      
-                      {/* Botões de ação - apenas para coordenadores e diretores */}
-                      {isCoordinatorOrDirector && (
-                        <div className="flex gap-1">
-                          {schedule.status === 'scheduled' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStatusChange(schedule.id, 'confirmed')}
-                              title="Confirmar"
-                            >
-                              <CheckCircle className="h-3 w-3" />
-                            </Button>
-                          )}
-                          
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(schedule)}
-                            title="Editar"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
 
-                          {schedule.status !== 'cancelled' && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
+                    <div>
+                      <Label className="text-sm font-medium text-green-800">Ver agenda de:</Label>
+                      <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                        <SelectTrigger className="bg-white border-green-300">
+                          <SelectValue placeholder="Todos os Profissionais" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os Profissionais</SelectItem>
+                          {departmentEmployees.map(employee => (
+                            <SelectItem key={employee.id} value={employee.id}>
+                              {employee.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium text-green-800">Filtrar por Unidade:</Label>
+                      <Select value={filterUnit} onValueChange={setFilterUnit}>
+                        <SelectTrigger className="bg-white border-green-300">
+                          <SelectValue placeholder="Todas as Unidades" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as Unidades</SelectItem>
+                          <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                          <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Botão Novo Agendamento */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg" 
+                  onClick={() => {
+                    setEditingSchedule(null);
+                    setNewAppointment({
+                      client_id: '',
+                      employee_id: '',
+                      title: 'Consulta',
+                      start_time: '',
+                      end_time: '',
+                      notes: ''
+                    });
+                  }}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Novo Agendamento
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>{editingSchedule ? 'Editar' : 'Novo'} Agendamento</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="client_id">Cliente</Label>
+                    <Select value={newAppointment.client_id} onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients.map(client => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="employee_id">Profissional</Label>
+                    <Select value={newAppointment.employee_id} onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um profissional" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map(employee => (
+                          <SelectItem key={employee.id} value={employee.id}>
+                            {employee.name} ({employee.employee_role})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="start_time">Data e Hora Início</Label>
+                    <Input
+                      id="start_time"
+                      type="datetime-local"
+                      value={newAppointment.start_time}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, start_time: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="end_time">Data e Hora Fim</Label>
+                    <Input
+                      id="end_time"
+                      type="datetime-local"
+                      value={newAppointment.end_time}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, end_time: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Título</Label>
+                    <Input
+                      id="title"
+                      value={newAppointment.title}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, title: e.target.value })}
+                      placeholder="Título do agendamento"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Observações</Label>
+                    <Textarea
+                      id="notes"
+                      value={newAppointment.notes}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
+                      placeholder="Informações adicionais sobre o agendamento"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreateAppointment}>
+                    {editingSchedule ? 'Atualizar' : 'Agendar'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Lista de Agendamentos */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Agenda do Dia - {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-muted-foreground text-center py-8">Carregando agendamentos...</p>
+                ) : todaySchedules.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    Nenhum agendamento para esta data.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {todaySchedules.map((schedule) => (
+                      <div key={schedule.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              {new Date(schedule.start_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - {new Date(schedule.end_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                            </span>
+                            <Badge variant="outline">{schedule.title}</Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                            <User className="h-3 w-3" />
+                            <span>Cliente: {schedule.clients?.name || 'N/A'}</span>
+                            <span>•</span>
+                            <span>Profissional: {schedule.profiles?.name || 'N/A'}</span>
+                          </div>
+                          {schedule.notes && (
+                            <p className="text-sm text-muted-foreground">{schedule.notes}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={getStatusColor(schedule.status)}>
+                            {getStatusLabel(schedule.status)}
+                          </Badge>
+                          
+                          {/* Botões de ação - apenas para diretores */}
+                          {userProfile?.employee_role === 'director' && (
+                            <div className="flex gap-1">
+                              {schedule.status === 'scheduled' && (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  title="Cancelar"
+                                  onClick={() => handleStatusChange(schedule.id, 'confirmed')}
+                                  title="Confirmar"
                                 >
-                                  <XCircle className="h-3 w-3" />
+                                  <CheckCircle className="h-3 w-3" />
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Cancelar Agendamento</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja cancelar este agendamento?
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Não</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleStatusChange(schedule.id, 'cancelled')}>
-                                    Sim, Cancelar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-
-                          <Dialog>
-                            <DialogTrigger asChild>
+                              )}
+                              
                               <Button
                                 size="sm"
                                 variant="outline"
-                                title="Redirecionar"
+                                onClick={() => handleEdit(schedule)}
+                                title="Editar"
                               >
-                                <ArrowRightLeft className="h-3 w-3" />
+                                <Edit className="h-3 w-3" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Redirecionar Agendamento</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <Label>Selecione o novo profissional:</Label>
-                                <Select onValueChange={(value) => handleRedirect(schedule.id, value)}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Escolha um profissional" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {employees
-                                      .filter(emp => emp.id !== schedule.employee_id)
-                                      .map(employee => (
-                                      <SelectItem key={employee.id} value={employee.id}>
-                                        {employee.name} ({employee.employee_role})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+
+                              {schedule.status !== 'cancelled' && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      title="Cancelar"
+                                    >
+                                      <XCircle className="h-3 w-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Cancelar Agendamento</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja cancelar este agendamento?
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Não</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleStatusChange(schedule.id, 'cancelled')}>
+                                        Sim, Cancelar
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    title="Redirecionar"
+                                  >
+                                    <ArrowRightLeft className="h-3 w-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Redirecionar Agendamento</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4 py-4">
+                                    <Label>Selecione o novo profissional:</Label>
+                                    <Select onValueChange={(value) => handleRedirect(schedule.id, value)}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Escolha um profissional" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {employees
+                                          .filter(emp => emp.id !== schedule.employee_id)
+                                          .map(employee => (
+                                          <SelectItem key={employee.id} value={employee.id}>
+                                            {employee.name} ({employee.employee_role})
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
