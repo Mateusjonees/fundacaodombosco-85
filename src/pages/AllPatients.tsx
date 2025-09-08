@@ -365,7 +365,15 @@ export default function AllPatients() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => window.open(`/clients?view=${patient.id}`, '_blank')}
+                          onClick={() => {
+                            toast({
+                              title: "Visualização",
+                              description: "Abrindo detalhes do cliente...",
+                            });
+                            setTimeout(() => {
+                              window.location.href = `/clients?view=${patient.id}`;
+                            }, 500);
+                          }}
                           title="Ver detalhes"
                         >
                           <Eye className="h-3 w-3" />
@@ -373,7 +381,15 @@ export default function AllPatients() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => window.open(`/schedule?client=${patient.id}`, '_blank')}
+                          onClick={() => {
+                            toast({
+                              title: "Agendamento",
+                              description: "Redirecionando para a agenda...",
+                            });
+                            setTimeout(() => {
+                              window.location.href = `/schedule?client=${patient.id}`;
+                            }, 1000);
+                          }}
                           title="Agendar consulta"
                         >
                           <Calendar className="h-3 w-3" />
