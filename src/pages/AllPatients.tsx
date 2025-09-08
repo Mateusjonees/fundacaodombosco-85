@@ -362,10 +362,20 @@ export default function AllPatients() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(`/clients?view=${patient.id}`, '_blank')}
+                          title="Ver detalhes"
+                        >
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(`/schedule?client=${patient.id}`, '_blank')}
+                          title="Agendar consulta"
+                        >
                           <Calendar className="h-3 w-3" />
                         </Button>
                       </div>

@@ -233,6 +233,165 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
+  const handleScheduleAppointment = () => {
+    toast({
+      title: "Agendamento",
+      description: "Redirecionando para a agenda...",
+    });
+    // Redirect to schedule page
+    window.open(`/schedule?client=${client.id}`, '_blank');
+  };
+
+  const handleLinkProfessionals = () => {
+    toast({
+      title: "Vincular Profissionais",
+      description: "Funcionalidade em desenvolvimento.",
+    });
+  };
+
+  const handleDuplicateClient = async () => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .insert({
+          name: `${client.name} (Cópia)`,
+          cpf: '',
+          birth_date: client.birth_date,
+          email: '',
+          phone: client.phone,
+          responsible_name: client.responsible_name,
+          responsible_phone: client.responsible_phone,
+          unit: client.unit,
+          address: client.address,
+          diagnosis: client.diagnosis,
+          medical_history: client.medical_history,
+          neuropsych_complaint: client.neuropsych_complaint,
+          treatment_expectations: client.treatment_expectations,
+          clinical_observations: client.clinical_observations,
+          created_by: user?.id
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Cliente duplicado com sucesso!",
+      });
+    } catch (error) {
+      console.error('Error duplicating client:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível duplicar o cliente.",
+      });
+    }
+  };
+
+  const handleGenerateReport = () => {
+    const reportContent = `
+RELATÓRIO DO CLIENTE
+====================
+
+Nome: ${client.name}
+ID: ${client.id}
+CPF: ${client.cpf || 'Não informado'}
+Data de Nascimento: ${client.birth_date ? formatDate(client.birth_date) : 'Não informado'}
+Email: ${client.email || 'Não informado'}
+Telefone: ${client.phone || 'Não informado'}
+
+DADOS CLÍNICOS
+==============
+
+Diagnóstico: ${client.diagnosis || 'Nenhum'}
+Histórico Médico: ${client.medical_history || 'Nenhum'}
+Queixa Neuropsicológica: ${client.neuropsych_complaint || 'Nenhum'}
+Expectativas do Tratamento: ${client.treatment_expectations || 'Não informado'}
+
+OBSERVAÇÕES
+===========
+
+${client.clinical_observations || 'Nenhuma observação registrada'}
+
+NOTAS REGISTRADAS
+=================
+
+${notes.map(note => `
+Data: ${formatDateTime(note.created_at)}
+Criado por: ${note.profiles?.name || 'Usuário'}
+Nota: ${note.note_text}
+`).join('\n')}
+
+DOCUMENTOS ANEXADOS
+==================
+
+${documents.map(doc => `
+- ${doc.document_name} (${doc.document_type || 'Documento'})
+  Enviado em: ${formatDateTime(doc.uploaded_at)}
+  Por: ${doc.profiles?.name || 'Usuário'}
+`).join('\n')}
+
+Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
+    `;
+
+    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `relatorio-${client.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.txt`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Relatório Gerado",
+      description: "O relatório foi baixado com sucesso!",
+    });
+  };
+
+  const handleDeleteClient = async () => {
+    if (!confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ is_active: false })
+        .eq('id', client.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Cliente Excluído",
+        description: "O cliente foi marcado como inativo.",
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível excluir o cliente.",
+      });
+    }
+  };
+
+  const handleUploadDocument = () => {
+    toast({
+      title: "Upload de Documento",
+      description: "Funcionalidade de upload em desenvolvimento.",
+    });
+  };
+
+  const handleAddToHistory = () => {
+    toast({
+      title: "Histórico",
+      description: "Funcionalidade de histórico em desenvolvimento.",
+    });
+  };
+
   const getUnitLabel = (unit: string) => {
     switch (unit) {
       case 'madre': return 'Clínica Social (Madre)';
@@ -466,7 +625,7 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
               <Upload className="h-5 w-5" />
               Documentos Anexados
             </CardTitle>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => handleUploadDocument()}>
               <Upload className="h-4 w-4 mr-2" />
               Anexar Documento
             </Button>
@@ -501,7 +660,7 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
               <History className="h-5 w-5" />
               Histórico de Atendimentos
             </CardTitle>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => handleAddToHistory()}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar ao Histórico
             </Button>
@@ -516,11 +675,11 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-2">
-            <Button>
+            <Button onClick={() => handleScheduleAppointment()}>
               <Calendar className="h-4 w-4 mr-2" />
               Agendar Novo Atendimento
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => handleLinkProfessionals()}>
               <Users className="h-4 w-4 mr-2" />
               Vincular Profissionais
             </Button>
@@ -528,15 +687,15 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
               <Edit className="h-4 w-4 mr-2" />
               Editar Dados
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => handleDuplicateClient()}>
               <Copy className="h-4 w-4 mr-2" />
               Duplicar Cliente
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => handleGenerateReport()}>
               <FileText className="h-4 w-4 mr-2" />
               Gerar Relatório
             </Button>
-            <Button variant="destructive" size="sm">
+            <Button variant="destructive" size="sm" onClick={() => handleDeleteClient()}>
               <Trash2 className="h-4 w-4 mr-2" />
               Excluir Cliente
             </Button>
