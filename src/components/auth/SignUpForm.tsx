@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,16 +12,34 @@ interface SignUpFormProps {
   onSwitchToLogin: () => void;
 }
 
+const EMPLOYEE_ROLES = [
+  { value: 'director', label: 'Diretor(a)' },
+  { value: 'coordinator_madre', label: 'Coordenador(a) Madre' },
+  { value: 'coordinator_floresta', label: 'Coordenador(a) Floresta' },
+  { value: 'staff', label: 'Funcionário(a) Geral' },
+  { value: 'intern', label: 'Estagiário(a)' },
+  { value: 'musictherapist', label: 'Musicoterapeuta' },
+  { value: 'financeiro', label: 'Financeiro' },
+  { value: 'receptionist', label: 'Recepcionista' },
+  { value: 'psychologist', label: 'Psicólogo(a)' },
+  { value: 'psychopedagogue', label: 'Psicopedagogo(a)' },
+  { value: 'speech_therapist', label: 'Fonoaudiólogo(a)' },
+  { value: 'nutritionist', label: 'Nutricionista' },
+  { value: 'physiotherapist', label: 'Fisioterapeuta' }
+];
+
 export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [employeeRole, setEmployeeRole] = useState('staff');
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('SignUpForm: Submit started', { email, name });
+    console.log('SignUpForm: Submit started', { email, name, employeeRole });
     setIsLoading(true);
 
     try {
@@ -32,6 +51,8 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             name: name,
+            employee_role: employeeRole,
+            phone: phone,
           }
         }
       });
@@ -48,14 +69,21 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         return;
       }
 
-      console.log('SignUpForm: Signup successful', { user: data.user?.email });
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Bem-vindo ao sistema.",
-      });
-      
-      console.log('SignUpForm: Calling onSuccess');
-      onSuccess();
+      if (data.user && !data.session) {
+        toast({
+          title: "Verifique seu email",
+          description: "Enviamos um link de confirmação para seu email.",
+        });
+      } else {
+        console.log('SignUpForm: Signup successful', { user: data.user?.email });
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: "Bem-vindo ao sistema.",
+        });
+        
+        console.log('SignUpForm: Calling onSuccess');
+        onSuccess();
+      }
     } catch (error) {
       console.error('SignUpForm: Unexpected error', error);
       toast({
@@ -77,7 +105,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
       <Card className="login-form">
         <CardHeader>
           <CardTitle className="login-form h1">FUNDAÇÃO DOM BOSCO</CardTitle>
-          <p className="login-subtitle">Criar Nova Conta</p>
+          <p className="login-subtitle">Cadastro de Funcionário</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -104,6 +132,32 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
                 disabled={isLoading}
                 placeholder="seu@email.com"
               />
+            </div>
+            <div className="form-group">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={isLoading}
+                placeholder="(11) 99999-9999"
+              />
+            </div>
+            <div className="form-group">
+              <Label htmlFor="role">Função</Label>
+              <Select value={employeeRole} onValueChange={setEmployeeRole} disabled={isLoading}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione sua função" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EMPLOYEE_ROLES.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="form-group">
               <Label htmlFor="password">Senha</Label>

@@ -36,10 +36,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('AuthProvider: Auth state changed', { event, hasSession: !!session, hasUser: !!session?.user });
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // If user just signed up, update their profile with additional data
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('AuthProvider: User signed in, checking if profile needs update');
+          const userData = session.user.user_metadata;
+          
+          if (userData?.employee_role) {
+            try {
+              // Wait a bit for the profile to be created by the trigger
+              setTimeout(async () => {
+                const { error } = await supabase
+                  .from('profiles')
+                  .update({
+                    employee_role: userData.employee_role,
+                    phone: userData.phone,
+                  })
+                  .eq('user_id', session.user.id);
+                  
+                if (error) {
+                  console.error('AuthProvider: Error updating profile', error);
+                } else {
+                  console.log('AuthProvider: Profile updated successfully');
+                }
+              }, 1000);
+            } catch (error) {
+              console.error('AuthProvider: Unexpected error updating profile', error);
+            }
+          }
+        }
+        
         setLoading(false);
       }
     );
