@@ -38,7 +38,7 @@ interface StockMovement {
   created_by: string;
   date: string;
   stock_items?: { name: string };
-  profiles?: { name: string };
+  profiles?: { name: string } | null;
 }
 
 export default function Stock() {
