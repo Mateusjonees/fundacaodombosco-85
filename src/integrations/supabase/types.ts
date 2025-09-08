@@ -14,6 +14,160 @@ export type Database = {
   }
   public: {
     Tables: {
+      anamnesis_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          id: string
+          is_active: boolean | null
+          medical_history: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          rg: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          id?: string
+          is_active?: boolean | null
+          medical_history?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          rg?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          id?: string
+          is_active?: boolean | null
+          medical_history?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          rg?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          category: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          employee_id: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_public: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_public?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_public?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           created_at: string
@@ -74,6 +228,185 @@ export type Database = {
           },
         ]
       }
+      financial_records: {
+        Row: {
+          amount: number
+          category: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string
+          employee_id: string | null
+          id: string
+          invoice_number: string | null
+          is_recurring: boolean | null
+          notes: string | null
+          payment_method: string | null
+          recurring_frequency: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date: string
+          description: string
+          employee_id?: string | null
+          id?: string
+          invoice_number?: string | null
+          is_recurring?: boolean | null
+          notes?: string | null
+          payment_method?: string | null
+          recurring_frequency?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string
+          employee_id?: string | null
+          id?: string
+          invoice_number?: string | null
+          is_recurring?: boolean | null
+          notes?: string | null
+          payment_method?: string | null
+          recurring_frequency?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "financial_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          category: string | null
+          client_id: string | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          employee_id: string | null
+          id: string
+          is_private: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          client_id?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string | null
+          id?: string
+          is_private?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          client_id?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string | null
+          id?: string
+          is_private?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "notes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_global: boolean | null
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_global?: boolean | null
+          is_read?: boolean | null
+          message: string
+          title: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_global?: boolean | null
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -130,6 +463,196 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      schedules: {
+        Row: {
+          anamnesis_type_id: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          employee_id: string | null
+          end_time: string
+          id: string
+          location: string | null
+          notes: string | null
+          start_time: string
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          anamnesis_type_id?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id?: string | null
+          end_time: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          start_time: string
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          anamnesis_type_id?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id?: string | null
+          end_time?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          start_time?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_anamnesis_type_id_fkey"
+            columns: ["anamnesis_type_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_items: {
+        Row: {
+          barcode: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          current_quantity: number | null
+          description: string | null
+          expiry_date: string | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          minimum_quantity: number | null
+          name: string
+          supplier: string | null
+          unit: string | null
+          unit_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_quantity?: number | null
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          minimum_quantity?: number | null
+          name: string
+          supplier?: string | null
+          unit?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_quantity?: number | null
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          minimum_quantity?: number | null
+          name?: string
+          supplier?: string | null
+          unit?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          notes: string | null
+          quantity: number
+          reason: string | null
+          reference_document: string | null
+          stock_item_id: string
+          total_cost: number | null
+          type: string
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          quantity: number
+          reason?: string | null
+          reference_document?: string | null
+          stock_item_id: string
+          total_cost?: number | null
+          type: string
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          reason?: string | null
+          reference_document?: string | null
+          stock_item_id?: string
+          total_cost?: number | null
+          type?: string
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
