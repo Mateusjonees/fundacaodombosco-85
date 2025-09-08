@@ -14,28 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
-      profiles: {
+      employees: {
         Row: {
           created_at: string
+          emergency_contact: string | null
+          emergency_phone: string | null
+          employee_code: string | null
           id: string
+          notes: string | null
+          professional_license: string | null
+          profile_id: string
+          specialization: string | null
+          updated_at: string
+          user_id: string
+          work_schedule: Json | null
+        }
+        Insert: {
+          created_at?: string
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          employee_code?: string | null
+          id?: string
+          notes?: string | null
+          professional_license?: string | null
+          profile_id: string
+          specialization?: string | null
+          updated_at?: string
+          user_id: string
+          work_schedule?: Json | null
+        }
+        Update: {
+          created_at?: string
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          employee_code?: string | null
+          id?: string
+          notes?: string | null
+          professional_license?: string | null
+          profile_id?: string
+          specialization?: string | null
+          updated_at?: string
+          user_id?: string
+          work_schedule?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          created_at: string
+          department: string | null
+          document_cpf: string | null
+          document_rg: string | null
+          employee_role: Database["public"]["Enums"]["employee_role"] | null
+          hire_date: string | null
+          id: string
+          is_active: boolean | null
           name: string | null
-          role: string | null
+          permissions: Json | null
+          phone: string | null
+          salary: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          address?: string | null
+          birth_date?: string | null
           created_at?: string
+          department?: string | null
+          document_cpf?: string | null
+          document_rg?: string | null
+          employee_role?: Database["public"]["Enums"]["employee_role"] | null
+          hire_date?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string | null
-          role?: string | null
+          permissions?: Json | null
+          phone?: string | null
+          salary?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          address?: string | null
+          birth_date?: string | null
           created_at?: string
+          department?: string | null
+          document_cpf?: string | null
+          document_rg?: string | null
+          employee_role?: Database["public"]["Enums"]["employee_role"] | null
+          hire_date?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string | null
-          role?: string | null
+          permissions?: Json | null
+          phone?: string | null
+          salary?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -46,10 +129,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["employee_role"]
+      }
+      user_has_role: {
+        Args: { required_roles: Database["public"]["Enums"]["employee_role"][] }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      employee_role:
+        | "director"
+        | "coordinator_madre"
+        | "coordinator_floresta"
+        | "staff"
+        | "intern"
+        | "musictherapist"
+        | "financeiro"
+        | "receptionist"
+        | "psychologist"
+        | "psychopedagogue"
+        | "speech_therapist"
+        | "nutritionist"
+        | "physiotherapist"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -176,6 +279,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      employee_role: [
+        "director",
+        "coordinator_madre",
+        "coordinator_floresta",
+        "staff",
+        "intern",
+        "musictherapist",
+        "financeiro",
+        "receptionist",
+        "psychologist",
+        "psychopedagogue",
+        "speech_therapist",
+        "nutritionist",
+        "physiotherapist",
+      ],
+    },
   },
 } as const
