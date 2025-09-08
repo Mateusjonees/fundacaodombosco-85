@@ -154,6 +154,8 @@
   }
 
   .bubble-3 {
-    @apply w-28 h-28 bottom-2/5 left-1/5;
+    @apply w-28 h-28;
+    bottom: 40%;
+    left: 20%;
   }
 }
