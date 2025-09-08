@@ -455,6 +455,44 @@ export type Database = {
           },
         ]
       }
+      file_shares: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          file_id: string
+          id: string
+          permission_level: string | null
+          shared_by: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          file_id: string
+          id?: string
+          permission_level?: string | null
+          shared_by: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          file_id?: string
+          id?: string
+          permission_level?: string | null
+          shared_by?: string
+          shared_with?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_shares_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "user_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_notes: {
         Row: {
           created_at: string
@@ -910,6 +948,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_files: {
+        Row: {
+          category: string | null
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_private: boolean | null
+          mime_type: string | null
+          tags: string[] | null
+          updated_at: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_private?: boolean | null
+          mime_type?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_private?: boolean | null
+          mime_type?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_permissions: {
         Row: {

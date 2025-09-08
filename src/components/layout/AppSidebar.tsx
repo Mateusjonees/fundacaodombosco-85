@@ -34,6 +34,7 @@ const menuItems = [
   { title: 'Agenda do Dia', url: '/schedule', icon: Calendar },
   { title: 'Todos os Pacientes', url: '/all-patients', icon: ClipboardList },
   { title: 'Meus Pacientes', url: '/my-patients', icon: UserCheck },
+  { title: 'Meus Arquivos', url: '/my-files', icon: FolderOpen },
   { title: 'Financeiro', url: '/financial', icon: DollarSign },
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { title: 'Estoque', url: '/stock', icon: Package },

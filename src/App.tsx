@@ -23,6 +23,7 @@ import Reports from "./pages/Reports";
 import Stock from "./pages/Stock";
 import Employees from "./pages/Employees";
 import StaticFiles from "./pages/StaticFiles";
+import MyFiles from "./pages/MyFiles";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/all-patients" element={<AllPatients />} />
               <Route path="/my-patients" element={<MyPatients />} />
+              <Route path="/my-files" element={<MyFiles />} />
               <Route path="/financial" element={<Financial />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/stock" element={<Stock />} />
