@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Edit, Eye } from 'lucide-react';
+import { Plus, Search, Edit, Eye, ArrowLeft, Users } from 'lucide-react';
+import ClientDetailsView from '@/components/ClientDetailsView';
 
 interface Client {
   id: string;
@@ -22,16 +24,36 @@ interface Client {
   emergency_contact?: string;
   emergency_phone?: string;
   medical_history?: string;
+  cpf?: string;
+  responsible_name?: string;
+  responsible_phone?: string;
+  unit?: string;
+  diagnosis?: string;
+  neuropsych_complaint?: string;
+  treatment_expectations?: string;
+  clinical_observations?: string;
   is_active: boolean;
   created_at: string;
 }
 
+interface UserProfile {
+  employee_role: string;
+}
+
 export default function Clients() {
+  const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
+
+  const isCoordinatorOrDirector = userProfile?.employee_role === 'director' || 
+                                  userProfile?.employee_role === 'coordinator_madre' || 
+                                  userProfile?.employee_role === 'coordinator_floresta';
 
   const [newClient, setNewClient] = useState({
     name: '',
@@ -41,20 +63,69 @@ export default function Clients() {
     address: '',
     emergency_contact: '',
     emergency_phone: '',
-    medical_history: ''
+    medical_history: '',
+    cpf: '',
+    responsible_name: '',
+    responsible_phone: '',
+    unit: 'madre',
+    diagnosis: '',
+    neuropsych_complaint: '',
+    treatment_expectations: '',
+    clinical_observations: ''
   });
 
   useEffect(() => {
-    loadClients();
-  }, []);
+    loadUserProfile();
+  }, [user]);
+
+  useEffect(() => {
+    if (userProfile) {
+      loadClients();
+    }
+  }, [userProfile]);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('employee_role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   const loadClients = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('name');
+      let query;
+      
+      if (isCoordinatorOrDirector) {
+        // Coordenadores e diretores veem todos os clientes
+        query = supabase
+          .from('clients')
+          .select('*')
+          .order('name');
+      } else {
+        // Staff vê apenas clientes vinculados a ele
+        query = supabase
+          .from('clients')
+          .select(`
+            *,
+            client_assignments!inner (employee_id)
+          `)
+          .eq('client_assignments.employee_id', user?.id)
+          .eq('client_assignments.is_active', true)
+          .order('name');
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setClients(data || []);
@@ -72,14 +143,31 @@ export default function Clients() {
 
   const handleCreateClient = async () => {
     try {
-      const { error } = await supabase
+      const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .insert([{
           ...newClient,
           is_active: true
-        }]);
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (clientError) throw clientError;
+
+      // Se não for coordenador/diretor, vincular automaticamente ao usuário atual
+      if (!isCoordinatorOrDirector && clientData) {
+        const { error: assignmentError } = await supabase
+          .from('client_assignments')
+          .insert({
+            client_id: clientData.id,
+            employee_id: user?.id,
+            assigned_by: user?.id
+          });
+
+        if (assignmentError) {
+          console.error('Error creating assignment:', assignmentError);
+        }
+      }
 
       toast({
         title: "Sucesso",
@@ -87,16 +175,7 @@ export default function Clients() {
       });
       
       setIsDialogOpen(false);
-      setNewClient({
-        name: '',
-        phone: '',
-        email: '',
-        birth_date: '',
-        address: '',
-        emergency_contact: '',
-        emergency_phone: '',
-        medical_history: ''
-      });
+      resetForm();
       loadClients();
     } catch (error) {
       console.error('Error creating client:', error);
@@ -108,26 +187,140 @@ export default function Clients() {
     }
   };
 
+  const handleUpdateClient = async () => {
+    if (!editingClient) return;
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update(newClient)
+        .eq('id', editingClient.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Cliente atualizado com sucesso!",
+      });
+      
+      setIsDialogOpen(false);
+      setEditingClient(null);
+      resetForm();
+      loadClients();
+      
+      // Atualizar a visualização se o cliente está sendo visualizado
+      if (selectedClient && selectedClient.id === editingClient.id) {
+        setSelectedClient({ ...selectedClient, ...newClient });
+      }
+    } catch (error) {
+      console.error('Error updating client:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o cliente.",
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setNewClient({
+      name: '',
+      phone: '',
+      email: '',
+      birth_date: '',
+      address: '',
+      emergency_contact: '',
+      emergency_phone: '',
+      medical_history: '',
+      cpf: '',
+      responsible_name: '',
+      responsible_phone: '',
+      unit: 'madre',
+      diagnosis: '',
+      neuropsych_complaint: '',
+      treatment_expectations: '',
+      clinical_observations: ''
+    });
+  };
+
+  const openEditDialog = (client: Client) => {
+    setEditingClient(client);
+    setNewClient({
+      name: client.name,
+      phone: client.phone || '',
+      email: client.email || '',
+      birth_date: client.birth_date || '',
+      address: client.address || '',
+      emergency_contact: client.emergency_contact || '',
+      emergency_phone: client.emergency_phone || '',
+      medical_history: client.medical_history || '',
+      cpf: client.cpf || '',
+      responsible_name: client.responsible_name || '',
+      responsible_phone: client.responsible_phone || '',
+      unit: client.unit || 'madre',
+      diagnosis: client.diagnosis || '',
+      neuropsych_complaint: client.neuropsych_complaint || '',
+      treatment_expectations: client.treatment_expectations || '',
+      clinical_observations: client.clinical_observations || ''
+    });
+    setIsDialogOpen(true);
+  };
+
   const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (!userProfile) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  // Se um cliente está selecionado, mostrar a visualização detalhada
+  if (selectedClient) {
+    return (
+      <ClientDetailsView
+        client={selectedClient}
+        onEdit={() => openEditDialog(selectedClient)}
+        onClose={() => setSelectedClient(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Clientes</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div>
+          <h1 className="text-3xl font-bold">Meus Clientes</h1>
+          <p className="text-muted-foreground">
+            {isCoordinatorOrDirector 
+              ? 'Visualizando todos os clientes' 
+              : 'Visualizando apenas clientes vinculados a você'
+            }
+          </p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setEditingClient(null);
+            resetForm();
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
               Cadastrar Cliente
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
+              <DialogTitle>
+                {editingClient ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}
+              </DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
@@ -137,6 +330,15 @@ export default function Clients() {
                   value={newClient.name}
                   onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
                   placeholder="Digite o nome completo"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  value={newClient.cpf}
+                  onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
+                  placeholder="000.000.000-00"
                 />
               </div>
               <div className="space-y-2">
@@ -167,40 +369,88 @@ export default function Clients() {
                   onChange={(e) => setNewClient({ ...newClient, birth_date: e.target.value })}
                 />
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="address">Endereço</Label>
-                <Input
-                  id="address"
-                  value={newClient.address}
-                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
-                  placeholder="Rua, número, bairro, cidade"
-                />
+              <div className="space-y-2">
+                <Label htmlFor="unit">Unidade de Atendimento</Label>
+                <Select value={newClient.unit} onValueChange={(value) => setNewClient({ ...newClient, unit: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                    <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="emergency_contact">Nome do Responsável</Label>
+                <Label htmlFor="responsible_name">Nome do Responsável</Label>
                 <Input
-                  id="emergency_contact"
-                  value={newClient.emergency_contact}
-                  onChange={(e) => setNewClient({ ...newClient, emergency_contact: e.target.value })}
+                  id="responsible_name"
+                  value={newClient.responsible_name}
+                  onChange={(e) => setNewClient({ ...newClient, responsible_name: e.target.value })}
                   placeholder="Nome do responsável (se menor de idade)"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="emergency_phone">Telefone do Responsável</Label>
+                <Label htmlFor="responsible_phone">Telefone do Responsável</Label>
                 <Input
-                  id="emergency_phone"
-                  value={newClient.emergency_phone}
-                  onChange={(e) => setNewClient({ ...newClient, emergency_phone: e.target.value })}
+                  id="responsible_phone"
+                  value={newClient.responsible_phone}
+                  onChange={(e) => setNewClient({ ...newClient, responsible_phone: e.target.value })}
                   placeholder="(11) 99999-9999"
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="medical_history">Histórico Médico</Label>
+                <Label htmlFor="address">Endereço Completo</Label>
+                <Input
+                  id="address"
+                  value={newClient.address}
+                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                  placeholder="Rua, número, bairro, cidade, estado, CEP"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="diagnosis">Diagnóstico Principal</Label>
+                <Input
+                  id="diagnosis"
+                  value={newClient.diagnosis}
+                  onChange={(e) => setNewClient({ ...newClient, diagnosis: e.target.value })}
+                  placeholder="Diagnóstico médico ou neurológico"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="medical_history">Histórico Médico Relevante</Label>
                 <Textarea
                   id="medical_history"
                   value={newClient.medical_history}
                   onChange={(e) => setNewClient({ ...newClient, medical_history: e.target.value })}
-                  placeholder="Alergias, medicamentos, condições especiais, etc."
+                  placeholder="Doenças pré-existentes, cirurgias, medicamentos"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="neuropsych_complaint">Queixa Principal Neuropsicológica</Label>
+                <Textarea
+                  id="neuropsych_complaint"
+                  value={newClient.neuropsych_complaint}
+                  onChange={(e) => setNewClient({ ...newClient, neuropsych_complaint: e.target.value })}
+                  placeholder="Relato do cliente/responsável sobre as dificuldades"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="treatment_expectations">Expectativas do Tratamento</Label>
+                <Textarea
+                  id="treatment_expectations"
+                  value={newClient.treatment_expectations}
+                  onChange={(e) => setNewClient({ ...newClient, treatment_expectations: e.target.value })}
+                  placeholder="O que o cliente/família espera do acompanhamento"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="clinical_observations">Observações Gerais</Label>
+                <Textarea
+                  id="clinical_observations"
+                  value={newClient.clinical_observations}
+                  onChange={(e) => setNewClient({ ...newClient, clinical_observations: e.target.value })}
+                  placeholder="Observações gerais sobre o cliente"
                 />
               </div>
             </div>
@@ -208,12 +458,50 @@ export default function Clients() {
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateClient} disabled={!newClient.name}>
-                Cadastrar
+              <Button 
+                onClick={editingClient ? handleUpdateClient : handleCreateClient} 
+                disabled={!newClient.name}
+              >
+                {editingClient ? 'Atualizar' : 'Cadastrar'}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{filteredClients.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ativos</CardTitle>
+            <Users className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {filteredClients.filter(c => c.is_active).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Inativos</CardTitle>
+            <Users className="h-4 w-4 text-gray-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-500">
+              {filteredClients.filter(c => !c.is_active).length}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -242,7 +530,7 @@ export default function Clients() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Telefone</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>Unidade</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data de Cadastro</TableHead>
                   <TableHead>Ações</TableHead>
@@ -253,7 +541,11 @@ export default function Clients() {
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell>{client.phone || '-'}</TableCell>
-                    <TableCell>{client.email || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {client.unit === 'madre' ? 'Madre' : 'Floresta'}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={client.is_active ? "default" : "secondary"}>
                         {client.is_active ? 'Ativo' : 'Inativo'}
@@ -264,10 +556,18 @@ export default function Clients() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedClient(client)}
+                        >
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openEditDialog(client)}
+                        >
                           <Edit className="h-3 w-3" />
                         </Button>
                       </div>

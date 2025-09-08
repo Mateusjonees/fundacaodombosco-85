@@ -38,13 +38,191 @@ export type Database = {
         }
         Relationships: []
       }
+      client_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          client_id: string | null
+          employee_id: string | null
+          id: string
+          is_active: boolean | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          client_id?: string | null
+          employee_id?: string | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          client_id?: string | null
+          employee_id?: string | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "client_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "client_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "client_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      client_documents: {
+        Row: {
+          client_id: string | null
+          document_name: string
+          document_type: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          is_active: boolean | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          document_name: string
+          document_type?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          is_active?: boolean | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          document_name?: string
+          document_type?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          is_active?: boolean | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "client_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      client_notes: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_private: boolean | null
+          note_text: string
+          note_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_private?: boolean | null
+          note_text: string
+          note_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_private?: boolean | null
+          note_text?: string
+          note_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employee_details"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "client_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
           birth_date: string | null
+          clinical_observations: string | null
           cpf: string | null
           created_at: string
           created_by: string | null
+          diagnosis: string | null
           email: string | null
           emergency_contact: string | null
           emergency_phone: string | null
@@ -52,17 +230,24 @@ export type Database = {
           is_active: boolean | null
           medical_history: string | null
           name: string
+          neuropsych_complaint: string | null
           notes: string | null
           phone: string | null
+          responsible_name: string | null
+          responsible_phone: string | null
           rg: string | null
+          treatment_expectations: string | null
+          unit: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
           birth_date?: string | null
+          clinical_observations?: string | null
           cpf?: string | null
           created_at?: string
           created_by?: string | null
+          diagnosis?: string | null
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
@@ -70,17 +255,24 @@ export type Database = {
           is_active?: boolean | null
           medical_history?: string | null
           name: string
+          neuropsych_complaint?: string | null
           notes?: string | null
           phone?: string | null
+          responsible_name?: string | null
+          responsible_phone?: string | null
           rg?: string | null
+          treatment_expectations?: string | null
+          unit?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
           birth_date?: string | null
+          clinical_observations?: string | null
           cpf?: string | null
           created_at?: string
           created_by?: string | null
+          diagnosis?: string | null
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
@@ -88,9 +280,14 @@ export type Database = {
           is_active?: boolean | null
           medical_history?: string | null
           name?: string
+          neuropsych_complaint?: string | null
           notes?: string | null
           phone?: string | null
+          responsible_name?: string | null
+          responsible_phone?: string | null
           rg?: string | null
+          treatment_expectations?: string | null
+          unit?: string | null
           updated_at?: string
         }
         Relationships: []
