@@ -6,51 +6,58 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-interface LoginFormProps {
+interface SignUpFormProps {
   onSuccess: () => void;
-  onSwitchToSignUp?: () => void;
+  onSwitchToLogin: () => void;
 }
 
-export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
+export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('LoginForm: Submit started', { email });
+    console.log('SignUpForm: Submit started', { email, name });
     setIsLoading(true);
 
     try {
-      console.log('LoginForm: Attempting Supabase login');
-      const { data, error } = await supabase.auth.signInWithPassword({
+      console.log('SignUpForm: Attempting Supabase signup');
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: name,
+          }
+        }
       });
 
-      console.log('LoginForm: Login response', { hasData: !!data, hasError: !!error, error: error?.message });
+      console.log('SignUpForm: Signup response', { hasData: !!data, hasError: !!error, error: error?.message });
 
       if (error) {
-        console.error('LoginForm: Login error', error);
+        console.error('SignUpForm: Signup error', error);
         toast({
           variant: "destructive",
-          title: "Erro no Login",
+          title: "Erro no Cadastro",
           description: error.message,
         });
         return;
       }
 
-      console.log('LoginForm: Login successful', { user: data.user?.email });
+      console.log('SignUpForm: Signup successful', { user: data.user?.email });
       toast({
-        title: "Login realizado com sucesso!",
+        title: "Cadastro realizado com sucesso!",
         description: "Bem-vindo ao sistema.",
       });
       
-      console.log('LoginForm: Calling onSuccess');
+      console.log('SignUpForm: Calling onSuccess');
       onSuccess();
     } catch (error) {
-      console.error('LoginForm: Unexpected error', error);
+      console.error('SignUpForm: Unexpected error', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -70,10 +77,22 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
       <Card className="login-form">
         <CardHeader>
           <CardTitle className="login-form h1">FUNDAÇÃO DOM BOSCO</CardTitle>
-          <p className="login-subtitle">Acesso Restrito</p>
+          <p className="login-subtitle">Criar Nova Conta</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="form-group">
+              <Label htmlFor="name">Nome Completo</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                disabled={isLoading}
+                placeholder="Seu nome completo"
+              />
+            </div>
             <div className="form-group">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -96,6 +115,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                 required
                 disabled={isLoading}
                 placeholder="Sua senha"
+                minLength={6}
               />
             </div>
             <Button 
@@ -103,21 +123,19 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? 'Entrando...' : 'Entrar'}
+              {isLoading ? 'Criando conta...' : 'Criar Conta'}
             </Button>
           </form>
           
-          {onSwitchToSignUp && (
-            <div className="mt-4 text-center">
-              <Button 
-                variant="link" 
-                onClick={onSwitchToSignUp}
-                disabled={isLoading}
-              >
-                Não tem uma conta? Criar conta
-              </Button>
-            </div>
-          )}
+          <div className="mt-4 text-center">
+            <Button 
+              variant="link" 
+              onClick={onSwitchToLogin}
+              disabled={isLoading}
+            >
+              Já tem uma conta? Fazer login
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
