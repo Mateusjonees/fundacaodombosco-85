@@ -109,7 +109,7 @@ export default function Stock() {
         .limit(50);
 
       if (error) throw error;
-      setMovements(data || []);
+      setMovements((data as any) || []);
     } catch (error) {
       console.error('Error loading stock movements:', error);
     }
