@@ -34,6 +34,23 @@ export default function ClientForm() {
     emergency_phone: '',
     unidade_atendimento: '',
     
+    // Dados específicos para menor de idade
+    nome_escola: '',
+    tipo_escola: '',
+    ano_escolar: '',
+    
+    // Dados dos Pais/Responsáveis
+    nome_pai: '',
+    idade_pai: '',
+    profissao_pai: '',
+    telefone_pai: '',
+    nome_mae: '',
+    idade_mae: '',
+    profissao_mae: '',
+    telefone_mae: '',
+    responsavel_financeiro: '',
+    outro_responsavel: '',
+    
     // Endereço
     cep: '',
     logradouro: '',
@@ -85,19 +102,28 @@ export default function ClientForm() {
     setLoading(true);
 
     try {
+      // Build notes field based on age type
+      let notesData = '';
+      
+      if (ageType === 'adult') {
+        notesData = `Gênero: ${formData.gender}\nRG: ${formData.rg}\nNaturalidade: ${formData.naturalidade}\nEstado Civil: ${formData.estado_civil}\nEscolaridade: ${formData.escolaridade}\nProfissão: ${formData.profissao}\nUnidade: ${formData.unidade_atendimento}\nDiagnóstico: ${formData.diagnostico_principal}\nQueixa: ${formData.queixa_neuropsicologica}\nExpectativas: ${formData.expectativas_tratamento}\nObservações: ${formData.observacoes}`;
+      } else {
+        notesData = `Tipo: Menor de Idade\nGênero: ${formData.gender}\nEscola: ${formData.nome_escola}\nTipo de Escola: ${formData.tipo_escola}\nAno Escolar: ${formData.ano_escolar}\nUnidade: ${formData.unidade_atendimento}\nPai: ${formData.nome_pai} (${formData.idade_pai} anos) - ${formData.profissao_pai} - ${formData.telefone_pai}\nMãe: ${formData.nome_mae} (${formData.idade_mae} anos) - ${formData.profissao_mae} - ${formData.telefone_mae}\nResponsável Financeiro: ${formData.responsavel_financeiro}\nOutro Responsável: ${formData.outro_responsavel}\nDiagnóstico: ${formData.diagnostico_principal}\nQueixa: ${formData.queixa_neuropsicologica}\nExpectativas: ${formData.expectativas_tratamento}\nObservações: ${formData.observacoes}`;
+      }
+
       const { error } = await supabase
         .from('clients')
         .insert([{
           name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
+          email: ageType === 'adult' ? formData.email : '', // Minors might not have email
+          phone: ageType === 'adult' ? formData.phone : formData.telefone_pai || formData.telefone_mae, // Use parent phone for minors
           cpf: formData.cpf,
           birth_date: formData.birth_date,
           address: `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade}/${formData.estado}`,
-          emergency_contact: formData.emergency_contact,
-          emergency_phone: formData.emergency_phone,
+          emergency_contact: ageType === 'adult' ? formData.emergency_contact : `${formData.nome_pai} / ${formData.nome_mae}`,
+          emergency_phone: ageType === 'adult' ? formData.emergency_phone : `${formData.telefone_pai} / ${formData.telefone_mae}`,
           medical_history: formData.medical_history,
-          notes: `Gênero: ${formData.gender}\nRG: ${formData.rg}\nNaturalidade: ${formData.naturalidade}\nEstado Civil: ${formData.estado_civil}\nEscolaridade: ${formData.escolaridade}\nProfissão: ${formData.profissao}\nUnidade: ${formData.unidade_atendimento}\nDiagnóstico: ${formData.diagnostico_principal}\nQueixa: ${formData.queixa_neuropsicologica}\nExpectativas: ${formData.expectativas_tratamento}\nObservações: ${formData.observacoes}`,
+          notes: notesData,
           is_active: true
         }]);
 
@@ -113,6 +139,9 @@ export default function ClientForm() {
         name: '', birth_date: '', gender: '', cpf: '', rg: '', naturalidade: '',
         estado_civil: '', escolaridade: '', profissao: '', email: '', phone: '',
         emergency_contact: '', emergency_phone: '', unidade_atendimento: '',
+        nome_escola: '', tipo_escola: '', ano_escolar: '', nome_pai: '', idade_pai: '',
+        profissao_pai: '', telefone_pai: '', nome_mae: '', idade_mae: '', profissao_mae: '',
+        telefone_mae: '', responsavel_financeiro: '', outro_responsavel: '',
         cep: '', logradouro: '', numero: '', complemento: '', bairro: '',
         cidade: '', estado: '', observacoes: '', diagnostico_principal: '',
         medical_history: '', queixa_neuropsicologica: '', expectativas_tratamento: ''
@@ -161,7 +190,9 @@ export default function ClientForm() {
         {/* Dados Pessoais */}
         <Card>
           <CardHeader>
-            <CardTitle>Dados Pessoais</CardTitle>
+            <CardTitle>
+              {ageType === 'adult' ? 'Dados Pessoais' : 'Dados Pessoais do Menor'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -200,120 +231,174 @@ export default function ClientForm() {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div>
-                <Label htmlFor="cpf">CPF</Label>
-                <Input
-                  id="cpf"
-                  value={formData.cpf}
-                  onChange={(e) => handleInputChange('cpf', e.target.value)}
-                  placeholder="000.000.000-00"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="rg">RG</Label>
-                <Input
-                  id="rg"
-                  value={formData.rg}
-                  onChange={(e) => handleInputChange('rg', e.target.value)}
-                  placeholder="00.000.000-0"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="naturalidade">Naturalidade</Label>
-                <Input
-                  id="naturalidade"
-                  value={formData.naturalidade}
-                  onChange={(e) => handleInputChange('naturalidade', e.target.value)}
-                  placeholder="Cidade/Estado"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="estado_civil">Estado Civil</Label>
-                <Select value={formData.estado_civil} onValueChange={(value) => handleInputChange('estado_civil', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="solteiro">Solteiro(a)</SelectItem>
-                    <SelectItem value="casado">Casado(a)</SelectItem>
-                    <SelectItem value="divorciado">Divorciado(a)</SelectItem>
-                    <SelectItem value="viuvo">Viúvo(a)</SelectItem>
-                    <SelectItem value="uniao-estavel">União Estável</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="escolaridade">Escolaridade</Label>
-                <Select value={formData.escolaridade} onValueChange={(value) => handleInputChange('escolaridade', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fundamental-incompleto">Ensino Fundamental Incompleto</SelectItem>
-                    <SelectItem value="fundamental-completo">Ensino Fundamental Completo</SelectItem>
-                    <SelectItem value="medio-incompleto">Ensino Médio Incompleto</SelectItem>
-                    <SelectItem value="medio-completo">Ensino Médio Completo</SelectItem>
-                    <SelectItem value="superior-incompleto">Ensino Superior Incompleto</SelectItem>
-                    <SelectItem value="superior-completo">Ensino Superior Completo</SelectItem>
-                    <SelectItem value="pos-graduacao">Pós-graduação</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="profissao">Profissão</Label>
-                <Input
-                  id="profissao"
-                  value={formData.profissao}
-                  onChange={(e) => handleInputChange('profissao', e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="(00) 90000-0000"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="emergency_contact">Contato de Emergência</Label>
-                <Input
-                  id="emergency_contact"
-                  value={formData.emergency_contact}
-                  onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
-                  placeholder="Nome"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="emergency_phone">Telefone de Emergência</Label>
-                <Input
-                  id="emergency_phone"
-                  value={formData.emergency_phone}
-                  onChange={(e) => handleInputChange('emergency_phone', e.target.value)}
-                  placeholder="(00) 90000-0000"
-                />
-              </div>
+
+              {ageType === 'minor' ? (
+                <>
+                  <div>
+                    <Label htmlFor="nome_escola">Nome da Escola</Label>
+                    <Input
+                      id="nome_escola"
+                      value={formData.nome_escola}
+                      onChange={(e) => handleInputChange('nome_escola', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="tipo_escola">Tipo de Escola</Label>
+                    <Select value={formData.tipo_escola} onValueChange={(value) => handleInputChange('tipo_escola', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="publica">Pública</SelectItem>
+                        <SelectItem value="particular">Particular</SelectItem>
+                        <SelectItem value="filantrópica">Filantrópica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="ano_escolar">Ano Escolar</Label>
+                    <Select value={formData.ano_escolar} onValueChange={(value) => handleInputChange('ano_escolar', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="maternal">Maternal</SelectItem>
+                        <SelectItem value="pre-escola">Pré-escola</SelectItem>
+                        <SelectItem value="1ano">1º Ano</SelectItem>
+                        <SelectItem value="2ano">2º Ano</SelectItem>
+                        <SelectItem value="3ano">3º Ano</SelectItem>
+                        <SelectItem value="4ano">4º Ano</SelectItem>
+                        <SelectItem value="5ano">5º Ano</SelectItem>
+                        <SelectItem value="6ano">6º Ano</SelectItem>
+                        <SelectItem value="7ano">7º Ano</SelectItem>
+                        <SelectItem value="8ano">8º Ano</SelectItem>
+                        <SelectItem value="9ano">9º Ano</SelectItem>
+                        <SelectItem value="1medio">1º Ano Médio</SelectItem>
+                        <SelectItem value="2medio">2º Ano Médio</SelectItem>
+                        <SelectItem value="3medio">3º Ano Médio</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input
+                      id="cpf"
+                      value={formData.cpf}
+                      onChange={(e) => handleInputChange('cpf', e.target.value)}
+                      placeholder="000.000.000-00"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="rg">RG</Label>
+                    <Input
+                      id="rg"
+                      value={formData.rg}
+                      onChange={(e) => handleInputChange('rg', e.target.value)}
+                      placeholder="00.000.000-0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="naturalidade">Naturalidade</Label>
+                    <Input
+                      id="naturalidade"
+                      value={formData.naturalidade}
+                      onChange={(e) => handleInputChange('naturalidade', e.target.value)}
+                      placeholder="Cidade/Estado"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="estado_civil">Estado Civil</Label>
+                    <Select value={formData.estado_civil} onValueChange={(value) => handleInputChange('estado_civil', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                        <SelectItem value="casado">Casado(a)</SelectItem>
+                        <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                        <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                        <SelectItem value="uniao-estavel">União Estável</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="escolaridade">Escolaridade</Label>
+                    <Select value={formData.escolaridade} onValueChange={(value) => handleInputChange('escolaridade', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fundamental-incompleto">Ensino Fundamental Incompleto</SelectItem>
+                        <SelectItem value="fundamental-completo">Ensino Fundamental Completo</SelectItem>
+                        <SelectItem value="medio-incompleto">Ensino Médio Incompleto</SelectItem>
+                        <SelectItem value="medio-completo">Ensino Médio Completo</SelectItem>
+                        <SelectItem value="superior-incompleto">Ensino Superior Incompleto</SelectItem>
+                        <SelectItem value="superior-completo">Ensino Superior Completo</SelectItem>
+                        <SelectItem value="pos-graduacao">Pós-graduação</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="profissao">Profissão</Label>
+                    <Input
+                      id="profissao"
+                      value={formData.profissao}
+                      onChange={(e) => handleInputChange('profissao', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="phone">Telefone</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="(00) 90000-0000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="emergency_contact">Contato de Emergência</Label>
+                    <Input
+                      id="emergency_contact"
+                      value={formData.emergency_contact}
+                      onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
+                      placeholder="Nome"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="emergency_phone">Telefone de Emergência</Label>
+                    <Input
+                      id="emergency_phone"
+                      value={formData.emergency_phone}
+                      onChange={(e) => handleInputChange('emergency_phone', e.target.value)}
+                      placeholder="(00) 90000-0000"
+                    />
+                  </div>
+                </>
+              )}
               
               <div>
                 <Label htmlFor="unidade_atendimento">Unidade de Atendimento</Label>
@@ -330,6 +415,131 @@ export default function ClientForm() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Dados dos Pais/Responsáveis - Only for minors */}
+        {ageType === 'minor' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Dados dos Pais/Responsáveis</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <h3 className="text-lg font-semibold mb-4">Dados do Pai</h3>
+                </div>
+                
+                <div>
+                  <Label htmlFor="nome_pai">Nome do Pai</Label>
+                  <Input
+                    id="nome_pai"
+                    value={formData.nome_pai}
+                    onChange={(e) => handleInputChange('nome_pai', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="idade_pai">Idade do Pai</Label>
+                  <Input
+                    id="idade_pai"
+                    type="number"
+                    value={formData.idade_pai}
+                    onChange={(e) => handleInputChange('idade_pai', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="profissao_pai">Profissão do Pai</Label>
+                  <Input
+                    id="profissao_pai"
+                    value={formData.profissao_pai}
+                    onChange={(e) => handleInputChange('profissao_pai', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="telefone_pai">Telefone do Pai</Label>
+                  <Input
+                    id="telefone_pai"
+                    value={formData.telefone_pai}
+                    onChange={(e) => handleInputChange('telefone_pai', e.target.value)}
+                    placeholder="(00) 90000-0000"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <h3 className="text-lg font-semibold mb-4 mt-6">Dados da Mãe</h3>
+                </div>
+                
+                <div>
+                  <Label htmlFor="nome_mae">Nome da Mãe</Label>
+                  <Input
+                    id="nome_mae"
+                    value={formData.nome_mae}
+                    onChange={(e) => handleInputChange('nome_mae', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="idade_mae">Idade da Mãe</Label>
+                  <Input
+                    id="idade_mae"
+                    type="number"
+                    value={formData.idade_mae}
+                    onChange={(e) => handleInputChange('idade_mae', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="profissao_mae">Profissão da Mãe</Label>
+                  <Input
+                    id="profissao_mae"
+                    value={formData.profissao_mae}
+                    onChange={(e) => handleInputChange('profissao_mae', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="telefone_mae">Telefone da Mãe</Label>
+                  <Input
+                    id="telefone_mae"
+                    value={formData.telefone_mae}
+                    onChange={(e) => handleInputChange('telefone_mae', e.target.value)}
+                    placeholder="(00) 90000-0000"
+                  />
+                </div>
+
+                <div className="md:col-span-2 mt-6">
+                  <h3 className="text-lg font-semibold mb-4">Responsabilidade</h3>
+                </div>
+                
+                <div>
+                  <Label htmlFor="responsavel_financeiro">Responsável Financeiro</Label>
+                  <Select value={formData.responsavel_financeiro} onValueChange={(value) => handleInputChange('responsavel_financeiro', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pai">Pai</SelectItem>
+                      <SelectItem value="mae">Mãe</SelectItem>
+                      <SelectItem value="ambos">Ambos</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="outro_responsavel">Outro Responsável (se aplicável)</Label>
+                  <Input
+                    id="outro_responsavel"
+                    value={formData.outro_responsavel}
+                    onChange={(e) => handleInputChange('outro_responsavel', e.target.value)}
+                    placeholder="Nome e parentesco"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Endereço */}
         <Card>
