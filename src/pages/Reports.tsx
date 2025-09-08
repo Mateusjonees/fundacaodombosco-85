@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { FileText, Download, Calendar, Users, Clock, TrendingUp, User, Award } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Calendar, Users, Clock, User, Award, Printer, Download } from 'lucide-react';
 
 interface EmployeeStats {
   employee: any;
@@ -93,23 +93,11 @@ export default function Reports() {
 
       if (appointmentsError) throw appointmentsError;
 
-      // Load client assignments
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from('client_assignments')
-        .select(`
-          id, client_id, assigned_at,
-          clients:client_id (id, name, unit, diagnosis)
-        `)
-        .eq('employee_id', selectedEmployee)
-        .eq('is_active', true);
-
-      if (assignmentsError) throw assignmentsError;
-
       // Calculate statistics
       const totalAppointments = appointments?.length || 0;
       const completedAppointments = appointments?.filter(a => a.status === 'completed').length || 0;
       
-      // Calculate total hours (assuming each appointment is the difference between start and end time)
+      // Calculate total hours
       const totalHours = appointments?.reduce((sum, apt) => {
         const start = new Date(apt.start_time);
         const end = new Date(apt.end_time);
@@ -169,7 +157,7 @@ export default function Reports() {
         avgAppointmentDuration: Math.round(avgAppointmentDuration * 100) / 100,
         monthlyStats,
         clientsList,
-        recentAppointments: appointments?.slice(0, 10) || []
+        recentAppointments: appointments || []
       });
 
     } catch (error) {
@@ -181,6 +169,345 @@ export default function Reports() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const printEmployeeReport = () => {
+    if (!employeeStats) return;
+
+    const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Relatório Detalhado - ${employeeStats.employee.name}</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                line-height: 1.6;
+                color: #333;
+            }
+            .header {
+                text-align: center;
+                border-bottom: 3px solid #333;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
+            .header h1 {
+                color: #2563eb;
+                font-size: 28px;
+                margin-bottom: 10px;
+            }
+            .section {
+                margin-bottom: 30px;
+                page-break-inside: avoid;
+            }
+            .section h2 {
+                background-color: #f8fafc;
+                padding: 10px;
+                border-left: 4px solid #2563eb;
+                margin-bottom: 15px;
+                font-size: 18px;
+            }
+            .info-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin-bottom: 20px;
+            }
+            .info-item {
+                background: #f9fafb;
+                padding: 15px;
+                border-radius: 8px;
+                border: 1px solid #e5e7eb;
+            }
+            .info-item strong {
+                color: #1f2937;
+                display: block;
+                margin-bottom: 5px;
+            }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            .stat-card {
+                background: #ffffff;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 15px;
+                text-align: center;
+            }
+            .stat-value {
+                font-size: 24px;
+                font-weight: bold;
+                color: #2563eb;
+            }
+            .stat-label {
+                font-size: 12px;
+                color: #6b7280;
+                margin-top: 5px;
+            }
+            .appointment-item {
+                background: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-left: 4px solid #2563eb;
+                padding: 15px;
+                margin-bottom: 10px;
+                border-radius: 0 8px 8px 0;
+            }
+            .appointment-title {
+                font-weight: bold;
+                color: #1f2937;
+                margin-bottom: 8px;
+            }
+            .appointment-details {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 10px;
+                font-size: 14px;
+                color: #6b7280;
+            }
+            .client-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            .client-item:last-child {
+                border-bottom: none;
+            }
+            .monthly-stats {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            .month-card {
+                background: #f9fafb;
+                padding: 15px;
+                border-radius: 8px;
+                text-align: center;
+                border: 1px solid #e5e7eb;
+            }
+            .month-name {
+                font-weight: bold;
+                color: #1f2937;
+                margin-bottom: 10px;
+            }
+            .month-stats {
+                font-size: 14px;
+                color: #6b7280;
+            }
+            .footer {
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 2px solid #e5e7eb;
+                text-align: center;
+                color: #6b7280;
+                font-size: 12px;
+            }
+            @media print {
+                body { margin: 0; }
+                .section { page-break-inside: avoid; }
+                .stats-grid { grid-template-columns: repeat(2, 1fr); }
+                .monthly-stats { grid-template-columns: repeat(2, 1fr); }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>RELATÓRIO DETALHADO DO FUNCIONÁRIO</h1>
+            <p>Sistema de Gestão Clínica</p>
+            <p><strong>Período:</strong> ${new Date(dateRange.start).toLocaleDateString('pt-BR')} - ${new Date(dateRange.end).toLocaleDateString('pt-BR')}</p>
+        </div>
+
+        <div class="section">
+            <h2>INFORMAÇÕES PESSOAIS</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Nome Completo:</strong>
+                    ${employeeStats.employee.name}
+                </div>
+                <div class="info-item">
+                    <strong>Cargo:</strong>
+                    ${employeeStats.employee.employee_role}
+                </div>
+                <div class="info-item">
+                    <strong>Departamento:</strong>
+                    ${employeeStats.employee.department || 'Não informado'}
+                </div>
+                <div class="info-item">
+                    <strong>Telefone:</strong>
+                    ${employeeStats.employee.phone || 'Não informado'}
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>ESTATÍSTICAS GERAIS</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">${employeeStats.totalAppointments}</div>
+                    <div class="stat-label">Total de Atendimentos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${employeeStats.completedAppointments}</div>
+                    <div class="stat-label">Atendimentos Concluídos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${employeeStats.totalHours}h</div>
+                    <div class="stat-label">Total de Horas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${employeeStats.uniqueClients}</div>
+                    <div class="stat-label">Clientes Únicos</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>DETALHES COMPLETOS DOS ATENDIMENTOS (${employeeStats.totalAppointments} total)</h2>
+            ${employeeStats.recentAppointments.map((appointment, index) => {
+                const startTime = new Date(appointment.start_time);
+                const endTime = new Date(appointment.end_time);
+                const duration = ((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)).toFixed(2);
+                
+                return `
+                <div class="appointment-item">
+                    <div class="appointment-title">
+                        ${index + 1}. ${appointment.title}
+                    </div>
+                    <div class="appointment-details">
+                        <div>
+                            <strong>Cliente:</strong><br>
+                            ${appointment.clients?.name || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Data e Horário:</strong><br>
+                            ${startTime.toLocaleDateString('pt-BR')}<br>
+                            ${startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - 
+                            ${endTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div>
+                            <strong>Duração:</strong><br>
+                            ${duration} horas<br>
+                            <span style="color: ${appointment.status === 'completed' ? '#059669' : '#dc2626'};">
+                                ${appointment.status === 'completed' ? 'Concluído' : appointment.status}
+                            </span>
+                        </div>
+                    </div>
+                    ${appointment.description ? `
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+                        <strong>Observações:</strong> ${appointment.description}
+                    </div>
+                    ` : ''}
+                </div>
+                `;
+            }).join('')}
+        </div>
+
+        <div class="section">
+            <h2>CLIENTES ATENDIDOS (${employeeStats.uniqueClients} únicos)</h2>
+            <div style="background: #f9fafb; border-radius: 8px; padding: 20px;">
+                ${employeeStats.clientsList.map((client, index) => `
+                <div class="client-item">
+                    <div>
+                        <strong>${index + 1}. ${client.name}</strong><br>
+                        <span style="color: #6b7280; font-size: 14px;">
+                            Unidade: ${client.unit === 'madre' ? 'Clínica Social (Madre)' : 'Neuro (Floresta)'}
+                        </span>
+                    </div>
+                    <div style="text-align: right; color: #2563eb; font-weight: bold;">
+                        ${client.appointmentCount} atendimentos
+                    </div>
+                </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>ESTATÍSTICAS MENSAIS</h2>
+            <div class="monthly-stats">
+                ${employeeStats.monthlyStats.map(month => `
+                <div class="month-card">
+                    <div class="month-name">${month.month.toUpperCase()}</div>
+                    <div class="month-stats">
+                        <div><strong>${month.appointments}</strong> atendimentos</div>
+                        <div><strong>${month.hours.toFixed(1)}</strong> horas</div>
+                        <div><strong>${month.completed}</strong> concluídos</div>
+                    </div>
+                </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>INDICADORES DE PERFORMANCE</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Eficiência de Conclusão:</strong>
+                    ${employeeStats.totalAppointments > 0 ? ((employeeStats.completedAppointments / employeeStats.totalAppointments) * 100).toFixed(1) : 0}%
+                    <div style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+                        ${employeeStats.completedAppointments} de ${employeeStats.totalAppointments} atendimentos concluídos
+                    </div>
+                </div>
+                <div class="info-item">
+                    <strong>Produtividade Diária:</strong>
+                    ${((employeeStats.totalHours / ((new Date(dateRange.end).getTime() - new Date(dateRange.start).getTime()) / (1000 * 60 * 60 * 24)))).toFixed(2)} horas/dia
+                    <div style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+                        Baseado no período selecionado
+                    </div>
+                </div>
+                <div class="info-item">
+                    <strong>Fidelização de Clientes:</strong>
+                    ${employeeStats.uniqueClients > 0 ? (employeeStats.totalAppointments / employeeStats.uniqueClients).toFixed(1) : 0} consultas/cliente
+                    <div style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+                        Média de retornos por cliente
+                    </div>
+                </div>
+                <div class="info-item">
+                    <strong>Capacidade de Atendimento:</strong>
+                    ${(employeeStats.totalAppointments / 12).toFixed(1)} consultas/mês
+                    <div style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+                        Média mensal no período
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>Relatório gerado em:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+            <p><strong>Sistema:</strong> Gestão Clínica | <strong>Período:</strong> ${new Date(dateRange.start).toLocaleDateString('pt-BR')} - ${new Date(dateRange.end).toLocaleDateString('pt-BR')}</p>
+            <p><strong>ID do Funcionário:</strong> ${employeeStats.employee.user_id}</p>
+        </div>
+    </body>
+    </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+
+      toast({
+        title: "Relatório de Impressão",
+        description: "Abrindo janela de impressão com relatório completo!",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível abrir a janela de impressão. Verifique se pop-ups estão bloqueados.",
+      });
     }
   };
 
@@ -229,21 +556,29 @@ ${index + 1}. ${client.name}
    - Total de Atendimentos: ${client.appointmentCount}
 `).join('\n')}
 
+DETALHES COMPLETOS DE TODOS OS ATENDIMENTOS
+==========================================
+${employeeStats.recentAppointments.map((apt, index) => {
+    const startTime = new Date(apt.start_time);
+    const endTime = new Date(apt.end_time);
+    const duration = ((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)).toFixed(2);
+    
+    return `
+${index + 1}. ${apt.title}
+   Data: ${startTime.toLocaleDateString('pt-BR')}
+   Horário: ${startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+   Duração: ${duration} horas
+   Cliente: ${apt.clients?.name || 'N/A'}
+   Status: ${apt.status === 'completed' ? 'Concluído' : apt.status}
+   ${apt.description ? `Observações: ${apt.description}` : 'Sem observações'}
+`;
+}).join('\n')}
+
 ESTATÍSTICAS MENSAIS
 ===================
 ${employeeStats.monthlyStats.map(month => `
 ${month.month}: ${month.appointments} atendimentos, ${month.hours.toFixed(1)} horas, ${month.completed} concluídos
 `).join('')}
-
-ÚLTIMOS ATENDIMENTOS
-===================
-${employeeStats.recentAppointments.slice(0, 10).map((apt, index) => `
-${index + 1}. ${apt.title}
-   Data/Hora: ${new Date(apt.start_time).toLocaleString('pt-BR')}
-   Cliente: ${apt.clients?.name || 'N/A'}
-   Status: ${apt.status === 'completed' ? 'Concluído' : apt.status}
-   ${apt.description ? `Descrição: ${apt.description}` : ''}
-`).join('\n')}
 
 INDICADORES DE PERFORMANCE
 =========================
@@ -271,17 +606,21 @@ Gerado por: Sistema de Gestão Clínica
     });
   };
 
-  const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Relatórios de Funcionários</h1>
         {employeeStats && (
-          <Button onClick={exportEmployeeReport} className="gap-2">
-            <Download className="h-4 w-4" />
-            Exportar Relatório
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={printEmployeeReport} variant="outline" className="gap-2">
+              <Printer className="h-4 w-4" />
+              Imprimir Relatório
+            </Button>
+            <Button onClick={exportEmployeeReport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar Relatório
+            </Button>
+          </div>
         )}
       </div>
 
@@ -487,7 +826,7 @@ Gerado por: Sistema de Gestão Clínica
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {employeeStats.recentAppointments.map((appointment) => (
+                  {employeeStats.recentAppointments.slice(0, 10).map((appointment) => (
                     <div key={appointment.id} className="border-l-4 border-primary pl-4 py-2">
                       <div className="font-medium">{appointment.title}</div>
                       <div className="text-sm text-muted-foreground">
