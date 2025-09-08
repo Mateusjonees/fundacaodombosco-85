@@ -29,14 +29,15 @@ import { useAuth } from '@/components/auth/AuthProvider';
 
 const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: Home },
-  { title: 'Cadastrar Cliente', url: '/clients', icon: Users },
+  { title: 'Cadastrar Cliente', url: '/client-form', icon: UserPlus },
+  { title: 'Lista de Clientes', url: '/clients', icon: Users },
   { title: 'Agenda do Dia', url: '/schedule', icon: Calendar },
   { title: 'Todos os Pacientes', url: '/all-patients', icon: ClipboardList },
   { title: 'Meus Pacientes', url: '/my-patients', icon: UserCheck },
   { title: 'Financeiro', url: '/financial', icon: DollarSign },
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { title: 'Estoque', url: '/stock', icon: Package },
-  { title: 'Funcionários', url: '/employees', icon: UserPlus },
+  { title: 'Funcionários', url: '/employees', icon: Users },
   { title: 'Arquivos HTML', url: '/static-files', icon: FolderOpen },
 ];
 

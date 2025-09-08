@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 
 // Pages
 import Dashboard from "./pages/Dashboard";
+import ClientForm from "./pages/ClientForm";
 import Clients from "./pages/Clients";
 import Schedule from "./pages/Schedule";
 import AllPatients from "./pages/AllPatients";
@@ -39,9 +40,9 @@ const AuthenticatedApp = () => {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/client-form" element={<ClientForm />} />
               <Route path="/clients" element={<Clients />} />
               <Route path="/schedule" element={<Schedule />} />
-              <Route path="/all-patients" element={<AllPatients />} />
               <Route path="/my-patients" element={<MyPatients />} />
               <Route path="/financial" element={<Financial />} />
               <Route path="/reports" element={<Reports />} />
