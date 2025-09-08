@@ -17,11 +17,10 @@ import { ptBR } from 'date-fns/locale';
 interface Schedule {
   id: string;
   client_id: string;
-  professional_id: string;
-  appointment_date: string;
+  employee_id: string;
   start_time: string;
   end_time: string;
-  type: string;
+  title: string;
   status: string;
   notes?: string;
   clients?: { name: string };
@@ -37,11 +36,10 @@ export default function Schedule() {
 
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
-    professional_id: '',
-    appointment_date: format(new Date(), 'yyyy-MM-dd'),
+    employee_id: '',
+    title: 'Consulta',
     start_time: '',
     end_time: '',
-    type: 'consultation',
     notes: ''
   });
 
@@ -59,7 +57,8 @@ export default function Schedule() {
           clients (name),
           profiles (name)
         `)
-        .eq('appointment_date', format(selectedDate, 'yyyy-MM-dd'))
+        .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
+        .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
         .order('start_time');
 
       if (error) throw error;
@@ -95,11 +94,10 @@ export default function Schedule() {
       setIsDialogOpen(false);
       setNewAppointment({
         client_id: '',
-        professional_id: '',
-        appointment_date: format(new Date(), 'yyyy-MM-dd'),
+        employee_id: '',
+        title: 'Consulta',
         start_time: '',
         end_time: '',
-        type: 'consultation',
         notes: ''
       });
       loadSchedules();
@@ -133,9 +131,7 @@ export default function Schedule() {
     }
   };
 
-  const todaySchedules = schedules.filter(schedule => 
-    schedule.appointment_date === format(selectedDate, 'yyyy-MM-dd')
-  );
+  const todaySchedules = schedules;
 
   return (
     <div className="space-y-6">
@@ -154,47 +150,31 @@ export default function Schedule() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="appointment_date">Data</Label>
+                <Label htmlFor="start_time">Data e Hora Início</Label>
                 <Input
-                  id="appointment_date"
-                  type="date"
-                  value={newAppointment.appointment_date}
-                  onChange={(e) => setNewAppointment({ ...newAppointment, appointment_date: e.target.value })}
+                  id="start_time"
+                  type="datetime-local"
+                  value={newAppointment.start_time}
+                  onChange={(e) => setNewAppointment({ ...newAppointment, start_time: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start_time">Horário Início</Label>
-                  <Input
-                    id="start_time"
-                    type="time"
-                    value={newAppointment.start_time}
-                    onChange={(e) => setNewAppointment({ ...newAppointment, start_time: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end_time">Horário Fim</Label>
-                  <Input
-                    id="end_time"
-                    type="time"
-                    value={newAppointment.end_time}
-                    onChange={(e) => setNewAppointment({ ...newAppointment, end_time: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_time">Data e Hora Fim</Label>
+                <Input
+                  id="end_time"
+                  type="datetime-local"
+                  value={newAppointment.end_time}
+                  onChange={(e) => setNewAppointment({ ...newAppointment, end_time: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Consulta</Label>
-                <Select value={newAppointment.type} onValueChange={(value) => setNewAppointment({ ...newAppointment, type: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="consultation">Consulta</SelectItem>
-                    <SelectItem value="therapy">Terapia</SelectItem>
-                    <SelectItem value="evaluation">Avaliação</SelectItem>
-                    <SelectItem value="followup">Acompanhamento</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="title">Título</Label>
+                <Input
+                  id="title"
+                  value={newAppointment.title}
+                  onChange={(e) => setNewAppointment({ ...newAppointment, title: e.target.value })}
+                  placeholder="Título do agendamento"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Observações</Label>
@@ -259,9 +239,9 @@ export default function Schedule() {
                       <div className="flex items-center gap-2 mb-1">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">
-                          {schedule.start_time} - {schedule.end_time}
+                          {new Date(schedule.start_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - {new Date(schedule.end_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
                         </span>
-                        <Badge variant="outline">{schedule.type}</Badge>
+                        <Badge variant="outline">{schedule.title}</Badge>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <User className="h-3 w-3" />

@@ -19,9 +19,8 @@ interface FinancialRecord {
   category: string;
   amount: number;
   description?: string;
-  transaction_date: string;
+  date: string;
   payment_method?: string;
-  status: string;
   client_id?: string;
   created_at: string;
   clients?: { name: string };
@@ -39,7 +38,7 @@ export default function Financial() {
     category: '',
     amount: '',
     description: '',
-    transaction_date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0],
     payment_method: 'cash',
     client_id: ''
   });
@@ -57,7 +56,7 @@ export default function Financial() {
           *,
           clients (name)
         `)
-        .order('transaction_date', { ascending: false });
+        .order('date', { ascending: false });
 
       if (error) throw error;
       setRecords(data || []);
@@ -80,7 +79,6 @@ export default function Financial() {
         .insert([{
           ...newRecord,
           amount: parseFloat(newRecord.amount),
-          status: 'confirmed',
           client_id: newRecord.client_id || null
         }]);
 
@@ -97,7 +95,7 @@ export default function Financial() {
         category: '',
         amount: '',
         description: '',
-        transaction_date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0],
         payment_method: 'cash',
         client_id: ''
       });
@@ -129,7 +127,7 @@ export default function Financial() {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const currentMonthRecords = filteredRecords.filter(r => {
-    const recordDate = new Date(r.transaction_date);
+    const recordDate = new Date(r.date);
     return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
   });
   const currentMonthIncome = currentMonthRecords.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
@@ -202,12 +200,12 @@ export default function Financial() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="transaction_date">Data</Label>
+                <Label htmlFor="date">Data</Label>
                 <Input
-                  id="transaction_date"
+                  id="date"
                   type="date"
-                  value={newRecord.transaction_date}
-                  onChange={(e) => setNewRecord({ ...newRecord, transaction_date: e.target.value })}
+                  value={newRecord.date}
+                  onChange={(e) => setNewRecord({ ...newRecord, date: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -338,7 +336,7 @@ export default function Financial() {
                     {filteredRecords.map((record) => (
                       <TableRow key={record.id}>
                         <TableCell>
-                          {new Date(record.transaction_date).toLocaleDateString('pt-BR')}
+                          {new Date(record.date).toLocaleDateString('pt-BR')}
                         </TableCell>
                         <TableCell>
                           <Badge variant={record.type === 'income' ? "default" : "destructive"}>
@@ -386,7 +384,7 @@ export default function Financial() {
                   {incomeRecords.map((record) => (
                     <TableRow key={record.id}>
                       <TableCell>
-                        {new Date(record.transaction_date).toLocaleDateString('pt-BR')}
+                        {new Date(record.date).toLocaleDateString('pt-BR')}
                       </TableCell>
                       <TableCell>{record.category}</TableCell>
                       <TableCell>{record.clients?.name || '-'}</TableCell>
@@ -421,7 +419,7 @@ export default function Financial() {
                   {expenseRecords.map((record) => (
                     <TableRow key={record.id}>
                       <TableCell>
-                        {new Date(record.transaction_date).toLocaleDateString('pt-BR')}
+                        {new Date(record.date).toLocaleDateString('pt-BR')}
                       </TableCell>
                       <TableCell>{record.category}</TableCell>
                       <TableCell>{record.description || '-'}</TableCell>

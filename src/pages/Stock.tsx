@@ -30,13 +30,13 @@ interface StockItem {
 interface StockMovement {
   id: string;
   stock_item_id: string;
-  movement_type: string;
+  type: string;
   quantity: number;
-  cost_per_unit?: number;
+  unit_cost?: number;
   total_cost?: number;
   reason?: string;
-  performed_by: string;
-  movement_date: string;
+  created_by: string;
+  date: string;
   stock_items?: { name: string };
   profiles?: { name: string };
 }
@@ -63,9 +63,9 @@ export default function Stock() {
 
   const [newMovement, setNewMovement] = useState({
     stock_item_id: '',
-    movement_type: 'in',
+    type: 'in',
     quantity: '',
-    cost_per_unit: '',
+    unit_cost: '',
     reason: ''
   });
 
@@ -105,7 +105,7 @@ export default function Stock() {
           stock_items (name),
           profiles (name)
         `)
-        .order('movement_date', { ascending: false })
+        .order('date', { ascending: false })
         .limit(50);
 
       if (error) throw error;
@@ -171,10 +171,10 @@ export default function Stock() {
         .insert([{
           ...newMovement,
           quantity: parseInt(newMovement.quantity),
-          cost_per_unit: newMovement.cost_per_unit ? parseFloat(newMovement.cost_per_unit) : null,
-          total_cost: newMovement.cost_per_unit ? parseFloat(newMovement.cost_per_unit) * parseInt(newMovement.quantity) : null,
-          performed_by: profileData.id,
-          movement_date: new Date().toISOString()
+          unit_cost: newMovement.unit_cost ? parseFloat(newMovement.unit_cost) : null,
+          total_cost: newMovement.unit_cost ? parseFloat(newMovement.unit_cost) * parseInt(newMovement.quantity) : null,
+          created_by: profileData.id,
+          date: new Date().toISOString().split('T')[0]
         }]);
 
       if (error) throw error;
@@ -182,7 +182,7 @@ export default function Stock() {
       // Update stock quantity
       const selectedItem = stockItems.find(item => item.id === newMovement.stock_item_id);
       if (selectedItem) {
-        const quantityChange = newMovement.movement_type === 'in' 
+        const quantityChange = newMovement.type === 'in' 
           ? parseInt(newMovement.quantity) 
           : -parseInt(newMovement.quantity);
         
@@ -203,9 +203,9 @@ export default function Stock() {
       setIsMovementDialogOpen(false);
       setNewMovement({
         stock_item_id: '',
-        movement_type: 'in',
+        type: 'in',
         quantity: '',
-        cost_per_unit: '',
+        unit_cost: '',
         reason: ''
       });
       loadStockItems();
@@ -264,8 +264,8 @@ export default function Stock() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="movement_type">Tipo de Movimentação</Label>
-                  <Select value={newMovement.movement_type} onValueChange={(value) => setNewMovement({ ...newMovement, movement_type: value })}>
+                  <Label htmlFor="type">Tipo de Movimentação</Label>
+                  <Select value={newMovement.type} onValueChange={(value) => setNewMovement({ ...newMovement, type: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -286,13 +286,13 @@ export default function Stock() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cost_per_unit">Custo Unitário (R$)</Label>
+                  <Label htmlFor="unit_cost">Custo Unitário (R$)</Label>
                   <Input
-                    id="cost_per_unit"
+                    id="unit_cost"
                     type="number"
                     step="0.01"
-                    value={newMovement.cost_per_unit}
-                    onChange={(e) => setNewMovement({ ...newMovement, cost_per_unit: e.target.value })}
+                    value={newMovement.unit_cost}
+                    onChange={(e) => setNewMovement({ ...newMovement, unit_cost: e.target.value })}
                     placeholder="0,00"
                   />
                 </div>
@@ -631,20 +631,20 @@ export default function Stock() {
                     {movements.map((movement) => (
                       <TableRow key={movement.id}>
                         <TableCell>
-                          {new Date(movement.movement_date).toLocaleDateString('pt-BR')}
+                          {new Date(movement.date).toLocaleDateString('pt-BR')}
                         </TableCell>
                         <TableCell>{movement.stock_items?.name}</TableCell>
                         <TableCell>
-                          <Badge variant={movement.movement_type === 'in' ? "default" : "destructive"}>
-                            {movement.movement_type === 'in' ? 'Entrada' : 'Saída'}
+                          <Badge variant={movement.type === 'in' ? "default" : "destructive"}>
+                            {movement.type === 'in' ? 'Entrada' : 'Saída'}
                           </Badge>
                         </TableCell>
-                        <TableCell className={movement.movement_type === 'in' ? 'text-green-600' : 'text-red-600'}>
-                          {movement.movement_type === 'in' ? '+' : '-'}{movement.quantity}
+                        <TableCell className={movement.type === 'in' ? 'text-green-600' : 'text-red-600'}>
+                          {movement.type === 'in' ? '+' : '-'}{movement.quantity}
                         </TableCell>
                         <TableCell>
-                          {movement.cost_per_unit 
-                            ? `R$ ${movement.cost_per_unit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                          {movement.unit_cost 
+                            ? `R$ ${movement.unit_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                             : '-'
                           }
                         </TableCell>

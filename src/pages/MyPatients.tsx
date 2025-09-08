@@ -18,7 +18,7 @@ interface MyPatient {
   phone?: string;
   email?: string;
   birth_date?: string;
-  status: string;
+  is_active: boolean;
   last_appointment?: string;
   next_appointment?: string;
   total_appointments: number;
@@ -57,7 +57,7 @@ export default function MyPatients() {
         .select(`
           id,
           client_id,
-          appointment_date,
+          start_time,
           status,
           clients (
             id,
@@ -65,10 +65,10 @@ export default function MyPatients() {
             phone,
             email,
             birth_date,
-            status
+            is_active
           )
         `)
-        .eq('professional_id', profileData.id)
+        .eq('employee_id', profileData.id)
         .eq('status', 'completed');
 
       if (appointmentsError) throw appointmentsError;
@@ -93,8 +93,8 @@ export default function MyPatients() {
         clientData.appointments.push(appointment);
         
         if (!clientData.last_appointment || 
-            new Date(appointment.appointment_date) > new Date(clientData.last_appointment)) {
-          clientData.last_appointment = appointment.appointment_date;
+            new Date(appointment.start_time) > new Date(clientData.last_appointment)) {
+          clientData.last_appointment = appointment.start_time;
         }
       });
 
@@ -102,16 +102,16 @@ export default function MyPatients() {
       for (const [clientId, clientData] of clientMap) {
         const { data: upcomingData } = await supabase
           .from('schedules')
-          .select('appointment_date')
-          .eq('professional_id', profileData.id)
+          .select('start_time')
+          .eq('employee_id', profileData.id)
           .eq('client_id', clientId)
-          .in('status', ['scheduled', 'confirmed'])
-          .gte('appointment_date', new Date().toISOString().split('T')[0])
-          .order('appointment_date', { ascending: true })
+          .in('status', ['scheduled'])
+          .gte('start_time', new Date().toISOString())
+          .order('start_time', { ascending: true })
           .limit(1);
 
         if (upcomingData && upcomingData.length > 0) {
-          clientData.next_appointment = upcomingData[0].appointment_date;
+          clientData.next_appointment = upcomingData[0].start_time;
         }
       }
 
@@ -145,10 +145,9 @@ export default function MyPatients() {
           *,
           clients (name)
         `)
-        .eq('professional_id', profileData.id)
-        .in('status', ['scheduled', 'confirmed'])
-        .gte('appointment_date', new Date().toISOString().split('T')[0])
-        .order('appointment_date', { ascending: true })
+        .eq('employee_id', profileData.id)
+        .eq('status', 'scheduled')
+        .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true })
         .limit(10);
 
@@ -206,9 +205,9 @@ export default function MyPatients() {
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {filteredPatients.filter(p => p.status === 'active').length}
-                </div>
+                 <div className="text-2xl font-bold text-green-600">
+                   {filteredPatients.filter(p => p.is_active).length}
+                 </div>
               </CardContent>
             </Card>
             <Card>
@@ -276,8 +275,8 @@ export default function MyPatients() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={patient.status === 'active' ? "default" : "secondary"}>
-                            {patient.status === 'active' ? 'Ativo' : 'Inativo'}
+                         <Badge variant={patient.is_active ? "default" : "secondary"}>
+                            {patient.is_active ? 'Ativo' : 'Inativo'}
                           </Badge>
                         </TableCell>
                         <TableCell>

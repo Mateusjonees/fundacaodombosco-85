@@ -40,7 +40,7 @@ export default function AllPatients() {
           *,
           schedules (
             id,
-            appointment_date,
+            start_time,
             status
           )
         `)
@@ -54,7 +54,7 @@ export default function AllPatients() {
         const completedAppointments = appointments.filter(apt => apt.status === 'completed');
         const lastAppointment = appointments
           .filter(apt => apt.status === 'completed')
-          .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())[0];
+          .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0];
 
         return {
           id: client.id,
@@ -62,9 +62,9 @@ export default function AllPatients() {
           phone: client.phone,
           email: client.email,
           birth_date: client.birth_date,
-          status: client.status,
+          status: client.is_active ? 'active' : 'inactive',
           created_at: client.created_at,
-          last_appointment: lastAppointment?.appointment_date,
+          last_appointment: lastAppointment?.start_time,
           total_appointments: completedAppointments.length
         };
       }) || [];
