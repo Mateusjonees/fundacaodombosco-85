@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -69,6 +70,22 @@ interface AssignedProfessional {
   assigned_at: string;
 }
 
+interface Employee {
+  user_id: string;
+  name: string;
+  employee_role: string;
+}
+
+interface Appointment {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  description?: string;
+  profiles?: { name: string };
+}
+
 interface ClientDetailsViewProps {
   client: Client;
   onEdit: () => void;
@@ -80,8 +97,22 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
   const [notes, setNotes] = useState<ClientNote[]>([]);
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
   const [assignedProfessionals, setAssignedProfessionals] = useState<AssignedProfessional[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [newNote, setNewNote] = useState('');
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
+  const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
+  const [addAppointmentDialogOpen, setAddAppointmentDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedProfessional, setSelectedProfessional] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [appointmentData, setAppointmentData] = useState({
+    title: '',
+    date: '',
+    time: '',
+    duration: '60',
+    description: ''
+  });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -93,7 +124,9 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
     await Promise.all([
       loadNotes(),
       loadDocuments(),
-      loadAssignedProfessionals()
+      loadAssignedProfessionals(),
+      loadAppointments(),
+      loadEmployees()
     ]);
   };
 
@@ -242,11 +275,103 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
     window.open(`/schedule?client=${client.id}`, '_blank');
   };
 
+  const loadAppointments = async () => {
+    try {
+      const { data: schedules, error } = await supabase
+        .from('schedules')
+        .select(`
+          id,
+          title,
+          start_time,
+          end_time,
+          status,
+          description,
+          created_by
+        `)
+        .eq('client_id', client.id)
+        .order('start_time', { ascending: false });
+
+      if (error) throw error;
+
+      // Buscar nomes dos criadores dos agendamentos
+      if (schedules && schedules.length > 0) {
+        const creatorIds = [...new Set(schedules.map(s => s.created_by))].filter(id => id);
+        let profiles: any[] = [];
+        
+        if (creatorIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', creatorIds);
+          profiles = profilesData || [];
+        }
+
+        const appointmentsWithProfiles = schedules.map(schedule => ({
+          ...schedule,
+          profiles: profiles.find(p => p.user_id === schedule.created_by) || { name: 'Sistema' }
+        }));
+
+        setAppointments(appointmentsWithProfiles);
+      } else {
+        setAppointments([]);
+      }
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+    }
+  };
+
+  const loadEmployees = async () => {
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('user_id, name, employee_role')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setEmployees(profiles || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    }
+  };
+
   const handleLinkProfessionals = () => {
-    toast({
-      title: "Vincular Profissionais",
-      description: "Funcionalidade em desenvolvimento.",
-    });
+    setLinkProfessionalDialogOpen(true);
+  };
+
+  const handleLinkProfessional = async () => {
+    if (!selectedProfessional) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('client_assignments')
+        .insert({
+          client_id: client.id,
+          employee_id: selectedProfessional,
+          assigned_by: user?.id
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Profissional vinculado com sucesso!",
+      });
+
+      setSelectedProfessional('');
+      setLinkProfessionalDialogOpen(false);
+      loadAssignedProfessionals();
+    } catch (error) {
+      console.error('Error linking professional:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível vincular o profissional.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDuplicateClient = async () => {
@@ -379,17 +504,109 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
   };
 
   const handleUploadDocument = () => {
-    toast({
-      title: "Upload de Documento",
-      description: "Funcionalidade de upload em desenvolvimento.",
-    });
+    setUploadDialogOpen(true);
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    setLoading(true);
+    try {
+      // Upload file to Supabase Storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${selectedFile.name}`;
+      const filePath = `client-documents/${client.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('user-documents')
+        .upload(filePath, selectedFile);
+
+      if (uploadError) throw uploadError;
+
+      // Save document record to database
+      const { error: dbError } = await supabase
+        .from('client_documents')
+        .insert({
+          client_id: client.id,
+          document_name: selectedFile.name,
+          document_type: fileExt || 'document',
+          file_path: filePath,
+          file_size: selectedFile.size,
+          uploaded_by: user?.id
+        });
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Sucesso",
+        description: "Documento enviado com sucesso!",
+      });
+
+      setSelectedFile(null);
+      setUploadDialogOpen(false);
+      loadDocuments();
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível enviar o documento.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddToHistory = () => {
-    toast({
-      title: "Histórico",
-      description: "Funcionalidade de histórico em desenvolvimento.",
-    });
+    setAddAppointmentDialogOpen(true);
+  };
+
+  const handleAddAppointment = async () => {
+    if (!appointmentData.title || !appointmentData.date || !appointmentData.time) return;
+
+    setLoading(true);
+    try {
+      const startTime = new Date(`${appointmentData.date}T${appointmentData.time}`);
+      const endTime = new Date(startTime.getTime() + parseInt(appointmentData.duration) * 60000);
+
+      const { error } = await supabase
+        .from('schedules')
+        .insert({
+          client_id: client.id,
+          title: appointmentData.title,
+          description: appointmentData.description,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: 'completed',
+          created_by: user?.id
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Atendimento adicionado ao histórico!",
+      });
+
+      setAppointmentData({
+        title: '',
+        date: '',
+        time: '',
+        duration: '60',
+        description: ''
+      });
+      setAddAppointmentDialogOpen(false);
+      loadAppointments();
+    } catch (error) {
+      console.error('Error adding appointment:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível adicionar o atendimento.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getUnitLabel = (unit: string) => {
@@ -625,10 +842,41 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <Upload className="h-5 w-5" />
               Documentos Anexados
             </CardTitle>
-            <Button size="sm" variant="outline" onClick={() => handleUploadDocument()}>
-              <Upload className="h-4 w-4 mr-2" />
-              Anexar Documento
-            </Button>
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Anexar Documento
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Anexar Documento</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="file">Arquivo</Label>
+                    <Input
+                      id="file"
+                      type="file"
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Formatos aceitos: PDF, DOC, DOCX, JPG, PNG
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleFileUpload} disabled={loading || !selectedFile}>
+                    {loading ? 'Enviando...' : 'Enviar'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
@@ -660,14 +908,107 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <History className="h-5 w-5" />
               Histórico de Atendimentos
             </CardTitle>
-            <Button size="sm" variant="outline" onClick={() => handleAddToHistory()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar ao Histórico
-            </Button>
+            <Dialog open={addAppointmentDialogOpen} onOpenChange={setAddAppointmentDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar ao Histórico
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar Atendimento ao Histórico</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="appointmentTitle">Título do Atendimento</Label>
+                    <Input
+                      id="appointmentTitle"
+                      value={appointmentData.title}
+                      onChange={(e) => setAppointmentData({...appointmentData, title: e.target.value})}
+                      placeholder="Ex: Sessão de Neuropsicologia"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="appointmentDate">Data</Label>
+                      <Input
+                        id="appointmentDate"
+                        type="date"
+                        value={appointmentData.date}
+                        onChange={(e) => setAppointmentData({...appointmentData, date: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="appointmentTime">Horário</Label>
+                      <Input
+                        id="appointmentTime"
+                        type="time"
+                        value={appointmentData.time}
+                        onChange={(e) => setAppointmentData({...appointmentData, time: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Duração (minutos)</Label>
+                    <Select value={appointmentData.duration} onValueChange={(value) => setAppointmentData({...appointmentData, duration: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30">30 minutos</SelectItem>
+                        <SelectItem value="60">60 minutos</SelectItem>
+                        <SelectItem value="90">90 minutos</SelectItem>
+                        <SelectItem value="120">120 minutos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="appointmentDescription">Observações</Label>
+                    <Textarea
+                      id="appointmentDescription"
+                      value={appointmentData.description}
+                      onChange={(e) => setAppointmentData({...appointmentData, description: e.target.value})}
+                      placeholder="Descreva o que foi realizado na sessão..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAddAppointmentDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAddAppointment} disabled={loading || !appointmentData.title || !appointmentData.date || !appointmentData.time}>
+                    {loading ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Nenhum atendimento registrado.</p>
+          {appointments.length > 0 ? (
+            <div className="space-y-3">
+              {appointments.map((appointment) => (
+                <div key={appointment.id} className="flex items-center justify-between p-3 border rounded">
+                  <div>
+                    <div className="font-medium">{appointment.title}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDateTime(appointment.start_time)} - {new Date(appointment.end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    {appointment.description && (
+                      <div className="text-sm mt-1">{appointment.description}</div>
+                    )}
+                  </div>
+                  <Badge variant={appointment.status === 'completed' ? 'default' : 'secondary'}>
+                    {appointment.status === 'completed' ? 'Realizado' : appointment.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Nenhum atendimento registrado.</p>
+          )}
         </CardContent>
       </Card>
 
@@ -679,10 +1020,44 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <Calendar className="h-4 w-4 mr-2" />
               Agendar Novo Atendimento
             </Button>
-            <Button variant="outline" onClick={() => handleLinkProfessionals()}>
-              <Users className="h-4 w-4 mr-2" />
-              Vincular Profissionais
-            </Button>
+            <Dialog open={linkProfessionalDialogOpen} onOpenChange={setLinkProfessionalDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Vincular Profissionais
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="professional">Selecione o Profissional</Label>
+                    <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Escolha um profissional" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map((employee) => (
+                          <SelectItem key={employee.user_id} value={employee.user_id}>
+                            {employee.name} - {employee.employee_role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setLinkProfessionalDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleLinkProfessional} disabled={loading || !selectedProfessional}>
+                    {loading ? 'Vinculando...' : 'Vincular'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button variant="outline" onClick={onEdit}>
               <Edit className="h-4 w-4 mr-2" />
               Editar Dados
