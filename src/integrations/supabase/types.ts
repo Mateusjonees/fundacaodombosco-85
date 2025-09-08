@@ -62,6 +62,13 @@ export type Database = {
             foreignKeyName: "employees_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
+            referencedRelation: "employee_details"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -126,9 +133,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      employee_details: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          created_at: string | null
+          department: string | null
+          document_cpf: string | null
+          document_rg: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          employee_code: string | null
+          employee_notes: string | null
+          employee_role: Database["public"]["Enums"]["employee_role"] | null
+          hire_date: string | null
+          is_active: boolean | null
+          name: string | null
+          permissions: Json | null
+          phone: string | null
+          professional_license: string | null
+          profile_id: string | null
+          salary: number | null
+          specialization: string | null
+          updated_at: string | null
+          user_id: string | null
+          work_schedule: Json | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      create_test_employee: {
+        Args: {
+          p_department?: string
+          p_email: string
+          p_name: string
+          p_password: string
+          p_phone?: string
+          p_role: Database["public"]["Enums"]["employee_role"]
+        }
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["employee_role"]
