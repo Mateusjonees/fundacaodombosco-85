@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar as CalendarIcon, Clock, User } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -24,15 +26,30 @@ interface Schedule {
   status: string;
   notes?: string;
   clients?: { name: string };
-  profiles?: { name: string };
+  profiles?: { name: string; employee_role: string; department: string };
 }
 
 export default function Schedule() {
+  const { user } = useAuth();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const { toast } = useToast();
+
+  // Filtros
+  const [filterRole, setFilterRole] = useState('all');
+  const [filterEmployee, setFilterEmployee] = useState('all');
+  const [filterUnit, setFilterUnit] = useState('all');
+
+  // Verificar se o usuário é coordenador ou diretor
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const isCoordinatorOrDirector = userProfile?.employee_role === 'director' || 
+                                  userProfile?.employee_role === 'coordinator_madre' || 
+                                  userProfile?.employee_role === 'coordinator_floresta';
 
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
@@ -44,25 +61,106 @@ export default function Schedule() {
   });
 
   useEffect(() => {
+    loadUserProfile();
+    loadEmployees();
+    loadClients();
     loadSchedules();
-  }, [selectedDate]);
+  }, [selectedDate, filterRole, filterEmployee, filterUnit]);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
+
+  const loadEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, employee_role, department')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    }
+  };
+
+  const loadClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
 
   const loadSchedules = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('schedules')
         .select(`
           *,
           clients (name),
-          profiles (name)
+          profiles (name, employee_role, department)
         `)
         .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
         .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
         .order('start_time');
 
+      // Aplicar filtros
+      if (filterEmployee !== 'all') {
+        query = query.eq('employee_id', filterEmployee);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      setSchedules(data || []);
+      
+      let filteredData = data || [];
+
+      // Filtrar por cargo
+      if (filterRole !== 'all') {
+        filteredData = filteredData.filter(schedule => 
+          schedule.profiles?.employee_role === filterRole
+        );
+      }
+
+      // Filtrar por unidade
+      if (filterUnit !== 'all') {
+        filteredData = filteredData.filter(schedule => {
+          if (filterUnit === 'madre') {
+            return schedule.profiles?.department?.toLowerCase().includes('madre') || 
+                   schedule.profiles?.employee_role === 'coordinator_madre';
+          }
+          if (filterUnit === 'floresta') {
+            return schedule.profiles?.department?.toLowerCase().includes('floresta') || 
+                   schedule.profiles?.employee_role === 'coordinator_floresta';
+          }
+          return true;
+        });
+      }
+
+      setSchedules(filteredData);
     } catch (error) {
       console.error('Error loading schedules:', error);
       toast({
@@ -77,21 +175,40 @@ export default function Schedule() {
 
   const handleCreateAppointment = async () => {
     try {
-      const { error } = await supabase
-        .from('schedules')
-        .insert([{
-          ...newAppointment,
-          status: 'scheduled'
-        }]);
+      const appointmentData = editingSchedule 
+        ? { ...newAppointment, id: editingSchedule.id }
+        : newAppointment;
 
-      if (error) throw error;
+      if (editingSchedule) {
+        const { error } = await supabase
+          .from('schedules')
+          .update(appointmentData)
+          .eq('id', editingSchedule.id);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Sucesso",
+          description: "Agendamento atualizado com sucesso!",
+        });
+      } else {
+        const { error } = await supabase
+          .from('schedules')
+          .insert([{
+            ...appointmentData,
+            status: 'scheduled'
+          }]);
 
-      toast({
-        title: "Sucesso",
-        description: "Agendamento criado com sucesso!",
-      });
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Agendamento criado com sucesso!",
+        });
+      }
       
       setIsDialogOpen(false);
+      setEditingSchedule(null);
       setNewAppointment({
         client_id: '',
         employee_id: '',
@@ -102,11 +219,75 @@ export default function Schedule() {
       });
       loadSchedules();
     } catch (error) {
-      console.error('Error creating appointment:', error);
+      console.error('Error saving appointment:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível criar o agendamento.",
+        description: "Não foi possível salvar o agendamento.",
+      });
+    }
+  };
+
+  const handleStatusChange = async (scheduleId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ status: newStatus })
+        .eq('id', scheduleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Agendamento ${newStatus === 'confirmed' ? 'confirmado' : 
+                                   newStatus === 'cancelled' ? 'cancelado' : 'atualizado'} com sucesso!`,
+      });
+
+      loadSchedules();
+    } catch (error) {
+      console.error('Error updating schedule status:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o status do agendamento.",
+      });
+    }
+  };
+
+  const handleEdit = (schedule: Schedule) => {
+    setEditingSchedule(schedule);
+    setNewAppointment({
+      client_id: schedule.client_id,
+      employee_id: schedule.employee_id,
+      title: schedule.title,
+      start_time: schedule.start_time,
+      end_time: schedule.end_time,
+      notes: schedule.notes || ''
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleRedirect = async (scheduleId: string, newEmployeeId: string) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ employee_id: newEmployeeId })
+        .eq('id', scheduleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Agendamento redirecionado com sucesso!",
+      });
+
+      loadSchedules();
+    } catch (error) {
+      console.error('Error redirecting schedule:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível redirecionar o agendamento.",
       });
     }
   };
@@ -133,22 +314,75 @@ export default function Schedule() {
 
   const todaySchedules = schedules;
 
+  const uniqueRoles = [...new Set(employees.map(emp => emp.employee_role))];
+  const departmentEmployees = employees.filter(emp => {
+    if (filterUnit === 'madre') {
+      return emp.department?.toLowerCase().includes('madre') || emp.employee_role === 'coordinator_madre';
+    }
+    if (filterUnit === 'floresta') {
+      return emp.department?.toLowerCase().includes('floresta') || emp.employee_role === 'coordinator_floresta';
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Agenda</h1>
+        <h1 className="text-3xl font-bold">Agenda do Dia - {format(selectedDate, "dd/MM/yyyy")}</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => {
+              setEditingSchedule(null);
+              setNewAppointment({
+                client_id: '',
+                employee_id: '',
+                title: 'Consulta',
+                start_time: '',
+                end_time: '',
+                notes: ''
+              });
+            }}>
               <Plus className="h-4 w-4" />
               Novo Agendamento
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Novo Agendamento</DialogTitle>
+              <DialogTitle>{editingSchedule ? 'Editar' : 'Novo'} Agendamento</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="client_id">Cliente</Label>
+                <Select value={newAppointment.client_id} onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map(client => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="employee_id">Profissional</Label>
+                <Select value={newAppointment.employee_id} onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map(employee => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name} ({employee.employee_role})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="start_time">Data e Hora Início</Label>
                 <Input
@@ -158,6 +392,7 @@ export default function Schedule() {
                   onChange={(e) => setNewAppointment({ ...newAppointment, start_time: e.target.value })}
                 />
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="end_time">Data e Hora Fim</Label>
                 <Input
@@ -167,6 +402,7 @@ export default function Schedule() {
                   onChange={(e) => setNewAppointment({ ...newAppointment, end_time: e.target.value })}
                 />
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="title">Título</Label>
                 <Input
@@ -176,6 +412,7 @@ export default function Schedule() {
                   placeholder="Título do agendamento"
                 />
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="notes">Observações</Label>
                 <Textarea
@@ -191,12 +428,72 @@ export default function Schedule() {
                 Cancelar
               </Button>
               <Button onClick={handleCreateAppointment}>
-                Agendar
+                {editingSchedule ? 'Atualizar' : 'Agendar'}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Filtros - Apenas para Coordenadores e Diretores */}
+      {isCoordinatorOrDirector && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="filterRole">Filtrar por Cargo:</Label>
+                <Select value={filterRole} onValueChange={setFilterRole}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Cargos</SelectItem>
+                    {uniqueRoles.map(role => (
+                      <SelectItem key={role} value={role}>
+                        {role === 'director' ? 'Diretor' :
+                         role === 'coordinator_madre' ? 'Coordenador Madre' :
+                         role === 'coordinator_floresta' ? 'Coordenador Floresta' :
+                         role === 'administrative' ? 'Administrativo' : 'Staff'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="filterEmployee">Ver agenda de:</Label>
+                <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Profissionais</SelectItem>
+                    {departmentEmployees.map(employee => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="filterUnit">Filtrar por Unidade:</Label>
+                <Select value={filterUnit} onValueChange={setFilterUnit}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as Unidades</SelectItem>
+                    <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                    <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">
@@ -243,19 +540,108 @@ export default function Schedule() {
                         </span>
                         <Badge variant="outline">{schedule.title}</Badge>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                         <User className="h-3 w-3" />
                         <span>Cliente: {schedule.clients?.name || 'N/A'}</span>
                         <span>•</span>
                         <span>Profissional: {schedule.profiles?.name || 'N/A'}</span>
                       </div>
                       {schedule.notes && (
-                        <p className="text-sm text-muted-foreground mt-2">{schedule.notes}</p>
+                        <p className="text-sm text-muted-foreground">{schedule.notes}</p>
                       )}
                     </div>
-                    <Badge variant={getStatusColor(schedule.status)}>
-                      {getStatusLabel(schedule.status)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getStatusColor(schedule.status)}>
+                        {getStatusLabel(schedule.status)}
+                      </Badge>
+                      
+                      {/* Botões de ação - apenas para coordenadores e diretores */}
+                      {isCoordinatorOrDirector && (
+                        <div className="flex gap-1">
+                          {schedule.status === 'scheduled' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleStatusChange(schedule.id, 'confirmed')}
+                              title="Confirmar"
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                            </Button>
+                          )}
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(schedule)}
+                            title="Editar"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+
+                          {schedule.status !== 'cancelled' && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  title="Cancelar"
+                                >
+                                  <XCircle className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Cancelar Agendamento</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja cancelar este agendamento?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Não</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleStatusChange(schedule.id, 'cancelled')}>
+                                    Sim, Cancelar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                title="Redirecionar"
+                              >
+                                <ArrowRightLeft className="h-3 w-3" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Redirecionar Agendamento</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <Label>Selecione o novo profissional:</Label>
+                                <Select onValueChange={(value) => handleRedirect(schedule.id, value)}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Escolha um profissional" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {employees
+                                      .filter(emp => emp.id !== schedule.employee_id)
+                                      .map(employee => (
+                                      <SelectItem key={employee.id} value={employee.id}>
+                                        {employee.name} ({employee.employee_role})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
