@@ -1,9 +1,9 @@
 // Main application entry point
 import { loadDb, saveDb, db } from './database.js';
 import { login, logout, checkLogin, getCurrentUser, isRoleAllowed, DIRECTOR_ONLY, FINANCE_ONLY, DIRECTOR_OR_FINANCE, STOCK_MANAGERS, ALL_USERS, PROFESSIONAL_ROLES, COORDINATOR_AND_HIGHER, NON_FINANCE_ACCESS, ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES, DIRECTOR_AND_PROFESSIONALS, DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS, checkTabAccess } from './auth.js'; 
-import { showLoginScreen, showMainApp, switchTab, updateCurrentDate, showNotification, updateGlobalSearchDatalist } from './ui.js'; 
-import { renderClientList, showClientDetails, addClientNote, addClientDocument, deleteClientDocument, renderMeusPacientes, renderClientReport, showAssignProfessionalModal, assignProfessionalToClient, unassignProfessionalFromClient, deleteClient, duplicateClient, showEmployeeReport, showClientReportModal, generateClientReport } from './clients.js'; 
-import { renderSchedule, updateScheduleStatus, initializeCalendar, renderCalendar, saveEditedSchedule, cancelScheduleWithReason, reassignSchedule, populateAssignableUsers, serviceNames, editSchedule, saveReassignedSchedule, initScheduleView } from './schedule.js'; 
+import { showLoginScreen, showMainApp, switchTab, updateCurrentDate, showNotification } from './ui.js'; 
+import { renderClientList, showClientDetails, addClientNote, addClientDocument, deleteClientDocument, renderMeusPacientes, renderClientReport, showAssignProfessionalModal, assignProfessionalToClient, unassignProfessionalFromClient, deleteClient } from './clients.js'; 
+import { renderSchedule, updateScheduleStatus, initializeCalendar, renderCalendar, saveEditedSchedule, cancelScheduleWithReason, reassignSchedule, populateAssignableUsers, serviceNames, editSchedule, saveReassignedSchedule } from './schedule.js'; 
 import { renderFinancialReport, renderDailyNotes, addDailyNote, generateDetailedFinancialReport, downloadDailyNotes, deleteDailyNote } from './financial.js'; 
 import { setupFormHandlers } from './forms.js';
 import { renderStockList, renderStockMovements, updateStockSummary, showDeleteStockItemConfirmation } from './stock.js';
@@ -65,31 +65,21 @@ window.deleteMuralItem = (id) => {
 };
 window.showAssignProfessionalModal = showAssignProfessionalModal; 
 window.assignProfessionalToClient = assignProfessionalToClient; 
+window.unassignProfessionalFromClient = unassignProfessionalFromClient; 
 window.deleteClient = deleteClient; 
 window.saveUserPermissions = saveUserPermissions;
 window.deleteDailyNote = deleteDailyNote;
 window.deleteRole = deleteRole;
 window.duplicateClient = duplicateClient; // Make duplicate function globally accessible if needed, though listener is better
-window.showEmployeeReport = showEmployeeReport;
-window.showClientReportModal = showClientReportModal;
 
 // NEW: Global file preview function
 window.previewFile = (title, fileData, fileName) => {
-    const modal = document.getElementById('modal-file-preview');
-    const titleElement = document.getElementById('file-preview-title');
-    const contentElement = document.getElementById('file-preview-content');
-
-    if (!modal || !titleElement || !contentElement) return;
-
-    titleElement.textContent = `Visualizando: ${title}`;
-
-    if (/\.(jpe?g|png|gif|webp)$/i.test(fileName)) {
-        contentElement.innerHTML = `<img src="${fileData}" alt="${title}">`;
-    } else {
-        contentElement.innerHTML = `<p>A pré-visualização não está disponível para este tipo de arquivo (${fileName}).</p>`;
+    const preview = document.getElementById('preview-imagem-cancelamento');
+    if (preview) {
+        preview.src = fileData;
+        preview.alt = fileName;
+        preview.style.display = 'block';
     }
-
-    modal.style.display = 'flex';
 };
 
 // Initialize mobile-specific functions
@@ -131,13 +121,11 @@ function setupMobileGestures() {
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
     loadDb();
-    populateDemoCredentials(); 
     
     if (checkLogin()) {
         showMainApp();
         initializeApp();
         checkNotifications(); 
-        resetIdleTimer(); // Start idle timer on initial load if logged in
     } else {
         showLoginScreen();
     }
@@ -151,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeApp() {
     updateCurrentDate();
     initializeCalendar();
-    initScheduleView(); // Initialize agenda view, including the professional filter
     
     const currentUser = getCurrentUser();
     
@@ -208,7 +195,7 @@ function initializeApp() {
     }
 }
 
-// NEW: Setup for the global search
+// NEW: Setup for the global client search
 function setupGlobalSearch() {
     const searchInput = document.getElementById('global-search-input');
     const searchDatalist = document.getElementById('global-search-datalist');
@@ -216,8 +203,33 @@ function setupGlobalSearch() {
 
     if (!searchInput || !searchDatalist || !gotoButton) return;
 
+    const populateDatalist = () => {
+        searchDatalist.innerHTML = '';
+        
+        // Add Patients
+        db.clients.forEach(client => {
+            const option = document.createElement('option');
+            option.value = `Paciente: ${client.name} (ID: ${client.id})`;
+            searchDatalist.appendChild(option);
+        });
+
+        // Add Employees
+        db.users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = `Funcionário: ${user.name} (ID: ${user.id})`;
+            searchDatalist.appendChild(option);
+        });
+
+        // Add Stock Items
+        db.stockItems.forEach(item => {
+            const option = document.createElement('option');
+            option.value = `Estoque: ${item.name} (ID: ${item.id})`;
+            searchDatalist.appendChild(option);
+        });
+    };
+
     // Populate once on load
-    updateGlobalSearchDatalist();
+    populateDatalist();
 
     const executeGlobalSearch = () => {
         const query = searchInput.value.trim();
@@ -346,7 +358,6 @@ function setupEventListeners() {
             } else if (tabId === 'agenda') {
                 renderSchedule();
                 renderCalendar();
-                initScheduleView(); // Re-initialize when switching to the tab
             } else if (tabId === 'relatorios') {
                 renderClientReport(document.getElementById('client-report-period').value);
             } else if (tabId === 'financeiro') {
@@ -365,7 +376,7 @@ function setupEventListeners() {
                 renderGeneralDocuments();
                 const documentsControls = document.querySelector('.documents-controls');
                 if (documentsControls) {
-                    if (checkTabAccess('documentos', 'edit')) { // Check for edit access to show controls
+                    if (checkTabAccess('documentos', 'edit')) { // Show controls only if user has edit access for documents
                         documentsControls.style.display = 'flex';
                     } else {
                         documentsControls.style.display = 'none';
@@ -403,12 +414,12 @@ function setupEventListeners() {
         });
     }
 
-    const funcionarioRoleFilter = document.getElementById('funcionario-role-filter');
-    if (funcionarioRoleFilter) {
-        funcionarioRoleFilter.addEventListener('change', (e) => {
-            if (!checkTabAccess('funcionarios', 'view')) return;
-            const searchTerm = document.getElementById('search-funcionario').value;
-            renderFuncionarioList(searchTerm, e.target.value);
+    const searchClientReport = document.getElementById('search-client-report');
+    if (searchClientReport) {
+        searchClientReport.addEventListener('input', (e) => {
+            if (!checkTabAccess('relatorios', 'view')) return;
+            const currentPeriod = document.getElementById('client-report-period').value;
+            renderClientReport(currentPeriod);
         });
     }
 
@@ -698,20 +709,12 @@ function setupEventListeners() {
             } else {
                 showNotification('Você não tem permissão para excluir este item.', 'error');
             }
-        } else if (window.currentDeleteItemType === 'role') {
-            const roleIdToDelete = window.currentDeleteItem;
-            if (checkTabAccess('funcionarios', 'edit') && isRoleAllowed(DIRECTOR_ONLY) && roleIdToDelete) {
-                deleteRole(roleIdToDelete);
-            } else {
-                showNotification('Você não tem permissão para excluir cargos.', 'error');
-            }
         } else {
             showNotification('Você não tem permissão para realizar esta exclusão.', 'error');
         }
         document.getElementById('modal-confirm-delete').style.display = 'none';
         window.currentDeleteItem = null;
         window.currentDeleteItemType = null;
-        updateGlobalSearchDatalist();
     });
 
     document.getElementById('btn-cancel-delete').addEventListener('click', () => {
@@ -724,18 +727,6 @@ function setupEventListeners() {
         e.preventDefault();
         saveReassignedSchedule();
     });
-
-    // NEW: Duplicate Client Button Handler
-    const btnDuplicateClient = document.getElementById('btn-duplicate-client');
-    if (btnDuplicateClient) {
-        btnDuplicateClient.addEventListener('click', () => {
-            if (!checkTabAccess('cadastro', 'view')) { // Use 'view' as it implies creation access for these roles
-                showNotification('Você não tem permissão para cadastrar (e duplicar) clientes.', 'error');
-                return;
-            }
-            duplicateClient(window.currentClientId);
-        });
-    }
 
     // NEW: Edit Funcionario Button
     document.getElementById('btn-edit-funcionario').addEventListener('click', () => {
@@ -782,6 +773,7 @@ function setupEventListeners() {
     const btnDeleteFuncionario = document.getElementById('btn-delete-funcionario');
     if (btnDeleteFuncionario) {
         btnDeleteFuncionario.addEventListener('click', () => {
+            // Permission check is inside deleteFuncionario, but also show a notification here
             if (!checkTabAccess('funcionarios', 'edit')) { showNotification('Você não tem permissão para excluir funcionários.', 'error'); return; }
             const funcToDelete = db.users.find(u => u.id === parseInt(window.currentFuncionarioId));
             if (!funcToDelete) {
@@ -802,31 +794,20 @@ function setupEventListeners() {
     document.getElementById('btn-add-funcionario').addEventListener('click', () => {
         if (!checkTabAccess('funcionarios', 'edit')) { showNotification('Você não tem permissão para adicionar funcionários.', 'error'); return; }
         document.getElementById('form-add-funcionario').reset();
-        
-        // NEW: Populate the role dropdown for the new user form
-        populateNewFuncionarioRoleSelect();
-        
         // The container 'new-funcionario-tab-permissions' is for the NEW user being added.
         // It should always be editable, so disableSelfEdit is false here.
-        // For a new user, there's no pre-existing role yet to determine defaults, so pass null for userRoleForDefaults
-        populateTabPermissions('new-funcionario-tab-permissions', {}, false, null); 
+        populateTabPermissions('new-funcionario-tab-permissions', {}, false); 
 
         // Add event listener to show/hide academic fields based on role
         const roleSelect = document.getElementById('new-funcionario-role');
         const academicFields = document.getElementById('new-funcionario-academic-fields');
 
         const handleRoleChange = () => {
-            const selectedRole = roleSelect.value;
-            // The academic fields should be shown if the selected role is a professional one,
-            // OR if the field is not empty (in case it was pre-filled and the role is not professional).
-            // For a new user, the latter condition is less relevant, but it's good practice.
-            if (PROFESSIONAL_ROLES.includes(selectedRole)) {
+            if (PROFESSIONAL_ROLES.includes(roleSelect.value)) {
                 academicFields.style.display = 'block';
             } else {
                 academicFields.style.display = 'none';
             }
-            // Also update the permission hints when the role changes
-            populateTabPermissions('new-funcionario-tab-permissions', {}, false, selectedRole);
         };
 
         // Remove previous listener to avoid duplicates if modal is opened multiple times
@@ -840,16 +821,6 @@ function setupEventListeners() {
     document.getElementById('form-add-funcionario').addEventListener('submit', (e) => {
         e.preventDefault();
         addNewFuncionario();
-    });
-
-    // NEW: Role Management button
-    document.getElementById('btn-manage-roles').addEventListener('click', () => {
-        if (!checkTabAccess('funcionarios', 'edit') || !isRoleAllowed(DIRECTOR_ONLY)) {
-            showNotification('Você não tem permissão para gerenciar cargos.', 'error');
-            return;
-        }
-        initRolesManagement();
-        document.getElementById('modal-manage-roles').style.display = 'flex';
     });
 
     const clientReportPeriodSelector = document.getElementById('client-report-period');
@@ -951,10 +922,7 @@ function setupEventListeners() {
 
     // NEW: Meeting Alert functionality
     document.getElementById('btn-add-meeting-alert').addEventListener('click', () => {
-        if (!checkTabAccess('documentos', 'edit')) { 
-            showNotification('Você não tem permissão para agendar reuniões.', 'error'); 
-            return; 
-        }
+        if (!checkTabAccess('documentos', 'edit')) { showNotification('Você não tem permissão para agendar reuniões.', 'error'); return; }
         populateMeetingAttendees();
         document.getElementById('form-add-meeting-alert').reset();
         // Set default date/time for meeting
@@ -980,12 +948,6 @@ function setupEventListeners() {
         renderGeneralDocuments(document.getElementById('search-documents').value, e.target.value);
     });
 
-    document.getElementById('search-client-report').addEventListener('input', (e) => {
-        if (!checkTabAccess('relatorios', 'view')) return; // Check if user has view permission for the tab
-        const selectedPeriod = document.getElementById('client-report-period').value;
-        renderClientReport(e.target.value, selectedPeriod);
-    });
-
     document.getElementById('btn-assign-professional-to-client').addEventListener('click', () => {
         if (!checkTabAccess('historico', 'edit') && !checkTabAccess('meus-pacientes', 'edit')) { // Check edit access for client related tabs
             showNotification('Você não tem permissão para vincular profissionais.', 'error');
@@ -999,16 +961,13 @@ function setupEventListeners() {
         assignProfessionalToClient();
     });
 
-    const btnUnassignProfessional = document.getElementById('btn-unassign-professional');
-    if (btnUnassignProfessional) { // Check if the element exists before adding listener
-        btnUnassignProfessional.addEventListener('click', () => {
-            if (!checkTabAccess('historico', 'edit') && !checkTabAccess('meus-pacientes', 'edit')) { // Check edit access for client related tabs
-                showNotification('Você não tem permissão para desvincular profissionais.', 'error');
-                return;
-            }
-            unassignProfessionalFromClient();
-        });
-    }
+    document.getElementById('btn-unassign-professional').addEventListener('click', () => {
+        if (!checkTabAccess('historico', 'edit') && !checkTabAccess('meus-pacientes', 'edit')) { // Check edit access for client related tabs
+            showNotification('Você não tem permissão para desvincular profissionais.', 'error');
+            return;
+        }
+        unassignProfessionalFromClient();
+    });
     // NEW: Stock History Shortcut button
     document.getElementById('btn-goto-stock-history').addEventListener('click', () => {
         const historyFilters = document.getElementById('stock-history-filters');
@@ -1019,38 +978,6 @@ function setupEventListeners() {
             setTimeout(() => {
                 historyFilters.style.boxShadow = 'none';
             }, 1500);
-        }
-    });
-
-    document.getElementById('btn-print-employee-report').addEventListener('click', () => {
-        window.print();
-    });
-
-    document.getElementById('btn-update-employee-report').addEventListener('click', () => {
-        if (!checkTabAccess('relatorios', 'view')) { return; }
-        const selectedPeriod = document.getElementById('employee-report-period-selector').value;
-        generateEmployeeReport(window.currentEmployeeReportId, selectedPeriod);
-        showNotification('Relatório do funcionário atualizado!', 'success');
-    });
-
-    // NEW: Generate Client Report Button Handler
-    document.getElementById('btn-generate-client-report').addEventListener('click', () => {
-        showClientReportModal(window.currentClientId);
-    });
-
-    // NEW: Client Report Modal Listeners
-    document.getElementById('btn-update-client-report-modal').addEventListener('click', () => {
-        const selectedPeriod = document.getElementById('client-report-period-selector-modal').value;
-        generateClientReport(window.currentClientReportId, selectedPeriod);
-        showNotification('Relatório do paciente atualizado!', 'success');
-    });
-
-    document.getElementById('btn-print-client-report').addEventListener('click', () => {
-        const reportContent = document.getElementById('client-report-content');
-        if (reportContent) {
-            document.getElementById('printable-content').innerHTML = reportContent.innerHTML;
-            window.print();
-            document.getElementById('printable-content').innerHTML = '';
         }
     });
 }
@@ -1067,7 +994,8 @@ function populateClientSelect() {
         clientsForDropdown = db.clients;
     } else if (checkTabAccess('meus-pacientes', 'view')) { // Otherwise if can only see own clients, filter
         clientsForDropdown = db.clients.filter(client =>
-            client.assignedProfessionalIds && client.assignedProfessionalIds.includes(currentUser.id) // Clients assigned to current user
+            client.createdByUserId === currentUser.id || // Clients created by current user
+            client.assignedProfessionalId === currentUser.id // Clients assigned to current user
         );
     } else {
         // If no relevant view access, no clients
@@ -1170,18 +1098,15 @@ async function saveNewSchedule() {
     }
 
     // Update client's assigned professional if applicable
-    if (assignedToUserId && PROFESSIONAL_ROLES.includes(db.users.find(u => u.id === assignedToUserId)?.role) && db.users.find(u => u.id === assignedToUserId)) {
+    if (assignedToUserId && PROFESSIONAL_ROLES.includes(db.users.find(u => u.id === assignedToUserId)?.role)) {
         const client = db.clients.find(c => c.id === clientId);
         if (client) {
-            // NEW LOGIC: Add to the array of professionals instead of replacing
-            if (!client.assignedProfessionalIds) {
-                client.assignedProfessionalIds = [];
-            }
-            if (!client.assignedProfessionalIds.includes(assignedToUserId)) {
-                const oldAssignedNames = client.assignedProfessionalIds.map(id => db.users.find(u => u.id === id)?.name || 'Desconhecido').join(', ');
-                client.assignedProfessionalIds.push(assignedToUserId);
-                const newAssignedNames = client.assignedProfessionalIds.map(id => db.users.find(u => u.id === id)?.name || 'Desconhecido').join(', ');
-                
+            const oldAssignedProfessionalName = client.assignedProfessionalName;
+            const newAssignedProfessionalName = assignedToUserName;
+
+            if (client.assignedProfessionalId !== assignedToUserId) {
+                client.assignedProfessionalId = assignedToUserId;
+                client.assignedProfessionalName = newAssignedProfessionalName;
                 if (!client.changeHistory) client.changeHistory = [];
                 client.changeHistory.push({
                     id: db.nextChangeId++,
@@ -1189,9 +1114,9 @@ async function saveNewSchedule() {
                     changedBy: getCurrentUser().name,
                     changes: [
                         {
-                            field: 'Profissionais Vinculados',
-                            oldValue: oldAssignedNames || 'Nenhum',
-                            newValue: newAssignedNames
+                            field: 'Profissional Vinculado',
+                            oldValue: oldAssignedProfessionalName || 'Nenhum',
+                            newValue: newAssignedProfessionalName
                         }
                     ]
                 });
@@ -1473,8 +1398,7 @@ function saveAttendanceConfirmation() {
     let internIdForAttendance = null;
     if (schedule.assignedToUserId) {
         const assignedUser = db.users.find(u => u.id === schedule.assignedToUserId);
-        // Only assign internIdForAttendance if the assigned user's role is specifically 'intern' (predefined)
-        if (assignedUser && assignedUser.role === 'intern') { 
+        if (assignedUser && assignedUser.role === 'intern') {
             internIdForAttendance = assignedUser.id;
         }
     } else if (getCurrentUser().role === 'intern') {
@@ -1659,7 +1583,6 @@ function addStockItem() {
         const selectedPeriod = document.getElementById('financial-period-selector').value;
         renderFinancialReport(selectedPeriod);
         showNotification('Item adicionado ao estoque com sucesso!', 'success');
-        updateGlobalSearchDatalist();
     }
 }
 
@@ -1718,7 +1641,6 @@ function processStockAdjustment() {
     
     const actionText = action === 'add' ? 'adicionado ao' : 'removido do';
     showNotification(`${quantity} unidades ${actionText} estoque com sucesso!`, 'success');
-    updateGlobalSearchDatalist();
 }
 
 function addNewFuncionario() {
@@ -1730,16 +1652,15 @@ function addNewFuncionario() {
     const username = document.getElementById('new-funcionario-username').value.trim();
     const password = document.getElementById('new-funcionario-password').value.trim();
     const name = document.getElementById('new-funcionario-name').value.trim();
-    const role = document.getElementById('new-funcionario-role').value; // Get from select dropdown
+    const role = document.getElementById('new-funcionario-role').value;
     const cpf = document.getElementById('new-funcionario-cpf').value.trim();
     const phone = document.getElementById('new-funcionario-phone').value.trim();
     const email = document.getElementById('new-funcionario-email').value.trim();
     const address = document.getElementById('new-funcionario-address').value.trim();
     
-    // Academic fields are now always collected if filled, regardless of the custom role string
+    // Academic fields are conditional based on role
     let academicInfo = {};
-    // Only collect academic info if the section is visible (which is based on the selected role)
-    if (document.getElementById('new-funcionario-academic-fields').style.display === 'block') {
+    if (PROFESSIONAL_ROLES.includes(role)) {
         academicInfo = {
             institution: document.getElementById('new-funcionario-institution').value.trim(),
             graduationPeriod: document.getElementById('new-funcionario-graduation-period').value.trim(),
@@ -1747,19 +1668,14 @@ function addNewFuncionario() {
             discipline: document.getElementById('new-funcionario-discipline').value.trim()
         };
     }
-    
-    // Clear academicInfo if all its fields are empty
-    if (Object.values(academicInfo).every(val => val === '')) {
-        academicInfo = {};
-    }
 
     // Collect tab permissions from the dynamically generated selects
     const newTabAccess = {};
     let hasCustomAccess = false;
     document.querySelectorAll('#new-funcionario-tab-permissions select').forEach(select => {
-        const tabId = select.dataset.tabId; // Use data-tab-id
+        const tabId = select.id.split('-').pop(); // e.g., 'cadastro' from 'new-funcionario-tab-permissions-perm-cadastro'
         const accessLevel = select.value;
-        if (accessLevel !== 'default') { // Only include if it's an explicit override
+        if (accessLevel !== 'none') {
             newTabAccess[tabId] = accessLevel;
             hasCustomAccess = true;
         }
@@ -1774,20 +1690,19 @@ function addNewFuncionario() {
         username,
         password,
         name,
-        role, // Use the role from select dropdown
+        role,
         cpf,
         phone,
         email,
         address,
-        academicInfo: academicInfo, 
-        tabAccess: hasCustomAccess ? newTabAccess : null, 
+        academicInfo: academicInfo, // Use the collected academicInfo
+        tabAccess: hasCustomAccess ? newTabAccess : null, // Set to null if no custom access
     };
 
     if (addFuncionario(funcionarioData)) { 
         document.getElementById('form-add-funcionario').reset();
         document.getElementById('modal-add-funcionario').style.display = 'none';
         renderFuncionarioList(); 
-        updateGlobalSearchDatalist();
     }
 }
 
@@ -1855,35 +1770,19 @@ function renderGeneralDocuments(filter = '', typeFilter = '') {
 
         const extraDetails = isMeeting ? `
             <div class="reuniao-details">
-                <div class="reuniao-detail-item">
-                    <i class="fa-solid fa-calendar-alt"></i>
-                    <span>${new Date(doc.meetingDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span>
-                </div>
-                <div class="reuniao-detail-item">
-                    <i class="fa-solid fa-clock"></i>
-                    <span>${doc.meetingTime}</span>
-                </div>
-                ${doc.location ? `
-                <div class="reuniao-detail-item">
-                    <i class="fa-solid fa-map-marker-alt"></i>
-                    <span>${doc.location}</span>
-                </div>
-                ` : ''}
+                <p><i class="fa-solid fa-calendar-alt"></i> ${new Date(doc.meetingDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} às ${doc.meetingTime}</p>
+                ${doc.location ? `<p><i class="fa-solid fa-map-marker-alt"></i> ${doc.location}</p>` : ''}
             </div>
             <div class="reuniao-attendees">
-                <strong>Participantes:</strong>
-                <div class="attendees-list">
-                 ${doc.attendees.map(id => {
+                <strong>Participantes:</strong> ${doc.attendees.map(id => {
                     const user = db.users.find(u => u.id === id);
                     return `<span class="attendee-badge ${currentUser?.id === id ? 'current-user' : ''}">${user ? user.name.split(' ')[0] : 'ID desconhecido'}</span>`;
                 }).join('')}
-                </div>
             </div>
         ` : '';
 
-        const isImage = doc.fileData && /\.(jpe?g|png|gif|webp)$/i.test(doc.fileName);
         const docCard = document.createElement('div');
-        docCard.className = `general-document-card ${isMeeting ? 'reuniao-card' : ''}`;
+        docCard.className = 'general-document-card';
         docCard.style.setProperty('--card-accent-color', info.color);
         
         docCard.innerHTML = `
@@ -1912,7 +1811,6 @@ function renderGeneralDocuments(filter = '', typeFilter = '') {
                     <span>Por ${doc.createdBy} em ${new Date(doc.createdAt).toLocaleDateString('pt-BR')}</span>
                 </div>
                 <div class="general-document-card-actions">
-                    ${isImage ? `<button class="btn-preview" onclick="window.previewFile('${doc.title.replace(/'/g, "\\'")}', '${doc.fileData}', '${doc.fileName.replace(/'/g, "\\'")}')"><i class="fa-solid fa-eye"></i> Visualizar</button>` : ''}
                     ${doc.fileData ? `
                         <a href="${doc.fileData}" download="${doc.fileName}" class="btn-download">
                             <i class="fa-solid fa-download"></i> Baixar
@@ -2100,79 +1998,103 @@ function markNotificationsAsRead() {
     }
 }
 
-// NEW function to populate the role dropdown in the "Add Employee" modal
-function populateNewFuncionarioRoleSelect() {
-    const roleSelect = document.getElementById('new-funcionario-role');
-    if (!roleSelect) return;
+// NEW Function to populate meeting attendees
+function populateMeetingAttendees() {
+    const container = document.getElementById('meeting-alert-attendees-container');
+    if (!container) return;
 
-    roleSelect.innerHTML = '<option value="">Selecione um Cargo</option>';
+    container.innerHTML = ''; 
 
-    const roleMap = {
-        'director': 'Diretoria',
-        'coordinator_madre': 'Coordenador(a) Madre',
-        'coordinator_floresta': 'Coordenador(a) Floresta',
-        'staff': 'Funcionário(a) Geral',
-        'receptionist': 'Recepcionista',
-        'psychologist': 'Psicólogo(a)',
-        'psychopedagogue': 'Psicopedagogo(a)',
-        'musictherapist': 'Musicoterapeuta',
-        'speech_therapist': 'Fonoaudiólogo(a)',
-        'nutritionist': 'Nutricionista',
-        'physiotherapist': 'Fisioterapeuta',
-        'financeiro': 'Financeiro',
-        'intern': 'Estagiário(a)'
-    };
+    const allUsers = [...db.users].sort((a, b) => a.name.localeCompare(b.name));
 
-    const predefinedRoles = Object.entries(roleMap).map(([id, name]) => ({ id, name }));
-    const customRoles = db.roles.filter(r => r.isCustom);
-    const allRoles = [...predefinedRoles, ...customRoles].sort((a, b) => a.name.localeCompare(b.name));
+    allUsers.forEach(user => {
+        const checkboxGroup = document.createElement('div');
+        checkboxGroup.className = 'checkbox-group';
 
-    allRoles.forEach(role => {
-        const option = document.createElement('option');
-        option.value = role.id;
-        option.textContent = role.name;
-        roleSelect.appendChild(option);
+        const checkboxId = `attendee-${user.id}`;
+        checkboxGroup.innerHTML = `
+            <input type="checkbox" id="${checkboxId}" name="attendees" value="${user.id}">
+            <label for="${checkboxId}">${user.name}</label>
+        `;
+        container.appendChild(checkboxGroup);
     });
 }
 
-function populateDemoCredentials() {
-    const demoList = document.getElementById('demo-credentials-list');
-    if (!demoList) return;
+// NEW Function to add a meeting alert
+function addMeetingAlert() {
+    if (!checkTabAccess('documentos', 'edit')) { 
+        showNotification('Você não tem permissão para agendar reuniões.', 'error'); 
+        return; 
+    }
 
-    demoList.innerHTML = ''; 
+    const title = document.getElementById('meeting-alert-title').value.trim();
+    const date = document.getElementById('meeting-alert-date').value;
+    const time = document.getElementById('meeting-alert-time').value;
+    const location = document.getElementById('meeting-alert-location').value.trim();
+    const description = document.getElementById('meeting-alert-description').value.trim();
+    
+    const attendeesCheckboxes = document.querySelectorAll('#meeting-alert-attendees-container input[type="checkbox"]:checked');
+    let attendees = Array.from(attendeesCheckboxes).map(checkbox => parseInt(checkbox.value));
 
-    const roleMap = {
-        'director': 'Diretoria (Acesso Total)',
-        'financeiro': 'Financeiro',
-        'coordinator_madre': 'Coord. Madre',
-        'coordinator_floresta': 'Coord. Floresta',
-        'staff': 'Funcionário(a) Geral',
-        'receptionist': 'Recepcionista',
-        'psychologist': 'Psicólogo(a)',
-        'psychopedagogue': 'Psicopedagogo(a)',
-        'musictherapist': 'Musicoterapeuta',
-        'speech_therapist': 'Fonoaudiólogo(a)',
-        'nutritionist': 'Nutricionista',
-        'physiotherapist': 'Fisioterapeuta',
-        'intern': 'Estagiário(a)'
+    // Add the current user (creator) to the attendees list if not already present
+    const currentUser = getCurrentUser();
+    if (!attendees.includes(currentUser.id)) {
+        attendees.push(currentUser.id);
+    }
+
+    if (!title || !date || !time || attendees.length === 0) { // Check length *after* adding creator
+        showNotification('Título, data, horário e pelo menos um participante são obrigatórios.', 'warning');
+        return;
+    }
+
+    if (!db.generalDocuments) {
+        db.generalDocuments = [];
+    }
+
+    const newMeeting = {
+        id: db.nextGeneralDocumentId++,
+        documentType: 'reuniao',
+        type: 'reuniao',
+        title,
+        description,
+        meetingDate: date,
+        meetingTime: time,
+        location,
+        attendees,
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser.name // Use currentUser.name as createdBy
     };
 
-    // Filter out entries that are explicitly null or empty
-    const filteredUsersForDemo = db.users.filter(user => user.username && user.password);
+    db.generalDocuments.push(newMeeting);
 
-    const sortedUsers = [...filteredUsersForDemo].sort((a, b) => {
-        const roleA = roleMap[a.role] || a.role; // Use original role or raw if custom
-        const roleB = roleMap[b.role] || b.role; // Use original role or raw if custom
-        if (roleA < roleB) return -1;
-        if (roleA > roleB) return 1;
-        return a.name.localeCompare(b.name);
+    if (!db.notifications) db.notifications = [];
+    attendees.forEach(attendeeId => {
+        // Send notification to all attendees, including the creator if they weren't the one who triggered this branch
+        // This ensures the creator gets a notification too, if that's desired.
+        // If 'if (attendeeId !== currentUser.id)' is kept, the creator won't get a notification for their own meeting.
+        // Based on "quero que a pessoa que marcou a reunião seja marcado automaticamente pelo sistema"
+        // it means they should be part of the 'attendees' list and thus see the meeting and *could* receive a notification.
+        // However, typically a user doesn't need a notification for something they just created.
+        // I will keep the previous behavior of not notifying self, but ensure self is an attendee.
+        if (attendeeId !== currentUser.id) { 
+            db.notifications.push({
+                id: db.nextNotificationId++,
+                userId: attendeeId,
+                type: 'meeting_invite',
+                title: 'Convite para Reunião',
+                message: `Você foi convidado(a) para a reunião: "${title}".`,
+                relatedId: newMeeting.id,
+                createdAt: new Date().toISOString(),
+                isRead: false
+            });
+        }
     });
 
-    sortedUsers.forEach(user => {
-        const li = document.createElement('li');
-        // Display mapped role or just the raw role if it's a custom one
-        const roleText = roleMap[user.role] || user.role; 
-        li.innerHTML = `<strong>${roleText}:</strong> ${user.username} / ${user.password}`;
-        demoList.appendChild(li);
-    });
+    saveDb();
+    
+    document.getElementById('modal-add-meeting-alert').style.display = 'none';
+    document.getElementById('form-add-meeting-alert').reset();
+    renderGeneralDocuments();
+    showNotification('Reunião agendada com sucesso! Uma notificação será exibida para os participantes.', 'success');
+    checkNotifications(); 
 }
