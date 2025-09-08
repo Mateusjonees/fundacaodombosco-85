@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -57,7 +56,7 @@
         <header>
             <div class="header-top">
                 <div class="header-logo">
-                    <img src="/a/a8926566-29ac-4da6-8bc6-4be946ef6d26" alt="Fundação Dom Bosco">
+                    <img src="/a/c47ad9fa-1a2d-48f3-98a8-e06a37d7435f" alt="Fundação Dom Bosco">
                     <h1>FUNDAÇÃO DOM BOSCO</h1>
                 </div>
 
@@ -884,26 +883,1169 @@
                                 <h3>Total de Itens em Estoque</h3>
                                 <span class="count" id="total-items">0</span>
                                 <div class="card-meta">
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</main>
-</div>
+                                    <span>Unidades disponíveis</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card low-stock-alert-card">
+                            <div class="card-icon">
+                                <i class="fa-solid fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3>Itens com Alerta de Estoque</h3>
+                                <span class="count" id="low-stock-items">0</span>
+                                <div class="card-meta">
+                                    <span>Baixo estoque ou esgotados</span>
+                                </div>
+                            </div>
+                        </div>
 
-<!-- Scripts -->
-<script src="database.js"></script>
-<script src="auth.js"></script>
-<script src="utils.js"></script>
-<script src="ui.js"></script>
-<script src="clients.js"></script>
-<script src="schedule.js"></script>
-<script src="financial.js"></script>
-<script src="stock.js"></script>
-<script src="funcionarios.js"></script>
-<script src="forms.js"></script>
-<script src="main.js"></script>
+                        <div class="summary-card stock-value-card">
+                            <div class="card-icon">
+                                <i class="fa-solid fa-dollar-sign"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3>Valor Total do Estoque</h3>
+                                <span class="amount" id="total-stock-value">R$ 0,00</span>
+                                <div class="card-meta">
+                                    <span>Valor de custo dos itens</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="summary-card total-categories-card">
+                            <div class="card-icon">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3>Categorias Distintas</h3>
+                                <span class="count" id="total-categories">0</span>
+                                <div class="card-meta">
+                                    <span>Variedade de produtos</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stock-controls">
+                        <button id="btn-add-stock-item" class="btn-primary">
+                            <i class="fa-solid fa-plus"></i> Adicionar Item
+                        </button>
+                        <button id="btn-goto-stock-history" class="btn-secondary">
+                            <i class="fa-solid fa-magnifying-glass-dollar"></i> Ir para Histórico de Movimentação
+                        </button>
+                    </div>
+                    
+                    <div id="stock-list">
+                        <!-- Lista de estoque será renderizada aqui -->
+                    </div>
+                    <div class="stock-history">
+                        <h3>Histórico de Movimentações</h3>
+                        <div class="stock-month-controls" id="stock-history-filters">
+                            <label for="stock-month-selector">Período das Movimentações:</label>
+                            <input type="month" id="stock-month-selector" class="month-selector">
+                            <button id="btn-update-stock-movements" class="btn-primary">
+                                <i class="fa-solid fa-refresh"></i> Filtrar
+                            </button>
+                            <button id="btn-clear-stock-filter" class="btn-secondary">
+                                <i class="fa-solid fa-times"></i> Limpar Filtro
+                            </button>
+                        </div>
+                        <div id="stock-movements">
+                            <!-- Movimentações serão renderizadas aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-funcionarios" class="tab-content">
+                <h2>Gerenciar Funcionários</h2>
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-funcionario" placeholder="Buscar funcionário por nome...">
+                </div>
+                <div class="intern-controls" style="margin-bottom: 24px;">
+                    <button id="btn-add-funcionario" class="btn-primary">
+                        <i class="fa-solid fa-user-plus"></i> Adicionar Novo Funcionário
+                    </button>
+                    <button id="btn-manage-roles" class="btn-secondary">
+                        <i class="fa-solid fa-user-cog"></i> Gerenciar Cargos
+                    </button>
+                    <div class="funcionario-filters">
+                        <label for="funcionario-role-filter"><i class="fa-solid fa-filter"></i> Filtrar por Cargo:</label>
+                        <select id="funcionario-role-filter">
+                            <option value="all">Todos os Cargos</option>
+                            <!-- Options will be populated by JS -->
+                        </select>
+                    </div>
+                    <div id="permissions-view-info" class="permissions-view-info" style="display: none;">
+                        <i class="fa-solid fa-info-circle"></i>
+                        <span>Abaixo, você pode gerenciar o acesso de cada usuário às abas do sistema. Se nenhuma for selecionada, as permissões padrão do cargo serão aplicadas.</span>
+                    </div>
+                </div>
+                <div id="funcionario-list-container">
+                    <!-- Lista de funcionários será renderizada aqui -->
+                    <p>Nenhum funcionário cadastrado.</p>
+                </div>
+            </div>
+
+            <div id="tab-documentos" class="tab-content">
+                <h2>Mural do Coordenador</h2>
+                <div class="documents-board-header">
+                    <div class="documents-controls">
+                        <button id="btn-add-general-document" class="btn-primary">
+                            <i class="fa-solid fa-file-alt"></i> Adicionar Documento
+                        </button>
+                        <button id="btn-add-general-note" class="btn-primary">
+                            <i class="fa-solid fa-sticky-note"></i> Adicionar Nota
+                        </button>
+                        <button id="btn-add-meeting-alert" class="btn-primary btn-add-meeting">
+                            <i class="fa-solid fa-calendar-plus"></i> Agendar Reunião
+                        </button>
+                    </div>
+                    <div class="documents-filters-container">
+                        <div class="search-container">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="search-documents" placeholder="Buscar no mural...">
+                        </div>
+                        <div class="documents-filter">
+                            <label for="documents-type-filter"><i class="fa-solid fa-filter"></i></label>
+                            <select id="documents-type-filter">
+                                <option value="">Todos os tipos</option>
+                                <option value="documento">Documentos</option>
+                                <option value="relatorio">Relatórios</option>
+                                <option value="comprovante">Comprovantes</option>
+                                <option value="contrato">Contratos</option>
+                                <option value="nota">Notas</option>
+                                <option value="reuniao">Reuniões</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+               
+                <div id="general-documents-list" class="documents-grid">
+                    <!-- Lista de documentos será renderizada aqui -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Detalhes do Cliente -->
+    <div id="modal-detalhes-cliente" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2 id="modal-nome-cliente"></h2>
+            <div class="modal-details-grid">
+                <div>
+                    <h3>Dados Pessoais</h3>
+                    <p><strong>CPF:</strong> <span id="modal-cpf-cliente"></span></p>
+                    <p><strong>Data de Nasc.:</strong> <span id="modal-data-nascimento"></span></p>
+                    <p><strong>Email:</strong> <span id="modal-email-cliente"></span></p>
+                    <p><strong>Telefone:</strong> <span id="modal-telefone-cliente"></span></p>
+                    <p><strong>Responsável:</strong> <span id="modal-responsavel-cliente"></span></p>
+                    <p><strong>Unidade:</strong> <span id="modal-unidade-cliente"></span></p>
+                </div>
+                <div>
+                    <h3>Endereço</h3>
+                    <p><strong id="modal-logradouro-cliente"></strong>, <span id="modal-numero-cliente"></span></p>
+                    <p><span id="modal-bairro-cliente"></span></p>
+                    <p><span id="modal-cidade-estado-cliente"></span></p>
+                    <p><strong>CEP:</strong> <span id="modal-cep-cliente"></span></p>
+                </div>
+                <div class="client-assigned-intern-info">
+                    <h3>Profissional Vinculado</h3>
+                    <p id="modal-assigned-professional-name">Nenhum</p>
+                    <p class="small-text" id="modal-assigned-professional-contact"></p>
+                </div>
+            </div>
+            <div class="modal-obs">
+                <h3>Observações</h3>
+                <p id="modal-observacoes-cliente"></p>
+            </div>
+
+            <div class="client-notes-section">
+                <h3>Notas do Cliente</h3>
+                <div id="client-notes-list">
+                    <!-- Notas serão preenchidas aqui -->
+                </div>
+                <button id="btn-add-note" class="btn-primary">Adicionar Nota</button>
+            </div>
+
+            <div class="client-documents-section">
+                <h3>Documentos Anexados</h3>
+                <div id="client-documents-list">
+                    <!-- Documentos serão preenchidos aqui -->
+                </div>
+                <button id="btn-add-document" class="btn-primary">Anexar Documento</button>
+            </div>
+
+            <hr>
+            <div class="client-history-section">
+                <div class="history-header">
+                    <h3>Histórico de Atendimentos</h3>
+                    <button id="btn-novo-atendimento" class="btn-primary btn-add-history">
+                        <i class="fa-solid fa-plus"></i> Adicionar ao Histórico
+                    </button>
+                </div>
+                <div id="historico-atendimentos">
+                    <!-- Histórico será preenchido aqui -->
+                </div>
+            </div>
+            <div class="change-history-section" style="margin-top: 24px;">
+                <h3>Histórico de Alterações do Paciente</h3>
+                <div id="client-change-history-list">
+                    <!-- Histórico de alterações do paciente será preenchido aqui -->
+                </div>
+            </div>
+            <button id="btn-schedule-new-appointment" class="btn-primary" style="margin-left: 10px;">Agendar Novo Atendimento</button>
+            <button id="btn-assign-professional-to-client" class="btn-secondary" style="margin-left: 10px;">Vincular Profissionais</button> 
+            <button id="btn-edit-client" class="btn-secondary" style="margin-left: 10px;">Editar Dados</button>
+            <button id="btn-duplicate-client" class="btn-secondary" style="margin-left: 10px;">Duplicar Cliente</button>
+            <button id="btn-generate-client-report" class="btn-secondary" style="margin-left: 10px;"><i class="fa-solid fa-file-invoice"></i> Gerar Relatório</button>
+            <button id="btn-delete-client" class="btn-danger" style="margin-left: 10px;">
+                <i class="fa-solid fa-trash-can"></i>
+                Excluir Cliente
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Cliente -->
+    <div id="modal-editar-cliente" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Editar Dados Pessoais</h2>
+            <form id="form_editar_cliente">
+                <div id="edit-form-container">
+                    <!-- Form fields will be populated dynamically -->
+                </div>
+                <button type="submit" class="btn-primary">Salvar Alterações</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Nota -->
+    <div id="modal-add-note" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Adicionar Nota</h2>
+            <form id="form-add-note">
+                <div class="form-group">
+                    <label for="note-title">Título da Nota</label>
+                    <input type="text" id="note-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="note-content">Conteúdo da Nota</label>
+                    <textarea id="note-content" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Nota</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Novo Atendimento -->
+    <div id="modal-novo-atendimento" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Novo Atendimento</h2>
+            <form id="form-novo-atendimento">
+                <div class="form-group">
+                    <label for="data-atendimento">Data</label>
+                    <input type="date" id="data-atendimento" required>
+                </div>
+                <div class="form-group">
+                    <label for="select-anamnese">Sessão</label>
+                    <select id="select-anamnese" required>
+                        <!-- Opções de anamnese serão preenchidas aqui -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="notas-atendimento">Anotações</label>
+                    <textarea id="notas-atendimento" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="valor-atendimento">Valor do Atendimento (R$)</label>
+                    <input type="number" id="valor-atendimento" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="duracao-atendimento">Duração do Atendimento (horas e minutos)</label>
+                    <input type="time" id="duracao-atendimento" step="60" value="00:00">
+                </div>
+                <div class="form-group">
+                    <label for="anexos-atendimento">Anexar Documentos (opcional)</label>
+                    <input type="file" id="anexos-atendimento" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <small>Formatos aceitos: PDF, JPG, PNG, DOC, DOCX (máx. 5MB por arquivo)</small>
+                </div>
+                <fieldset>
+                    <legend>Materiais Utilizados</legend>
+                    <div id="materials-selection">
+                        <!-- Materiais serão carregados aqui -->
+                    </div>
+                    <button type="button" id="btn-add-material" class="btn-secondary">
+                        <i class="fa-solid fa-plus"></i> Adicionar Material
+                    </button>
+                </fieldset>
+
+                <button type="submit" class="btn-primary">Salvar Atendimento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Agendamento -->
+    <div id="modal-editar-agendamento" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Editar Agendamento</h2>
+            <form id="form-editar-agendamento">
+                <div class="form-group">
+                    <label for="edit-cliente-agenda">Cliente</label>
+                    <select id="edit-cliente-agenda" required>
+                        <option value="">Selecione um cliente</option>
+                        <!-- Clientes serão preenchidos aqui -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-data-agendamento">Data</label>
+                    <input type="date" id="edit-data-agendamento" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-hora-agendamento">Horário</label>
+                    <input type="time" id="edit-hora-agendamento" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-tipo-servico">Tipo de Serviço</label>
+                    <select id="edit-tipo-servico" required>
+                        <!-- Tipos de serviço serão preenchidos aqui -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-observacoes-agendamento">Observações</label>
+                    <textarea id="edit-observacoes-agendamento" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Alterações</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Documento -->
+    <div id="modal-add-document" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Anexar Documento</h2>
+            <form id="form-add-document">
+                <div class="form-group">
+                    <label for="document-title">Título do Documento</label>
+                    <input type="text" id="document-title" required placeholder="Ex: Comprovante de Pagamento - Janeiro/2024">
+                </div>
+                <div class="form-group">
+                    <label for="document-type">Tipo de Documento</label>
+                    <select id="document-type" required>
+                        <option value="">Selecione o tipo</option>
+                        <option value="pagamento"> Comprovante de Pagamento</option>
+                        <option value="laudo"> Laudo Médico</option>
+                        <option value="receita"> Receita Médica</option>
+                        <option value="exame"> Resultado de Exame</option>
+                        <option value="relatorio"> Relatório de Atendimento</option>
+                        <option value="outros"> Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="document-file">Arquivo</label>
+                    <input type="file" id="document-file" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <small>Formatos aceitos: PDF, Imagens (JPG, PNG), Documentos de Texto (DOC, DOCX) (máx. 5MB)</small>
+                </div>
+                <div class="form-group">
+                    <label for="document-description">Descrição (opcional)</label>
+                    <textarea id="document-description" rows="3" placeholder="Observações sobre o documento..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Documento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Novo Agendamento -->
+    <div id="modal-novo-agendamento" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Novo Agendamento</h2>
+            <form id="form-novo-agendamento">
+                <div class="form-group">
+                    <label for="select-cliente-agenda">Cliente</label>
+                    <select id="select-cliente-agenda" required>
+                        <option value="">Selecione um cliente</option>
+                        <!-- Clientes serão preenchidos aqui -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="data-agendamento">Data</label>
+                    <input type="date" id="data-agendamento" required>
+                </div>
+                <div class="form-group">
+                    <label for="hora-agendamento">Horário</label>
+                    <input type="time" id="hora-agendamento" required>
+                </div>
+                <div class="form-group">
+                    <label for="tipo-servico">Tipo de Serviço</label>
+                    <select id="tipo-servico" required>
+                        <!-- Tipos de serviço serão preenchidos aqui -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="select-assigned-professional">Profissional Responsável</label>
+                    <select id="select-assigned-professional">
+                        <option value="">Nenhum (selecione)</option>
+                        <!-- Usuários (funcionários e estagiários) serão preenchidos aqui -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="observacoes-agendamento">Observações</label>
+                    <textarea id="observacoes-agendamento" rows="3"></textarea>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="send-email-confirmation" checked>
+                    <label for="send-email-confirmation">Enviar confirmação por email ao cliente</label>
+                </div>
+                <button type="submit" class="btn-primary">Agendar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Cancelar Agendamento -->
+    <div id="modal-cancelar-agendamento" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Cancelar Agendamento</h2>
+            <form id="form-cancelar-agendamento">
+                <div class="form-group">
+                    <label for="motivo-cancelamento">Motivo do Cancelamento</label>
+                    <textarea id="motivo-cancelamento" rows="4" required placeholder="Digite o motivo do cancelamento..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="imagem-cancelamento">Comprovante (opcional)</label>
+                    <input type="file" id="imagem-cancelamento" accept="image/*">
+                    <small>Anexe uma imagem caso tenha comprovante da conversa (WhatsApp, SMS, etc.)</small>
+                </div>
+                <div id="preview-imagem-cancelamento" style="display: none; margin-top: 10px;">
+                    <img id="img-preview-cancelamento" style="max-width: 100%; max-height: 200px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                </div>
+                <button type="submit" class="btn-primary">Confirmar Cancelamento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Confirmar Atendimento -->
+    <div id="modal-confirmar-atendimento" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <p id="confirm-attendance-client-info" class="modal-client-info"></p>
+            <form id="form-confirmar-atendimento">
+                <div class="form-group">
+                    <label for="profissional-responsavel">Profissional Responsável</label>
+                    <input type="text" id="profissional-responsavel" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="observacoes-confirmacao">Observações do Atendimento</label>
+                    <textarea id="observacoes-confirmacao" rows="3" placeholder="Descreva como foi o atendimento..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="valor-atendimento-confirmacao">Valor do Atendimento (R$)</label>
+                    <input type="number" id="valor-atendimento-confirmacao" step="0.01" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="duracao-atendimento-confirmacao">Duração do Atendimento (horas e minutos)</label>
+                    <input type="time" id="duracao-atendimento-confirmacao" step="60" value="00:00">
+                </div>
+
+                <div class="form-group">
+                    <label for="anexos-confirmacao">Anexar Documentos (opcional)</label>
+                    <input type="file" id="anexos-confirmacao" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <small>Formatos aceitos: PDF, JPG, PNG, DOC, DOCX</small>
+                </div>
+
+                <fieldset>
+                    <legend>Materiais Utilizados</legend>
+                    <div id="materials-selection-confirm">
+                        <!-- Materiais serão carregados aqui -->
+                    </div>
+                    <button type="button" id="btn-add-material-confirm" class="btn-secondary">
+                        <i class="fa-solid fa-plus"></i> Adicionar Material
+                    </button>
+                </fieldset>
+
+                <button type="submit" class="btn-primary">Confirmar Atendimento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Item ao Estoque -->
+    <div id="modal-add-stock" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Adicionar Item ao Estoque</h2>
+            <form id="form-add-stock">
+                <div class="form-group">
+                    <label for="stock-item-name">Nome do Item</label>
+                    <input type="text" id="stock-item-name" required placeholder="Ex: Lápis HB">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="stock-item-category">Categoria</label>
+                        <select id="stock-item-category" required>
+                            <option value="">Selecione</option>
+                            <option value="papelaria">Papelaria</option>
+                            <option value="testes">Testes Neuropsicológicos</option>
+                            <option value="brinquedos">Brinquedos Terapêuticos</option>
+                            <option value="jogos">Jogos e Quebra-cabeças</option>
+                            <option value="tecnologia">Equipamentos Tecnológicos</option>
+                            <option value="consumiveis">Materiais Consumíveis</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="stock-item-quantity">Quantidade</label>
+                        <input type="number" id="stock-item-quantity" required min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="stock-item-min-stock">Estoque Mínimo</label>
+                    <input type="number" id="stock-item-min-stock" required min="0" value="5">
+                </div>
+                <div class="form-group">
+                    <label for="stock-item-unit-value">Valor por Unidade (R$)</label>
+                    <input type="number" id="stock-item-unit-value" step="0.01" min="0" value="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="stock-item-description">Descrição (opcional)</label>
+                    <textarea id="stock-item-description" rows="3" placeholder="Descrição detalhada do item..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="stock-purchase-notes">Notas da Compra (opcional)</label>
+                    <textarea id="stock-purchase-notes" rows="3" placeholder="Ex: Comprado de Fornecedor X, Desconto de 10%"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="stock-purchase-file">Anexar Comprovante de Pagamento (opcional)</label>
+                    <input type="file" id="stock-purchase-file" accept=".pdf,.jpg,.jpeg,.png">
+                    <small>Formatos aceitos: PDF, Imagens (JPG, PNG) (máx. 5MB)</small>
+                </div>
+                <button type="submit" class="btn-primary">Adicionar ao Estoque</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Ajustar Estoque -->
+    <div id="modal-adjust-stock" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2 id="adjust-stock-title">Ajustar Estoque</h2>
+            <form id="form-adjust-stock">
+                <div class="form-group">
+                    <label for="adjust-stock-quantity" id="adjust-stock-quantity-label">Quantidade</label>
+                    <input type="number" id="adjust-stock-quantity" min="1" required>
+                    <small id="adjust-stock-unit-info"></small>
+                </div>
+                <div class="form-group">
+                    <label for="adjust-stock-reason">Motivo da movimentação</label>
+                    <input type="text" id="adjust-stock-reason" required placeholder="Digite o motivo...">
+                </div>
+                <button type="submit" class="btn-primary" id="adjust-stock-submit-btn">Confirmar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Confirmação de Exclusão -->
+    <div id="modal-confirm-delete" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-small">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Confirmar Exclusão</h2>
+            <p id="delete-confirmation-message"></p>
+            <div class="modal-actions">
+                <button id="btn-confirm-delete" class="btn-danger">Excluir</button>
+                <button id="btn-cancel-delete" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW Modal for File Preview -->
+    <div id="modal-file-preview" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-large">
+            <button class="modal-close-btn">&times;</button>
+            <h2 id="file-preview-title">Visualizar Arquivo</h2>
+            <div id="file-preview-content" class="file-preview-content">
+                <!-- Preview content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW Modal for Employee Report -->
+    <div id="modal-employee-report" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-large">
+            <button class="modal-close-btn">&times;</button>
+            <div class="employee-report-header">
+                <h2 id="employee-report-title">Relatório de Atividade</h2>
+                <div class="report-controls">
+                    <label for="employee-report-period-selector">Período:</label>
+                    <select id="employee-report-period-selector" class="report-period-selector">
+                        <option value="today">Hoje</option>
+                        <option value="current-week">Esta semana</option>
+                        <option value="current-month">Mês atual</option>
+                        <option value="last-3-months">Últimos 3 meses</option>
+                        <option value="last-6-months">Últimos 6 meses</option>
+                        <option value="current-year">Ano atual</option>
+                        <option value="all">Todos os períodos</option>
+                    </select>
+                    <button id="btn-update-employee-report" class="btn-primary">
+                        <i class="fa-solid fa-refresh"></i> Atualizar
+                    </button>
+                    <button id="btn-print-employee-report" class="btn-secondary">
+                        <i class="fa-solid fa-print"></i> Imprimir Relatório
+                    </button>
+                </div>
+            </div>
+            <div id="employee-report-content" class="printable-section">
+                <!-- Employee report content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW Modal for Client Report -->
+    <div id="modal-client-report" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-large">
+            <button class="modal-close-btn">&times;</button>
+            <div class="client-report-header">
+                <h2 id="client-report-title">Relatório do Paciente</h2>
+                <div class="report-controls">
+                    <label for="client-report-period-selector-modal">Período:</label>
+                    <select id="client-report-period-selector-modal" class="report-period-selector">
+                        <option value="today">Hoje</option>
+                        <option value="current-week">Esta semana</option>
+                        <option value="current-month">Mês atual</option>
+                        <option value="last-3-months">Últimos 3 meses</option>
+                        <option value="last-6-months">Últimos 6 meses</option>
+                        <option value="current-year">Ano atual</option>
+                        <option value="all">Todos os períodos</option>
+                    </select>
+                    <button id="btn-update-client-report-modal" class="btn-primary">
+                        <i class="fa-solid fa-refresh"></i> Atualizar
+                    </button>
+                    <button id="btn-print-client-report" class="btn-secondary">
+                        <i class="fa-solid fa-print"></i> Imprimir Relatório
+                    </button>
+                </div>
+            </div>
+            <div id="client-report-content" class="printable-section">
+                <!-- Client report content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Redirecionar Agendamento -->
+    <div id="modal-reassign-schedule" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-small">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Redirecionar Agendamento</h2>
+            <p id="reassign-schedule-info" class="modal-client-info"></p>
+            <form id="form-reassign-schedule">
+                <div class="form-group">
+                    <label for="select-assigned-user">Atribuir a Profissional</label>
+                    <select id="select-assigned-user" required>
+                        <option value="">Selecione um profissional</option>
+                        <!-- Usuários (funcionários e estagiários) serão preenchidos aqui -->
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Confirmar Redirecionamento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Detalhes do Funcionário -->
+    <div id="modal-detalhes-funcionario" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2 id="modal-nome-funcionario"></h2>
+            <div class="modal-details-grid">
+                <div>
+                    <h3>Dados Pessoais</h3>
+                    <p><strong>Nome Completo:</strong> <span id="funcionario-modal-nome-completo"></span></p>
+                    <p><strong>CPF:</strong> <span id="funcionario-modal-cpf"></span></p>
+                    <p><strong>Celular:</strong> <span id="funcionario-modal-celular"></span></p>
+                    <p><strong>Email:</strong> <span id="funcionario-modal-email"></span></p>
+                    <p><strong>Endereço:</strong> <span id="funcionario-modal-endereco"></span></p>
+                </div>
+                <div id="funcionario-academic-info">
+                    <h3>Formação e Acadêmico</h3>
+                    <p><strong>Instituição de Ensino:</strong> <span id="funcionario-modal-instituicao"></span></p>
+                    <p><strong>Período da Graduação:</strong> <span id="funcionario-modal-periodo"></span></p>
+                    <p><strong>Formação:</strong> <span id="funcionario-modal-formacao"></span></p>
+                    <p><strong>Disciplina:</strong> <span id="funcionario-modal-disciplina"></span></p>
+                </div>
+            </div>
+            <hr>
+            <h3>Pacientes Vinculados & Atividade Recente</h3>
+            <div id="funcionario-activity-details">
+                <!-- Stat cards and lists of patients/appointments will be rendered here -->
+            </div>
+            <div class="change-history-section" style="margin-top: 24px;">
+                <h3>Histórico de Alterações</h3>
+                <div id="funcionario-change-history-list">
+                    <!-- Histórico de alterações do funcionário será preenchido aqui -->
+                </div>
+            </div>
+            <div class="modal-actions" style="justify-content: flex-start; margin-top: 24px;">
+                <button id="btn-edit-funcionario" class="btn-primary">
+                    <i class="fa-solid fa-pencil-alt"></i> Editar Dados
+                </button>
+                <button id="btn-edit-funcionario-password" class="btn-secondary" style="margin-left: 10px;">
+                    <i class="fa-solid fa-key"></i> Alterar Senha
+                </button>
+                <button id="btn-delete-funcionario" class="btn-danger" style="margin-left: 10px;">
+                    <i class="fa-solid fa-trash-can"></i> Excluir Funcionário
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Funcionário -->
+    <div id="modal-editar-funcionario" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Editar Dados do Funcionário</h2>
+            <form id="form-editar-funcionario">
+                <div class="edit-form-section">
+                    <h4>Dados Pessoais</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-funcionario-name">Nome Completo</label>
+                            <input type="text" id="edit-funcionario-name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-funcionario-role">Cargo</label>
+                            <input type="text" id="edit-funcionario-role" required placeholder="Ex: Psicólogo, Recepcionista">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-funcionario-cpf">CPF</label>
+                            <input type="text" id="edit-funcionario-cpf" placeholder="000.000.000-00">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-funcionario-phone">Celular</label>
+                            <input type="tel" id="edit-funcionario-phone" placeholder="(00) 90000-0000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-funcionario-email">Email</label>
+                            <input type="email" id="edit-funcionario-email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-funcionario-address">Endereço</label>
+                        <input type="text" id="edit-funcionario-address" placeholder="Rua, Número, Bairro, Cidade/Estado">
+                    </div>
+                </div>
+                
+                <div id="edit-funcionario-academic-fields" class="edit-form-section">
+                    <h4>Formação e Acadêmico (para profissionais)</h4>
+                    <div class="form-group">
+                        <label for="edit-funcionario-instituicao">Instituição de Ensino</label>
+                        <input type="text" id="edit-funcionario-instituicao">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-funcionario-graduation-period">Período da Graduação</label>
+                            <input type="text" id="edit-funcionario-graduation-period" placeholder="Ex: 5º Semestre">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-funcionario-education">Formação</label>
+                            <input type="text" id="edit-funcionario-education" placeholder="Ex: Psicologia">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-funcionario-disciplina">Disciplina (ou Área de Atuação)</label>
+                        <input type="text" id="edit-funcionario-disciplina" placeholder="Ex: Neuropsicologia Infantil">
+                    </div>
+                </div>
+                
+                <div class="edit-form-section">
+                    <h4>Permissões de Acesso (Abas)</h4>
+                    <div class="form-group">
+                        <label>Selecione as abas que este usuário poderá visualizar e/ou editar. Se nenhuma for selecionada, o usuário não terá acesso a abas que dependam de permissão. O acesso padrão do cargo não será aplicado se o cargo for personalizado.</label>
+                        <div id="edit-funcionario-tab-permissions" class="checkbox-group-container">
+                            <!-- Checkboxes will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">Salvar Alterações</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Funcionário -->
+    <div id="modal-add-funcionario" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Adicionar Novo Funcionário</h2>
+            <form id="form-add-funcionario">
+                <fieldset>
+                    <legend>Dados de Acesso</legend>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-funcionario-username">Usuário</label>
+                            <input type="text" id="new-funcionario-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-funcionario-password">Senha</label>
+                            <input type="password" id="new-funcionario-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-funcionario-role">Cargo (ou Função)</label>
+                            <select id="new-funcionario-role" required>
+                                <!-- Options will be populated by JS -->
+                            </select>
+                            <small>Selecione um cargo. Para criar um novo, vá em "Gerenciar Cargos".</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Dados Pessoais</legend>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-funcionario-name">Nome Completo</label>
+                            <input type="text" id="new-funcionario-name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-funcionario-cpf">CPF</label>
+                            <input type="text" id="new-funcionario-cpf" placeholder="000.000.000-00">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-funcionario-phone">Celular</label>
+                            <input type="tel" id="new-funcionario-phone" placeholder="(00) 90000-0000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-funcionario-email">Email</label>
+                            <input type="email" id="new-funcionario-email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-funcionario-address">Endereço</label>
+                        <input type="text" id="new-funcionario-address" placeholder="Rua, Número, Bairro, Cidade/Estado">
+                    </div>
+                </fieldset>
+
+                <fieldset id="new-funcionario-academic-fields">
+                    <legend>Formação e Acadêmico (opcional para todos)</legend>
+                    <div class="form-group">
+                        <label for="new-funcionario-instituicao">Instituição de Ensino</label>
+                        <input type="text" id="new-funcionario-instituicao">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new-funcionario-graduation-period">Período da Graduação</label>
+                            <input type="text" id="new-funcionario-graduation-period" placeholder="Ex: 5º Semestre ou Concluído">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-funcionario-education">Formação</label>
+                            <input type="text" id="new-funcionario-education" placeholder="Ex: Psicologia">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-funcionario-disciplina">Disciplina (ou Área de Atuação)</label>
+                        <input type="text" id="new-funcionario-disciplina" placeholder="Ex: Neuropsicologia Infantil">
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Permissões de Acesso (Abas)</legend>
+                    <div class="form-group">
+                        <label>Selecione as abas que este usuário poderá visualizar e/ou editar. Se nenhuma for selecionada, o usuário não terá acesso a abas que dependam de permissão. O acesso padrão do cargo não será aplicado se o cargo for personalizado.</label>
+                        <div id="new-funcionario-tab-permissions" class="checkbox-group-container">
+                            <!-- Checkboxes will be populated here -->
+                        </div>
+                    </div>
+                </fieldset>
+
+                <button type="submit" class="btn-primary">Cadastrar Funcionário</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Nota Diária -->
+    <div id="modal-add-daily-note" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Adicionar Nota Diária</h2>
+            <form id="form-add-daily-note">
+                <div class="form-group">
+                    <label for="daily-note-date">Data</label>
+                    <input type="date" id="daily-note-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="daily-note-title">Título</label>
+                    <input type="text" id="daily-note-title" required placeholder="Ex: Compra de materiais, Pagamento estagiário">
+                </div>
+                <div class="form-group">
+                    <label for="daily-note-type">Tipo</label>
+                    <select id="daily-note-type" required>
+                        <option value="">Selecione o tipo</option>
+                        <option value="receita"> Receita</option>
+                        <option value="despesa"> Despesa</option>
+                        <option value="nota"> Nota</option>
+                    </select>
+                </div>
+                <div class="form-group" id="expense-category-group" style="display: none;">
+                    <label for="daily-note-expense-category">Categoria da Despesa</label>
+                    <select id="daily-note-expense-category">
+                        <option value="outros">Outros</option>
+                        <option value="salarios">Salários/Pagamentos</option>
+                        <option value="aluguel_contas">Aluguel e Contas (Luz, Água, etc.)</option>
+                        <option value="fornecedores">Fornecedores (sem estoque)</option>
+                        <option value="marketing">Marketing e Divulgação</option>
+                        <option value="impostos">Impostos e Taxas</option>
+                        <option value="manutencao">Manutenção e Reparos</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="daily-note-value">Valor (R$) - opcional</label>
+                    <input type="number" id="daily-note-value" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="daily-note-content">Descrição</label>
+                    <textarea id="daily-note-content" rows="4" required placeholder="Descreva os detalhes da movimentação financeira..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="daily-note-file">Anexar Arquivo (opcional)</label>
+                    <input type="file" id="daily-note-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.txt">
+                    <small>Formatos aceitos: PDF, Imagens (JPG, PNG), Documentos de Texto (DOC, DOCX, TXT), Planilhas (XLS, XLSX, CSV) (máx. 5MB)</small>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Nota</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Relatório Mensal -->
+    <div id="modal-monthly-report" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-large">
+            <button class="modal-close-btn">&times;</button>
+            <div class="monthly-report-header">
+                <h2>Relatório Financeiro Mensal</h2>
+                <div class="report-controls">
+                    <label for="report-period-selector-modal">Período:</label>
+                    <select id="report-period-selector-modal" class="report-period-selector">
+                        <option value="current-month">Mês atual</option>
+                        <option value="last-3-months">Últimos 3 meses</option>
+                        <option value="last-6-months">Últimos 6 meses</option>
+                        <option value="current-year">Ano atual</option>
+                        <option value="all">Todos os períodos</option>
+                    </select>
+                    <button id="btn-update-monthly-report" class="btn-primary">
+                        <i class="fa-solid fa-refresh"></i> Atualizar
+                    </button>
+                    <button id="btn-print-report" class="btn-secondary">
+                        <i class="fa-solid fa-print"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+            <div id="monthly-report-content" class="printable-section">
+                <!-- Monthly report content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Documento Geral -->
+    <div id="modal-add-general-document" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Adicionar Documento Geral</h2>
+            <form id="form-add-general-document">
+                <div class="form-group">
+                    <label for="general-document-title">Título do Documento</label>
+                    <input type="text" id="general-document-title" required placeholder="Ex: Contrato de Estágio - João Silva">
+                </div>
+                <div class="form-group">
+                    <label for="general-document-type">Tipo de Documento</label>
+                    <select id="general-document-type" required>
+                        <option value="">Selecione o tipo</option>
+                        <option value="documento"> Documento</option>
+                        <option value="relatorio"> Relatório</option>
+                        <option value="comprovante"> Comprovante</option>
+                        <option value="contrato"> Contrato</option>
+                        <option value="outros"> Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="general-document-file">Arquivo</label>
+                    <input type="file" id="general-document-file" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv,.txt">
+                    <small>Formatos aceitos: PDF, Imagens (JPG, PNG), Documentos de Texto (DOC, DOCX, TXT), Planilhas (XLS, XLSX, CSV) (máx. 5MB)</small>
+                </div>
+                <div class="form-group">
+                    <label for="general-document-description">Descrição (opcional)</label>
+                    <textarea id="general-document-description" rows="3" placeholder="Observações sobre o documento..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Documento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Nota Geral -->
+    <div id="modal-add-general-note" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Adicionar Nota Geral</h2>
+            <form id="form-add-general-note">
+                <div class="form-group">
+                    <label for="general-note-title">Título da Nota</label>
+                    <input type="text" id="general-note-title" required placeholder="Ex: Reunião de equipe - 26/06/2025">
+                </div>
+                <div class="form-group">
+                    <label for="general-note-type">Tipo de Nota</label>
+                    <select id="general-note-type" required>
+                        <option value="">Selecione o tipo</option>
+                        <option value="nota"> Nota</option>
+                        <option value="lembrete"> Lembrete</option>
+                        <option value="procedimento"> Procedimento</option>
+                        <option value="observacao"> Observação</option>
+                        <option value="outros"> Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="general-note-content">Conteúdo da Nota</label>
+                    <textarea id="general-note-content" rows="6" required placeholder="Escreva o conteúdo da nota..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Nota</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW Modal for Meeting Alert -->
+    <div id="modal-add-meeting-alert" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Agendar Reunião / Alerta</h2>
+            <form id="form-add-meeting-alert">
+                <div class="form-group">
+                    <label for="meeting-alert-title">Título da Reunião</label>
+                    <input type="text" id="meeting-alert-title" required placeholder="Ex: Reunião de alinhamento semanal">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="meeting-alert-date">Data</label>
+                        <input type="date" id="meeting-alert-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="meeting-alert-time">Horário</label>
+                        <input type="time" id="meeting-alert-time" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="meeting-alert-location">Local / Link</label>
+                    <input type="text" id="meeting-alert-location" placeholder="Ex: Sala de reuniões 1 ou link do Google Meet">
+                </div>
+                <div class="form-group">
+                    <label for="meeting-alert-attendees-container">Participantes</label>
+                    <div id="meeting-alert-attendees-container" class="checkbox-group-container">
+                        <!-- Checkboxes will be populated by JS -->
+                    </div>
+                    <small>Selecione um ou mais participantes.</small>
+                </div>
+                <div class="form-group">
+                    <label for="meeting-alert-description">Pauta / Descrição</label>
+                    <textarea id="meeting-alert-description" rows="4" placeholder="Descreva os tópicos da reunião..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Agendamento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Vincular/Redirecionar Profissional -->
+    <div id="modal-assign-professional" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Vincular Profissionais ao Paciente</h2>
+            <p id="assign-professional-client-info" class="modal-client-info"></p>
+            <form id="form-assign-professional">
+                <div class="form-group">
+                    <label>Selecione um ou mais profissionais para vincular:</label>
+                    <div id="assign-professionals-list" class="assign-professionals-grid">
+                        <!-- Checkboxes will be populated here as styled cards -->
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Vínculos</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW Modal for Edit Password -->
+    <div id="modal-edit-password" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-small">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Alterar Senha do Usuário</h2>
+            <p id="edit-password-user-info" class="modal-client-info"></p>
+            <form id="form-edit-password">
+                <div class="form-group">
+                    <label for="new-password">Nova Senha</label>
+                    <input type="password" id="new-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-new-password">Confirmar Nova Senha</label>
+                    <input type="password" id="confirm-new-password" required>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Nova Senha</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW Modal for Role Management -->
+    <div id="modal-manage-roles" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-large">
+            <button class="modal-close-btn">&times;</button>
+            <h2>Gerenciar Cargos Personalizados</h2>
+            <p class="modal-description">Crie e edite cargos para atribuir permissões de acesso específicas para cada função na clínica.</p>
+            <div class="roles-manager-layout">
+                <div id="roles-list-container" class="roles-list-container">
+                    <!-- Custom roles will be listed here -->
+                </div>
+                <div id="role-editor-container" class="role-editor-container" style="display: none;">
+                    <h3 id="role-editor-title">Criar Novo Cargo</h3>
+                    <form id="form-role-editor">
+                        <input type="hidden" id="role-editor-id">
+                        <div class="form-group">
+                            <label for="role-name">Nome do Cargo</label>
+                            <input type="text" id="role-name" required placeholder="Ex: Psicólogo Chefe">
+                        </div>
+                        <div class="form-group">
+                            <label>Permissões de Acesso às Abas</label>
+                            <div id="role-tab-permissions" class="checkbox-group-container">
+                                <!-- Tab permission selectors will be populated here -->
+                            </div>
+                        </div>
+                        <div class="modal-actions" style="justify-content: flex-end; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                            <button type="submit" class="btn-primary" id="btn-save-role">Salvar Cargo</button>
+                            <button type="button" class="btn-secondary" id="btn-cancel-role-edit">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "./js/": "./js/"
+        }
+    }
+    </script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
