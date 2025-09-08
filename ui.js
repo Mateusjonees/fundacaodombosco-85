@@ -1,385 +1,196 @@
-// ui.js - Interface do Usuário
-// FUNDAÇÃO DOM BOSCO
+// UI management module
+import { db } from './database.js';
+import { getCurrentUser, isRoleAllowed, DIRECTOR_ONLY, FINANCE_ONLY, DIRECTOR_OR_FINANCE, COORDINATOR_AND_HIGHER, NON_FINANCE_ACCESS, ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES, PROFESSIONAL_ROLES, DIRECTOR_AND_PROFESSIONALS, DIRECTOR_AND_COORDINATORS_ONLY_DOCUMENTS, STOCK_MANAGERS, ALL_USERS, checkTabAccess } from './auth.js';
 
-// Initialize UI components
-function initUI() {
-    setupTabNavigation();
-    setupGlobalSearch();
-    setupNotifications();
-    setupMobileResponsive();
-    updateCurrentDate();
+export function showLoginScreen() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
 }
 
-// Setup tab navigation
-function setupTabNavigation() {
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
+export function showMainApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
     
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabId = button.dataset.tab;
-            
-            // Remove active class from all buttons and contents
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
-            
-            // Add active class to clicked button and corresponding content
-            button.classList.add('active');
-            const targetTab = document.getElementById(`tab-${tabId}`);
-            if (targetTab) {
-                targetTab.classList.add('active');
-                
-                // Trigger tab-specific initialization
-                onTabActivated(tabId);
-            }
-        });
-    });
-    
-    // Activate first available tab
-    if (tabButtons.length > 0) {
-        tabButtons[0].click();
-    }
-}
-
-// Handle tab activation
-function onTabActivated(tabId) {
-    switch (tabId) {
-        case 'cadastro':
-            initializeClientForm();
+    // Update user info
+    const currentUser = getCurrentUser();
+    document.getElementById('current-user-name').textContent = currentUser.name;
+    let roleText;
+    switch (currentUser.role) {
+        case 'director':
+            roleText = 'Diretoria';
             break;
-        case 'agenda':
-            initializeSchedule();
+        case 'coordinator_madre':
+            roleText = 'Coordenador(a) Madre';
             break;
-        case 'historico':
-            loadClientsList();
+        case 'coordinator_floresta':
+            roleText = 'Coordenador(a) Floresta';
             break;
-        case 'meus-pacientes':
-            loadMyPatients();
+        case 'staff':
+            roleText = 'Funcionário(a) Geral';
+            break;
+        case 'intern':
+            roleText = 'Estagiário(a)';
+            break;
+        case 'musictherapist':
+            roleText = 'Musicoterapeuta';
             break;
         case 'financeiro':
-            initializeFinancial();
+            roleText = 'Financeiro';
             break;
-        case 'relatorios':
-            initializeReports();
+        case 'receptionist':
+            roleText = 'Recepcionista';
             break;
-        case 'estoque':
-            initializeStock();
+        case 'psychologist':
+            roleText = 'Psicólogo(a)';
             break;
-        case 'funcionarios':
-            initializeEmployees();
+        case 'psychopedagogue':
+            roleText = 'Psicopedagogo(a)';
             break;
-        case 'documentos':
-            initializeDocuments();
+        case 'speech_therapist':
+            roleText = 'Fonoaudiólogo(a)';
             break;
+        case 'nutritionist':
+            roleText = 'Nutricionista';
+            break;
+        case 'physiotherapist':
+            roleText = 'Fisioterapeuta';
+            break;
+        default:
+            roleText = 'Usuário';
+    }
+    document.getElementById('current-user-role').textContent = `(${roleText})`;
+    
+    // NEW LOGIC: Tab visibility using checkTabAccess
+    document.querySelectorAll('.tab-button').forEach(button => {
+        const tabId = button.dataset.tab;
+        const canView = checkTabAccess(tabId, 'view');
+        button.style.display = canView ? 'flex' : 'none';
+    });
+}
+
+export function switchTab(tabId) {
+    const tabContents = document.querySelectorAll('.tab-content');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    
+    tabContents.forEach(content => content.classList.remove('active'));
+    tabButtons.forEach(button => button.classList.remove('active'));
+
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+}
+
+export function closeModal(modal) {
+    modal.style.display = 'none';
+}
+
+export function updateCurrentDate() {
+    const today = new Date();
+    document.getElementById('current-date').textContent = today.toLocaleDateString('pt-BR');
+    document.getElementById('date-selector').valueAsDate = today;
+}
+
+export function showNotification(message, type = 'info', title = null, duration = 5000) {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+
+    const titles = {
+        success: 'Sucesso',
+        error: 'Erro',
+        warning: 'Atenção',
+        info: 'Informação'
+    };
+
+    notification.innerHTML = `
+        <div class="notification-icon">
+            <i class="fa-solid ${icons[type]}"></i>
+        </div>
+        <div class="notification-content">
+            ${title || titles[type] ? `<div class="notification-title">${title || titles[type]}</div>` : ''}
+            <div class="notification-message">${message}</div>
+        </div>
+        <button class="notification-close">
+            <i class="fa-solid fa-times"></i>
+        </button>
+    `;
+
+    // Add close functionality
+    const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.addEventListener('click', () => {
+        closeNotification(notification);
+    });
+
+    container.appendChild(notification);
+
+    // Auto-remove after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            if (notification.parentNode) {
+                closeNotification(notification);
+            }
+        }, duration);
     }
 }
 
-// Setup global search
-function setupGlobalSearch() {
-    const searchInput = document.getElementById('global-search-input');
-    const searchButton = document.getElementById('btn-global-search');
+function closeNotification(notification) {
+    notification.classList.add('removing');
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 300);
+}
+
+export function updateGlobalSearchDatalist() {
+    const searchDatalist = document.getElementById('global-search-datalist');
+    if (!searchDatalist) return;
+
+    searchDatalist.innerHTML = '';
+    const currentUser = getCurrentUser();
     
-    if (searchInput) {
-        // Setup autocomplete
-        searchInput.addEventListener('input', debounce(() => {
-            updateGlobalSearchSuggestions(searchInput.value);
-        }, 300));
-        
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                performGlobalSearch(searchInput.value);
+    // Add Patients based on permissions
+    if (checkTabAccess('historico', 'view')) {
+        // User can see all clients
+        db.clients.forEach(client => {
+            const option = document.createElement('option');
+            option.value = `Paciente: ${client.name} (ID: ${client.id})`;
+            searchDatalist.appendChild(option);
+        });
+    } else if (checkTabAccess('meus-pacientes', 'view')) {
+        // User can only see their own clients
+        db.clients.forEach(client => {
+            if (client.assignedProfessionalId === currentUser.id) {
+                const option = document.createElement('option');
+                option.value = `Paciente: ${client.name} (ID: ${client.id})`;
+                searchDatalist.appendChild(option);
             }
         });
     }
-    
-    if (searchButton) {
-        searchButton.addEventListener('click', () => {
-            performGlobalSearch(searchInput.value);
+
+    // Add Employees based on permissions
+    if (checkTabAccess('funcionarios', 'view')) {
+        db.users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = `Funcionário: ${user.name} (ID: ${user.id})`;
+            searchDatalist.appendChild(option);
         });
     }
-}
 
-// Update global search suggestions
-function updateGlobalSearchSuggestions(searchTerm) {
-    if (!searchTerm || searchTerm.length < 2) return;
-    
-    const datalist = document.getElementById('global-search-datalist');
-    if (!datalist) return;
-    
-    datalist.innerHTML = '';
-    
-    // Search clients
-    const clients = searchRecords('clients', searchTerm, ['name', 'cpf', 'email']);
-    clients.slice(0, 5).forEach(client => {
-        const option = document.createElement('option');
-        option.value = `${client.name} - ${formatCPF(client.cpf)}`;
-        option.dataset.type = 'client';
-        option.dataset.id = client.id;
-        datalist.appendChild(option);
-    });
-    
-    // Search employees
-    const employees = searchRecords('employees', searchTerm, ['name', 'email']);
-    employees.slice(0, 3).forEach(employee => {
-        const option = document.createElement('option');
-        option.value = `${employee.name} (Funcionário)`;
-        option.dataset.type = 'employee';
-        option.dataset.id = employee.id;
-        datalist.appendChild(option);
-    });
-}
-
-// Perform global search
-function performGlobalSearch(searchTerm) {
-    if (!searchTerm) {
-        showNotification('Digite algo para buscar.', 'warning');
-        return;
-    }
-    
-    // Search for exact matches first
-    const clients = searchRecords('clients', searchTerm, ['name', 'cpf', 'email']);
-    
-    if (clients.length === 1) {
-        // Open client detail
-        openClientDetail(clients[0].id);
-        return;
-    }
-    
-    if (clients.length > 1) {
-        // Show list of matches
-        showGlobalSearchResults(clients, 'clients');
-        return;
-    }
-    
-    // No matches found
-    showNotification(`Nenhum resultado encontrado para "${searchTerm}".`, 'info');
-}
-
-// Show global search results
-function showGlobalSearchResults(results, type) {
-    // Implementation depends on the specific tab/modal system
-    console.log('Search results:', results, type);
-    showNotification(`${results.length} resultado(s) encontrado(s).`, 'info');
-}
-
-// Setup notifications
-function setupNotifications() {
-    const bellButton = document.getElementById('notification-bell');
-    const dropdown = document.getElementById('notification-dropdown');
-    
-    if (bellButton && dropdown) {
-        bellButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
-            dropdown.style.display = 'none';
-        });
-        
-        dropdown.addEventListener('click', (e) => {
-            e.stopPropagation();
+    // Add Stock Items based on permissions
+    if (checkTabAccess('estoque', 'view')) {
+        db.stockItems.forEach(item => {
+            const option = document.createElement('option');
+            option.value = `Estoque: ${item.name} (ID: ${item.id})`;
+            searchDatalist.appendChild(option);
         });
     }
-    
-    // Load notifications
-    loadNotifications();
-}
-
-// Load notifications
-function loadNotifications() {
-    const notifications = readRecords('notifications');
-    const unreadCount = notifications.filter(n => !n.read).length;
-    
-    // Update notification count
-    const countElement = document.getElementById('notification-count');
-    if (countElement) {
-        if (unreadCount > 0) {
-            countElement.textContent = unreadCount > 99 ? '99+' : unreadCount;
-            countElement.style.display = 'block';
-        } else {
-            countElement.style.display = 'none';
-        }
-    }
-    
-    // Update notification list
-    const listElement = document.getElementById('notification-list');
-    if (listElement) {
-        listElement.innerHTML = '';
-        
-        if (notifications.length === 0) {
-            listElement.innerHTML = '<p>Nenhuma nova notificação.</p>';
-            return;
-        }
-        
-        notifications.slice(0, 10).forEach(notification => {
-            const div = document.createElement('div');
-            div.className = `notification-item ${notification.read ? 'read' : 'unread'}`;
-            div.innerHTML = `
-                <div class="notification-content">
-                    <strong>${notification.title}</strong>
-                    <p>${notification.message}</p>
-                    <small>${formatDate(notification.createdAt, 'dd/mm/yyyy hh:mm')}</small>
-                </div>
-            `;
-            
-            div.addEventListener('click', () => {
-                markNotificationAsRead(notification.id);
-                if (notification.action) {
-                    // Handle notification action
-                    console.log('Notification action:', notification.action);
-                }
-            });
-            
-            listElement.appendChild(div);
-        });
-    }
-}
-
-// Mark notification as read
-function markNotificationAsRead(notificationId) {
-    updateRecord('notifications', notificationId, { read: true });
-    loadNotifications();
-}
-
-// Add new notification
-function addNotification(title, message, type = 'info', action = null) {
-    const notification = {
-        title,
-        message,
-        type,
-        action,
-        read: false
-    };
-    
-    createRecord('notifications', notification);
-    loadNotifications();
-}
-
-// Setup mobile responsive features
-function setupMobileResponsive() {
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        adjustMobileLayout();
-    });
-    
-    // Initial adjustment
-    adjustMobileLayout();
-}
-
-// Adjust layout for mobile
-function adjustMobileLayout() {
-    const isMobile = window.innerWidth <= 768;
-    const nav = document.querySelector('nav');
-    
-    if (nav && isMobile) {
-        // Enable horizontal scroll for navigation
-        nav.style.overflowX = 'auto';
-        nav.style.whiteSpace = 'nowrap';
-    }
-}
-
-// Update current date display
-function updateCurrentDate() {
-    const currentDateElement = document.getElementById('current-date');
-    if (currentDateElement) {
-        const today = new Date();
-        const dateStr = today.toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        currentDateElement.textContent = dateStr;
-    }
-}
-
-// Modal functions
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-}
-
-// Form validation helpers
-function validateForm(formElement) {
-    const requiredFields = formElement.querySelectorAll('[required]');
-    let isValid = true;
-    let firstInvalidField = null;
-    
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            field.classList.add('error');
-            isValid = false;
-            if (!firstInvalidField) {
-                firstInvalidField = field;
-            }
-        } else {
-            field.classList.remove('error');
-        }
-    });
-    
-    if (!isValid && firstInvalidField) {
-        firstInvalidField.focus();
-        showNotification('Por favor, preencha todos os campos obrigatórios.', 'error');
-    }
-    
-    return isValid;
-}
-
-// Clear form
-function clearForm(formElement) {
-    const inputs = formElement.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-        if (input.type === 'checkbox' || input.type === 'radio') {
-            input.checked = false;
-        } else {
-            input.value = '';
-        }
-        input.classList.remove('error');
-    });
-}
-
-// Loading state helpers
-function showLoading(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.innerHTML = '<div class="loading">Carregando...</div>';
-    }
-}
-
-function hideLoading(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        const loading = element.querySelector('.loading');
-        if (loading) {
-            loading.remove();
-        }
-    }
-}
-
-// Export functions
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        initUI,
-        onTabActivated,
-        addNotification,
-        openModal,
-        closeModal,
-        validateForm,
-        clearForm,
-        showLoading,
-        hideLoading
-    };
 }
