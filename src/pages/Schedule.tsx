@@ -101,12 +101,31 @@ export default function Schedule() {
 
   const loadClients = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('clients')
         .select('id, name')
         .eq('is_active', true)
         .order('name');
-      
+
+      // Apply role-based filtering - staff only see their assigned clients
+      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role)) {
+        // For staff members, only show clients they have appointments with
+        const { data: userSchedules } = await supabase
+          .from('schedules')
+          .select('client_id')
+          .eq('employee_id', user?.id);
+        
+        const clientIds = [...new Set(userSchedules?.map(s => s.client_id) || [])];
+        if (clientIds.length > 0) {
+          query = query.in('id', clientIds);
+        } else {
+          // If no appointments, show no clients
+          setClients([]);
+          return;
+        }
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       setClients(data || []);
     } catch (error) {
@@ -128,7 +147,12 @@ export default function Schedule() {
         .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
         .order('start_time');
 
-      // Aplicar filtros
+      // Apply role-based filtering - staff only see appointments where they are assigned
+      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role)) {
+        query = query.eq('employee_id', user?.id);
+      }
+
+      // Apply additional filters for coordinators/directors
       if (filterEmployee !== 'all') {
         query = query.eq('employee_id', filterEmployee);
       }
@@ -138,26 +162,29 @@ export default function Schedule() {
       
       let filteredData = data || [];
 
-      // Filtrar por cargo
-      if (filterRole !== 'all') {
-        filteredData = filteredData.filter(schedule => 
-          schedule.profiles?.employee_role === filterRole
-        );
-      }
+      // Apply role and unit filters only for coordinators/directors
+      if (userProfile && ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role)) {
+        // Filter by role
+        if (filterRole !== 'all') {
+          filteredData = filteredData.filter(schedule => 
+            schedule.profiles?.employee_role === filterRole
+          );
+        }
 
-      // Filtrar por unidade
-      if (filterUnit !== 'all') {
-        filteredData = filteredData.filter(schedule => {
-          if (filterUnit === 'madre') {
-            return schedule.profiles?.department?.toLowerCase().includes('madre') || 
-                   schedule.profiles?.employee_role === 'coordinator_madre';
-          }
-          if (filterUnit === 'floresta') {
-            return schedule.profiles?.department?.toLowerCase().includes('floresta') || 
-                   schedule.profiles?.employee_role === 'coordinator_floresta';
-          }
-          return true;
-        });
+        // Filter by unit
+        if (filterUnit !== 'all') {
+          filteredData = filteredData.filter(schedule => {
+            if (filterUnit === 'madre') {
+              return schedule.profiles?.department?.toLowerCase().includes('madre') || 
+                     schedule.profiles?.employee_role === 'coordinator_madre';
+            }
+            if (filterUnit === 'floresta') {
+              return schedule.profiles?.department?.toLowerCase().includes('floresta') || 
+                     schedule.profiles?.employee_role === 'coordinator_floresta';
+            }
+            return true;
+          });
+        }
       }
 
       setSchedules(filteredData);
