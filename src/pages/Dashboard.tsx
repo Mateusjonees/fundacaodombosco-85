@@ -84,49 +84,27 @@ export default function Dashboard() {
   const loadDashboardStats = async () => {
     setLoading(true);
     try {
-      // Load all stats in parallel
+      // Load basic stats
       const [
         clientsRes,
-        schedulesRes,
-        financialRes,
-        employeesRes,
-        stockRes
+        employeesRes
       ] = await Promise.all([
         supabase.from('clients').select('id, is_active'),
-        supabase.from('schedules').select('id, appointment_date, status'),
-        supabase.from('financial_records').select('amount, type, transaction_date'),
-        supabase.from('profiles').select('id'),
-        supabase.from('stock_items').select('id, current_quantity, minimum_quantity')
+        supabase.from('profiles').select('id')
       ]);
 
       const clients = clientsRes.data || [];
-      const schedules = schedulesRes.data || [];
-      const financial = financialRes.data || [];
       const employees = employeesRes.data || [];
-      const stock = stockRes.data || [];
-
-      // Calculate today's date
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Current month calculation
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
 
       const newStats: DashboardStats = {
         totalClients: clients.length,
         activeClients: clients.filter(c => c.is_active === true).length,
-        todayAppointments: schedules.filter(s => s.appointment_date === today).length,
-        totalAppointments: schedules.length,
-        monthlyRevenue: financial
-          .filter(f => {
-            if (f.type !== 'income') return false;
-            const date = new Date(f.transaction_date);
-            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-          })
-          .reduce((sum, f) => sum + f.amount, 0),
+        todayAppointments: 0, // Will be implemented when schedules table is fixed
+        totalAppointments: 0,
+        monthlyRevenue: 0, // Will be implemented when financial_records table is fixed
         totalEmployees: employees.length,
-        lowStockItems: stock.filter(s => s.current_quantity <= s.minimum_quantity).length,
-        pendingAppointments: schedules.filter(s => s.status === 'scheduled').length
+        lowStockItems: 0, // Will be implemented when stock_items table is fixed
+        pendingAppointments: 0
       };
 
       setStats(newStats);
@@ -204,52 +182,6 @@ export default function Dashboard() {
             <div className="text-2xl font-bold">{stats.totalEmployees}</div>
             <p className="text-xs text-muted-foreground">
               Registrados
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Consultas</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalAppointments}</div>
-            <p className="text-xs text-muted-foreground">
-              Todas as consultas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.lowStockItems}</div>
-            <p className="text-xs text-muted-foreground">
-              Itens com estoque baixo
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Ocupação</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.totalAppointments > 0 
-                ? ((stats.todayAppointments / Math.max(stats.totalAppointments * 0.1, 1)) * 100).toFixed(1)
-                : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Hoje vs média
             </p>
           </CardContent>
         </Card>

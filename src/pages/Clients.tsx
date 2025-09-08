@@ -19,10 +19,10 @@ interface Client {
   email?: string;
   birth_date?: string;
   address?: string;
-  responsible_name?: string;
-  responsible_phone?: string;
-  medical_info?: string;
-  status: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  medical_history?: string;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -39,10 +39,9 @@ export default function Clients() {
     email: '',
     birth_date: '',
     address: '',
-    responsible_name: '',
-    responsible_phone: '',
-    medical_info: '',
-    status: 'active'
+    emergency_contact: '',
+    emergency_phone: '',
+    medical_history: ''
   });
 
   useEffect(() => {
@@ -75,7 +74,10 @@ export default function Clients() {
     try {
       const { error } = await supabase
         .from('clients')
-        .insert([newClient]);
+        .insert([{
+          ...newClient,
+          is_active: true
+        }]);
 
       if (error) throw error;
 
@@ -91,10 +93,9 @@ export default function Clients() {
         email: '',
         birth_date: '',
         address: '',
-        responsible_name: '',
-        responsible_phone: '',
-        medical_info: '',
-        status: 'active'
+        emergency_contact: '',
+        emergency_phone: '',
+        medical_history: ''
       });
       loadClients();
     } catch (error) {
@@ -176,43 +177,31 @@ export default function Clients() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="responsible_name">Nome do Responsável</Label>
+                <Label htmlFor="emergency_contact">Nome do Responsável</Label>
                 <Input
-                  id="responsible_name"
-                  value={newClient.responsible_name}
-                  onChange={(e) => setNewClient({ ...newClient, responsible_name: e.target.value })}
+                  id="emergency_contact"
+                  value={newClient.emergency_contact}
+                  onChange={(e) => setNewClient({ ...newClient, emergency_contact: e.target.value })}
                   placeholder="Nome do responsável (se menor de idade)"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="responsible_phone">Telefone do Responsável</Label>
+                <Label htmlFor="emergency_phone">Telefone do Responsável</Label>
                 <Input
-                  id="responsible_phone"
-                  value={newClient.responsible_phone}
-                  onChange={(e) => setNewClient({ ...newClient, responsible_phone: e.target.value })}
+                  id="emergency_phone"
+                  value={newClient.emergency_phone}
+                  onChange={(e) => setNewClient({ ...newClient, emergency_phone: e.target.value })}
                   placeholder="(11) 99999-9999"
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="medical_info">Informações Médicas</Label>
+                <Label htmlFor="medical_history">Histórico Médico</Label>
                 <Textarea
-                  id="medical_info"
-                  value={newClient.medical_info}
-                  onChange={(e) => setNewClient({ ...newClient, medical_info: e.target.value })}
+                  id="medical_history"
+                  value={newClient.medical_history}
+                  onChange={(e) => setNewClient({ ...newClient, medical_history: e.target.value })}
                   placeholder="Alergias, medicamentos, condições especiais, etc."
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={newClient.status} onValueChange={(value) => setNewClient({ ...newClient, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-4">
@@ -266,8 +255,8 @@ export default function Clients() {
                     <TableCell>{client.phone || '-'}</TableCell>
                     <TableCell>{client.email || '-'}</TableCell>
                     <TableCell>
-                      <Badge variant={client.status === 'active' ? "default" : "secondary"}>
-                        {client.status === 'active' ? 'Ativo' : 'Inativo'}
+                      <Badge variant={client.is_active ? "default" : "secondary"}>
+                        {client.is_active ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
                     <TableCell>

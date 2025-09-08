@@ -10,7 +10,8 @@ import {
   BarChart3, 
   UserCheck,
   ClipboardList,
-  Home
+  Home,
+  FolderOpen
 } from 'lucide-react';
 
 import {
@@ -36,6 +37,7 @@ const menuItems = [
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { title: 'Estoque', url: '/stock', icon: Package },
   { title: 'Funcionários', url: '/employees', icon: UserPlus },
+  { title: 'Arquivos HTML', url: '/static-files', icon: FolderOpen },
 ];
 
 export function AppSidebar() {

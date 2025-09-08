@@ -21,6 +21,7 @@ import Financial from "./pages/Financial";
 import Reports from "./pages/Reports";
 import Stock from "./pages/Stock";
 import Employees from "./pages/Employees";
+import StaticFiles from "./pages/StaticFiles";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const AuthenticatedApp = () => {
               <Route path="/reports" element={<Reports />} />
               <Route path="/stock" element={<Stock />} />
               <Route path="/employees" element={<Employees />} />
+              <Route path="/static-files" element={<StaticFiles />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
