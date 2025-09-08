@@ -455,6 +455,36 @@ export type Database = {
           },
         ]
       }
+      financial_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note_date: string
+          note_text: string
+          note_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note_date?: string
+          note_text: string
+          note_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note_date?: string
+          note_text?: string
+          note_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       financial_records: {
         Row: {
           amount: number
