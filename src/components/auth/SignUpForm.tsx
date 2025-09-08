@@ -39,11 +39,9 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('SignUpForm: Submit started', { email, name, employeeRole });
     setIsLoading(true);
 
     try {
-      console.log('SignUpForm: Attempting Supabase signup');
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -57,10 +55,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         }
       });
 
-      console.log('SignUpForm: Signup response', { hasData: !!data, hasError: !!error, error: error?.message });
-
       if (error) {
-        console.error('SignUpForm: Signup error', error);
         toast({
           variant: "destructive",
           title: "Erro no Cadastro",
@@ -75,17 +70,14 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           description: "Enviamos um link de confirmação para seu email.",
         });
       } else {
-        console.log('SignUpForm: Signup successful', { user: data.user?.email });
         toast({
           title: "Cadastro realizado com sucesso!",
           description: "Bem-vindo ao sistema.",
         });
         
-        console.log('SignUpForm: Calling onSuccess');
         onSuccess();
       }
     } catch (error) {
-      console.error('SignUpForm: Unexpected error', error);
       toast({
         variant: "destructive",
         title: "Erro",

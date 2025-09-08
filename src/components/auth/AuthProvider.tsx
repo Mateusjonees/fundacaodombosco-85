@@ -32,18 +32,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthProvider: Initializing auth state listener');
-    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('AuthProvider: Auth state changed', { event, hasSession: !!session, hasUser: !!session?.user });
         setSession(session);
         setUser(session?.user ?? null);
         
         // If user just signed up, update their profile with additional data
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('AuthProvider: User signed in, checking if profile needs update');
           const userData = session.user.user_metadata;
           
           if (userData?.employee_role) {
@@ -60,8 +56,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                   
                 if (error) {
                   console.error('AuthProvider: Error updating profile', error);
-                } else {
-                  console.log('AuthProvider: Profile updated successfully');
                 }
               }, 1000);
             } catch (error) {
@@ -76,7 +70,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('AuthProvider: Initial session check', { hasSession: !!session, hasUser: !!session?.user });
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -86,7 +79,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     return () => {
-      console.log('AuthProvider: Cleaning up subscription');
       subscription.unsubscribe();
     };
   }, []);

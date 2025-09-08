@@ -10,19 +10,14 @@ const AppContent = () => {
   const [showApp, setShowApp] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
 
-  console.log('AppContent: Current state', { hasUser: !!user, loading, showApp, showSignUp });
-
   useEffect(() => {
-    console.log('AppContent: useEffect triggered', { hasUser: !!user, loading });
     if (!loading) {
       const shouldShowApp = !!user;
-      console.log('AppContent: Setting showApp to', shouldShowApp);
       setShowApp(shouldShowApp);
     }
   }, [user, loading]);
 
   if (loading) {
-    console.log('AppContent: Showing loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -34,13 +29,10 @@ const AppContent = () => {
   }
 
   if (!user) {
-    console.log('AppContent: No user, showing auth forms');
-    
     if (showSignUp) {
       return (
         <SignUpForm 
           onSuccess={() => {
-            console.log('SignUpForm: onSuccess called');
             setShowApp(true);
           }}
           onSwitchToLogin={() => setShowSignUp(false)}
@@ -51,7 +43,6 @@ const AppContent = () => {
     return (
       <LoginForm 
         onSuccess={() => {
-          console.log('LoginForm: onSuccess called');
           setShowApp(true);
         }}
         onSwitchToSignUp={() => setShowSignUp(true)}
@@ -59,7 +50,6 @@ const AppContent = () => {
     );
   }
 
-  console.log('AppContent: User authenticated, showing main app');
   return <MainApp />;
 };
 

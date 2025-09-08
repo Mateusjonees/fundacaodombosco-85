@@ -19,20 +19,15 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('LoginForm: Submit started', { email });
     setIsLoading(true);
 
     try {
-      console.log('LoginForm: Attempting Supabase login');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('LoginForm: Login response', { hasData: !!data, hasError: !!error, error: error?.message });
-
       if (error) {
-        console.error('LoginForm: Login error', error);
         toast({
           variant: "destructive",
           title: "Erro no Login",
@@ -41,16 +36,13 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
         return;
       }
 
-      console.log('LoginForm: Login successful', { user: data.user?.email });
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao sistema.",
       });
       
-      console.log('LoginForm: Calling onSuccess');
       onSuccess();
     } catch (error) {
-      console.error('LoginForm: Unexpected error', error);
       toast({
         variant: "destructive",
         title: "Erro",
