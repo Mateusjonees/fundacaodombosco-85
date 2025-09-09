@@ -21,7 +21,7 @@ import MyPatients from "./pages/MyPatients";
 import Financial from "./pages/Financial";
 import Reports from "./pages/Reports";
 import Stock from "./pages/Stock";
-import Employees from "./pages/Employees";
+import Employees from "./pages/EmployeesNew";
 import StaticFiles from "./pages/StaticFiles";
 import MyFiles from "./pages/MyFiles";
 import NotFound from "./pages/NotFound";

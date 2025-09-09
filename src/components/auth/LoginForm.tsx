@@ -88,9 +88,11 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
       <div className="login-bubble bubble-3"></div>
       
       <Card className="login-form">
-        <CardHeader>
-          <CardTitle className="login-form h1">FUNDAÇÃO DOM BOSCO</CardTitle>
-          <p className="login-subtitle">Acesso Restrito</p>
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-2xl font-bold text-primary">
+            FUNDAÇÃO DOM BOSCO
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">Sistema de Gestão - Acesso Restrito</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

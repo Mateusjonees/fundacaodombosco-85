@@ -108,25 +108,17 @@
   }
 
   .login-form {
-    @apply bg-card p-10 rounded-xl shadow-lg w-full max-w-md text-center border;
+    @apply bg-card p-8 rounded-xl shadow-2xl w-full max-w-md text-center border;
     border-color: hsl(var(--login-input-border));
-  }
-
-  .login-form h1 {
-    @apply text-3xl font-bold mb-2;
-    color: hsl(var(--login-text));
-  }
-
-  .login-form .login-subtitle {
-    @apply text-muted-foreground mb-6 text-sm;
+    backdrop-filter: blur(20px);
   }
 
   .login-form .form-group {
-    @apply text-left mb-5;
+    @apply text-left mb-4;
   }
 
   .login-form .form-group label {
-    @apply block mb-2 font-medium text-foreground;
+    @apply block mb-2 font-medium text-foreground text-sm;
   }
 
   .login-form .form-group input {
@@ -141,21 +133,33 @@
   }
 
   .login-bubble {
-    @apply absolute rounded-full opacity-70;
-    background: rgba(255, 255, 255, 0.15);
+    @apply absolute rounded-full opacity-60;
+    background: linear-gradient(135deg, hsla(var(--primary) / 0.1), hsla(var(--primary-glow) / 0.2));
   }
 
   .bubble-1 {
     @apply w-48 h-48 -top-12 -left-20;
+    animation: float 6s ease-in-out infinite;
   }
 
   .bubble-2 {
     @apply w-72 h-72 -bottom-24 -right-28;
+    animation: float 8s ease-in-out infinite reverse;
   }
 
   .bubble-3 {
     @apply w-28 h-28;
     bottom: 40%;
     left: 20%;
+    animation: float 7s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
   }
 }

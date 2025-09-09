@@ -38,6 +38,51 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       client_assignments: {
         Row: {
           assigned_at: string
@@ -759,6 +804,33 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          created_at: string
+          employee_role: Database["public"]["Enums"]["employee_role"]
+          granted: boolean
+          id: string
+          permission: Database["public"]["Enums"]["permission_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_role: Database["public"]["Enums"]["employee_role"]
+          granted?: boolean
+          id?: string
+          permission: Database["public"]["Enums"]["permission_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_role?: Database["public"]["Enums"]["employee_role"]
+          granted?: boolean
+          id?: string
+          permission?: Database["public"]["Enums"]["permission_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       schedules: {
         Row: {
           anamnesis_type_id: string | null
@@ -1027,6 +1099,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          id: string
+          ip_address: string | null
+          is_active: boolean
+          last_activity: string
+          login_at: string
+          logout_at: string | null
+          session_token: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          last_activity?: string
+          login_at?: string
+          logout_at?: string | null
+          session_token: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          last_activity?: string
+          login_at?: string
+          logout_at?: string | null
+          session_token?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       employee_details: {
@@ -1074,6 +1182,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["employee_role"]
       }
+      get_user_permissions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          permission: Database["public"]["Enums"]["permission_type"]
+        }[]
+      }
+      user_has_permission: {
+        Args: {
+          required_permission: Database["public"]["Enums"]["permission_type"]
+        }
+        Returns: boolean
+      }
       user_has_role: {
         Args: { required_roles: Database["public"]["Enums"]["employee_role"][] }
         Returns: boolean
@@ -1094,6 +1214,39 @@ export type Database = {
         | "speech_therapist"
         | "nutritionist"
         | "physiotherapist"
+      permission_type:
+        | "view_clients"
+        | "create_clients"
+        | "edit_clients"
+        | "delete_clients"
+        | "view_employees"
+        | "create_employees"
+        | "edit_employees"
+        | "delete_employees"
+        | "view_financial"
+        | "create_financial"
+        | "edit_financial"
+        | "delete_financial"
+        | "view_schedules"
+        | "create_schedules"
+        | "edit_schedules"
+        | "delete_schedules"
+        | "view_stock"
+        | "create_stock"
+        | "edit_stock"
+        | "delete_stock"
+        | "view_reports"
+        | "create_reports"
+        | "edit_reports"
+        | "delete_reports"
+        | "view_documents"
+        | "create_documents"
+        | "edit_documents"
+        | "delete_documents"
+        | "manage_roles"
+        | "manage_permissions"
+        | "view_audit_logs"
+        | "system_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1235,6 +1388,40 @@ export const Constants = {
         "speech_therapist",
         "nutritionist",
         "physiotherapist",
+      ],
+      permission_type: [
+        "view_clients",
+        "create_clients",
+        "edit_clients",
+        "delete_clients",
+        "view_employees",
+        "create_employees",
+        "edit_employees",
+        "delete_employees",
+        "view_financial",
+        "create_financial",
+        "edit_financial",
+        "delete_financial",
+        "view_schedules",
+        "create_schedules",
+        "edit_schedules",
+        "delete_schedules",
+        "view_stock",
+        "create_stock",
+        "edit_stock",
+        "delete_stock",
+        "view_reports",
+        "create_reports",
+        "edit_reports",
+        "delete_reports",
+        "view_documents",
+        "create_documents",
+        "edit_documents",
+        "delete_documents",
+        "manage_roles",
+        "manage_permissions",
+        "view_audit_logs",
+        "system_admin",
       ],
     },
   },
