@@ -12,10 +12,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
+import { ConfirmAppointmentDialog } from '@/components/ConfirmAppointmentDialog';
+import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 
 interface Schedule {
   id: string;
@@ -39,6 +41,9 @@ export default function Schedule() {
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedScheduleForAction, setSelectedScheduleForAction] = useState<Schedule | null>(null);
   const { toast } = useToast();
 
   // Filtros
@@ -256,30 +261,109 @@ export default function Schedule() {
     }
   };
 
-  const handleStatusChange = async (scheduleId: string, newStatus: string) => {
+  const handleConfirmAppointment = async (scheduleId: string, materials: any[], notes: string) => {
+    try {
+      // Update schedule status
+      const { error: updateError } = await supabase
+        .from('schedules')
+        .update({ 
+          status: 'completed',
+          notes: notes 
+        })
+        .eq('id', scheduleId);
+
+      if (updateError) throw updateError;
+
+      // Create stock movements for used materials
+      if (materials.length > 0) {
+        const stockMovements = materials.map(material => ({
+          stock_item_id: material.stock_item_id,
+          type: 'out',
+          quantity: material.quantity,
+          reason: 'Utilizado em atendimento',
+          notes: `Usado no atendimento - Agendamento ID: ${scheduleId}`,
+          date: new Date().toISOString().split('T')[0],
+          created_by: user?.id
+        }));
+
+        const { error: movementError } = await supabase
+          .from('stock_movements')
+          .insert(stockMovements);
+
+        if (movementError) throw movementError;
+
+        // Update stock quantities - simplified approach
+        for (const material of materials) {
+          const { data: currentItem } = await supabase
+            .from('stock_items')
+            .select('current_quantity')
+            .eq('id', material.stock_item_id)
+            .single();
+
+          if (currentItem) {
+            const newQuantity = Math.max(0, currentItem.current_quantity - material.quantity);
+            await supabase
+              .from('stock_items')
+              .update({ current_quantity: newQuantity })
+              .eq('id', material.stock_item_id);
+          }
+        }
+      }
+
+      toast({
+        title: "Atendimento confirmado!",
+        description: materials.length > 0 
+          ? `Atendimento confirmado e ${materials.length} material(is) baixado(s) do estoque.`
+          : "Atendimento confirmado com sucesso!",
+      });
+
+      loadSchedules();
+    } catch (error) {
+      console.error('Error confirming appointment:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível confirmar o atendimento.",
+      });
+    }
+  };
+
+  const handleCancelAppointment = async (scheduleId: string, reason: string, category: string) => {
     try {
       const { error } = await supabase
         .from('schedules')
-        .update({ status: newStatus })
+        .update({ 
+          status: 'cancelled',
+          notes: `Cancelado - Categoria: ${category}. Motivo: ${reason}`
+        })
         .eq('id', scheduleId);
 
       if (error) throw error;
 
       toast({
-        title: "Sucesso",
-        description: `Agendamento ${newStatus === 'confirmed' ? 'confirmado' : 
-                                   newStatus === 'cancelled' ? 'cancelado' : 'atualizado'} com sucesso!`,
+        title: "Agendamento cancelado",
+        description: "O agendamento foi cancelado e o motivo foi registrado.",
       });
 
       loadSchedules();
     } catch (error) {
-      console.error('Error updating schedule status:', error);
+      console.error('Error canceling appointment:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar o status do agendamento.",
+        description: "Não foi possível cancelar o agendamento.",
       });
     }
+  };
+
+  const openConfirmDialog = (schedule: Schedule) => {
+    setSelectedScheduleForAction(schedule);
+    setConfirmDialogOpen(true);
+  };
+
+  const openCancelDialog = (schedule: Schedule) => {
+    setSelectedScheduleForAction(schedule);
+    setCancelDialogOpen(true);
   };
 
   const handleEdit = (schedule: Schedule) => {
@@ -365,10 +449,10 @@ export default function Schedule() {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Coluna da esquerda - Calendário */}
-          <Card className="lg:col-span-1">
+          <Card className="lg:col-span-1 gradient-card shadow-professional">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm md:text-base">
-                <CalendarIcon className="h-4 w-4 md:h-5 md:w-5" />
+                <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 {format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
               </CardTitle>
             </CardHeader>
@@ -378,7 +462,7 @@ export default function Schedule() {
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
                 locale={ptBR}
-                className="rounded-md border w-full"
+                className="rounded-md border w-full pointer-events-auto"
               />
             </CardContent>
           </Card>
@@ -392,9 +476,13 @@ export default function Schedule() {
 
             {/* Filtros - Apenas para Diretores */}
             {userProfile?.employee_role === 'director' && (
-              <Card className="bg-muted/50 border-muted">
+              <Card className="gradient-card shadow-professional border-primary/10">
                 <CardContent className="pt-6">
                   <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Filter className="h-4 w-4 text-primary" />
+                      <h3 className="font-semibold text-primary">Filtros Avançados</h3>
+                    </div>
                     <div>
                       <Label className="text-sm font-medium text-foreground">Filtrar por Cargo:</Label>
                       <Select value={filterRole} onValueChange={setFilterRole}>
@@ -608,8 +696,9 @@ export default function Schedule() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleStatusChange(schedule.id, 'confirmed')}
+                                  onClick={() => openConfirmDialog(schedule)}
                                   title="Confirmar Atendimento"
+                                  className="text-primary hover:text-primary shadow-professional"
                                 >
                                   <CheckCircle className="h-3 w-3" />
                                 </Button>
@@ -624,32 +713,16 @@ export default function Schedule() {
                                 <Edit className="h-3 w-3" />
                               </Button>
 
-                              {schedule.status !== 'cancelled' && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      title="Cancelar"
-                                    >
-                                      <XCircle className="h-3 w-3" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Cancelar Agendamento</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Tem certeza que deseja cancelar este agendamento?
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Não</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleStatusChange(schedule.id, 'cancelled')}>
-                                        Sim, Cancelar
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                              {schedule.status !== 'cancelled' && schedule.status !== 'completed' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openCancelDialog(schedule)}
+                                  title="Cancelar Agendamento"
+                                  className="text-destructive hover:text-destructive shadow-professional"
+                                >
+                                  <XCircle className="h-3 w-3" />
+                                </Button>
                               )}
 
                               <Dialog>
@@ -696,6 +769,132 @@ export default function Schedule() {
             </Card>
           </div>
         </div>
+        
+        {/* Dialogs */}
+        <ConfirmAppointmentDialog
+          isOpen={confirmDialogOpen}
+          onClose={() => {
+            setConfirmDialogOpen(false);
+            setSelectedScheduleForAction(null);
+          }}
+          schedule={selectedScheduleForAction}
+          onConfirm={handleConfirmAppointment}
+        />
+
+        <CancelAppointmentDialog
+          isOpen={cancelDialogOpen}
+          onClose={() => {
+            setCancelDialogOpen(false);
+            setSelectedScheduleForAction(null);
+          }}
+          schedule={selectedScheduleForAction}
+          onCancel={handleCancelAppointment}
+        />
+
+        {/* Create/Edit Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90 animate-pulse-gentle">
+              <Plus className="h-6 w-6" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {editingSchedule ? 'Editar Agendamento' : 'Novo Agendamento'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_time">Data e Hora Início</Label>
+                  <Input
+                    id="start_time"
+                    type="datetime-local"
+                    value={newAppointment.start_time}
+                    onChange={(e) => setNewAppointment({...newAppointment, start_time: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_time">Data e Hora Fim</Label>
+                  <Input
+                    id="end_time"
+                    type="datetime-local"
+                    value={newAppointment.end_time}
+                    onChange={(e) => setNewAppointment({...newAppointment, end_time: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="client">Cliente</Label>
+                <Select value={newAppointment.client_id} onValueChange={(value) => setNewAppointment({...newAppointment, client_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="employee">Profissional</Label>
+                <Select value={newAppointment.employee_id} onValueChange={(value) => setNewAppointment({...newAppointment, employee_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="title">Tipo de Atendimento</Label>
+                <Select value={newAppointment.title} onValueChange={(value) => setNewAppointment({...newAppointment, title: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Consulta">Consulta</SelectItem>
+                    <SelectItem value="Terapia">Terapia</SelectItem>
+                    <SelectItem value="Avaliação">Avaliação</SelectItem>
+                    <SelectItem value="Retorno">Retorno</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="notes">Observações</Label>
+                <Textarea
+                  id="notes"
+                  value={newAppointment.notes}
+                  onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
+                  placeholder="Observações opcionais..."
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateAppointment}>
+                {editingSchedule ? 'Salvar' : 'Criar'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
