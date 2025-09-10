@@ -1,9 +1,9 @@
-import { DirectMessages } from '@/components/DirectMessages';
+import { MessagingApp } from '@/components/MessagingApp';
 
 export default function Messages() {
   return (
     <div className="h-full">
-      <DirectMessages />
+      <MessagingApp />
     </div>
   );
 }
