@@ -484,6 +484,54 @@ export type Database = {
           },
         ]
       }
+      employee_timesheet: {
+        Row: {
+          approved_by: string | null
+          break_end: string | null
+          break_start: string | null
+          clock_in: string | null
+          clock_out: string | null
+          created_at: string
+          date: string
+          employee_id: string
+          id: string
+          notes: string | null
+          status: string | null
+          total_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          break_end?: string | null
+          break_start?: string | null
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          date?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          break_end?: string | null
+          break_start?: string | null
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          date?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           created_at: string
@@ -691,6 +739,127 @@ export type Database = {
           },
         ]
       }
+      internal_messages: {
+        Row: {
+          attachments: Json | null
+          created_at: string
+          id: string
+          is_archived: boolean | null
+          is_read: boolean | null
+          message_body: string
+          message_type: string | null
+          parent_message_id: string | null
+          priority: string | null
+          read_at: string | null
+          recipient_id: string | null
+          sender_id: string
+          subject: string
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          is_archived?: boolean | null
+          is_read?: boolean | null
+          message_body: string
+          message_type?: string | null
+          parent_message_id?: string | null
+          priority?: string | null
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id: string
+          subject: string
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          is_archived?: boolean | null
+          is_read?: boolean | null
+          message_body?: string
+          message_type?: string | null
+          parent_message_id?: string | null
+          priority?: string | null
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "internal_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_records: {
+        Row: {
+          attachments: Json | null
+          client_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          medications: Json | null
+          next_appointment_notes: string | null
+          progress_notes: string
+          session_date: string
+          session_duration: number | null
+          session_type: string
+          status: string | null
+          symptoms: string | null
+          treatment_plan: string | null
+          updated_at: string
+          vital_signs: Json | null
+        }
+        Insert: {
+          attachments?: Json | null
+          client_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          medications?: Json | null
+          next_appointment_notes?: string | null
+          progress_notes: string
+          session_date: string
+          session_duration?: number | null
+          session_type: string
+          status?: string | null
+          symptoms?: string | null
+          treatment_plan?: string | null
+          updated_at?: string
+          vital_signs?: Json | null
+        }
+        Update: {
+          attachments?: Json | null
+          client_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          medications?: Json | null
+          next_appointment_notes?: string | null
+          progress_notes?: string
+          session_date?: string
+          session_duration?: number | null
+          session_type?: string
+          status?: string | null
+          symptoms?: string | null
+          treatment_plan?: string | null
+          updated_at?: string
+          vital_signs?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           created_at: string
@@ -883,6 +1052,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      quality_evaluations: {
+        Row: {
+          client_id: string
+          comments: string | null
+          communication_score: number | null
+          created_at: string
+          employee_id: string
+          evaluation_date: string
+          evaluator_id: string
+          follow_up_required: boolean | null
+          id: string
+          improvement_suggestions: string | null
+          overall_satisfaction: number | null
+          professionalism_score: number | null
+          punctuality_score: number | null
+          service_quality_score: number | null
+        }
+        Insert: {
+          client_id: string
+          comments?: string | null
+          communication_score?: number | null
+          created_at?: string
+          employee_id: string
+          evaluation_date?: string
+          evaluator_id: string
+          follow_up_required?: boolean | null
+          id?: string
+          improvement_suggestions?: string | null
+          overall_satisfaction?: number | null
+          professionalism_score?: number | null
+          punctuality_score?: number | null
+          service_quality_score?: number | null
+        }
+        Update: {
+          client_id?: string
+          comments?: string | null
+          communication_score?: number | null
+          created_at?: string
+          employee_id?: string
+          evaluation_date?: string
+          evaluator_id?: string
+          follow_up_required?: boolean | null
+          id?: string
+          improvement_suggestions?: string | null
+          overall_satisfaction?: number | null
+          professionalism_score?: number | null
+          punctuality_score?: number | null
+          service_quality_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_evaluations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
@@ -1123,6 +1351,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          description: string | null
+          id: string
+          is_public: boolean | null
+          setting_key: string
+          setting_type: string | null
+          setting_value: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_key: string
+          setting_type?: string | null
+          setting_value: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_key?: string
+          setting_type?: string | null
+          setting_value?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       user_files: {
         Row: {
