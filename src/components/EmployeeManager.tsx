@@ -20,6 +20,7 @@ interface Profile {
   id: string;
   user_id: string;
   name: string;
+  email?: string;
   employee_role: EmployeeRole;
   phone?: string;
   document_cpf?: string;
@@ -35,6 +36,7 @@ interface Profile {
 
 interface FormData {
   name: string;
+  email: string;
   employee_role: EmployeeRole;
   phone: string;
   document_cpf: string;
@@ -79,6 +81,7 @@ export const EmployeeManager = () => {
   // Form states
   const [formData, setFormData] = useState<FormData>({
     name: '',
+    email: '',
     employee_role: 'staff',
     phone: '',
     document_cpf: '',
@@ -159,10 +162,30 @@ export const EmployeeManager = () => {
     if (!selectedEmployee) return;
 
     try {
+      // Verificar se CPF já existe para outro funcionário
+      if (formData.document_cpf && formData.document_cpf !== selectedEmployee.document_cpf) {
+        const { data: existingCpf } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('document_cpf', formData.document_cpf)
+          .neq('id', selectedEmployee.id)
+          .single();
+
+        if (existingCpf) {
+          toast({
+            variant: "destructive",
+            title: "CPF já cadastrado",
+            description: "Este CPF já está sendo usado por outro funcionário.",
+          });
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
           name: formData.name,
+          email: formData.email,
           employee_role: formData.employee_role,
           phone: formData.phone,
           document_cpf: formData.document_cpf,
@@ -242,6 +265,7 @@ export const EmployeeManager = () => {
     setSelectedEmployee(employee);
     setFormData({
       name: employee.name || '',
+      email: employee.email || '',
       employee_role: employee.employee_role,
       phone: employee.phone || '',
       document_cpf: employee.document_cpf || '',
@@ -268,6 +292,7 @@ export const EmployeeManager = () => {
   const resetForm = () => {
     setFormData({
       name: '',
+      email: '',
       employee_role: 'staff',
       phone: '',
       document_cpf: '',
@@ -333,6 +358,7 @@ export const EmployeeManager = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Função</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Status</TableHead>
@@ -344,6 +370,7 @@ export const EmployeeManager = () => {
                 {employees.map((employee) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.name}</TableCell>
+                    <TableCell>{employee.email || '-'}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
                         {ROLE_LABELS[employee.employee_role] || employee.employee_role}
@@ -409,6 +436,10 @@ export const EmployeeManager = () => {
                 <div>
                   <Label>Nome</Label>
                   <p className="text-sm text-muted-foreground">{selectedEmployee.name}</p>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <p className="text-sm text-muted-foreground">{selectedEmployee.email || '-'}</p>
                 </div>
                 <div>
                   <Label>Função</Label>
@@ -482,6 +513,15 @@ export const EmployeeManager = () => {
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
               <div>

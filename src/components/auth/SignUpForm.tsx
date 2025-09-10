@@ -35,6 +35,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   const [name, setName] = useState('');
   const [employeeRole, setEmployeeRole] = useState('staff');
   const [phone, setPhone] = useState('');
+  const [cpf, setCpf] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -43,6 +44,24 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
     setIsLoading(true);
 
     try {
+      // Verificar se CPF já existe
+      if (cpf) {
+        const { data: existingCpf } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('document_cpf', cpf)
+          .single();
+
+        if (existingCpf) {
+          toast({
+            variant: "destructive",
+            title: "CPF já cadastrado",
+            description: "Este CPF já está sendo usado por outro funcionário.",
+          });
+          return;
+        }
+      }
+
       // Log signup attempt
       await AuditService.logAction({
         entityType: 'auth',
@@ -50,7 +69,8 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         metadata: { 
           user_email: email,
           employee_role: employeeRole,
-          name: name
+          name: name,
+          cpf: cpf
         }
       });
 
@@ -63,6 +83,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
             name: name,
             employee_role: employeeRole,
             phone: phone,
+            document_cpf: cpf,
           }
         }
       });
@@ -180,6 +201,17 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
                 onChange={(e) => setPhone(e.target.value)}
                 disabled={isLoading}
                 placeholder="(11) 99999-9999"
+              />
+            </div>
+            <div className="form-group">
+              <Label htmlFor="cpf">CPF</Label>
+              <Input
+                id="cpf"
+                type="text"
+                value={cpf}
+                onChange={(e) => setCpf(e.target.value)}
+                disabled={isLoading}
+                placeholder="000.000.000-00"
               />
             </div>
             <div className="form-group">
