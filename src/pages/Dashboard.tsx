@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Calendar, DollarSign, UserPlus, Package, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 
 interface DashboardStats {
   totalClients: number;
@@ -124,6 +125,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Alertas de Agendamento */}
+      <ScheduleAlerts />
+      
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground mt-2">

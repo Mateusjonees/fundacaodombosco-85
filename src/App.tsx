@@ -10,6 +10,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import logoFDB from '@/assets/fundacao-dom-bosco-logo.png';
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -36,11 +37,11 @@ const AuthenticatedApp = () => {
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <SidebarTrigger />
                 <div className="md:hidden">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-bold text-xs">
-                      FDB
-                    </div>
-                  </div>
+                  <img 
+                    src={logoFDB} 
+                    alt="Fundação Dom Bosco" 
+                    className="h-8 w-auto object-contain"
+                  />
                 </div>
               </header>
               <main className="flex-1 p-4 md:p-6 bg-muted/20">

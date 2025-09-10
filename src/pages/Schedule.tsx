@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 
 interface Schedule {
   id: string;
@@ -354,6 +355,9 @@ export default function Schedule() {
 
   return (
     <div className="space-y-6">
+      {/* Alertas de Agendamento */}
+      <ScheduleAlerts />
+      
       <div className="flex flex-col space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Agenda</h1>
