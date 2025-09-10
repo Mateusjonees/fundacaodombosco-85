@@ -291,7 +291,7 @@ export const MessagingApp = () => {
         recipient_id: selectedContact,
         message_body: messageText.trim(),
         subject: 'Mensagem direta',
-        message_type: messageType,
+        message_type: 'general',
         is_read: false
       };
 
