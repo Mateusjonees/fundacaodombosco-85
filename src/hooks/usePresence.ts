@@ -50,23 +50,34 @@ export const usePresence = () => {
 
     // Load initial online users
     const loadOnlineUsers = async () => {
-      const { data, error } = await supabase
-        .from('user_presence')
-        .select(`
-          *,
-          profiles!user_presence_user_id_fkey (
-            name,
-            employee_role
-          )
-        `)
-        .eq('is_online', true);
+      try {
+        const { data: presenceData, error } = await supabase
+          .from('user_presence')
+          .select('*')
+          .eq('is_online', true);
 
-      if (error) {
+        if (error) {
+          console.error('Error loading online users:', error);
+          return;
+        }
+
+        // Get profiles for online users
+        const userIds = presenceData?.map(p => p.user_id) || [];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, name, employee_role')
+          .in('user_id', userIds);
+
+        // Combine presence with profile data
+        const usersWithProfiles = presenceData?.map(presence => ({
+          ...presence,
+          profiles: profilesData?.find(p => p.user_id === presence.user_id)
+        })) || [];
+
+        setOnlineUsers(usersWithProfiles);
+      } catch (error) {
         console.error('Error loading online users:', error);
-        return;
       }
-
-      setOnlineUsers((data as any) || []);
     };
 
     loadOnlineUsers();
@@ -81,9 +92,9 @@ export const usePresence = () => {
           schema: 'public',
           table: 'user_presence',
         },
-        (payload) => {
+        async (payload) => {
           console.log('Presence change:', payload);
-          loadOnlineUsers(); // Reload all online users when any change occurs
+          await loadOnlineUsers(); // Reload all online users when any change occurs
         }
       )
       .subscribe();

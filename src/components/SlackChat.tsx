@@ -190,42 +190,63 @@ export const SlackChat = () => {
 
   const loadChannelMessages = async (channelId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: messagesData, error } = await supabase
         .from('internal_messages')
-        .select(`
-          *,
-          profiles!internal_messages_sender_id_fkey (
-            name,
-            employee_role
-          )
-        `)
+        .select('*')
         .eq('channel_id', channelId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages((data as any) || []);
+
+      // Get profiles for all senders
+      const senderIds = [...new Set(messagesData?.map(m => m.sender_id) || [])];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, name, employee_role')
+        .in('user_id', senderIds);
+
+      // Combine messages with profile data
+      const messagesWithProfiles = messagesData?.map(message => ({
+        ...message,
+        profiles: profilesData?.find(p => p.user_id === message.sender_id)
+      })) || [];
+
+      setMessages(messagesWithProfiles);
     } catch (error) {
       console.error('Error loading channel messages:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar as mensagens do canal.",
+      });
     }
   };
 
   const loadDMMessages = async (otherUserId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: messagesData, error } = await supabase
         .from('internal_messages')
-        .select(`
-          *,
-          profiles!internal_messages_sender_id_fkey (
-            name,
-            employee_role
-          )
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user?.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${user?.id})`)
         .is('channel_id', null)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages((data as any) || []);
+
+      // Get profiles for all senders
+      const senderIds = [...new Set(messagesData?.map(m => m.sender_id) || [])];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, name, employee_role')
+        .in('user_id', senderIds);
+
+      // Combine messages with profile data
+      const messagesWithProfiles = messagesData?.map(message => ({
+        ...message,
+        profiles: profilesData?.find(p => p.user_id === message.sender_id)
+      })) || [];
+
+      setMessages(messagesWithProfiles);
 
       // Mark messages as read
       await supabase
@@ -238,6 +259,11 @@ export const SlackChat = () => {
       loadDirectMessages(); // Reload to update unread counts
     } catch (error) {
       console.error('Error loading DM messages:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar as mensagens diretas.",
+      });
     }
   };
 
@@ -312,13 +338,7 @@ export const SlackChat = () => {
       const { data: insertedMessage, error } = await supabase
         .from('internal_messages')
         .insert(messageData)
-        .select(`
-          *,
-          profiles!internal_messages_sender_id_fkey (
-            name,
-            employee_role
-          )
-        `)
+        .select('*')
         .single();
 
       if (error) {
@@ -326,9 +346,20 @@ export const SlackChat = () => {
         throw error;
       }
 
+      // Get sender profile info
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('user_id, name, employee_role')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
       // Add message to current chat immediately for better UX
       if (insertedMessage) {
-        setMessages(prev => [...prev, insertedMessage as any]);
+        const messageWithProfile = {
+          ...insertedMessage,
+          profiles: senderProfile
+        };
+        setMessages(prev => [...prev, messageWithProfile]);
       }
 
       setMessageText('');
