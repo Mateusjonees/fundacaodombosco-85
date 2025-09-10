@@ -1,9 +1,9 @@
-import { SlackChat } from '@/components/SlackChat';
+import { DirectMessages } from '@/components/DirectMessages';
 
 export default function Messages() {
   return (
     <div className="h-full">
-      <SlackChat />
+      <DirectMessages />
     </div>
   );
 }
