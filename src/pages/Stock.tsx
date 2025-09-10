@@ -11,7 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Edit } from 'lucide-react';
+import { Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Edit, MousePointer } from 'lucide-react';
+import { StockItemManager } from '@/components/StockItemManager';
 
 interface StockItem {
   id: string;
@@ -20,9 +21,13 @@ interface StockItem {
   current_quantity: number;
   minimum_quantity: number;
   unit: string;
+  unit_cost?: number;
   cost_per_unit?: number;
   supplier?: string;
   description?: string;
+  location?: string;
+  expiry_date?: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +53,8 @@ export default function Stock() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
+  const [isItemManagerOpen, setIsItemManagerOpen] = useState(false);
   const { toast } = useToast();
 
   const [newItem, setNewItem] = useState({
@@ -230,6 +237,16 @@ export default function Stock() {
   const totalValue = filteredItems.reduce((sum, item) => 
     sum + (item.current_quantity * (item.cost_per_unit || 0)), 0
   );
+
+  const handleItemClick = (item: StockItem) => {
+    setSelectedItem(item);
+    setIsItemManagerOpen(true);
+  };
+
+  const handleItemManagerClose = () => {
+    setSelectedItem(null);
+    setIsItemManagerOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -521,7 +538,15 @@ export default function Stock() {
                   <TableBody>
                     {filteredItems.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
+                         <TableCell 
+                           className="font-medium cursor-pointer hover:text-primary"
+                           onClick={() => handleItemClick(item)}
+                         >
+                           <div className="flex items-center gap-2">
+                             <MousePointer className="h-4 w-4" />
+                             {item.name}
+                           </div>
+                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">{item.category}</Badge>
                         </TableCell>
@@ -542,11 +567,16 @@ export default function Stock() {
                             {item.current_quantity <= item.minimum_quantity ? 'Baixo' : 'Normal'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                        </TableCell>
+                         <TableCell>
+                           <Button 
+                             variant="outline" 
+                             size="sm"
+                             onClick={() => handleItemClick(item)}
+                           >
+                             <Edit className="h-3 w-3 mr-1" />
+                             Gerenciar
+                           </Button>
+                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -589,11 +619,16 @@ export default function Stock() {
                         <TableCell className="text-red-600">
                           -{item.minimum_quantity - item.current_quantity}
                         </TableCell>
-                        <TableCell>
-                          <Button size="sm" variant="outline">
-                            Reabastecer
-                          </Button>
-                        </TableCell>
+                         <TableCell>
+                           <Button 
+                             size="sm" 
+                             variant="outline"
+                             onClick={() => handleItemClick(item)}
+                           >
+                             <Package className="h-3 w-3 mr-1" />
+                             Reabastecer
+                           </Button>
+                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -667,6 +702,16 @@ export default function Stock() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Stock Item Manager Modal */}
+      {selectedItem && (
+        <StockItemManager
+          item={selectedItem}
+          isOpen={isItemManagerOpen}
+          onClose={handleItemManagerClose}
+          onUpdate={loadStockItems}
+        />
+      )}
     </div>
   );
 }

@@ -860,6 +860,56 @@ export type Database = {
           },
         ]
       }
+      meeting_alerts: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          created_by: string
+          id: string
+          is_active: boolean | null
+          meeting_date: string
+          meeting_location: string | null
+          meeting_room: string | null
+          message: string
+          participants: string[] | null
+          title: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_active?: boolean | null
+          meeting_date: string
+          meeting_location?: string | null
+          meeting_room?: string | null
+          message: string
+          participants?: string[] | null
+          title: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_active?: boolean | null
+          meeting_date?: string
+          meeting_location?: string | null
+          meeting_room?: string | null
+          message?: string
+          participants?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           created_at: string

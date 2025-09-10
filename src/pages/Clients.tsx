@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Edit, Eye, ArrowLeft, Users } from 'lucide-react';
+import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter } from 'lucide-react';
 import ClientDetailsView from '@/components/ClientDetailsView';
 
 interface Client {
@@ -300,8 +300,11 @@ export default function Clients() {
   };
 
   const filteredClients = clients.filter(client => {
-    // Search filter
-    const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // Enhanced search filter - ID, CPF, Name, Phone
+    const matchesSearch = searchTerm === '' || 
+      client.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.cpf?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -648,18 +651,33 @@ export default function Clients() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Clientes</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
-        </CardHeader>
+              <CardHeader>
+                <CardTitle>Lista de Clientes</CardTitle>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex items-center space-x-2 flex-1">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por ID, nome, CPF, telefone..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <Select value={unitFilter} onValueChange={setUnitFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as Unidades</SelectItem>
+                        <SelectItem value="madre">Madre</SelectItem>
+                        <SelectItem value="floresta">Floresta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
         <CardContent>
           {loading ? (
             <p className="text-muted-foreground text-center py-8">Carregando clientes...</p>
