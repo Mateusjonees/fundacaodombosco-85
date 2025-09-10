@@ -1291,6 +1291,15 @@ export type Database = {
           permission: Database["public"]["Enums"]["permission_type"]
         }[]
       }
+      log_sensitive_access: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_entity_id: string
+          p_entity_type: string
+        }
+        Returns: undefined
+      }
       user_has_permission: {
         Args: {
           required_permission: Database["public"]["Enums"]["permission_type"]

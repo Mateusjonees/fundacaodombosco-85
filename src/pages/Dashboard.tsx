@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Users, Calendar, DollarSign, UserPlus, Package, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
+import { ClientAssignmentManager } from '@/components/ClientAssignmentManager';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface DashboardStats {
   totalClients: number;
@@ -46,6 +48,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAdmin, isDirector } = usePermissions();
   const [stats, setStats] = useState<DashboardStats>({
     totalClients: 0,
     activeClients: 0,
@@ -194,59 +197,21 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Quick Actions and Assignment Management */}
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Ações Rápidas</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Cadastrar novo cliente</span>
-              <Badge 
-                variant="outline" 
-                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                onClick={() => navigate('/client-form')}
-              >
-                <Users className="h-3 w-3 mr-1" />
-                Ir para Clientes
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Agendar consulta</span>
-              <Badge 
-                variant="outline" 
-                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                onClick={() => navigate('/schedule')}
-              >
-                <Calendar className="h-3 w-3 mr-1" />
-                Ir para Agenda
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Registrar transação</span>
-              <Badge 
-                variant="outline" 
-                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                onClick={() => navigate('/financial')}
-              >
-                <DollarSign className="h-3 w-3 mr-1" />
-                Ir para Financeiro
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Verificar estoque</span>
-              <Badge 
-                variant="outline" 
-                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                onClick={() => navigate('/stock')}
-              >
-                <Package className="h-3 w-3 mr-1" />
-                Ir para Estoque
-              </Badge>
-            </div>
+          <CardContent>
+            <QuickActions />
           </CardContent>
         </Card>
+
+        {/* Client Assignment Management - Only for Directors/Admins */}
+        {(isDirector || isAdmin) && (
+          <ClientAssignmentManager />
+        )}
 
         <Card>
           <CardHeader>
@@ -264,6 +229,9 @@ export default function Dashboard() {
             </div>
             <div className="text-sm">
               <strong>Último acesso:</strong> {new Date().toLocaleString('pt-BR')}
+            </div>
+            <div className="text-sm">
+              <strong>Segurança:</strong> <span className="text-green-600 font-medium">Políticas RLS Ativas ✓</span>
             </div>
           </CardContent>
         </Card>

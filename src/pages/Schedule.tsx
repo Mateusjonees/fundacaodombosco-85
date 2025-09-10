@@ -113,19 +113,20 @@ export default function Schedule() {
         .eq('is_active', true)
         .order('name');
 
-      // Apply role-based filtering - staff only see their assigned clients
+      // Apply role-based filtering using client_assignments (matches RLS policies)
       if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role)) {
-        // For staff members, only show clients they have appointments with
-        const { data: userSchedules } = await supabase
-          .from('schedules')
+        // For staff members, only show clients they are assigned to via client_assignments
+        const { data: assignments } = await supabase
+          .from('client_assignments')
           .select('client_id')
-          .eq('employee_id', user?.id);
+          .eq('employee_id', user?.id)
+          .eq('is_active', true);
         
-        const clientIds = [...new Set(userSchedules?.map(s => s.client_id) || [])];
+        const clientIds = [...new Set(assignments?.map(a => a.client_id) || [])];
         if (clientIds.length > 0) {
           query = query.in('id', clientIds);
         } else {
-          // If no appointments, show no clients
+          // If no assignments, show no clients
           setClients([]);
           return;
         }
