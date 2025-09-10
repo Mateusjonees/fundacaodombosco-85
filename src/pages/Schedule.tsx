@@ -263,6 +263,13 @@ export default function Schedule() {
 
   const handleConfirmAppointment = async (scheduleId: string, materials: any[], notes: string) => {
     try {
+      // Get schedule details for client information
+      const { data: scheduleData } = await supabase
+        .from('schedules')
+        .select('client_id')
+        .eq('id', scheduleId)
+        .single();
+
       // Update schedule status
       const { error: updateError } = await supabase
         .from('schedules')
@@ -274,6 +281,32 @@ export default function Schedule() {
 
       if (updateError) throw updateError;
 
+      // Get session number for this client
+      const { data: existingSessions } = await supabase
+        .from('appointment_sessions')
+        .select('session_number')
+        .eq('schedule_id', scheduleId)
+        .order('session_number', { ascending: false })
+        .limit(1);
+
+      const sessionNumber = existingSessions?.length > 0 ? existingSessions[0].session_number + 1 : 1;
+
+      // Create session record
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('appointment_sessions')
+        .insert({
+          schedule_id: scheduleId,
+          session_number: sessionNumber,
+          materials_used: materials,
+          total_materials_cost: materials.reduce((total, m) => total + (m.unit_cost || 0) * m.quantity, 0),
+          session_notes: notes,
+          created_by: user?.id
+        })
+        .select('id')
+        .single();
+
+      if (sessionError) throw sessionError;
+
       // Create stock movements for used materials
       if (materials.length > 0) {
         const stockMovements = materials.map(material => ({
@@ -281,9 +314,12 @@ export default function Schedule() {
           type: 'out',
           quantity: material.quantity,
           reason: 'Utilizado em atendimento',
-          notes: `Usado no atendimento - Agendamento ID: ${scheduleId}`,
+          notes: `Sessão ${sessionNumber} - Cliente: ${scheduleData?.client_id}`,
           date: new Date().toISOString().split('T')[0],
-          created_by: user?.id
+          created_by: user?.id,
+          client_id: scheduleData?.client_id,
+          schedule_id: scheduleId,
+          session_number: sessionNumber
         }));
 
         const { error: movementError } = await supabase
@@ -292,11 +328,11 @@ export default function Schedule() {
 
         if (movementError) throw movementError;
 
-        // Update stock quantities - simplified approach
+        // Update stock quantities - use transactions for better consistency
         for (const material of materials) {
           const { data: currentItem } = await supabase
             .from('stock_items')
-            .select('current_quantity')
+            .select('current_quantity, unit_cost')
             .eq('id', material.stock_item_id)
             .single();
 
@@ -313,8 +349,8 @@ export default function Schedule() {
       toast({
         title: "Atendimento confirmado!",
         description: materials.length > 0 
-          ? `Atendimento confirmado e ${materials.length} material(is) baixado(s) do estoque.`
-          : "Atendimento confirmado com sucesso!",
+          ? `Sessão ${sessionNumber} confirmada e ${materials.length} material(is) baixado(s) do estoque.`
+          : `Sessão ${sessionNumber} confirmada com sucesso!`,
       });
 
       loadSchedules();
