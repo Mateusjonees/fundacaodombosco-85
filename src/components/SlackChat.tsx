@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
+import { TypingIndicator } from './TypingIndicator';
 import { 
   Hash, 
   Users, 
@@ -54,6 +55,8 @@ export const SlackChat = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { onlineUsers, totalOnline } = usePresence();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [channels, setChannels] = useState<Channel[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -85,6 +88,15 @@ export const SlackChat = () => {
       setSelectedChannel(null);
     }
   }, [selectedDM]);
+
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const loadChannels = async () => {
     try {
@@ -131,7 +143,7 @@ export const SlackChat = () => {
           .is('channel_id', null)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         // Get unread count (messages from this user to current user that are unread)
         const { count: unreadCount } = await supabase
@@ -152,9 +164,27 @@ export const SlackChat = () => {
         });
       }
 
+      // Sort by last message time and unread messages first
+      dmList.sort((a, b) => {
+        if (a.unread_count > 0 && b.unread_count === 0) return -1;
+        if (b.unread_count > 0 && a.unread_count === 0) return 1;
+        
+        if (a.last_message_time && b.last_message_time) {
+          return new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime();
+        }
+        if (a.last_message_time) return -1;
+        if (b.last_message_time) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
       setDirectMessages(dmList);
     } catch (error) {
       console.error('Error loading direct messages:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar as mensagens diretas.",
+      });
     }
   };
 
@@ -221,22 +251,40 @@ export const SlackChat = () => {
           schema: 'public',
           table: 'internal_messages',
         },
-        (payload) => {
-          console.log('New message:', payload);
+        async (payload) => {
+          console.log('New message received:', payload);
           const newMessage = payload.new as Message;
           
-          // If message is for current channel/DM, add it to messages
+          // If message is for current channel/DM, reload to show new message
           if (selectedChannel && newMessage.channel_id === selectedChannel.id) {
-            loadChannelMessages(selectedChannel.id);
+            await loadChannelMessages(selectedChannel.id);
           } else if (selectedDM && (
             (newMessage.sender_id === selectedDM && newMessage.recipient_id === user?.id) ||
             (newMessage.sender_id === user?.id && newMessage.recipient_id === selectedDM)
           )) {
-            loadDMMessages(selectedDM);
-          } else {
-            // Update DM list to show new message indicators
-            loadDirectMessages();
+            await loadDMMessages(selectedDM);
           }
+          
+          // Always update DM list to show new message indicators and counts
+          await loadDirectMessages();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'internal_messages',
+        },
+        async (payload) => {
+          console.log('Message updated:', payload);
+          // Reload current conversation to reflect read status updates
+          if (selectedChannel) {
+            await loadChannelMessages(selectedChannel.id);
+          } else if (selectedDM) {
+            await loadDMMessages(selectedDM);
+          }
+          await loadDirectMessages();
         }
       )
       .subscribe();
@@ -254,19 +302,41 @@ export const SlackChat = () => {
       const messageData = {
         sender_id: user?.id,
         message_body: messageText.trim(),
-        subject: selectedChannel?.name || `Mensagem para ${directMessages.find(dm => dm.user_id === selectedDM)?.name}`,
+        subject: selectedChannel?.name || `Conversa com ${directMessages.find(dm => dm.user_id === selectedDM)?.name}`,
         channel_id: selectedChannel?.id || null,
         recipient_id: selectedDM || null,
-        message_type: 'text'
+        message_type: 'text',
+        is_read: false
       };
 
-      const { error } = await supabase
+      const { data: insertedMessage, error } = await supabase
         .from('internal_messages')
-        .insert(messageData);
+        .insert(messageData)
+        .select(`
+          *,
+          profiles!internal_messages_sender_id_fkey (
+            name,
+            employee_role
+          )
+        `)
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Insert error:', error);
+        throw error;
+      }
+
+      // Add message to current chat immediately for better UX
+      if (insertedMessage) {
+        setMessages(prev => [...prev, insertedMessage as any]);
+      }
 
       setMessageText('');
+      
+      // Reload direct messages to update unread counts
+      if (selectedDM) {
+        loadDirectMessages();
+      }
       
       toast({
         title: "Mensagem enviada",
@@ -277,7 +347,7 @@ export const SlackChat = () => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível enviar a mensagem.",
+        description: "Não foi possível enviar a mensagem. Tente novamente.",
       });
     } finally {
       setLoading(false);
@@ -291,17 +361,48 @@ export const SlackChat = () => {
     }
   };
 
+  const handleTyping = () => {
+    // Send typing indicator
+    const channelName = selectedChannel?.id || selectedDM;
+    if (channelName && user) {
+      const channel = supabase.channel(`typing-${channelName}`);
+      
+      channel.track({
+        user_id: user.id,
+        name: user.user_metadata?.name || user.email,
+        timestamp: Date.now()
+      });
+
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Stop typing indicator after 2 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        channel.untrack();
+      }, 2000);
+    }
+  };
+
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
-    if (diffInDays === 0) {
+    if (diffInMinutes < 1) {
+      return 'agora';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes}m`;
+    } else if (diffInDays === 0) {
       return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     } else if (diffInDays === 1) {
-      return 'Ontem';
+      return 'ontem';
+    } else if (diffInDays < 7) {
+      return date.toLocaleDateString('pt-BR', { weekday: 'short' });
     } else {
-      return date.toLocaleDateString('pt-BR');
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     }
   };
 
@@ -383,8 +484,8 @@ export const SlackChat = () => {
                 onClick={() => setSelectedDM(dm.user_id)}
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center">
-                    <div className="relative mr-2">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="relative mr-2 flex-shrink-0">
                       <Circle 
                         className={`h-2 w-2 ${
                           isUserOnline(dm.user_id) 
@@ -393,13 +494,30 @@ export const SlackChat = () => {
                         }`} 
                       />
                     </div>
-                    <span className="truncate">{dm.name}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{dm.name}</div>
+                      {dm.last_message && (
+                        <div className="text-xs text-muted-foreground truncate mt-0.5">
+                          {dm.last_message.length > 30 
+                            ? `${dm.last_message.substring(0, 30)}...` 
+                            : dm.last_message
+                          }
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {dm.unread_count > 0 && (
-                    <Badge variant="destructive" className="ml-2 text-xs">
-                      {dm.unread_count}
-                    </Badge>
-                  )}
+                  <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                    {dm.unread_count > 0 && (
+                      <Badge variant="destructive" className="text-xs mb-1">
+                        {dm.unread_count > 99 ? '99+' : dm.unread_count}
+                      </Badge>
+                    )}
+                    {dm.last_message_time && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(dm.last_message_time)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Button>
             ))}
@@ -454,53 +572,80 @@ export const SlackChat = () => {
               {messages.map((message, index) => {
                 const isCurrentUser = message.sender_id === user?.id;
                 const showAvatar = index === 0 || messages[index - 1].sender_id !== message.sender_id;
+                const showTime = index === 0 || 
+                  new Date(message.created_at).getTime() - new Date(messages[index - 1].created_at).getTime() > 300000; // 5 minutes
                 
                 return (
                   <div key={message.id} className={`flex gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
                     {showAvatar && (
-                      <div className={`w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium ${isCurrentUser ? 'order-1' : ''}`}>
+                      <div className={`w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium flex-shrink-0 ${isCurrentUser ? 'order-1' : ''}`}>
                         {message.profiles?.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                     )}
-                    <div className={`flex-1 ${!showAvatar ? (isCurrentUser ? 'mr-11' : 'ml-11') : ''}`}>
-                      {showAvatar && (
+                    <div className={`flex-1 max-w-md ${!showAvatar ? (isCurrentUser ? 'mr-11' : 'ml-11') : ''}`}>
+                      {(showAvatar || showTime) && (
                         <div className={`flex items-baseline gap-2 mb-1 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
-                          <span className="font-medium text-sm">{message.profiles?.name}</span>
+                          {showAvatar && (
+                            <span className="font-medium text-sm text-foreground">{message.profiles?.name}</span>
+                          )}
                           <span className="text-xs text-muted-foreground">
                             {formatTime(message.created_at)}
                           </span>
                         </div>
                       )}
-                      <div className={`rounded-lg p-3 max-w-md ${
+                      <div className={`rounded-lg p-3 ${
                         isCurrentUser 
                           ? 'bg-primary text-primary-foreground ml-auto' 
-                          : 'bg-muted'
+                          : 'bg-card border'
                       }`}>
-                        <p className="text-sm whitespace-pre-wrap">{message.message_body}</p>
+                        <p className="text-sm whitespace-pre-wrap break-words">{message.message_body}</p>
                       </div>
                     </div>
                   </div>
                 );
               })}
+              <div ref={messagesEndRef} />
             </div>
           )}
+          
+          {/* Typing Indicator */}
+          <TypingIndicator 
+            channelId={selectedChannel?.id} 
+            recipientId={selectedDM} 
+          />
         </ScrollArea>
 
         {/* Message Input */}
-        <div className="border-t p-4">
+        <div className="border-t p-4 bg-background">
           <div className="flex gap-2">
             <Input
               value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
+              onChange={(e) => {
+                setMessageText(e.target.value);
+                handleTyping();
+              }}
               onKeyPress={handleKeyPress}
               placeholder={`Mensagem ${selectedChannel ? `#${selectedChannel.name}` : currentChatName}...`}
-              className="flex-1"
+              className="flex-1 bg-card"
               disabled={loading}
             />
-            <Button onClick={sendMessage} disabled={loading || !messageText.trim()}>
-              <Send className="h-4 w-4" />
+            <Button 
+              onClick={sendMessage} 
+              disabled={loading || !messageText.trim()}
+              size="sm"
+            >
+              {loading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
+          {loading && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Enviando mensagem...
+            </div>
+          )}
         </div>
       </div>
     </div>
