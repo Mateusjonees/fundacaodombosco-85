@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import logoFDB from '@/assets/fundacao-dom-bosco-logo.png';
+import logoFDB from '@/assets/fundacao-dom-bosco-logo.jpg';
 import { 
   Users, 
   Calendar, 
@@ -87,30 +87,34 @@ export function AppSidebar() {
     loadUserRole();
   }, [user]);
 
-  // Load menu items from database
-  useEffect(() => {
-    const loadMenuItems = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('menu_items')
-          .select('*')
-          .eq('is_active', true)
-          .order('order_index');
-        
-        if (error) throw error;
-        setNavigationItems(data || []);
-      } catch (error) {
-        console.error('Error loading menu items:', error);
-        // Fallback to empty array if database fails
-        setNavigationItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadMenuItems();
+  // Load menu items from database with cache clear
+  const loadMenuItems = useCallback(async () => {
+    setLoading(true);
+    try {
+      const cacheKey = `menu_items_${Date.now()}`; // Force cache refresh
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index');
+      
+      if (error) throw error;
+      setNavigationItems(data || []);
+    } catch (error) {
+      console.error('Error loading menu items:', error);
+      // Fallback to empty array if database fails
+      setNavigationItems([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadMenuItems();
+    // Auto-refresh menu every 30 seconds to clear cache
+    const interval = setInterval(loadMenuItems, 30000);
+    return () => clearInterval(interval);
+  }, [loadMenuItems]);
 
   const isActive = (path: string) => currentPath === path;
   
@@ -145,21 +149,27 @@ export function AppSidebar() {
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
       <SidebarContent>
         <SidebarGroup>
-          <div className={collapsed ? "p-2" : "p-4 border-b"}>
-            <div className="flex items-center gap-2">
-              {collapsed ? (
-                <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-bold text-sm">
-                  FDB
+            <div className="flex flex-col items-center p-4">
+              <img 
+                src={logoFDB}
+                alt="Fundação Dom Bosco" 
+                className="h-16 w-auto mb-2 object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+              {!collapsed && (
+                <div className="text-center">
+                  <div className="text-sm font-semibold text-primary">
+                    Fundação Dom Bosco
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Sistema de Gestão
+                  </div>
                 </div>
-              ) : (
-                <img 
-                  src={logoFDB} 
-                  alt="Fundação Dom Bosco" 
-                  className="h-12 w-auto object-contain"
-                />
               )}
             </div>
-          </div>
           
           <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
             MENU PRINCIPAL

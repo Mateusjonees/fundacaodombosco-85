@@ -38,6 +38,50 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_sessions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          materials_used: Json | null
+          schedule_id: string
+          session_duration: number | null
+          session_notes: string | null
+          session_number: number
+          total_materials_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          materials_used?: Json | null
+          schedule_id: string
+          session_duration?: number | null
+          session_notes?: string | null
+          session_number?: number
+          total_materials_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          materials_used?: Json | null
+          schedule_id?: string
+          session_duration?: number | null
+          session_notes?: string | null
+          session_number?: number
+          total_materials_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_sessions_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1006,6 +1050,7 @@ export type Database = {
       }
       stock_movements: {
         Row: {
+          client_id: string | null
           created_at: string
           created_by: string | null
           date: string
@@ -1014,12 +1059,15 @@ export type Database = {
           quantity: number
           reason: string | null
           reference_document: string | null
+          schedule_id: string | null
+          session_number: number | null
           stock_item_id: string
           total_cost: number | null
           type: string
           unit_cost: number | null
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
@@ -1028,12 +1076,15 @@ export type Database = {
           quantity: number
           reason?: string | null
           reference_document?: string | null
+          schedule_id?: string | null
+          session_number?: number | null
           stock_item_id: string
           total_cost?: number | null
           type: string
           unit_cost?: number | null
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
@@ -1042,12 +1093,28 @@ export type Database = {
           quantity?: number
           reason?: string | null
           reference_document?: string | null
+          schedule_id?: string | null
+          session_number?: number | null
           stock_item_id?: string
           total_cost?: number | null
           type?: string
           unit_cost?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_stock_movements_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_stock_movements_schedule"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_movements_stock_item_id_fkey"
             columns: ["stock_item_id"]
