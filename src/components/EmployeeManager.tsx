@@ -11,7 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { UserPlus, Edit, Trash2, Eye } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { UserPlus, Edit, Trash2, Eye, Calendar, MapPin, Building2, CreditCard } from 'lucide-react';
 
 type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
 
@@ -29,6 +30,7 @@ interface Profile {
   hire_date: string;
   salary?: number;
   permissions?: any;
+  birth_date?: string;
 }
 
 interface FormData {
@@ -40,6 +42,7 @@ interface FormData {
   address: string;
   department: string;
   salary: string;
+  birth_date: string;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -64,6 +67,7 @@ export const EmployeeManager = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { logAction } = useAuditLog();
+  const { isDirector, canManageUsers, loading: permissionsLoading } = usePermissions();
   
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -82,6 +86,7 @@ export const EmployeeManager = () => {
     address: '',
     department: '',
     salary: '',
+    birth_date: '',
   });
 
   useEffect(() => {
@@ -165,6 +170,7 @@ export const EmployeeManager = () => {
           address: formData.address,
           department: formData.department,
           salary: formData.salary ? parseFloat(formData.salary) : null,
+          birth_date: formData.birth_date || null,
         })
         .eq('id', selectedEmployee.id);
 
@@ -243,6 +249,7 @@ export const EmployeeManager = () => {
       address: employee.address || '',
       department: employee.department || '',
       salary: employee.salary?.toString() || '',
+      birth_date: employee.birth_date || '',
     });
     setIsEditModalOpen(true);
   };
@@ -268,10 +275,17 @@ export const EmployeeManager = () => {
       address: '',
       department: '',
       salary: '',
+      birth_date: '',
     });
   };
 
-  const canEditEmployees = user && user.email?.includes('admin'); // Basic check for now
+  if (permissionsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Carregando permissões...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -281,7 +295,7 @@ export const EmployeeManager = () => {
           <Button onClick={loadEmployees} disabled={loading} variant="outline">
             {loading ? 'Carregando...' : 'Atualizar'}
           </Button>
-          {canEditEmployees && (
+          {isDirector && (
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm}>
@@ -353,7 +367,7 @@ export const EmployeeManager = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {canEditEmployees && (
+                        {isDirector && (
                           <>
                             <Button 
                               variant="outline" 
@@ -420,8 +434,34 @@ export const EmployeeManager = () => {
                 </div>
               </div>
               <div>
+                <Label>Data de Nascimento</Label>
+                <p className="text-sm text-muted-foreground">
+                  {selectedEmployee.birth_date ? new Date(selectedEmployee.birth_date).toLocaleDateString('pt-BR') : '-'}
+                </p>
+              </div>
+              <div>
                 <Label>Endereço</Label>
                 <p className="text-sm text-muted-foreground">{selectedEmployee.address || '-'}</p>
+              </div>
+              {selectedEmployee.salary && (
+                <div>
+                  <Label>Salário</Label>
+                  <p className="text-sm text-muted-foreground">
+                    R$ {selectedEmployee.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              )}
+              <div>
+                <Label>Data de Contratação</Label>
+                <p className="text-sm text-muted-foreground">
+                  {selectedEmployee.hire_date ? new Date(selectedEmployee.hire_date).toLocaleDateString('pt-BR') : '-'}
+                </p>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Badge variant={selectedEmployee.is_active ? "default" : "secondary"}>
+                  {selectedEmployee.is_active ? 'Ativo' : 'Inativo'}
+                </Badge>
               </div>
             </div>
           )}
@@ -491,24 +531,37 @@ export const EmployeeManager = () => {
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 />
               </div>
+              <div>
+                <Label htmlFor="birth_date">Data de Nascimento</Label>
+                <Input
+                  id="birth_date"
+                  type="date"
+                  value={formData.birth_date}
+                  onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="salary">Salário</Label>
-              <Input
-                id="salary"
-                type="number"
-                step="0.01"
-                value={formData.salary}
-                onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="address">Endereço Completo</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Rua, número, bairro, cidade"
+                />
+              </div>
+              <div>
+                <Label htmlFor="salary">Salário (R$)</Label>
+                <Input
+                  id="salary"
+                  type="number"
+                  step="0.01"
+                  value={formData.salary}
+                  onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
