@@ -24,6 +24,7 @@ import Stock from "./pages/StockManager";
 import Employees from "./pages/EmployeesNew";
 import UserManagement from "./components/UserManagement";
 import MyFiles from "./pages/MyFiles";
+import { CustomRoleManager } from "./components/CustomRoleManager";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,7 +58,7 @@ const AuthenticatedApp = () => {
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/stock" element={<Stock />} />
                   <Route path="/employees" element={<Employees />} />
-                  <Route path="/user-management" element={<UserManagement />} />
+                  <Route path="/custom-roles" element={<CustomRoleManager />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

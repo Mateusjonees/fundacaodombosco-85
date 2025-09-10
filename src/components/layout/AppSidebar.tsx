@@ -13,7 +13,8 @@ import {
   ClipboardList,
   Home,
   FolderOpen,
-  LogOut
+  LogOut,
+  Settings
 } from 'lucide-react';
 
 import {
@@ -42,7 +43,7 @@ const menuItems = [
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { title: 'Estoque', url: '/stock', icon: Package },
   { title: 'Funcionários', url: '/employees', icon: Users },
-  { title: 'Gerenciar Usuários', url: '/user-management', icon: UserPlus, roleRequired: 'director' },
+  { title: 'Cargos Customizados', url: '/custom-roles', icon: Settings, roleRequired: 'director' },
 ];
 
 export function AppSidebar() {

@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Search, Eye, Edit, UserPlus, Users, Clock, Settings, Shield } from 'lucide-react';
 import EmployeePermissions from '@/components/EmployeePermissions';
 import PasswordManager from '@/components/PasswordManager';
-import CustomRoleManager from '@/components/CustomRoleManager';
+import { CustomRoleManager } from '@/components/CustomRoleManager';
 
 interface Employee {
   id: string;

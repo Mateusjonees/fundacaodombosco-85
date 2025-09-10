@@ -129,7 +129,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
             </Button>
           </form>
           
-          {onSwitchToSignUp && (
+          {onSwitchToSignUp && false && (
             <div className="mt-4 text-center">
               <Button 
                 variant="link" 
