@@ -16,13 +16,12 @@ import Dashboard from "./pages/Dashboard";
 import ClientForm from "./pages/ClientForm";
 import Clients from "./pages/Clients";
 import Schedule from "./pages/Schedule";
-import AllPatients from "./pages/AllPatients";
 import MyPatients from "./pages/MyPatients";
 import Financial from "./pages/Financial";
 import Reports from "./pages/Reports";
 import Stock from "./pages/StockManager";
 import Employees from "./pages/EmployeesNew";
-import StaticFiles from "./pages/StaticFiles";
+import UserManagement from "./components/UserManagement";
 import MyFiles from "./pages/MyFiles";
 import NotFound from "./pages/NotFound";
 
@@ -30,34 +29,40 @@ const queryClient = new QueryClient();
 
 const AuthenticatedApp = () => {
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-12 flex items-center border-b bg-background px-4">
-            <SidebarTrigger />
-          </header>
-          <main className="flex-1 p-6 bg-muted/20">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/client-form" element={<ClientForm />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/all-patients" element={<AllPatients />} />
-              <Route path="/my-patients" element={<MyPatients />} />
-              <Route path="/my-files" element={<MyFiles />} />
-              <Route path="/financial" element={<Financial />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/stock" element={<Stock />} />
-              <Route path="/employees" element={<Employees />} />
-              <Route path="/static-files" element={<StaticFiles />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
+        <SidebarProvider>
+          <div className="flex min-h-screen w-full">
+            <AppSidebar />
+            <div className="flex-1 flex flex-col">
+              <header className="h-12 flex items-center justify-between border-b bg-background px-4">
+                <SidebarTrigger />
+                <div className="md:hidden">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-bold text-xs">
+                      FDB
+                    </div>
+                  </div>
+                </div>
+              </header>
+              <main className="flex-1 p-4 md:p-6 bg-muted/20">
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/client-form" element={<ClientForm />} />
+                  <Route path="/clients" element={<Clients />} />
+                  <Route path="/schedule" element={<Schedule />} />
+                  <Route path="/my-patients" element={<MyPatients />} />
+                  <Route path="/my-files" element={<MyFiles />} />
+                  <Route path="/financial" element={<Financial />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/stock" element={<Stock />} />
+                  <Route path="/employees" element={<Employees />} />
+                  <Route path="/user-management" element={<UserManagement />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+            </div>
+          </div>
+        </SidebarProvider>
   );
 };
 

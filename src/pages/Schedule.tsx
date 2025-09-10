@@ -363,18 +363,18 @@ export default function Schedule() {
           {/* Coluna da esquerda - Calendário */}
           <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+                <CalendarIcon className="h-4 w-4 md:h-5 md:w-5" />
                 {format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 md:p-6">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
                 locale={ptBR}
-                className="rounded-md border"
+                className="rounded-md border w-full"
               />
             </CardContent>
           </Card>
@@ -450,7 +450,7 @@ export default function Schedule() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
               <Button 
-                className="w-full py-6 text-lg" 
+                className="w-full py-4 md:py-6 text-base md:text-lg" 
                 onClick={() => {
                     setEditingSchedule(null);
                     setNewAppointment({
@@ -463,7 +463,7 @@ export default function Schedule() {
                     });
                   }}
                 >
-                  <Plus className="h-5 w-5 mr-2" />
+                  <Plus className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                   Novo Agendamento
                 </Button>
               </DialogTrigger>
@@ -573,39 +573,39 @@ export default function Schedule() {
                 ) : (
                   <div className="space-y-4">
                     {todaySchedules.map((schedule) => (
-                      <div key={schedule.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                      <div key={schedule.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg gap-4">
+                        <div className="flex-1 w-full md:w-auto">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
+                            <span className="font-medium text-sm md:text-base">
                               {new Date(schedule.start_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - {new Date(schedule.end_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
                             </span>
-                            <Badge variant="outline">{schedule.title}</Badge>
+                            <Badge variant="outline" className="text-xs">{schedule.title}</Badge>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2 flex-wrap">
                             <User className="h-3 w-3" />
                             <span>Cliente: {schedule.clients?.name || 'N/A'}</span>
-                            <span>•</span>
+                            <span className="hidden md:inline">•</span>
                             <span>Profissional: {schedule.profiles?.name || 'N/A'}</span>
                           </div>
                           {schedule.notes && (
-                            <p className="text-sm text-muted-foreground">{schedule.notes}</p>
+                            <p className="text-xs md:text-sm text-muted-foreground">{schedule.notes}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={getStatusColor(schedule.status)}>
+                        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                          <Badge variant={getStatusColor(schedule.status)} className="text-xs">
                             {getStatusLabel(schedule.status)}
                           </Badge>
                           
                           {/* Botões de ação - apenas para diretores */}
                           {userProfile?.employee_role === 'director' && (
                             <div className="flex gap-1">
-                              {schedule.status === 'scheduled' && (
+                              {(schedule.status === 'scheduled' || schedule.status === 'confirmed') && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleStatusChange(schedule.id, 'confirmed')}
-                                  title="Confirmar"
+                                  title="Confirmar Atendimento"
                                 >
                                   <CheckCircle className="h-3 w-3" />
                                 </Button>

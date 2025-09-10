@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, 
@@ -35,14 +35,13 @@ const menuItems = [
   { title: 'Cadastrar Cliente', url: '/client-form', icon: UserPlus },
   { title: 'Lista de Clientes', url: '/clients', icon: Users },
   { title: 'Agenda do Dia', url: '/schedule', icon: Calendar },
-  { title: 'Todos os Pacientes', url: '/all-patients', icon: ClipboardList },
   { title: 'Meus Pacientes', url: '/my-patients', icon: UserCheck },
   { title: 'Meus Arquivos', url: '/my-files', icon: FolderOpen },
   { title: 'Financeiro', url: '/financial', icon: DollarSign },
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { title: 'Estoque', url: '/stock', icon: Package },
   { title: 'Funcionários', url: '/employees', icon: Users },
-  { title: 'Arquivos HTML', url: '/static-files', icon: FolderOpen },
+  { title: 'Gerenciar Usuários', url: '/user-management', icon: UserPlus, roleRequired: 'director' },
 ];
 
 export function AppSidebar() {
@@ -52,11 +51,38 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { toast } = useToast();
   const currentPath = location.pathname;
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadUserRole = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('employee_role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) throw error;
+        setUserRole(data.employee_role);
+      } catch (error) {
+        console.error('Error loading user role:', error);
+      }
+    };
+
+    loadUserRole();
+  }, [user]);
 
   const isActive = (path: string) => currentPath === path;
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted/50";
+
+  const shouldShowMenuItem = (item: any) => {
+    if (!item.roleRequired) return true;
+    return userRole === item.roleRequired;
+  };
 
   const handleLogout = async () => {
     try {
@@ -81,12 +107,25 @@ export function AppSidebar() {
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
       <SidebarContent>
         <SidebarGroup>
+          <div className={collapsed ? "p-2" : "p-4 border-b"}>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-bold text-sm">
+                FDB
+              </div>
+              {!collapsed && (
+                <div>
+                  <div className="font-bold text-sm text-foreground">FUNDAÇÃO</div>
+                  <div className="font-bold text-xs text-foreground">DOM BOSCO</div>
+                </div>
+              )}
+            </div>
+          </div>
           <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            FUNDAÇÃO DOM BOSCO
+            MENU PRINCIPAL
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {menuItems.filter(shouldShowMenuItem).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 

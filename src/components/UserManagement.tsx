@@ -1,0 +1,379 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
+import { UserPlus, Users, Edit, Trash2, Shield } from 'lucide-react';
+
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  employee_role: string;
+  department?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export default function UserManagement() {
+  const { user } = useAuth();
+  const { isDirector } = usePermissions();
+  const { toast } = useToast();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+
+  const [newEmployee, setNewEmployee] = useState({
+    name: '',
+    email: '',
+    password: '',
+    employee_role: 'staff' as any,
+    department: ''
+  });
+
+  useEffect(() => {
+    if (isDirector) {
+      loadEmployees();
+    }
+  }, [isDirector]);
+
+  const loadEmployees = async () => {
+    setLoading(true);
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('id, name, employee_role, department, is_active, created_at, user_id')
+        .order('name');
+
+      if (error) throw error;
+
+      // Get email from auth.users for each profile
+      const employeesWithEmail = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          const { data: userData } = await supabase.auth.admin.getUserById(profile.user_id);
+          return {
+            id: profile.id,
+            name: profile.name || 'N/A',
+            email: userData.user?.email || 'N/A',
+            employee_role: profile.employee_role,
+            department: profile.department,
+            is_active: profile.is_active,
+            created_at: profile.created_at
+          };
+        })
+      );
+
+      setEmployees(employeesWithEmail);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar os funcionários.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateEmployee = async () => {
+    try {
+      // Create user in auth.users
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newEmployee.email,
+        password: newEmployee.password,
+        user_metadata: {
+          name: newEmployee.name,
+          employee_role: newEmployee.employee_role
+        }
+      });
+
+      if (authError) throw authError;
+
+      // The profile will be created automatically by the trigger
+      // We just need to update it with additional info
+      if (authData.user) {
+        setTimeout(async () => {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+              name: newEmployee.name,
+              employee_role: newEmployee.employee_role,
+              department: newEmployee.department
+            })
+            .eq('user_id', authData.user.id);
+
+          if (updateError) {
+            console.error('Error updating profile:', updateError);
+          }
+        }, 1000);
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Funcionário criado com sucesso!",
+      });
+
+      setIsDialogOpen(false);
+      resetForm();
+      loadEmployees();
+    } catch (error) {
+      console.error('Error creating employee:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível criar o funcionário.",
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setNewEmployee({
+      name: '',
+      email: '',
+      password: '',
+      employee_role: 'staff',
+      department: ''
+    });
+    setEditingEmployee(null);
+  };
+
+  const getRoleLabel = (role: string) => {
+    const roleLabels: { [key: string]: string } = {
+      'director': 'Diretor',
+      'coordinator_madre': 'Coordenador Madre',
+      'coordinator_floresta': 'Coordenador Floresta',
+      'administrative': 'Administrativo',
+      'health_professional': 'Profissional de Saúde',
+      'finance': 'Financeiro',
+      'receptionist': 'Recepcionista',
+      'intern': 'Estagiário',
+      'staff': 'Funcionário'
+    };
+    return roleLabels[role] || role;
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'director': return 'default';
+      case 'coordinator_madre':
+      case 'coordinator_floresta': return 'secondary';
+      case 'health_professional': return 'outline';
+      default: return 'outline';
+    }
+  };
+
+  if (!isDirector) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Acesso restrito a diretores</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Gerenciar Usuários</h1>
+          <p className="text-muted-foreground">
+            Sistema de criação e gerenciamento de usuários
+          </p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Criar Usuário
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Criar Novo Usuário</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome Completo</Label>
+                <Input
+                  id="name"
+                  value={newEmployee.name}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                  placeholder="Digite o nome completo"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newEmployee.email}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha Temporária</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newEmployee.password}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
+                  placeholder="Senha temporária"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Cargo</Label>
+                <Select value={newEmployee.employee_role} onValueChange={(value) => setNewEmployee({ ...newEmployee, employee_role: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="director">Diretor</SelectItem>
+                    <SelectItem value="coordinator_madre">Coordenador Madre</SelectItem>
+                    <SelectItem value="coordinator_floresta">Coordenador Floresta</SelectItem>
+                    <SelectItem value="administrative">Administrativo</SelectItem>
+                    <SelectItem value="health_professional">Profissional de Saúde</SelectItem>
+                    <SelectItem value="finance">Financeiro</SelectItem>
+                    <SelectItem value="receptionist">Recepcionista</SelectItem>
+                    <SelectItem value="intern">Estagiário</SelectItem>
+                    <SelectItem value="staff">Funcionário</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="department">Departamento</Label>
+                <Input
+                  id="department"
+                  value={newEmployee.department}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
+                  placeholder="Ex: Psicologia, Administração"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCreateEmployee} 
+                disabled={!newEmployee.name || !newEmployee.email || !newEmployee.password}
+              >
+                Criar Usuário
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Total de Usuários</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{employees.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Usuários Ativos</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {employees.filter(emp => emp.is_active).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Diretores</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {employees.filter(emp => emp.employee_role === 'director').length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-foreground">Coordenadores</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {employees.filter(emp => emp.employee_role.includes('coordinator')).length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-foreground">Lista de Usuários</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-muted-foreground">Carregando...</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-foreground">Nome</TableHead>
+                  <TableHead className="text-foreground">Email</TableHead>
+                  <TableHead className="text-foreground">Cargo</TableHead>
+                  <TableHead className="text-foreground">Departamento</TableHead>
+                  <TableHead className="text-foreground">Status</TableHead>
+                  <TableHead className="text-foreground">Data de Criação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {employees.map((employee) => (
+                  <TableRow key={employee.id}>
+                    <TableCell className="font-medium text-foreground">{employee.name}</TableCell>
+                    <TableCell className="text-foreground">{employee.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={getRoleBadgeVariant(employee.employee_role)}>
+                        {getRoleLabel(employee.employee_role)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-foreground">{employee.department || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Badge variant={employee.is_active ? 'default' : 'secondary'}>
+                        {employee.is_active ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-foreground">
+                      {new Date(employee.created_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

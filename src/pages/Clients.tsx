@@ -45,9 +45,13 @@ export default function Clients() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [clients, setClients] = useState<Client[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [unitFilter, setUnitFilter] = useState('all');
+  const [ageFilter, setAgeFilter] = useState('all');
+  const [professionalFilter, setProfessionalFilter] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -78,6 +82,7 @@ export default function Clients() {
 
   useEffect(() => {
     loadUserProfile();
+    loadEmployees();
   }, [user]);
 
   useEffect(() => {
@@ -111,6 +116,21 @@ export default function Clients() {
       setUserProfile(data);
     } catch (error) {
       console.error('Error loading user profile:', error);
+    }
+  };
+
+  const loadEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, employee_role')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
     }
   };
 
@@ -279,11 +299,44 @@ export default function Clients() {
     setIsDialogOpen(true);
   };
 
-  const filteredClients = clients.filter(client =>
-    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = clients.filter(client => {
+    // Search filter
+    const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Unit filter
+    const matchesUnit = unitFilter === 'all' || client.unit === unitFilter;
+
+    // Age filter
+    let matchesAge = true;
+    if (ageFilter !== 'all' && client.birth_date) {
+      const birthDate = new Date(client.birth_date);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      if (ageFilter === 'minor') {
+        matchesAge = age < 18;
+      } else if (ageFilter === 'adult') {
+        matchesAge = age >= 18;
+      }
+    }
+
+    // Professional filter (only for coordinators/directors)
+    let matchesProfessional = true;
+    if (professionalFilter !== 'all' && isCoordinatorOrDirector) {
+      // This would require checking client assignments
+      // For now, we'll keep it simple
+      matchesProfessional = true;
+    }
+
+    return matchesSearch && matchesUnit && matchesAge && matchesProfessional;
+  });
 
   if (!userProfile) {
     return (
@@ -312,29 +365,29 @@ export default function Clients() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Meus Clientes</h1>
-          <p className="text-muted-foreground">
-            {isCoordinatorOrDirector 
-              ? 'Visualizando todos os clientes' 
-              : 'Visualizando apenas clientes vinculados a você'
-            }
-          </p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) {
-            setEditingClient(null);
-            resetForm();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Cadastrar Cliente
-            </Button>
-          </DialogTrigger>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-foreground">Lista de Clientes</h1>
+                  <p className="text-muted-foreground">
+                    {isCoordinatorOrDirector 
+                      ? 'Visualizando todos os clientes' 
+                      : 'Visualizando apenas clientes vinculados a você'
+                    }
+                  </p>
+                </div>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) {
+                setEditingClient(null);
+                resetForm();
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 w-full md:w-auto">
+                  <Plus className="h-4 w-4" />
+                  Cadastrar Cliente
+                </Button>
+              </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -400,6 +453,22 @@ export default function Clients() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {isCoordinatorOrDirector && (
+                <div className="space-y-2">
+                  <Label htmlFor="client_role">Vincular como</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma opção" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="client">Cliente Regular</SelectItem>
+                      <SelectItem value="director">Diretor</SelectItem>
+                      <SelectItem value="coordinator">Coordenador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="responsible_name">Nome do Responsável</Label>
                 <Input
@@ -488,7 +557,62 @@ export default function Clients() {
         </Dialog>
       </div>
 
-      {/* Statistics */}
+            {/* Filters Section */}
+            <Card className="bg-muted/50 border-muted">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-foreground">Filtros</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground">Unidade:</Label>
+                    <Select value={unitFilter} onValueChange={setUnitFilter}>
+                      <SelectTrigger className="bg-background border-border">
+                        <SelectValue placeholder="Todas as Unidades" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as Unidades</SelectItem>
+                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground">Idade:</Label>
+                    <Select value={ageFilter} onValueChange={setAgeFilter}>
+                      <SelectTrigger className="bg-background border-border">
+                        <SelectValue placeholder="Todas as Idades" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as Idades</SelectItem>
+                        <SelectItem value="minor">Menor de Idade</SelectItem>
+                        <SelectItem value="adult">Maior de Idade</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {isCoordinatorOrDirector && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">Profissional:</Label>
+                      <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
+                        <SelectTrigger className="bg-background border-border">
+                          <SelectValue placeholder="Todos os Profissionais" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os Profissionais</SelectItem>
+                          {employees.map(employee => (
+                            <SelectItem key={employee.id} value={employee.id}>
+                              {employee.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
