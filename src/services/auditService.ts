@@ -102,17 +102,15 @@ export class AuditService {
       const { data: currentUser } = await supabase.auth.getUser();
       
       if (currentUser?.user) {
-        // Update or insert user session
+        // Update or insert user session (simplified)
         const { error } = await supabase
           .from('user_sessions')
           .upsert({
             user_id: currentUser.user.id,
+            session_token: currentUser.user.id, // Use user ID as token for now
             last_activity: new Date().toISOString(),
             is_active: true,
-            session_data: {
-              user_agent: navigator.userAgent,
-              last_seen: new Date().toISOString()
-            }
+            user_agent: navigator.userAgent
           }, {
             onConflict: 'user_id'
           });
