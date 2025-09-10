@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import logoFDB from '@/assets/fundacao-dom-bosco-logo.jpg';
+
 import { 
   Users, 
   Calendar, 
@@ -150,15 +150,6 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
             <div className="flex flex-col items-center p-4">
-              <img 
-                src={logoFDB}
-                alt="Fundação Dom Bosco" 
-                className="h-16 w-auto mb-2 object-contain"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
               {!collapsed && (
                 <div className="text-center">
                   <div className="text-sm font-semibold text-primary">

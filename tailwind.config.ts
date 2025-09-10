@@ -62,9 +62,9 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				'upload-zone': 'hsl(var(--upload-zone))',
-				'upload-zone-border': 'hsl(var(--upload-zone-border))',
-				'upload-zone-hover': 'hsl(var(--upload-zone-hover))',
+				'upload-zone': 'hsl(0 0% 100%)',
+				'upload-zone-border': 'hsl(120 30% 85%)',
+				'upload-zone-hover': 'hsl(120 35% 88%)',
 				'primary-glow': 'hsl(var(--primary-glow))'
 			},
 			borderRadius: {
