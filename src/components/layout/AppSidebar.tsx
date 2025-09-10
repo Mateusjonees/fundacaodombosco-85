@@ -14,7 +14,8 @@ import {
   Home,
   FolderOpen,
   LogOut,
-  Settings
+  Settings,
+  LucideIcon
 } from 'lucide-react';
 
 import {
@@ -32,19 +33,28 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const menuItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: Home },
-  { title: 'Cadastrar Cliente', url: '/client-form', icon: UserPlus },
-  { title: 'Lista de Clientes', url: '/clients', icon: Users },
-  { title: 'Agenda do Dia', url: '/schedule', icon: Calendar },
-  { title: 'Meus Pacientes', url: '/my-patients', icon: UserCheck },
-  { title: 'Meus Arquivos', url: '/my-files', icon: FolderOpen },
-  { title: 'Financeiro', url: '/financial', icon: DollarSign },
-  { title: 'Relatórios', url: '/reports', icon: BarChart3 },
-  { title: 'Estoque', url: '/stock', icon: Package },
-  { title: 'Funcionários', url: '/employees', icon: Users },
-  { title: 'Cargos Customizados', url: '/custom-roles', icon: Settings, roleRequired: 'director' },
-];
+// Map icon names to actual icon components
+const iconMap: Record<string, LucideIcon> = {
+  Home,
+  UserPlus,
+  Users,
+  Calendar,
+  UserCheck,
+  FolderOpen,
+  DollarSign,
+  BarChart3,
+  Package,
+  Settings,
+};
+
+interface MenuItem {
+  id: string;
+  title: string;
+  url: string;
+  icon: string;
+  order_index: number;
+  role_required?: string;
+}
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -54,6 +64,7 @@ export function AppSidebar() {
   const { toast } = useToast();
   const currentPath = location.pathname;
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
   useEffect(() => {
     const loadUserRole = async () => {
@@ -76,14 +87,33 @@ export function AppSidebar() {
     loadUserRole();
   }, [user]);
 
+  useEffect(() => {
+    const loadMenuItems = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*')
+          .eq('is_active', true)
+          .order('order_index');
+        
+        if (error) throw error;
+        setMenuItems(data || []);
+      } catch (error) {
+        console.error('Error loading menu items:', error);
+      }
+    };
+
+    loadMenuItems();
+  }, []);
+
   const isActive = (path: string) => currentPath === path;
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted/50";
 
-  const shouldShowMenuItem = (item: any) => {
-    if (!item.roleRequired) return true;
-    return userRole === item.roleRequired;
+  const shouldShowMenuItem = (item: MenuItem) => {
+    if (!item.role_required) return true;
+    return userRole === item.role_required;
   };
 
   const handleLogout = async () => {
@@ -129,20 +159,23 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.filter(shouldShowMenuItem).map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
-                      className={({ isActive }) => getNavCls({ isActive })}
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.filter(shouldShowMenuItem).map((item) => {
+                const IconComponent = iconMap[item.icon];
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        end 
+                        className={({ isActive }) => getNavCls({ isActive })}
+                      >
+                        {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

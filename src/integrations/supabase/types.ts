@@ -647,6 +647,42 @@ export type Database = {
           },
         ]
       }
+      menu_items: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          order_index: number
+          role_required: Database["public"]["Enums"]["employee_role"] | null
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          icon: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          role_required?: Database["public"]["Enums"]["employee_role"] | null
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          role_required?: Database["public"]["Enums"]["employee_role"] | null
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           category: string | null
