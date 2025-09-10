@@ -127,6 +127,65 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_members: {
+        Row: {
+          channel_id: string | null
+          id: string
+          joined_at: string | null
+          user_id: string
+        }
+        Insert: {
+          channel_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id: string
+        }
+        Update: {
+          channel_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channels: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       client_assignments: {
         Row: {
           assigned_at: string
@@ -742,6 +801,7 @@ export type Database = {
       internal_messages: {
         Row: {
           attachments: Json | null
+          channel_id: string | null
           created_at: string
           id: string
           is_archived: boolean | null
@@ -754,9 +814,11 @@ export type Database = {
           recipient_id: string | null
           sender_id: string
           subject: string
+          thread_id: string | null
         }
         Insert: {
           attachments?: Json | null
+          channel_id?: string | null
           created_at?: string
           id?: string
           is_archived?: boolean | null
@@ -769,9 +831,11 @@ export type Database = {
           recipient_id?: string | null
           sender_id: string
           subject: string
+          thread_id?: string | null
         }
         Update: {
           attachments?: Json | null
+          channel_id?: string | null
           created_at?: string
           id?: string
           is_archived?: boolean | null
@@ -784,11 +848,26 @@ export type Database = {
           recipient_id?: string | null
           sender_id?: string
           subject?: string
+          thread_id?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "internal_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "internal_messages_parent_message_id_fkey"
             columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "internal_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internal_messages_thread_id_fkey"
+            columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "internal_messages"
             referencedColumns: ["id"]
@@ -1510,6 +1589,30 @@ export type Database = {
           permission_value?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          is_online: boolean | null
+          last_seen: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          is_online?: boolean | null
+          last_seen?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          is_online?: boolean | null
+          last_seen?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
