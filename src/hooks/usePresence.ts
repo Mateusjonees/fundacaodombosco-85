@@ -51,9 +51,15 @@ export const usePresence = () => {
     // Load initial online users
     const loadOnlineUsers = async () => {
       try {
-        const { data: presenceData, error } = await supabase
+        const { data, error } = await supabase
           .from('user_presence')
-          .select('*')
+          .select(`
+            *,
+            profiles!user_presence_user_id_fkey (
+              name,
+              employee_role
+            )
+          `)
           .eq('is_online', true);
 
         if (error) {
@@ -61,20 +67,7 @@ export const usePresence = () => {
           return;
         }
 
-        // Get profiles for online users
-        const userIds = presenceData?.map(p => p.user_id) || [];
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('user_id, name, employee_role')
-          .in('user_id', userIds);
-
-        // Combine presence with profile data
-        const usersWithProfiles = presenceData?.map(presence => ({
-          ...presence,
-          profiles: profilesData?.find(p => p.user_id === presence.user_id)
-        })) || [];
-
-        setOnlineUsers(usersWithProfiles);
+        setOnlineUsers((data as any) || []);
       } catch (error) {
         console.error('Error loading online users:', error);
       }
