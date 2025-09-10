@@ -1133,6 +1133,7 @@ export type Database = {
           department: string | null
           document_cpf: string | null
           document_rg: string | null
+          email: string | null
           employee_role: Database["public"]["Enums"]["employee_role"] | null
           hire_date: string | null
           id: string
@@ -1151,6 +1152,7 @@ export type Database = {
           department?: string | null
           document_cpf?: string | null
           document_rg?: string | null
+          email?: string | null
           employee_role?: Database["public"]["Enums"]["employee_role"] | null
           hire_date?: string | null
           id?: string
@@ -1169,6 +1171,7 @@ export type Database = {
           department?: string | null
           document_cpf?: string | null
           document_rg?: string | null
+          email?: string | null
           employee_role?: Database["public"]["Enums"]["employee_role"] | null
           hire_date?: string | null
           id?: string
