@@ -102,7 +102,7 @@ export class AuditService {
       const { data: currentUser } = await supabase.auth.getUser();
       
       if (currentUser?.user) {
-        // Update or insert user session (simplified)
+        // Update or insert user session (fixed upsert)
         const { error } = await supabase
           .from('user_sessions')
           .upsert({
@@ -111,8 +111,6 @@ export class AuditService {
             last_activity: new Date().toISOString(),
             is_active: true,
             user_agent: navigator.userAgent
-          }, {
-            onConflict: 'user_id'
           });
 
         if (error) {

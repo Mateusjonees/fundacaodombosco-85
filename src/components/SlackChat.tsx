@@ -361,7 +361,12 @@ export const SlackChat = () => {
 
       if (error) {
         console.error('Erro ao inserir mensagem:', error);
-        throw error;
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: `Erro ao enviar mensagem: ${error.message}`,
+        });
+        return;
       }
 
       console.log('Mensagem inserida:', insertedMessage);
