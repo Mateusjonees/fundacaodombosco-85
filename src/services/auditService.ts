@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 export interface AuditLogEntry {
   id: string;
   user_id: string;
@@ -23,38 +25,102 @@ export class AuditService {
     metadata?: any;
   }) {
     try {
-      // For now, just log to console until audit_logs table is created
-      console.log('Audit Service Log:', {
+      const auditData = {
         entity_type: data.entityType,
-        entity_id: data.entityId,
+        entity_id: data.entityId || null,
         action: data.action,
-        old_data: data.oldData,
-        new_data: data.newData,
-        metadata: data.metadata || {},
-        timestamp: new Date().toISOString(),
-      });
+        old_data: data.oldData || null,
+        new_data: data.newData || null,
+        metadata: {
+          ...data.metadata,
+          timestamp: new Date().toISOString(),
+          user_agent: navigator.userAgent,
+        },
+        ip_address: null, // Will be set by trigger if needed
+      };
+
+      // Log to console for debugging
+      console.log('Audit Service Log:', auditData);
+
+      // Save to database
+      const { error } = await supabase
+        .from('audit_logs')
+        .insert(auditData);
+
+      if (error) {
+        console.error('Error saving audit log:', error);
+        throw error;
+      }
     } catch (error) {
       console.error('Unexpected error logging audit action:', error);
     }
   }
 
   static async getUserAuditLogs(userId?: string, limit = 100): Promise<AuditLogEntry[]> {
-    // Return empty array until audit_logs table is created
-    console.log('getUserAuditLogs called for userId:', userId);
-    return [];
+    try {
+      let query = supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching user audit logs:', error);
+      return [];
+    }
   }
 
   static async getEntityAuditLogs(entityType: string, entityId: string, limit = 50): Promise<AuditLogEntry[]> {
-    // Return empty array until audit_logs table is created
-    console.log('getEntityAuditLogs called for:', entityType, entityId);
-    return [];
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('entity_type', entityType)
+        .eq('entity_id', entityId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching entity audit logs:', error);
+      return [];
+    }
   }
 
   // Update user session activity
   static async updateUserActivity() {
     try {
-      // For now, just log to console until user_sessions table is created
-      console.log('User activity updated at:', new Date().toISOString());
+      const { data: currentUser } = await supabase.auth.getUser();
+      
+      if (currentUser?.user) {
+        // Update or insert user session
+        const { error } = await supabase
+          .from('user_sessions')
+          .upsert({
+            user_id: currentUser.user.id,
+            last_activity: new Date().toISOString(),
+            is_active: true,
+            session_data: {
+              user_agent: navigator.userAgent,
+              last_seen: new Date().toISOString()
+            }
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (error) {
+          console.error('Error updating user activity:', error);
+        }
+      }
     } catch (error) {
       console.error('Unexpected error updating user activity:', error);
     }
