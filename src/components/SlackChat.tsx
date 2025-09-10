@@ -333,6 +333,16 @@ export const SlackChat = () => {
 
     setLoading(true);
     try {
+      console.log('Enviando mensagem:', {
+        sender_id: user?.id,
+        message_body: messageText.trim(),
+        subject: selectedChannel?.name || `Conversa com ${directMessages.find(dm => dm.user_id === selectedDM)?.name}`,
+        channel_id: selectedChannel?.id || null,
+        recipient_id: selectedDM || null,
+        message_type: 'text',
+        is_read: false
+      });
+
       const messageData = {
         sender_id: user?.id,
         message_body: messageText.trim(),
@@ -350,9 +360,11 @@ export const SlackChat = () => {
         .single();
 
       if (error) {
-        console.error('Insert error:', error);
+        console.error('Erro ao inserir mensagem:', error);
         throw error;
       }
+
+      console.log('Mensagem inserida:', insertedMessage);
 
       // Add message to current chat immediately for better UX with profile info
       if (insertedMessage) {
@@ -386,7 +398,7 @@ export const SlackChat = () => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível enviar a mensagem. Tente novamente.",
+        description: `Não foi possível enviar a mensagem: ${error.message}`,
       });
     } finally {
       setLoading(false);
