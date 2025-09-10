@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +17,12 @@ import {
   Search,
   Users,
   Phone,
-  Video
+  Video,
+  Smile,
+  Paperclip,
+  Image,
+  Mic,
+  MoreVertical
 } from 'lucide-react';
 
 interface Contact {
@@ -50,6 +57,8 @@ export const MessagingApp = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isMobile] = useState(window.innerWidth < 768);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     console.log('MessagingApp: Iniciando...');
@@ -267,7 +276,7 @@ export const MessagingApp = () => {
     };
   };
 
-  const sendMessage = async () => {
+  const sendMessage = async (messageType: 'text' | 'emoji' | 'file' = 'text') => {
     if (!messageText.trim() || loading || !selectedContact || !user?.id) {
       console.log('MessagingApp: Não é possível enviar - dados inválidos');
       return;
@@ -282,7 +291,7 @@ export const MessagingApp = () => {
         recipient_id: selectedContact,
         message_body: messageText.trim(),
         subject: 'Mensagem direta',
-        message_type: 'text',
+        message_type: messageType,
         is_read: false
       };
 
@@ -314,6 +323,7 @@ export const MessagingApp = () => {
       }
 
       setMessageText('');
+      setShowEmojiPicker(false);
       
       // Recarregar contatos para atualizar ordem
       await loadContacts();
@@ -341,6 +351,35 @@ export const MessagingApp = () => {
       sendMessage();
     }
   };
+
+  const handleTyping = () => {
+    setIsTyping(true);
+    // Simular parar de digitar após 1 segundo
+    setTimeout(() => setIsTyping(false), 1000);
+  };
+
+  const insertEmoji = (emoji: string) => {
+    setMessageText(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const commonEmojis = ['😀', '😂', '❤️', '👍', '👎', '🔥', '✨', '💯', '🎉', '👌', '🙏', '💪'];
+
+  const sendQuickMessage = (message: string) => {
+    setMessageText(message);
+    setTimeout(() => sendMessage(), 100);
+  };
+
+  const quickMessages = [
+    "Oi! 👋",
+    "Tudo bem?",
+    "Obrigado! 🙏", 
+    "De nada 😊",
+    "Pode deixar 👍",
+    "Vou verificar",
+    "Já estou indo",
+    "Até mais! 👋"
+  ];
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -553,13 +592,24 @@ export const MessagingApp = () => {
                                 <p className="text-sm whitespace-pre-wrap break-words mb-1">
                                   {message.message_body}
                                 </p>
-                                <span className={`text-xs ${
-                                  isCurrentUser 
-                                    ? 'text-primary-foreground/70' 
-                                    : 'text-muted-foreground'
-                                }`}>
-                                  {formatTime(message.created_at)}
-                                </span>
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-xs ${
+                                    isCurrentUser 
+                                      ? 'text-primary-foreground/70' 
+                                      : 'text-muted-foreground'
+                                  }`}>
+                                    {formatTime(message.created_at)}
+                                  </span>
+                                  {isCurrentUser && (
+                                    <span className={`text-xs ml-2 ${
+                                      message.is_read 
+                                        ? 'text-blue-400' 
+                                        : 'text-primary-foreground/50'
+                                    }`}>
+                                      {message.is_read ? '✓✓' : '✓'}
+                                    </span>
+                                  )}
+                                </div>
                               </CardContent>
                             </Card>
                           </div>
@@ -583,7 +633,7 @@ export const MessagingApp = () => {
                     disabled={loading}
                   />
                   <Button 
-                    onClick={sendMessage} 
+                    onClick={() => sendMessage()} 
                     disabled={loading || !messageText.trim()}
                     size="lg"
                     className="px-6"
