@@ -13,6 +13,7 @@ import {
   FolderOpen,
   LogOut,
   Settings,
+  Archive,
   LucideIcon
 } from 'lucide-react';
 
@@ -43,6 +44,7 @@ const iconMapping: Record<string, LucideIcon> = {
   BarChart3,
   Package,
   Settings,
+  Archive,
 };
 
 interface DatabaseMenuItem {
