@@ -190,20 +190,32 @@ export const SlackChat = () => {
 
   const loadChannelMessages = async (channelId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: messages, error } = await supabase
         .from('internal_messages')
-        .select(`
-          *,
-          profiles!internal_messages_sender_id_fkey (
-            name,
-            employee_role
-          )
-        `)
+        .select('*')
         .eq('channel_id', channelId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages((data as any) || []);
+
+      // Load profiles for each unique sender
+      if (messages && messages.length > 0) {
+        const senderIds = [...new Set(messages.map(m => m.sender_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name, employee_role')
+          .in('user_id', senderIds);
+
+        // Map profiles to messages
+        const messagesWithProfiles = messages.map(message => ({
+          ...message,
+          profiles: profiles?.find(p => p.user_id === message.sender_id) || null
+        }));
+
+        setMessages(messagesWithProfiles as any);
+      } else {
+        setMessages([]);
+      }
     } catch (error) {
       console.error('Error loading channel messages:', error);
       toast({
@@ -216,21 +228,33 @@ export const SlackChat = () => {
 
   const loadDMMessages = async (otherUserId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: messages, error } = await supabase
         .from('internal_messages')
-        .select(`
-          *,
-          profiles!internal_messages_sender_id_fkey (
-            name,
-            employee_role
-          )
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user?.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${user?.id})`)
         .is('channel_id', null)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages((data as any) || []);
+
+      // Load profiles for each unique sender
+      if (messages && messages.length > 0) {
+        const senderIds = [...new Set(messages.map(m => m.sender_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name, employee_role')
+          .in('user_id', senderIds);
+
+        // Map profiles to messages
+        const messagesWithProfiles = messages.map(message => ({
+          ...message,
+          profiles: profiles?.find(p => p.user_id === message.sender_id) || null
+        }));
+
+        setMessages(messagesWithProfiles as any);
+      } else {
+        setMessages([]);
+      }
 
       // Mark messages as read
       await supabase
@@ -322,13 +346,7 @@ export const SlackChat = () => {
       const { data: insertedMessage, error } = await supabase
         .from('internal_messages')
         .insert(messageData)
-        .select(`
-          *,
-          profiles!internal_messages_sender_id_fkey (
-            name,
-            employee_role
-          )
-        `)
+        .select('*')
         .single();
 
       if (error) {
@@ -336,9 +354,20 @@ export const SlackChat = () => {
         throw error;
       }
 
-      // Add message to current chat immediately for better UX
+      // Add message to current chat immediately for better UX with profile info
       if (insertedMessage) {
-        setMessages(prev => [...prev, insertedMessage as any]);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, employee_role')
+          .eq('user_id', insertedMessage.sender_id)
+          .single();
+
+        const messageWithProfile = {
+          ...insertedMessage,
+          profiles: profile
+        };
+
+        setMessages(prev => [...prev, messageWithProfile as any]);
       }
 
       setMessageText('');
