@@ -388,13 +388,13 @@ export default function Schedule() {
 
             {/* Filtros - Apenas para Diretores */}
             {userProfile?.employee_role === 'director' && (
-              <Card className="bg-green-50 border-green-200">
+              <Card className="bg-muted/50 border-muted">
                 <CardContent className="pt-6">
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-sm font-medium text-green-800">Filtrar por Cargo:</Label>
+                      <Label className="text-sm font-medium text-foreground">Filtrar por Cargo:</Label>
                       <Select value={filterRole} onValueChange={setFilterRole}>
-                        <SelectTrigger className="bg-white border-green-300">
+                        <SelectTrigger className="bg-background border-border">
                           <SelectValue placeholder="Todos os Cargos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -412,9 +412,9 @@ export default function Schedule() {
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium text-green-800">Ver agenda de:</Label>
+                      <Label className="text-sm font-medium text-foreground">Ver agenda de:</Label>
                       <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                        <SelectTrigger className="bg-white border-green-300">
+                        <SelectTrigger className="bg-background border-border">
                           <SelectValue placeholder="Todos os Profissionais" />
                         </SelectTrigger>
                         <SelectContent>
@@ -429,9 +429,9 @@ export default function Schedule() {
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium text-green-800">Filtrar por Unidade:</Label>
+                      <Label className="text-sm font-medium text-foreground">Filtrar por Unidade:</Label>
                       <Select value={filterUnit} onValueChange={setFilterUnit}>
-                        <SelectTrigger className="bg-white border-green-300">
+                        <SelectTrigger className="bg-background border-border">
                           <SelectValue placeholder="Todas as Unidades" />
                         </SelectTrigger>
                         <SelectContent>
@@ -449,9 +449,9 @@ export default function Schedule() {
             {/* Botão Novo Agendamento */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg" 
-                  onClick={() => {
+              <Button 
+                className="w-full py-6 text-lg" 
+                onClick={() => {
                     setEditingSchedule(null);
                     setNewAppointment({
                       client_id: '',

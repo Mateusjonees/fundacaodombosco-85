@@ -20,7 +20,7 @@ import AllPatients from "./pages/AllPatients";
 import MyPatients from "./pages/MyPatients";
 import Financial from "./pages/Financial";
 import Reports from "./pages/Reports";
-import Stock from "./pages/Stock";
+import Stock from "./pages/StockManager";
 import Employees from "./pages/EmployeesNew";
 import StaticFiles from "./pages/StaticFiles";
 import MyFiles from "./pages/MyFiles";

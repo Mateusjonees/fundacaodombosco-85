@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Calendar, DollarSign, UserPlus, Package, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardStats {
   totalClients: number;
@@ -42,6 +43,7 @@ const ROLE_LABELS: Record<string, string> = {
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalClients: 0,
     activeClients: 0,
@@ -196,28 +198,44 @@ export default function Dashboard() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm">Cadastrar novo cliente</span>
-              <Badge variant="outline" className="cursor-pointer">
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                onClick={() => navigate('/client-form')}
+              >
                 <Users className="h-3 w-3 mr-1" />
                 Ir para Clientes
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Agendar consulta</span>
-              <Badge variant="outline" className="cursor-pointer">
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                onClick={() => navigate('/schedule')}
+              >
                 <Calendar className="h-3 w-3 mr-1" />
                 Ir para Agenda
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Registrar transação</span>
-              <Badge variant="outline" className="cursor-pointer">
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                onClick={() => navigate('/financial')}
+              >
                 <DollarSign className="h-3 w-3 mr-1" />
                 Ir para Financeiro
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Verificar estoque</span>
-              <Badge variant="outline" className="cursor-pointer">
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                onClick={() => navigate('/stock')}
+              >
                 <Package className="h-3 w-3 mr-1" />
                 Ir para Estoque
               </Badge>

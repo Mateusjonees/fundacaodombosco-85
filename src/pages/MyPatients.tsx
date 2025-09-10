@@ -42,7 +42,6 @@ export default function MyPatients() {
   const loadMyPatients = async () => {
     setLoading(true);
     try {
-      // Get current user's profile to get their ID
       const { data: profileData } = await supabase
         .from('profiles')
         .select('id')
@@ -51,7 +50,7 @@ export default function MyPatients() {
 
       if (!profileData) return;
 
-      // Get all appointments for this professional
+      // Get all appointments for this professional where they are assigned
       const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('schedules')
         .select(`
@@ -68,7 +67,7 @@ export default function MyPatients() {
             is_active
           )
         `)
-        .eq('employee_id', profileData.id)
+        .eq('employee_id', user?.id)
         .eq('status', 'completed');
 
       if (appointmentsError) throw appointmentsError;
@@ -103,7 +102,7 @@ export default function MyPatients() {
         const { data: upcomingData } = await supabase
           .from('schedules')
           .select('start_time')
-          .eq('employee_id', profileData.id)
+          .eq('employee_id', user?.id)
           .eq('client_id', clientId)
           .in('status', ['scheduled'])
           .gte('start_time', new Date().toISOString())
@@ -145,7 +144,7 @@ export default function MyPatients() {
           *,
           clients (name)
         `)
-        .eq('employee_id', profileData.id)
+        .eq('employee_id', user?.id)
         .eq('status', 'scheduled')
         .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true })
