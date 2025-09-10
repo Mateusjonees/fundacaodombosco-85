@@ -10,6 +10,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/usePresence';
 import { TypingIndicator } from './TypingIndicator';
+import { MessageBackupService } from '@/services/messageBackupService';
 import { 
   Hash, 
   Users, 
@@ -18,7 +19,9 @@ import {
   Circle,
   Plus,
   Settings,
-  Search
+  Search,
+  Download,
+  Archive
 } from 'lucide-react';
 
 interface Channel {
@@ -36,6 +39,8 @@ interface Message {
   channel_id?: string;
   recipient_id?: string;
   created_at: string;
+  message_type?: string;
+  is_read?: boolean;
   profiles?: {
     name: string;
     employee_role: string;
@@ -66,6 +71,7 @@ export const SlackChat = () => {
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [backupLoading, setBackupLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -477,6 +483,87 @@ export const SlackChat = () => {
   const currentChatName = selectedChannel?.name || 
     (selectedDM ? directMessages.find(dm => dm.user_id === selectedDM)?.name : '');
 
+  const handleBackupMessages = async () => {
+    setBackupLoading(true);
+    try {
+      const blob = await MessageBackupService.backupAllMessages();
+      MessageBackupService.downloadBackup(blob);
+      
+      toast({
+        title: "Backup realizado",
+        description: "Backup de mensagens criado e baixado com sucesso!",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro no backup",
+        description: "Não foi possível criar o backup das mensagens.",
+      });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleBackupCurrentChat = async () => {
+    if (!selectedChannel && !selectedDM) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Selecione um canal ou conversa para fazer backup.",
+      });
+      return;
+    }
+
+    setBackupLoading(true);
+    try {
+      // Filter current chat messages and create backup
+      const currentMessages = messages.map(msg => ({
+        id: msg.id,
+        message_body: msg.message_body,
+        sender_id: msg.sender_id,
+        sender_name: msg.profiles?.name || 'Usuário Desconhecido',
+        sender_role: msg.profiles?.employee_role || 'staff',
+        recipient_id: msg.recipient_id,
+        recipient_name: selectedDM ? directMessages.find(dm => dm.user_id === selectedDM)?.name : undefined,
+        channel_id: msg.channel_id,
+        channel_name: selectedChannel?.name,
+        created_at: msg.created_at,
+        message_type: msg.message_type || 'text',
+        is_read: msg.is_read || false
+      }));
+
+      const backup = {
+        backup_date: new Date().toISOString(),
+        chat_type: selectedChannel ? 'channel' : 'direct_message',
+        chat_name: currentChatName,
+        total_messages: currentMessages.length,
+        messages: currentMessages
+      };
+
+      const jsonString = JSON.stringify(backup, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      const filename = selectedChannel 
+        ? `backup_canal_${selectedChannel.name}_${new Date().toISOString().split('T')[0]}.json`
+        : `backup_dm_${currentChatName}_${new Date().toISOString().split('T')[0]}.json`;
+        
+      MessageBackupService.downloadBackup(blob, filename);
+      
+      toast({
+        title: "Backup da conversa realizado",
+        description: `Backup de ${currentMessages.length} mensagens criado com sucesso!`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro no backup",
+        description: "Não foi possível criar o backup da conversa.",
+      });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-8rem)] bg-background">
       {/* Sidebar */}
@@ -612,7 +699,35 @@ export const SlackChat = () => {
               </span>
             )}
           </div>
-          <Settings className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackupCurrentChat}
+              disabled={backupLoading || (!selectedChannel && !selectedDM)}
+              title="Backup desta conversa"
+            >
+              {backupLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+              ) : (
+                <Archive className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackupMessages}
+              disabled={backupLoading}
+              title="Backup completo das mensagens"
+            >
+              {backupLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+            </Button>
+            <Settings className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground" />
+          </div>
         </div>
 
         {/* Messages */}

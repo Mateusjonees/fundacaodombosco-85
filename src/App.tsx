@@ -32,6 +32,7 @@ import MedicalRecords from "./pages/MedicalRecords";
 import QualityControl from "./pages/QualityControl";
 import Messages from "./pages/Messages";
 import MeetingAlerts from "./pages/MeetingAlerts";
+import BackupMessages from "./pages/BackupMessages";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const AuthenticatedApp = () => {
                   <Route path="/medical-records" element={<MedicalRecords />} />
                   <Route path="/quality" element={<QualityControl />} />
                   <Route path="/messages" element={<Messages />} />
+                  <Route path="/backup-messages" element={<BackupMessages />} />
                   <Route path="/meeting-alerts" element={<MeetingAlerts />} />
                   <Route path="/custom-roles" element={<CustomRoleManager />} />
                   <Route path="*" element={<NotFound />} />
