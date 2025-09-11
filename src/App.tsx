@@ -9,8 +9,11 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 
 // Pages
@@ -36,6 +39,33 @@ import MeetingAlerts from "./pages/MeetingAlerts";
 const queryClient = new QueryClient();
 
 const AuthenticatedApp = () => {
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao sair",
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: "Logout realizado com sucesso",
+          description: "Até logo!",
+        });
+      }
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro inesperado ao fazer logout.",
+      });
+    }
+  };
+
   return (
         <SidebarProvider>
           <div className="flex min-h-screen w-full">
@@ -45,6 +75,15 @@ const AuthenticatedApp = () => {
                 <SidebarTrigger />
                 <div className="flex items-center gap-3">
                   <NotificationBell />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleLogout}
+                    className="gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </Button>
                 </div>
               </header>
               <main className="flex-1 p-4 md:p-6 bg-muted/20">
