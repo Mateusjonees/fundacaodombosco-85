@@ -56,12 +56,7 @@ export default function ConfirmLink() {
     }
   };
 
-  const handleConfirmLink = async () => {
-    if (confirmed) {
-      navigate('/');
-      return;
-    }
-    
+  const handleConfirmLink = async () => {    
     try {
       setIsConfirming(true);
       setError('');
@@ -80,14 +75,9 @@ export default function ConfirmLink() {
         if (data.user) {
           setConfirmed(true);
           toast({
-            title: "Vínculo confirmado!",
-            description: "Suas informações foram vinculadas ao sistema com sucesso.",
+            title: "Cadastro confirmado!",
+            description: "Seu e-mail foi vinculado ao sistema com sucesso.",
           });
-          
-          // Aguardar um pouco antes de redirecionar
-          setTimeout(() => {
-            navigate('/');
-          }, 2000);
         }
       } else {
         throw new Error('Token de confirmação inválido');
@@ -143,16 +133,12 @@ export default function ConfirmLink() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-green-700">
-                  Vínculo Confirmado!
+                  Cadastro Vinculado!
                 </h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Suas informações foram vinculadas ao sistema da Fundação Dom Bosco com sucesso.
-                  Você será redirecionado em instantes...
+                  Seu e-mail foi vinculado ao sistema da Fundação Dom Bosco com sucesso.
                 </p>
               </div>
-              <Button onClick={() => navigate('/')} className="w-full">
-                Acessar Sistema
-              </Button>
             </div>
           ) : (
             <div className="text-center space-y-4">
@@ -164,12 +150,7 @@ export default function ConfirmLink() {
                   Confirmar Vínculo
                 </h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Você está prestes a vincular suas informações ao sistema da{' '}
-                  <strong>Fundação Dom Bosco</strong>.
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Ao confirmar, você concorda em fazer parte da nossa equipe e 
-                  aceita os termos de uso do sistema.
+                  Você concorda em vincular seu cadastro e e-mail ao sistema?
                 </p>
               </div>
               
@@ -179,16 +160,7 @@ export default function ConfirmLink() {
                   disabled={isConfirming}
                   className="w-full"
                 >
-                  {isConfirming ? 'Confirmando...' : 'Sim, Confirmo o Vínculo'}
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isConfirming}
-                  className="w-full"
-                >
-                  Cancelar
+                  {isConfirming ? 'Confirmando...' : 'Sim, Confirmo'}
                 </Button>
               </div>
             </div>
