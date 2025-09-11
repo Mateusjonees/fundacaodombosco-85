@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { usePermissions } from '@/hooks/usePermissions';
+import { CreateEmployeeForm } from './CreateEmployeeForm';
 import { UserPlus, Edit, Trash2, Eye, Calendar, MapPin, Building2, CreditCard } from 'lucide-react';
 
 type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
@@ -133,29 +134,8 @@ export const EmployeeManager = () => {
     }
   };
 
-  const handleCreateEmployee = async () => {
-    try {
-      // This would require admin privileges to create auth users
-      // For now, we'll just show the signup form instructions
-      toast({
-        title: "Cadastro de Funcionário",
-        description: "Para cadastrar um novo funcionário, use o formulário de cadastro na tela de login.",
-      });
-      
-      await logAction({
-        entityType: 'employees',
-        action: 'create_attempted',
-        newData: formData
-      });
-      
-      setIsCreateModalOpen(false);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível criar o funcionário.",
-      });
-    }
+  const handleCreateEmployee = () => {
+    setIsCreateModalOpen(true);
   };
 
   const handleUpdateEmployee = async () => {
@@ -320,29 +300,11 @@ export const EmployeeManager = () => {
           <Button onClick={loadEmployees} disabled={loading} variant="outline">
             {loading ? 'Carregando...' : 'Atualizar'}
           </Button>
-          {isDirector && (
-            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Novo Funcionário
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Cadastrar Novo Funcionário</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Para cadastrar um novo funcionário, ele deve usar o formulário de cadastro na tela de login.
-                    Aqui você pode apenas visualizar as informações dos funcionários já cadastrados.
-                  </p>
-                  <Button onClick={() => setIsCreateModalOpen(false)} className="w-full">
-                    Entendido
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+          {(isDirector || canManageUsers) && (
+            <Button onClick={handleCreateEmployee}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Novo Funcionário
+            </Button>
           )}
         </div>
       </div>
@@ -614,6 +576,13 @@ export const EmployeeManager = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Employee Form */}
+      <CreateEmployeeForm
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={loadEmployees}
+      />
     </div>
   );
 };
