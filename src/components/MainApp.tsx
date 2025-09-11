@@ -159,7 +159,14 @@ export const MainApp = () => {
       <header className="bg-card border-b border-border p-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-primary">FUNDAÇÃO DOM BOSCO</h1>
+            <img 
+              src="/src/assets/fundacao-dom-bosco-logo-header.png" 
+              alt="Fundação Dom Bosco" 
+              className="h-12 w-auto rounded-md shadow-md hover:shadow-lg transition-shadow duration-300"
+            />
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              FUNDAÇÃO DOM BOSCO
+            </h1>
           </div>
           
           <div className="flex items-center gap-4">
