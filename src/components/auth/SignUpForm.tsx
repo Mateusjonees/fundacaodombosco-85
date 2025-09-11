@@ -78,7 +78,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/confirm-link`,
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             name: name,
             employee_role: employeeRole,
