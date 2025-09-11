@@ -35,6 +35,7 @@ import MedicalRecords from "./pages/MedicalRecords";
 import QualityControl from "./pages/QualityControl";
 import Messages from "./pages/Messages";
 import MeetingAlerts from "./pages/MeetingAlerts";
+import ConfirmLink from "./pages/ConfirmLink";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/meeting-alerts" element={<MeetingAlerts />} />
                   <Route path="/custom-roles" element={<CustomRoleManager />} />
+                  <Route path="/confirm-link" element={<ConfirmLink />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
@@ -135,6 +137,11 @@ const AppContent = () => {
         </div>
       </div>
     );
+  }
+
+  // Permitir acesso à página de confirmação mesmo sem login
+  if (window.location.pathname === '/confirm-link') {
+    return <ConfirmLink />;
   }
 
   if (!user) {
