@@ -13,7 +13,8 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { usePermissions } from '@/hooks/usePermissions';
 import { CreateEmployeeForm } from './CreateEmployeeForm';
-import { UserPlus, Edit, Trash2, Eye, Calendar, MapPin, Building2, CreditCard } from 'lucide-react';
+import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { UserPlus, Edit, Trash2, Eye, Calendar, MapPin, Building2, CreditCard, Key } from 'lucide-react';
 
 type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
 
@@ -78,6 +79,7 @@ export const EmployeeManager = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState<FormData>({
@@ -365,6 +367,17 @@ export const EmployeeManager = () => {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                setSelectedEmployee(employee);
+                                setIsChangePasswordModalOpen(true);
+                              }}
+                              title="Alterar senha"
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
                             {employee.is_active && (
                               <Button 
                                 variant="outline" 
@@ -583,6 +596,20 @@ export const EmployeeManager = () => {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={loadEmployees}
       />
+
+      {/* Change Password Dialog */}
+      {selectedEmployee && (
+        <ChangePasswordDialog
+          isOpen={isChangePasswordModalOpen}
+          onClose={() => {
+            setIsChangePasswordModalOpen(false);
+            setSelectedEmployee(null);
+          }}
+          userId={selectedEmployee.user_id}
+          userEmail={selectedEmployee.email || ''}
+          userName={selectedEmployee.name}
+        />
+      )}
     </div>
   );
 };
