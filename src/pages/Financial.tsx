@@ -53,6 +53,22 @@ export default function Financial() {
   const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
   const { toast } = useToast();
 
+  const [newRecord, setNewRecord] = useState({
+    type: 'income',
+    category: '',
+    amount: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    payment_method: 'cash',
+    client_id: ''
+  });
+
+  const [newNote, setNewNote] = useState({
+    note_date: new Date().toISOString().split('T')[0],
+    note_text: '',
+    note_type: 'daily'
+  });
+
   // Verificar permissões de acesso
   if (permissionsLoading) {
     return (
@@ -76,22 +92,6 @@ export default function Financial() {
       </div>
     );
   }
-
-  const [newRecord, setNewRecord] = useState({
-    type: 'income',
-    category: '',
-    amount: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    payment_method: 'cash',
-    client_id: ''
-  });
-
-  const [newNote, setNewNote] = useState({
-    note_date: new Date().toISOString().split('T')[0],
-    note_text: '',
-    note_type: 'daily'
-  });
 
   useEffect(() => {
     loadFinancialRecords();
