@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface FinancialRecord {
   id: string;
@@ -37,6 +39,8 @@ interface FinancialNote {
 }
 
 export default function Financial() {
+  const { user } = useAuth();
+  const { canViewFinancial, isAdmin, loading: permissionsLoading } = usePermissions();
   const [records, setRecords] = useState<FinancialRecord[]>([]);
   const [notes, setNotes] = useState<FinancialNote[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,7 +52,30 @@ export default function Financial() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
   const { toast } = useToast();
-  const { user } = useAuth();
+
+  // Verificar permissões de acesso
+  if (permissionsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-lg">Carregando...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canViewFinancial() && !isAdmin()) {
+    return (
+      <div className="space-y-6">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Você não tem permissão para acessar o módulo financeiro. Entre em contato com o administrador.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const [newRecord, setNewRecord] = useState({
     type: 'income',

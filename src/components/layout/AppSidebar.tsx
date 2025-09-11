@@ -125,6 +125,12 @@ export function AppSidebar() {
 
   const shouldShowMenuItem = (item: DatabaseMenuItem) => {
     if (!item.role_required) return true;
+    
+    // Acesso especial para Financeiro: diretor e funcionário financeiro
+    if (item.url === '/financial') {
+      return userRole === 'director' || userRole === 'financeiro';
+    }
+    
     return userRole === item.role_required;
   };
 
