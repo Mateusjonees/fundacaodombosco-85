@@ -222,15 +222,8 @@ export function ClientAssignmentManager() {
     );
   });
 
-  // Get available employees (not yet assigned to selected client)
-  const availableEmployees = employees.filter(employee => {
-    if (!selectedClient) return true;
-    return !assignments.some(a => 
-      a.client_id === selectedClient && 
-      a.employee_id === employee.user_id && 
-      a.is_active
-    );
-  });
+  // Get available employees - allow unlimited assignments (no filtering)
+  const availableEmployees = employees;
 
   return (
     <Card className="shadow-professional">
