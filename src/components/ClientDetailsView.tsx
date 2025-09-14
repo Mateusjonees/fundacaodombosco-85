@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { FileUpload } from '@/components/FileUpload';
 import { 
   Calendar, 
   Edit, 
@@ -472,33 +473,45 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
     });
   };
 
-  const handleDeleteClient = async () => {
-    if (!confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
+  const handleToggleClientStatus = async () => {
+    const newStatus = !client.is_active;
+    const action = newStatus ? 'ativar' : 'inativar';
+    
+    if (!confirm(`Tem certeza que deseja ${action} este cliente?`)) {
       return;
     }
 
     try {
       const { error } = await supabase
         .from('clients')
-        .update({ is_active: false })
+        .update({ is_active: newStatus })
         .eq('id', client.id);
 
       if (error) throw error;
 
       toast({
-        title: "Cliente Excluído",
-        description: "O cliente foi marcado como inativo.",
+        title: newStatus ? "Cliente Ativado" : "Cliente Inativado",
+        description: `O cliente foi ${newStatus ? 'ativado' : 'inativado'} com sucesso.`,
       });
       
-      onClose();
+      // Update local client state
+      client.is_active = newStatus;
+      
+      if (!newStatus) {
+        onClose();
+      }
     } catch (error) {
-      console.error('Error deleting client:', error);
+      console.error(`Error ${action}ing client:`, error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível excluir o cliente.",
+        description: `Não foi possível ${action} o cliente.`,
       });
     }
+  };
+
+  const handleActivateClient = async () => {
+    await handleToggleClientStatus();
   };
 
   const handleUploadDocument = () => {
@@ -627,6 +640,27 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
           <Button variant="outline" onClick={onEdit}>
             <Edit className="h-4 w-4 mr-2" />
             Editar Dados
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleScheduleAppointment}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Agendar Atendimento
+          </Button>
+          {!client.is_active && (
+            <Button 
+              variant="default" 
+              onClick={handleActivateClient}
+            >
+              Ativar Cliente
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            onClick={handleToggleClientStatus}
+          >
+            {client.is_active ? 'Inativar' : 'Ativar'} Cliente
           </Button>
           <Button variant="outline" onClick={onClose}>
             Voltar
@@ -847,23 +881,16 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                   Anexar Documento
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Anexar Documento</DialogTitle>
+                  <DialogTitle>Anexar Documentos</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="file">Arquivo</Label>
-                    <Input
-                      id="file"
-                      type="file"
-                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Formatos aceitos: PDF, DOC, DOCX, JPG, PNG
-                    </p>
-                  </div>
+                  <FileUpload 
+                    onFileSelect={(files) => setSelectedFile(files[0])}
+                    maxFiles={1}
+                    acceptedTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.txt']}
+                  />
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
@@ -1067,10 +1094,6 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
             <Button variant="outline" onClick={() => handleGenerateReport()}>
               <FileText className="h-4 w-4 mr-2" />
               Gerar Relatório
-            </Button>
-            <Button variant="destructive" size="sm" onClick={() => handleDeleteClient()}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir Cliente
             </Button>
           </div>
         </CardContent>

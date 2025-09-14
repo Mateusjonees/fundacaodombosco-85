@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +32,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  // Check if user is active
+  const checkUserActiveStatus = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .eq('user_id', userId)
+        .single();
+
+      if (error || !data?.is_active) {
+        // User is inactive, sign them out
+        await supabase.auth.signOut();
+        toast({
+          variant: "destructive",
+          title: "Acesso Negado",
+          description: "Sua conta foi desativada. Entre em contato com o administrador.",
+        });
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error checking user status:', error);
+      return true; // In case of error, allow access
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -41,6 +69,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         // Log authentication events
         if (event === 'SIGNED_IN' && session?.user) {
+          // Check if user is active before completing login
+          const isActive = await checkUserActiveStatus(session.user.id);
+          if (!isActive) {
+            return; // User was signed out due to inactive status
+          }
+
           setTimeout(() => {
             AuditService.logAction({
               entityType: 'auth',

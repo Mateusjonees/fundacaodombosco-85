@@ -255,6 +255,38 @@ export default function Clients() {
     }
   };
 
+  const handleToggleClientStatus = async (client: Client) => {
+    const newStatus = !client.is_active;
+    const action = newStatus ? 'ativar' : 'inativar';
+    
+    if (!confirm(`Tem certeza que deseja ${action} este cliente?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ is_active: newStatus })
+        .eq('id', client.id);
+
+      if (error) throw error;
+
+      toast({
+        title: newStatus ? "Cliente Ativado" : "Cliente Inativado",
+        description: `O cliente foi ${newStatus ? 'ativado' : 'inativado'} com sucesso.`,
+      });
+      
+      loadClients();
+    } catch (error) {
+      console.error(`Error ${action}ing client:`, error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: `Não foi possível ${action} o cliente.`,
+      });
+    }
+  };
+
   const resetForm = () => {
     setNewClient({
       name: '',
@@ -730,6 +762,14 @@ export default function Clients() {
                           onClick={() => openEditDialog(client)}
                         >
                           <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleToggleClientStatus(client)}
+                          title={client.is_active ? 'Inativar cliente' : 'Ativar cliente'}
+                        >
+                          {client.is_active ? '🔒' : '🔓'}
                         </Button>
                       </div>
                     </TableCell>
