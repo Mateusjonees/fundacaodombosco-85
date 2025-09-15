@@ -112,10 +112,20 @@ export default function Clients() {
         .eq('user_id', user.id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Profile error:', error);
+        throw error;
+      }
+      
+      console.log('User profile loaded:', data);
       setUserProfile(data);
     } catch (error) {
       console.error('Error loading user profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar o perfil do usuário.",
+      });
     }
   };
 
@@ -135,6 +145,8 @@ export default function Clients() {
   };
 
   const loadClients = async () => {
+    if (!userProfile) return; // Don't load if profile isn't ready
+    
     setLoading(true);
     try {
       let query;
@@ -160,7 +172,12 @@ export default function Clients() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Loaded clients:', data?.length || 0, 'clients');
       setClients(data || []);
     } catch (error) {
       console.error('Error loading clients:', error);
