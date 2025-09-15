@@ -81,8 +81,14 @@ export default function Clients() {
   });
 
   useEffect(() => {
-    loadUserProfile();
-    loadEmployees();
+    console.log('=== Clients page useEffect ===');
+    if (user) {
+      console.log('User authenticated:', user.id, user.email);
+      loadUserProfile();
+      loadEmployees();
+    } else {
+      console.log('No user authenticated in useEffect');
+    }
   }, [user]);
 
   useEffect(() => {
@@ -103,19 +109,44 @@ export default function Clients() {
   }, [searchParams, clients]);
 
   const loadUserProfile = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found when loading profile');
+      return;
+    }
+    
+    console.log('Loading profile for user:', user.id);
     
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('employee_role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single
       
-      if (error) throw error;
+      if (error) {
+        console.error('Profile error:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.error('No profile found for user:', user.id);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Perfil de usuário não encontrado. Entre em contato com o administrador.",
+        });
+        return;
+      }
+      
+      console.log('User profile loaded:', data);
       setUserProfile(data);
     } catch (error) {
       console.error('Error loading user profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar o perfil do usuário.",
+      });
     }
   };
 
@@ -135,17 +166,26 @@ export default function Clients() {
   };
 
   const loadClients = async () => {
+    if (!userProfile) {
+      console.log('User profile not loaded yet, waiting...');
+      return; // Don't load if profile isn't ready
+    }
+    
+    console.log('Loading clients with profile:', userProfile);
+    
     setLoading(true);
     try {
       let query;
       
       if (isCoordinatorOrDirector) {
+        console.log('User is coordinator/director, loading all clients');
         // Coordenadores e diretores veem todos os clientes
         query = supabase
           .from('clients')
           .select('*')
           .order('name');
       } else {
+        console.log('User is staff, loading assigned clients only');
         // Staff vê apenas clientes vinculados a ele
         query = supabase
           .from('clients')
@@ -158,9 +198,16 @@ export default function Clients() {
           .order('name');
       }
 
+      console.log('Executing query...');
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Loaded clients:', data?.length || 0, 'clients');
+      console.log('Client data:', data);
       setClients(data || []);
     } catch (error) {
       console.error('Error loading clients:', error);
@@ -169,6 +216,7 @@ export default function Clients() {
         title: "Erro",
         description: "Não foi possível carregar os clientes.",
       });
+      setClients([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -371,6 +419,16 @@ export default function Clients() {
     }
 
     return matchesSearch && matchesUnit && matchesAge && matchesProfessional;
+  });
+
+  // Debug logs
+  console.log('Clients page state:', {
+    loading,
+    user: !!user,
+    userProfile,
+    isCoordinatorOrDirector,
+    clientsCount: clients.length,
+    filteredClientsCount: filteredClients.length
   });
 
   if (!userProfile) {
