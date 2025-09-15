@@ -81,12 +81,13 @@ export default function Clients() {
   });
 
   useEffect(() => {
+    console.log('=== Clients page useEffect ===');
     if (user) {
-      console.log('User authenticated:', user.id);
+      console.log('User authenticated:', user.id, user.email);
       loadUserProfile();
       loadEmployees();
     } else {
-      console.log('No user authenticated');
+      console.log('No user authenticated in useEffect');
     }
   }, [user]);
 
