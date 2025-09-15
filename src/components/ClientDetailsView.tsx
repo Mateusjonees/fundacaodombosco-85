@@ -13,7 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileUpload } from '@/components/FileUpload';
-import { ContractGenerator } from '@/components/ContractGenerator';
 import { 
   Calendar, 
   Edit, 
@@ -1307,7 +1306,6 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <FileText className="h-4 w-4 mr-2" />
               Gerar Relatório
             </Button>
-            <ContractGenerator client={client} />
           </div>
         </CardContent>
       </Card>
