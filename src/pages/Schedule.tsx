@@ -19,6 +19,7 @@ import { ptBR } from 'date-fns/locale';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { ConfirmAppointmentDialog } from '@/components/ConfirmAppointmentDialog';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
+import { useReportUpdater } from '@/hooks/useReportUpdater';
 
 interface Schedule {
   id: string;
@@ -35,6 +36,7 @@ interface Schedule {
 
 export default function Schedule() {
   const { user } = useAuth();
+  const { updateEmployeeReport, recordMaterialsUsage } = useReportUpdater();
   const [searchParams] = useSearchParams();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -356,9 +358,11 @@ export default function Schedule() {
       // Get schedule details for client information
       const { data: scheduleData } = await supabase
         .from('schedules')
-        .select('client_id')
+        .select('client_id, employee_id')
         .eq('id', scheduleId)
         .single();
+
+      if (!scheduleData) throw new Error('Schedule not found');
 
       // Update schedule status
       const { error: updateError } = await supabase
@@ -371,50 +375,26 @@ export default function Schedule() {
 
       if (updateError) throw updateError;
 
-      // Create stock movements for used materials
+      // Record materials usage if any
       if (materials.length > 0) {
-        const stockMovements = materials.map(material => ({
-          stock_item_id: material.stock_item_id,
-          type: 'out',
-          quantity: material.quantity,
-          reason: 'Utilizado em atendimento',
-          notes: `Sessão - Cliente ID: ${scheduleData?.client_id}`,
-          date: new Date().toISOString().split('T')[0],
-          created_by: user?.id,
-          client_id: scheduleData?.client_id,
-          schedule_id: scheduleId,
-          session_number: 1
-        }));
-
-        const { error: movementError } = await supabase
-          .from('stock_movements')
-          .insert(stockMovements);
-
-        if (movementError) throw movementError;
-
-        // Update stock quantities - use transactions for better consistency
-        for (const material of materials) {
-          const { data: currentItem } = await supabase
-            .from('stock_items')
-            .select('current_quantity, unit_cost')
-            .eq('id', material.stock_item_id)
-            .single();
-
-          if (currentItem) {
-            const newQuantity = Math.max(0, currentItem.current_quantity - material.quantity);
-            await supabase
-              .from('stock_items')
-              .update({ current_quantity: newQuantity })
-              .eq('id', material.stock_item_id);
-          }
-        }
+        await recordMaterialsUsage(materials, scheduleId, scheduleData.client_id);
       }
+
+      // Update employee report with completion data
+      await updateEmployeeReport({
+        scheduleId,
+        employeeId: scheduleData.employee_id,
+        clientId: scheduleData.client_id,
+        status: 'completed',
+        materials,
+        notes
+      });
 
       toast({
         title: "Atendimento confirmado!",
         description: materials.length > 0 
-          ? `Sessão confirmada e ${materials.length} material(is) baixado(s) do estoque.`
-          : `Sessão confirmada com sucesso!`,
+          ? `Sessão confirmada e ${materials.length} material(is) baixado(s) do estoque. Relatório atualizado automaticamente.`
+          : `Sessão confirmada com sucesso! Relatório atualizado automaticamente.`,
       });
 
       loadSchedules();
@@ -430,6 +410,15 @@ export default function Schedule() {
 
   const handleCancelAppointment = async (scheduleId: string, reason: string, category: string) => {
     try {
+      // Get schedule details for reporting
+      const { data: scheduleData } = await supabase
+        .from('schedules')
+        .select('client_id, employee_id')
+        .eq('id', scheduleId)
+        .single();
+
+      if (!scheduleData) throw new Error('Schedule not found');
+
       const { error } = await supabase
         .from('schedules')
         .update({ 
@@ -440,9 +429,19 @@ export default function Schedule() {
 
       if (error) throw error;
 
+      // Update employee report with cancellation data
+      await updateEmployeeReport({
+        scheduleId,
+        employeeId: scheduleData.employee_id,
+        clientId: scheduleData.client_id,
+        status: 'cancelled',
+        cancelReason: reason,
+        cancelCategory: category
+      });
+
       toast({
         title: "Agendamento cancelado",
-        description: "O agendamento foi cancelado e o motivo foi registrado.",
+        description: "O agendamento foi cancelado, motivo registrado e relatório atualizado automaticamente.",
       });
 
       loadSchedules();
