@@ -24,7 +24,7 @@ export function QuickActions() {
       title: 'Novo Cliente',
       description: 'Cadastrar novo cliente',
       icon: UserPlus,
-      path: '/clients/new',
+      path: '/client-form',
       color: 'bg-blue-500 hover:bg-blue-600'
     },
     {

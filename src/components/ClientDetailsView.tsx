@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { FileUpload } from '@/components/FileUpload';
 import { 
   Calendar, 
   Edit, 
@@ -25,7 +27,9 @@ import {
   User,
   Activity,
   Upload,
-  History
+  History,
+  X,
+  UserPlus
 } from 'lucide-react';
 
 interface Client {
@@ -94,6 +98,7 @@ interface ClientDetailsViewProps {
 
 export default function ClientDetailsView({ client, onEdit, onClose }: ClientDetailsViewProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState<ClientNote[]>([]);
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
   const [assignedProfessionals, setAssignedProfessionals] = useState<AssignedProfessional[]>([]);
@@ -105,6 +110,8 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
   const [addAppointmentDialogOpen, setAddAppointmentDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState('');
+  const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>([]);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [appointmentData, setAppointmentData] = useState({
     title: '',
@@ -267,12 +274,8 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
   };
 
   const handleScheduleAppointment = () => {
-    toast({
-      title: "Agendamento",
-      description: "Redirecionando para a agenda...",
-    });
-    // Redirect to schedule page
-    window.open(`/schedule?client=${client.id}`, '_blank');
+    // Navigate to schedule page with client pre-selected
+    navigate(`/schedule?client=${client.id}&name=${encodeURIComponent(client.name)}`);
   };
 
   const loadAppointments = async () => {
@@ -337,6 +340,89 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
 
   const handleLinkProfessionals = () => {
     setLinkProfessionalDialogOpen(true);
+  };
+
+  const handleRemoveProfessionalLink = async (assignmentId: string) => {
+    if (!confirm('Tem certeza que deseja remover este vínculo?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('client_assignments')
+        .update({ is_active: false })
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Vínculo removido com sucesso!",
+      });
+
+      loadAssignedProfessionals();
+    } catch (error) {
+      console.error('Error removing professional link:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível remover o vínculo.",
+      });
+    }
+  };
+
+  const handleLinkMultipleProfessionals = async () => {
+    if (selectedProfessionals.length === 0) return;
+
+    setLoading(true);
+    try {
+      const assignments = selectedProfessionals.map(professionalId => ({
+        client_id: client.id,
+        employee_id: professionalId,
+        assigned_by: user?.id
+      }));
+
+      const { error } = await supabase
+        .from('client_assignments')
+        .insert(assignments);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `${selectedProfessionals.length} profissional(is) vinculado(s) com sucesso!`,
+      });
+
+      setSelectedProfessionals([]);
+      setMultiSelectMode(false);
+      setLinkProfessionalDialogOpen(false);
+      loadAssignedProfessionals();
+    } catch (error) {
+      console.error('Error linking professionals:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível vincular os profissionais.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleProfessionalSelection = (professionalId: string) => {
+    setSelectedProfessionals(prev => 
+      prev.includes(professionalId)
+        ? prev.filter(id => id !== professionalId)
+        : [...prev, professionalId]
+    );
+  };
+
+  const getAvailableEmployees = () => {
+    const assignedIds = assignedProfessionals.map(ap => ap.profiles?.name ? 
+      employees.find(e => e.name === ap.profiles?.name)?.user_id : null
+    ).filter(Boolean);
+    
+    return employees.filter(emp => !assignedIds.includes(emp.user_id));
   };
 
   const handleLinkProfessional = async () => {
@@ -474,33 +560,45 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
     });
   };
 
-  const handleDeleteClient = async () => {
-    if (!confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
+  const handleToggleClientStatus = async () => {
+    const newStatus = !client.is_active;
+    const action = newStatus ? 'ativar' : 'inativar';
+    
+    if (!confirm(`Tem certeza que deseja ${action} este cliente?`)) {
       return;
     }
 
     try {
       const { error } = await supabase
         .from('clients')
-        .update({ is_active: false })
+        .update({ is_active: newStatus })
         .eq('id', client.id);
 
       if (error) throw error;
 
       toast({
-        title: "Cliente Excluído",
-        description: "O cliente foi marcado como inativo.",
+        title: newStatus ? "Cliente Ativado" : "Cliente Inativado",
+        description: `O cliente foi ${newStatus ? 'ativado' : 'inativado'} com sucesso.`,
       });
       
-      onClose();
+      // Update local client state
+      client.is_active = newStatus;
+      
+      if (!newStatus) {
+        onClose();
+      }
     } catch (error) {
-      console.error('Error deleting client:', error);
+      console.error(`Error ${action}ing client:`, error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível excluir o cliente.",
+        description: `Não foi possível ${action} o cliente.`,
       });
     }
+  };
+
+  const handleActivateClient = async () => {
+    await handleToggleClientStatus();
   };
 
   const handleUploadDocument = () => {
@@ -630,6 +728,27 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
             <Edit className="h-4 w-4 mr-2" />
             Editar Dados
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleScheduleAppointment}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Agendar Atendimento
+          </Button>
+          {!client.is_active && (
+            <Button 
+              variant="default" 
+              onClick={handleActivateClient}
+            >
+              Ativar Cliente
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            onClick={handleToggleClientStatus}
+          >
+            {client.is_active ? 'Inativar' : 'Ativar'} Cliente
+          </Button>
           <Button variant="outline" onClick={onClose}>
             Voltar
           </Button>
@@ -696,33 +815,60 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
         {/* Profissional Vinculado */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Profissional Vinculado
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Profissionais Vinculados
+              </CardTitle>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={handleLinkProfessionals}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Vincular
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {assignedProfessionals.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {assignedProfessionals.map((assignment) => (
-                  <div key={assignment.id} className="flex items-center justify-between">
-                    <div>
+                  <div key={assignment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
                       <div className="font-medium">{assignment.profiles.name}</div>
                       <div className="text-sm text-muted-foreground">
                         {assignment.profiles.employee_role}
                       </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Vinculado em {formatDate(assignment.assigned_at)}
+                      </div>
                     </div>
-                    <Badge variant="outline">
-                      {formatDate(assignment.assigned_at)}
-                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRemoveProfessionalLink(assignment.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
-                <p className="text-sm text-muted-foreground mt-2">
-                  {assignedProfessionals.length} profissional{assignedProfessionals.length > 1 ? 'is' : ''} vinculado{assignedProfessionals.length > 1 ? 's' : ''}.
-                </p>
+                <div className="text-sm text-muted-foreground pt-2 border-t">
+                  {assignedProfessionals.length} profissional{assignedProfessionals.length > 1 ? 'is' : ''} vinculado{assignedProfessionals.length > 1 ? 's' : ''}
+                </div>
               </div>
             ) : (
-              <p className="text-muted-foreground">Nenhum profissional vinculado</p>
+              <div className="text-center py-4">
+                <p className="text-muted-foreground mb-2">Nenhum profissional vinculado</p>
+                <Button 
+                  size="sm" 
+                  onClick={handleLinkProfessionals}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Vincular Primeiro Profissional
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -849,23 +995,16 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                   Anexar Documento
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Anexar Documento</DialogTitle>
+                  <DialogTitle>Anexar Documentos</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="file">Arquivo</Label>
-                    <Input
-                      id="file"
-                      type="file"
-                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Formatos aceitos: PDF, DOC, DOCX, JPG, PNG
-                    </p>
-                  </div>
+                  <FileUpload 
+                    onFileSelect={(files) => setSelectedFile(files[0])}
+                    maxFiles={1}
+                    acceptedTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.txt']}
+                  />
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
@@ -1024,37 +1163,134 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <Users className="h-4 w-4 mr-2" />
-                  Vincular Profissionais
+                  Gerenciar Vínculos
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
+                  <DialogTitle>Gerenciar Vínculos de Profissionais</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="professional">Selecione o Profissional</Label>
-                    <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Escolha um profissional" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((employee) => (
-                          <SelectItem key={employee.user_id} value={employee.user_id}>
-                            {employee.name} - {employee.employee_role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex gap-2 mb-4">
+                    <Button 
+                      size="sm"
+                      variant={!multiSelectMode ? "default" : "outline"}
+                      onClick={() => {
+                        setMultiSelectMode(false);
+                        setSelectedProfessionals([]);
+                        setSelectedProfessional('');
+                      }}
+                    >
+                      Vincular Um
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant={multiSelectMode ? "default" : "outline"}
+                      onClick={() => {
+                        setMultiSelectMode(true);
+                        setSelectedProfessional('');
+                        setSelectedProfessionals([]);
+                      }}
+                    >
+                      Vincular Múltiplos
+                    </Button>
                   </div>
+
+                  {!multiSelectMode ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="professional">Selecione o Profissional</Label>
+                      <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolha um profissional" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableEmployees().map((employee) => (
+                            <SelectItem key={employee.user_id} value={employee.user_id}>
+                              {employee.name} - {employee.employee_role}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label>Selecione os Profissionais (múltiplos)</Label>
+                      <div className="border rounded-lg p-4 max-h-60 overflow-y-auto">
+                        {getAvailableEmployees().length > 0 ? (
+                          <div className="space-y-2">
+                            {getAvailableEmployees().map((employee) => (
+                              <div 
+                                key={employee.user_id} 
+                                className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${
+                                  selectedProfessionals.includes(employee.user_id) 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'hover:bg-gray-100'
+                                }`}
+                                onClick={() => toggleProfessionalSelection(employee.user_id)}
+                              >
+                                <div>
+                                  <div className="font-medium">{employee.name}</div>
+                                  <div className="text-sm opacity-70">{employee.employee_role}</div>
+                                </div>
+                                {selectedProfessionals.includes(employee.user_id) && (
+                                  <Plus className="h-4 w-4" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-sm">
+                            Todos os profissionais já estão vinculados a este cliente.
+                          </p>
+                        )}
+                      </div>
+                      {selectedProfessionals.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          {selectedProfessionals.length} profissional(is) selecionado(s)
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {assignedProfessionals.length > 0 && (
+                    <div className="border-t pt-4">
+                      <Label className="text-sm font-medium">Profissionais já vinculados:</Label>
+                      <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                        {assignedProfessionals.map((assignment) => (
+                          <div key={assignment.id} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
+                            <span>{assignment.profiles.name}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRemoveProfessionalLink(assignment.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setLinkProfessionalDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setLinkProfessionalDialogOpen(false);
+                    setMultiSelectMode(false);
+                    setSelectedProfessionals([]);
+                    setSelectedProfessional('');
+                  }}>
                     Cancelar
                   </Button>
-                  <Button onClick={handleLinkProfessional} disabled={loading || !selectedProfessional}>
-                    {loading ? 'Vinculando...' : 'Vincular'}
-                  </Button>
+                  {!multiSelectMode ? (
+                    <Button onClick={handleLinkProfessional} disabled={loading || !selectedProfessional}>
+                      {loading ? 'Vinculando...' : 'Vincular'}
+                    </Button>
+                  ) : (
+                    <Button onClick={handleLinkMultipleProfessionals} disabled={loading || selectedProfessionals.length === 0}>
+                      {loading ? 'Vinculando...' : `Vincular ${selectedProfessionals.length} Profissional(is)`}
+                    </Button>
+                  )}
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -1069,10 +1305,6 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
             <Button variant="outline" onClick={() => handleGenerateReport()}>
               <FileText className="h-4 w-4 mr-2" />
               Gerar Relatório
-            </Button>
-            <Button variant="destructive" size="sm" onClick={() => handleDeleteClient()}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir Cliente
             </Button>
           </div>
         </CardContent>

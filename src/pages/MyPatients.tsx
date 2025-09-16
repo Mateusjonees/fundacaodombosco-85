@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Eye, Calendar, FileText, Clock } from 'lucide-react';
+import { Search, Eye, Calendar, FileText, Clock, Activity } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -36,29 +36,25 @@ export default function MyPatients() {
     if (user) {
       loadMyPatients();
       loadUpcomingAppointments();
+      
+      // Auto-refresh every 30 seconds to show new assignments and appointments
+      const interval = setInterval(() => {
+        loadMyPatients();
+        loadUpcomingAppointments();
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [user]);
 
   const loadMyPatients = async () => {
     setLoading(true);
     try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (!profileData) return;
-
-      // Get all appointments for this professional where they are assigned
-      const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('schedules')
+      // Get all clients assigned to this professional through client_assignments
+      const { data: assignedClients, error: assignmentError } = await supabase
+        .from('client_assignments')
         .select(`
-          id,
-          client_id,
-          start_time,
-          status,
-          clients (
+          clients!inner (
             id,
             name,
             phone,
@@ -68,54 +64,54 @@ export default function MyPatients() {
           )
         `)
         .eq('employee_id', user?.id)
-        .eq('status', 'completed');
+        .eq('is_active', true);
 
-      if (appointmentsError) throw appointmentsError;
+      if (assignmentError) throw assignmentError;
 
-      // Group by client and calculate statistics
-      const clientMap = new Map();
-      appointmentsData?.forEach(appointment => {
-        const client = appointment.clients;
-        if (!client) return;
+      // Get appointment statistics for each client
+      const patientsWithStats = await Promise.all(
+        (assignedClients || []).map(async (assignment) => {
+          const client = assignment.clients;
+          
+          // Get all appointments for this client with this professional
+          const { data: appointments, error: appointmentsError } = await supabase
+            .from('schedules')
+            .select('id, start_time, status')
+            .eq('employee_id', user?.id)
+            .eq('client_id', client.id)
+            .order('start_time', { ascending: false });
 
-        if (!clientMap.has(client.id)) {
-          clientMap.set(client.id, {
+          if (appointmentsError) {
+            console.error('Error loading appointments for client:', client.id, appointmentsError);
+            return {
+              ...client,
+              total_appointments: 0,
+              last_appointment: null,
+              next_appointment: null
+            };
+          }
+
+          const totalAppointments = appointments?.length || 0;
+          const completedAppointments = appointments?.filter(a => a.status === 'completed') || [];
+          const lastAppointment = completedAppointments.length > 0 ? completedAppointments[0].start_time : null;
+
+          // Get next appointment
+          const upcomingAppointments = appointments?.filter(a => 
+            a.status === 'scheduled' && new Date(a.start_time) > new Date()
+          ) || [];
+          
+          const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0].start_time : null;
+
+          return {
             ...client,
-            total_appointments: 0,
-            last_appointment: null,
-            appointments: []
-          });
-        }
+            total_appointments: totalAppointments,
+            last_appointment: lastAppointment,
+            next_appointment: nextAppointment
+          };
+        })
+      );
 
-        const clientData = clientMap.get(client.id);
-        clientData.total_appointments++;
-        clientData.appointments.push(appointment);
-        
-        if (!clientData.last_appointment || 
-            new Date(appointment.start_time) > new Date(clientData.last_appointment)) {
-          clientData.last_appointment = appointment.start_time;
-        }
-      });
-
-      // Get upcoming appointments for each client
-      for (const [clientId, clientData] of clientMap) {
-        const { data: upcomingData } = await supabase
-          .from('schedules')
-          .select('start_time')
-          .eq('employee_id', user?.id)
-          .eq('client_id', clientId)
-          .in('status', ['scheduled'])
-          .gte('start_time', new Date().toISOString())
-          .order('start_time', { ascending: true })
-          .limit(1);
-
-        if (upcomingData && upcomingData.length > 0) {
-          clientData.next_appointment = upcomingData[0].start_time;
-        }
-      }
-
-      const patientsArray = Array.from(clientMap.values());
-      setPatients(patientsArray);
+      setPatients(patientsWithStats);
     } catch (error) {
       console.error('Error loading my patients:', error);
       toast({
@@ -130,14 +126,6 @@ export default function MyPatients() {
 
   const loadUpcomingAppointments = async () => {
     try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (!profileData) return;
-
       const { data, error } = await supabase
         .from('schedules')
         .select(`
@@ -145,7 +133,7 @@ export default function MyPatients() {
           clients (name)
         `)
         .eq('employee_id', user?.id)
-        .eq('status', 'scheduled')
+        .in('status', ['scheduled', 'confirmed'])
         .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true })
         .limit(10);
@@ -178,6 +166,10 @@ export default function MyPatients() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Meus Pacientes</h1>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Activity className="h-4 w-4 animate-pulse" />
+          <span>Atualização automática ativa</span>
+        </div>
       </div>
 
       <Tabs defaultValue="patients" className="w-full">
@@ -239,9 +231,9 @@ export default function MyPatients() {
               {loading ? (
                 <p className="text-muted-foreground text-center py-8">Carregando pacientes...</p>
               ) : filteredPatients.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  {searchTerm ? 'Nenhum paciente encontrado.' : 'Você ainda não possui pacientes atendidos.'}
-                </p>
+                 <div className="text-muted-foreground text-center py-8">
+                   {searchTerm ? 'Nenhum paciente encontrado.' : 'Você ainda não possui pacientes vinculados. Quando você for designado para atender um cliente ou criar um agendamento, ele aparecerá aqui automaticamente.'}
+                 </div>
               ) : (
                 <Table>
                   <TableHeader>
@@ -338,21 +330,34 @@ export default function MyPatients() {
                         <div className="flex items-center gap-2 mb-1">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">
-                            {format(new Date(appointment.appointment_date), "dd 'de' MMMM", { locale: ptBR })}
+                            {format(new Date(appointment.start_time), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                           </span>
-                          <Clock className="h-4 w-4 text-muted-foreground ml-4" />
-                          <span>{appointment.start_time} - {appointment.end_time}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground mb-2">
+                          <strong>Paciente:</strong> {appointment.clients?.name}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          Paciente: {appointment.clients?.name}
+                          <strong>Tipo:</strong> {appointment.title || 'Consulta'}
                         </div>
-                        <Badge variant="outline" className="mt-2">
-                          {appointment.type}
-                        </Badge>
+                        {appointment.description && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <strong>Observações:</strong> {appointment.description}
+                          </div>
+                        )}
                       </div>
-                      <Badge variant={appointment.status === 'confirmed' ? "default" : "secondary"}>
-                        {appointment.status === 'confirmed' ? 'Confirmado' : 'Agendado'}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge variant={
+                          appointment.status === 'confirmed' ? "default" : 
+                          appointment.status === 'scheduled' ? "secondary" : "outline"
+                        }>
+                          {appointment.status === 'confirmed' ? 'Confirmado' : 
+                           appointment.status === 'scheduled' ? 'Agendado' : 
+                           appointment.status}
+                        </Badge>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
