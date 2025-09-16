@@ -17,7 +17,7 @@ import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
-import { CompleteAppointmentDialog } from '@/components/CompleteAppointmentDialog';
+import { ConfirmAppointmentDialog } from '@/components/ConfirmAppointmentDialog';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import { useReportUpdater } from '@/hooks/useReportUpdater';
 
@@ -353,146 +353,57 @@ export default function Schedule() {
     }
   };
 
-  const handleCompleteAppointment = async (data: any) => {
+  const handleConfirmAppointment = async (scheduleId: string, materials: any[], notes: string) => {
     try {
-      const schedule = selectedScheduleForAction;
-      if (!schedule) throw new Error('Schedule not found');
+      // Get schedule details for client information
+      const { data: scheduleData } = await supabase
+        .from('schedules')
+        .select('client_id, employee_id')
+        .eq('id', scheduleId)
+        .single();
 
-      // 1. Atualizar status do agendamento
+      if (!scheduleData) throw new Error('Schedule not found');
+
+      // Update schedule status
       const { error: updateError } = await supabase
         .from('schedules')
         .update({ 
           status: 'completed',
-          notes: data.progressNotes 
+          notes: notes 
         })
-        .eq('id', data.scheduleId);
+        .eq('id', scheduleId);
 
       if (updateError) throw updateError;
 
-      // 2. Registrar sessão de atendimento
-      const { error: sessionError } = await supabase
-        .from('appointment_sessions')
-        .insert([{
-          schedule_id: data.scheduleId,
-          session_number: data.sessionNumber,
-          session_notes: data.progressNotes,
-          session_duration: data.actualDuration,
-          materials_used: data.materials.map((m: any) => ({
-            stock_item_id: m.stock_item_id,
-            name: m.name,
-            quantity: m.quantity,
-            unit_cost: m.unit_cost,
-            total_cost: m.total_cost
-          })),
-          total_materials_cost: data.totalMaterialsCost,
-          created_by: user?.id
-        }]);
-
-      if (sessionError) throw sessionError;
-
-      // 3. Registrar histórico médico/clínico
-      const { error: medicalError } = await supabase
-        .from('medical_records')
-        .insert([{
-          client_id: data.clientId,
-          employee_id: data.employeeId,
-          session_date: new Date().toISOString().split('T')[0],
-          session_type: schedule.title || 'Consulta',
-          progress_notes: data.clinicalObservations,
-          symptoms: data.symptoms,
-          session_duration: data.actualDuration,
-          next_appointment_notes: data.nextSteps,
-          status: 'completed'
-        }]);
-
-      if (medicalError) throw medicalError;
-
-      // 4. Registrar movimentações de estoque
-      if (data.materials.length > 0) {
-        const stockMovements = data.materials.map((material: any) => ({
-          stock_item_id: material.stock_item_id,
-          type: 'out',
-          quantity: material.quantity,
-          unit_cost: material.unit_cost,
-          total_cost: material.total_cost,
-          reason: 'Utilizado em atendimento',
-          schedule_id: data.scheduleId,
-          client_id: data.clientId,
-          session_number: data.sessionNumber,
-          created_by: user?.id,
-          notes: `Sessão #${data.sessionNumber} - ${schedule.clients?.name}`
-        }));
-
-        const { error: stockError } = await supabase
-          .from('stock_movements')
-          .insert(stockMovements);
-
-        if (stockError) throw stockError;
-
-        // Atualizar quantidades no estoque
-        for (const material of data.materials) {
-          const { data: currentStock } = await supabase
-            .from('stock_items')
-            .select('current_quantity')
-            .eq('id', material.stock_item_id)
-            .single();
-
-          if (currentStock) {
-            const newQuantity = currentStock.current_quantity - material.quantity;
-            const { error: updateStockError } = await supabase
-              .from('stock_items')
-              .update({ current_quantity: newQuantity })
-              .eq('id', material.stock_item_id);
-
-            if (updateStockError) throw updateStockError;
-          }
-        }
+      // Record materials usage if any
+      if (materials.length > 0) {
+        await recordMaterialsUsage(materials, scheduleId, scheduleData.client_id);
       }
 
-      // 5. Registrar informações financeiras (se houver valor)
-      if (data.sessionValue > 0) {
-        const { error: financialError } = await supabase
-          .from('financial_records')
-          .insert([{
-            type: 'income',
-            category: 'Atendimento',
-            description: `Sessão #${data.sessionNumber} - ${schedule.clients?.name} - ${schedule.title}`,
-            amount: data.sessionValue,
-            date: new Date().toISOString().split('T')[0],
-            payment_method: data.paymentMethod,
-            client_id: data.clientId,
-            employee_id: data.employeeId,
-            notes: `Status: ${data.paymentStatus}. Custo materiais: R$ ${data.totalMaterialsCost.toFixed(2)}`,
-            created_by: user?.id
-          }]);
-
-        if (financialError) throw financialError;
-      }
-
-      // 6. Atualizar relatório do funcionário
+      // Update employee report with completion data
       await updateEmployeeReport({
-        scheduleId: data.scheduleId,
-        employeeId: data.employeeId,
-        clientId: data.clientId,
+        scheduleId,
+        employeeId: scheduleData.employee_id,
+        clientId: scheduleData.client_id,
         status: 'completed',
-        materials: data.materials,
-        notes: data.progressNotes,
-        sessionDuration: data.actualDuration,
-        clientProgress: data.clientProgress
+        materials,
+        notes
       });
 
       toast({
-        title: "Atendimento concluído com sucesso!",
-        description: `Todas as informações foram registradas: ${data.materials.length > 0 ? `${data.materials.length} material(is) baixado(s), ` : ''}${data.sessionValue > 0 ? `receita de R$ ${data.sessionValue.toFixed(2)}, ` : ''}histórico clínico e relatório atualizados.`,
+        title: "Atendimento confirmado!",
+        description: materials.length > 0 
+          ? `Sessão confirmada e ${materials.length} material(is) baixado(s) do estoque. Relatório atualizado automaticamente.`
+          : `Sessão confirmada com sucesso! Relatório atualizado automaticamente.`,
       });
 
       loadSchedules();
     } catch (error) {
-      console.error('Error completing appointment:', error);
+      console.error('Error confirming appointment:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível concluir o atendimento. Tente novamente.",
+        description: "Não foi possível confirmar o atendimento.",
       });
     }
   };
@@ -897,7 +808,7 @@ export default function Schedule() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => openConfirmDialog(schedule)}
-                                  title="Concluir Atendimento"
+                                  title="Confirmar Atendimento"
                                   className="text-primary hover:text-primary shadow-professional"
                                 >
                                   <CheckCircle className="h-3 w-3" />
@@ -971,16 +882,16 @@ export default function Schedule() {
           </div>
         </div>
         
-      {/* Dialogs */}
-      <CompleteAppointmentDialog
-        isOpen={confirmDialogOpen}
-        onClose={() => {
-          setConfirmDialogOpen(false);
-          setSelectedScheduleForAction(null);
-        }}
-        schedule={selectedScheduleForAction}
-        onComplete={handleCompleteAppointment}
-      />
+        {/* Dialogs */}
+        <ConfirmAppointmentDialog
+          isOpen={confirmDialogOpen}
+          onClose={() => {
+            setConfirmDialogOpen(false);
+            setSelectedScheduleForAction(null);
+          }}
+          schedule={selectedScheduleForAction}
+          onConfirm={handleConfirmAppointment}
+        />
 
         <CancelAppointmentDialog
           isOpen={cancelDialogOpen}

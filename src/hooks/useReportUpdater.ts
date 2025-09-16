@@ -13,10 +13,6 @@ interface AppointmentReportData {
   notes?: string;
   cancelReason?: string;
   cancelCategory?: string;
-  // Novas propriedades para o sistema completo
-  sessionDuration?: number; // in minutes
-  clientProgress?: string;
-  sessionValue?: number;
 }
 
 export const useReportUpdater = () => {
