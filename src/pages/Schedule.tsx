@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,9 +16,8 @@ import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
-import { CompleteAppointmentDialog } from '@/components/CompleteAppointmentDialog';
+import { ConfirmAppointmentDialog } from '@/components/ConfirmAppointmentDialog';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
-import { useReportUpdater } from '@/hooks/useReportUpdater';
 
 interface Schedule {
   id: string;
@@ -36,8 +34,6 @@ interface Schedule {
 
 export default function Schedule() {
   const { user } = useAuth();
-  const { updateEmployeeReport, recordMaterialsUsage } = useReportUpdater();
-  const [searchParams] = useSearchParams();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -75,30 +71,7 @@ export default function Schedule() {
     loadEmployees();
     loadClients();
     loadSchedules();
-    
-    // Check for URL parameters to pre-fill appointment form
-    const clientId = searchParams.get('client');
-    const clientName = searchParams.get('name');
-    
-    if (clientId) {
-      // Pre-fill client and open dialog
-      setNewAppointment(prev => ({
-        ...prev,
-        client_id: clientId
-      }));
-      
-      // Show toast with client name
-      if (clientName) {
-        toast({
-          title: "Cliente Selecionado",
-          description: `Agendamento para: ${decodeURIComponent(clientName)}`,
-        });
-      }
-      
-      // Auto-open the dialog
-      setIsDialogOpen(true);
-    }
-  }, [selectedDate, filterRole, filterEmployee, filterUnit, searchParams]);
+  }, [selectedDate, filterRole, filterEmployee, filterUnit]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -236,23 +209,9 @@ export default function Schedule() {
 
   const handleCreateAppointment = async () => {
     try {
-      // Convert datetime-local format to ISO string maintaining local time
-      const convertToISOString = (dateTimeLocal: string) => {
-        if (!dateTimeLocal) return '';
-        // Create date object from local datetime input and convert to ISO
-        const date = new Date(dateTimeLocal);
-        return date.toISOString();
-      };
-
-      const appointmentData = {
-        client_id: newAppointment.client_id,
-        employee_id: newAppointment.employee_id,
-        title: newAppointment.title,
-        start_time: convertToISOString(newAppointment.start_time),
-        end_time: convertToISOString(newAppointment.end_time),
-        notes: newAppointment.notes,
-        created_by: user?.id
-      };
+      const appointmentData = editingSchedule 
+        ? { ...newAppointment, id: editingSchedule.id }
+        : newAppointment;
 
       if (editingSchedule) {
         const { error } = await supabase
@@ -276,54 +235,10 @@ export default function Schedule() {
 
         if (error) throw error;
 
-        // Auto-assign client to professional if not already assigned
-        if (newAppointment.client_id && newAppointment.employee_id) {
-          // Check if assignment already exists
-          const { data: existingAssignment } = await supabase
-            .from('client_assignments')
-            .select('id')
-            .eq('client_id', newAppointment.client_id)
-            .eq('employee_id', newAppointment.employee_id)
-            .eq('is_active', true)
-            .single();
-
-          // If no assignment exists, create one
-          if (!existingAssignment) {
-            const { error: assignmentError } = await supabase
-              .from('client_assignments')
-              .insert([{
-                client_id: newAppointment.client_id,
-                employee_id: newAppointment.employee_id,
-                assigned_by: user?.id,
-                is_active: true
-              }]);
-
-            if (assignmentError) {
-              console.error('Error creating client assignment:', assignmentError);
-              // Don't fail the entire operation, just log the error
-              toast({
-                title: "Agendamento Criado",
-                description: "Agendamento criado com sucesso! Cliente vinculado automaticamente ao profissional.",
-                variant: "default"
-              });
-            } else {
-              toast({
-                title: "Sucesso",
-                description: "Agendamento criado e cliente vinculado ao profissional!",
-              });
-            }
-          } else {
-            toast({
-              title: "Sucesso",
-              description: "Agendamento criado com sucesso!",
-            });
-          }
-        } else {
-          toast({
-            title: "Sucesso",
-            description: "Agendamento criado com sucesso!",
-          });
-        }
+        toast({
+          title: "Sucesso",
+          description: "Agendamento criado com sucesso!",
+        });
       }
       
       setIsDialogOpen(false);
@@ -336,13 +251,7 @@ export default function Schedule() {
         end_time: '',
         notes: ''
       });
-      
-      // Reload all data to reflect changes immediately
-      await Promise.all([
-        loadSchedules(),
-        loadClients(),
-        loadEmployees()
-      ]);
+      loadSchedules();
     } catch (error) {
       console.error('Error saving appointment:', error);
       toast({
@@ -353,161 +262,85 @@ export default function Schedule() {
     }
   };
 
-  const handleCompleteAppointment = async (data: any) => {
+  const handleConfirmAppointment = async (scheduleId: string, materials: any[], notes: string) => {
     try {
-      const schedule = selectedScheduleForAction;
-      if (!schedule) throw new Error('Schedule not found');
+      // Get schedule details for client information
+      const { data: scheduleData } = await supabase
+        .from('schedules')
+        .select('client_id')
+        .eq('id', scheduleId)
+        .single();
 
-      // 1. Atualizar status do agendamento
+      // Update schedule status
       const { error: updateError } = await supabase
         .from('schedules')
         .update({ 
           status: 'completed',
-          notes: data.progressNotes 
+          notes: notes 
         })
-        .eq('id', data.scheduleId);
+        .eq('id', scheduleId);
 
       if (updateError) throw updateError;
 
-      // 2. Registrar sessão de atendimento
-      const { error: sessionError } = await supabase
-        .from('appointment_sessions')
-        .insert([{
-          schedule_id: data.scheduleId,
-          session_number: data.sessionNumber,
-          session_notes: data.progressNotes,
-          session_duration: data.actualDuration,
-          materials_used: data.materials.map((m: any) => ({
-            stock_item_id: m.stock_item_id,
-            name: m.name,
-            quantity: m.quantity,
-            unit_cost: m.unit_cost,
-            total_cost: m.total_cost
-          })),
-          total_materials_cost: data.totalMaterialsCost,
-          created_by: user?.id
-        }]);
-
-      if (sessionError) throw sessionError;
-
-      // 3. Registrar histórico médico/clínico
-      const { error: medicalError } = await supabase
-        .from('medical_records')
-        .insert([{
-          client_id: data.clientId,
-          employee_id: data.employeeId,
-          session_date: new Date().toISOString().split('T')[0],
-          session_type: schedule.title || 'Consulta',
-          progress_notes: data.clinicalObservations,
-          symptoms: data.symptoms,
-          session_duration: data.actualDuration,
-          next_appointment_notes: data.nextSteps,
-          status: 'completed'
-        }]);
-
-      if (medicalError) throw medicalError;
-
-      // 4. Registrar movimentações de estoque
-      if (data.materials.length > 0) {
-        const stockMovements = data.materials.map((material: any) => ({
+      // Create stock movements for used materials
+      if (materials.length > 0) {
+        const stockMovements = materials.map(material => ({
           stock_item_id: material.stock_item_id,
           type: 'out',
           quantity: material.quantity,
-          unit_cost: material.unit_cost,
-          total_cost: material.total_cost,
           reason: 'Utilizado em atendimento',
-          schedule_id: data.scheduleId,
-          client_id: data.clientId,
-          session_number: data.sessionNumber,
+          notes: `Sessão - Cliente ID: ${scheduleData?.client_id}`,
+          date: new Date().toISOString().split('T')[0],
           created_by: user?.id,
-          notes: `Sessão #${data.sessionNumber} - ${schedule.clients?.name}`
+          client_id: scheduleData?.client_id,
+          schedule_id: scheduleId,
+          session_number: 1
         }));
 
-        const { error: stockError } = await supabase
+        const { error: movementError } = await supabase
           .from('stock_movements')
           .insert(stockMovements);
 
-        if (stockError) throw stockError;
+        if (movementError) throw movementError;
 
-        // Atualizar quantidades no estoque
-        for (const material of data.materials) {
-          const { data: currentStock } = await supabase
+        // Update stock quantities - use transactions for better consistency
+        for (const material of materials) {
+          const { data: currentItem } = await supabase
             .from('stock_items')
-            .select('current_quantity')
+            .select('current_quantity, unit_cost')
             .eq('id', material.stock_item_id)
             .single();
 
-          if (currentStock) {
-            const newQuantity = currentStock.current_quantity - material.quantity;
-            const { error: updateStockError } = await supabase
+          if (currentItem) {
+            const newQuantity = Math.max(0, currentItem.current_quantity - material.quantity);
+            await supabase
               .from('stock_items')
               .update({ current_quantity: newQuantity })
               .eq('id', material.stock_item_id);
-
-            if (updateStockError) throw updateStockError;
           }
         }
       }
 
-      // 5. Registrar informações financeiras (se houver valor)
-      if (data.sessionValue > 0) {
-        const { error: financialError } = await supabase
-          .from('financial_records')
-          .insert([{
-            type: 'income',
-            category: 'Atendimento',
-            description: `Sessão #${data.sessionNumber} - ${schedule.clients?.name} - ${schedule.title}`,
-            amount: data.sessionValue,
-            date: new Date().toISOString().split('T')[0],
-            payment_method: data.paymentMethod,
-            client_id: data.clientId,
-            employee_id: data.employeeId,
-            notes: `Status: ${data.paymentStatus}. Custo materiais: R$ ${data.totalMaterialsCost.toFixed(2)}`,
-            created_by: user?.id
-          }]);
-
-        if (financialError) throw financialError;
-      }
-
-      // 6. Atualizar relatório do funcionário
-      await updateEmployeeReport({
-        scheduleId: data.scheduleId,
-        employeeId: data.employeeId,
-        clientId: data.clientId,
-        status: 'completed',
-        materials: data.materials,
-        notes: data.progressNotes,
-        sessionDuration: data.actualDuration,
-        clientProgress: data.clientProgress
-      });
-
       toast({
-        title: "Atendimento concluído com sucesso!",
-        description: `Todas as informações foram registradas: ${data.materials.length > 0 ? `${data.materials.length} material(is) baixado(s), ` : ''}${data.sessionValue > 0 ? `receita de R$ ${data.sessionValue.toFixed(2)}, ` : ''}histórico clínico e relatório atualizados.`,
+        title: "Atendimento confirmado!",
+        description: materials.length > 0 
+          ? `Sessão confirmada e ${materials.length} material(is) baixado(s) do estoque.`
+          : `Sessão confirmada com sucesso!`,
       });
 
       loadSchedules();
     } catch (error) {
-      console.error('Error completing appointment:', error);
+      console.error('Error confirming appointment:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível concluir o atendimento. Tente novamente.",
+        description: "Não foi possível confirmar o atendimento.",
       });
     }
   };
 
   const handleCancelAppointment = async (scheduleId: string, reason: string, category: string) => {
     try {
-      // Get schedule details for reporting
-      const { data: scheduleData } = await supabase
-        .from('schedules')
-        .select('client_id, employee_id')
-        .eq('id', scheduleId)
-        .single();
-
-      if (!scheduleData) throw new Error('Schedule not found');
-
       const { error } = await supabase
         .from('schedules')
         .update({ 
@@ -518,19 +351,9 @@ export default function Schedule() {
 
       if (error) throw error;
 
-      // Update employee report with cancellation data
-      await updateEmployeeReport({
-        scheduleId,
-        employeeId: scheduleData.employee_id,
-        clientId: scheduleData.client_id,
-        status: 'cancelled',
-        cancelReason: reason,
-        cancelCategory: category
-      });
-
       toast({
         title: "Agendamento cancelado",
-        description: "O agendamento foi cancelado, motivo registrado e relatório atualizado automaticamente.",
+        description: "O agendamento foi cancelado e o motivo foi registrado.",
       });
 
       loadSchedules();
@@ -556,22 +379,12 @@ export default function Schedule() {
 
   const handleEdit = (schedule: Schedule) => {
     setEditingSchedule(schedule);
-    
-    // Convert ISO strings to local datetime format for datetime-local inputs
-    const formatDateTimeLocal = (isoString: string) => {
-      const date = new Date(isoString);
-      // Get local timezone offset and adjust
-      const offset = date.getTimezoneOffset();
-      const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-      return localDate.toISOString().slice(0, 16);
-    };
-    
     setNewAppointment({
       client_id: schedule.client_id,
       employee_id: schedule.employee_id,
       title: schedule.title,
-      start_time: formatDateTimeLocal(schedule.start_time),
-      end_time: formatDateTimeLocal(schedule.end_time),
+      start_time: schedule.start_time,
+      end_time: schedule.end_time,
       notes: schedule.notes || ''
     });
     setIsDialogOpen(true);
@@ -868,7 +681,7 @@ export default function Schedule() {
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium text-sm md:text-base">
-                              {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
+                              {new Date(schedule.start_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - {new Date(schedule.end_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
                             </span>
                             <Badge variant="outline" className="text-xs">{schedule.title}</Badge>
                           </div>
@@ -887,29 +700,26 @@ export default function Schedule() {
                             {getStatusLabel(schedule.status)}
                           </Badge>
                           
-                          {/* Botões de ação - permitir edição em qualquer status */}
-                          {(userProfile?.employee_role === 'director' || 
-                            userProfile?.employee_role === 'coordinator_madre' || 
-                            userProfile?.employee_role === 'coordinator_floresta') && (
+                          {/* Botões de ação - apenas para diretores */}
+                          {userProfile?.employee_role === 'director' && (
                             <div className="flex gap-1">
                               {(schedule.status === 'scheduled' || schedule.status === 'confirmed') && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => openConfirmDialog(schedule)}
-                                  title="Concluir Atendimento"
+                                  title="Confirmar Atendimento"
                                   className="text-primary hover:text-primary shadow-professional"
                                 >
                                   <CheckCircle className="h-3 w-3" />
                                 </Button>
                               )}
                               
-                              {/* Permitir edição em qualquer status */}
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleEdit(schedule)}
-                                title="Editar Agendamento"
+                                title="Editar"
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
@@ -971,16 +781,16 @@ export default function Schedule() {
           </div>
         </div>
         
-      {/* Dialogs */}
-      <CompleteAppointmentDialog
-        isOpen={confirmDialogOpen}
-        onClose={() => {
-          setConfirmDialogOpen(false);
-          setSelectedScheduleForAction(null);
-        }}
-        schedule={selectedScheduleForAction}
-        onComplete={handleCompleteAppointment}
-      />
+        {/* Dialogs */}
+        <ConfirmAppointmentDialog
+          isOpen={confirmDialogOpen}
+          onClose={() => {
+            setConfirmDialogOpen(false);
+            setSelectedScheduleForAction(null);
+          }}
+          schedule={selectedScheduleForAction}
+          onConfirm={handleConfirmAppointment}
+        />
 
         <CancelAppointmentDialog
           isOpen={cancelDialogOpen}

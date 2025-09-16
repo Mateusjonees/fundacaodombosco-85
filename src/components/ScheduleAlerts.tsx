@@ -65,7 +65,7 @@ export function ScheduleAlerts() {
         `)
         .gte('start_time', startOfDay)
         .lte('start_time', endOfDay)
-        .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled'])
+        .in('status', ['scheduled', 'confirmed'])
         .order('start_time');
 
       // Filter based on user role
@@ -89,36 +89,31 @@ export function ScheduleAlerts() {
     }
   };
 
-  // Auto refresh every 2 minutes and when userProfile changes
+  // Auto refresh every 5 minutes
   useEffect(() => {
     const interval = setInterval(() => {
-      if (user && userProfile) {
+      if (user) {
         loadTodaySchedules();
       }
-    }, 2 * 60 * 1000); // 2 minutes
+    }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [user, userProfile]);
+  }, [user]);
 
   if (!isVisible || todaySchedules.length === 0) return null;
 
   const nextAppointment = todaySchedules.find(schedule => {
     const scheduleTime = new Date(schedule.start_time);
     const now = new Date();
-    return scheduleTime > now && ['scheduled', 'confirmed'].includes(schedule.status);
+    return scheduleTime > now;
   });
 
   const currentAppointments = todaySchedules.filter(schedule => {
     const scheduleTime = new Date(schedule.start_time);
     const scheduleEnd = new Date(scheduleTime.getTime() + 60 * 60 * 1000); // Assuming 1 hour appointments
     const now = new Date();
-    return now >= scheduleTime && now <= scheduleEnd && ['scheduled', 'confirmed'].includes(schedule.status);
+    return now >= scheduleTime && now <= scheduleEnd;
   });
-
-  // Calculate different status counts
-  const pendingAppointments = todaySchedules.filter(s => ['scheduled', 'confirmed'].includes(s.status));
-  const completedAppointments = todaySchedules.filter(s => s.status === 'completed');
-  const cancelledAppointments = todaySchedules.filter(s => s.status === 'cancelled');
 
   return (
     <Card className="mb-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
@@ -193,27 +188,22 @@ export function ScheduleAlerts() {
               <div className="text-xs text-muted-foreground">Total Hoje</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{pendingAppointments.length}</div>
-              <div className="text-xs text-muted-foreground">Pendentes</div>
-            </div>
-            <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{currentAppointments.length}</div>
               <div className="text-xs text-muted-foreground">Em Andamento</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{completedAppointments.length}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {todaySchedules.filter(s => new Date(s.start_time) > new Date()).length}
+              </div>
+              <div className="text-xs text-muted-foreground">Próximos</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-600">
+                {todaySchedules.filter(s => s.status === 'completed').length}
+              </div>
               <div className="text-xs text-muted-foreground">Concluídos</div>
             </div>
           </div>
-
-          {/* Additional Status Information */}
-          {cancelledAppointments.length > 0 && (
-            <div className="text-center pt-2 border-t">
-              <div className="text-sm text-red-600">
-                <span className="font-medium">{cancelledAppointments.length}</span> cancelado(s) hoje
-              </div>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

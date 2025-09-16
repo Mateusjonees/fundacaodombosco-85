@@ -91,55 +91,27 @@ export default function Dashboard() {
   const loadDashboardStats = async () => {
     setLoading(true);
     try {
-      // Get user profile first
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('employee_role')
-        .eq('user_id', user?.id)
-        .single();
-
       // Load basic stats
       const [
         clientsRes,
-        employeesRes,
-        schedulesRes,
-        financialRes,
-        stockRes
+        employeesRes
       ] = await Promise.all([
         supabase.from('clients').select('id, is_active'),
-        supabase.from('profiles').select('id'),
-        loadTodaySchedules(userProfile),
-        supabase.from('financial_records').select('amount, type').gte('date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]),
-        supabase.from('stock_items').select('id, current_quantity, minimum_quantity').eq('is_active', true)
+        supabase.from('profiles').select('id')
       ]);
 
       const clients = clientsRes.data || [];
       const employees = employeesRes.data || [];
-      const schedules = schedulesRes || [];
-      const financial = financialRes.data || [];
-      const stock = stockRes.data || [];
-
-      // Calculate today's appointments by status
-      const pendingAppointments = schedules.filter(s => ['scheduled', 'confirmed'].includes(s.status)).length;
-      const completedAppointments = schedules.filter(s => s.status === 'completed').length;
-      
-      // Calculate monthly revenue (income - expenses)
-      const monthlyRevenue = financial.reduce((total, record) => {
-        return record.type === 'income' ? total + Number(record.amount) : total - Number(record.amount);
-      }, 0);
-
-      // Calculate low stock items
-      const lowStockItems = stock.filter(item => item.current_quantity <= item.minimum_quantity).length;
 
       const newStats: DashboardStats = {
         totalClients: clients.length,
         activeClients: clients.filter(c => c.is_active === true).length,
-        todayAppointments: schedules.length,
-        totalAppointments: schedules.length,
-        monthlyRevenue: monthlyRevenue,
+        todayAppointments: 0, // Will be implemented when schedules table is fixed
+        totalAppointments: 0,
+        monthlyRevenue: 0, // Will be implemented when financial_records table is fixed
         totalEmployees: employees.length,
-        lowStockItems: lowStockItems,
-        pendingAppointments: pendingAppointments
+        lowStockItems: 0, // Will be implemented when stock_items table is fixed
+        pendingAppointments: 0
       };
 
       setStats(newStats);
@@ -154,61 +126,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-
-  // Function to load today's schedules with proper filtering
-  const loadTodaySchedules = async (userProfile: any) => {
-    try {
-      const today = new Date();
-      const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-      const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
-
-      let query = supabase
-        .from('schedules')
-        .select(`
-          id, title, start_time, status,
-          clients (name),
-          profiles (name)
-        `)
-        .gte('start_time', startOfDay)
-        .lte('start_time', endOfDay)
-        .order('start_time');
-
-      // Filter based on user role
-      if (userProfile) {
-        const isReceptionist = ['receptionist', 'administrative'].includes(userProfile.employee_role);
-        const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role);
-        
-        if (!isDirectorOrCoordinator && !isReceptionist) {
-          // Staff members see only their appointments
-          query = query.eq('employee_id', user?.id);
-        }
-        // Directors, coordinators and receptionists see all appointments
-      }
-
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error('Error loading today schedules:', error);
-        return [];
-      }
-      
-      return data || [];
-    } catch (error) {
-      console.error('Error loading today schedules:', error);
-      return [];
-    }
-  };
-
-  // Auto refresh stats every 2 minutes
-  useEffect(() => {
-    if (user) {
-      const interval = setInterval(() => {
-        loadDashboardStats();
-      }, 2 * 60 * 1000); // 2 minutes
-
-      return () => clearInterval(interval);
-    }
-  }, [user]);
 
   return (
     <div className="space-y-6">
