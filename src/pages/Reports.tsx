@@ -9,21 +9,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Calendar, Users, Clock, User, Award, Printer, Download, RefreshCw, Activity, Package } from 'lucide-react';
+import { Calendar, Users, Clock, User, Award, Printer, Download } from 'lucide-react';
 
 interface EmployeeStats {
   employee: any;
   totalAppointments: number;
   completedAppointments: number;
-  cancelledAppointments: number;
-  inProgressAppointments: number;
   totalHours: number;
-  totalMaterialsCost?: number;
   uniqueClients: number;
   avgAppointmentDuration: number;
-  avgAppointmentsPerClient: number;
-  completionRate: number;
-  performanceScore: number;
   monthlyStats: any[];
   clientsList: any[];
   recentAppointments: any[];
@@ -35,23 +29,11 @@ export default function Reports() {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [employeeStats, setEmployeeStats] = useState<EmployeeStats | null>(null);
   const [loading, setLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
   const { toast } = useToast();
-
-  // Auto-refresh every 30 seconds when enabled
-  useEffect(() => {
-    if (!autoRefresh || !selectedEmployee) return;
-    
-    const interval = setInterval(() => {
-      generateEmployeeReport();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, selectedEmployee, dateRange]);
 
   useEffect(() => {
     loadEmployees();
@@ -97,11 +79,11 @@ export default function Reports() {
       const employee = employees.find(emp => emp.user_id === selectedEmployee);
       if (!employee) return;
 
-      // Load appointments for the employee with cancellation reasons
+      // Load appointments for the employee
       const { data: appointments, error: appointmentsError } = await supabase
         .from('schedules')
         .select(`
-          id, title, start_time, end_time, status, description, client_id, notes,
+          id, title, start_time, end_time, status, description, client_id,
           clients:client_id (id, name, unit)
         `)
         .eq('employee_id', selectedEmployee)
@@ -111,57 +93,22 @@ export default function Reports() {
 
       if (appointmentsError) throw appointmentsError;
 
-      // Load appointment sessions for detailed metrics
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('appointment_sessions')
-        .select(`
-          schedule_id, session_duration, materials_used, total_materials_cost, session_notes,
-          schedules:schedule_id (start_time, end_time, employee_id)
-        `)
-        .eq('schedules.employee_id', selectedEmployee);
-
-      if (sessionsError) {
-        console.error('Error loading sessions:', sessionsError);
-      }
-
-      // Calculate statistics with session data
+      // Calculate statistics
       const totalAppointments = appointments?.length || 0;
       const completedAppointments = appointments?.filter(a => a.status === 'completed').length || 0;
-      const cancelledAppointments = appointments?.filter(a => a.status === 'cancelled').length || 0;
-      const inProgressAppointments = appointments?.filter(a => a.status === 'confirmed' || a.status === 'scheduled').length || 0;
       
-      // Calculate total hours from sessions when available, fallback to schedule times
-      let totalHours = 0;
-      const sessionMap = new Map(sessions?.map(s => [s.schedule_id, s]) || []);
-      
-      appointments?.forEach(apt => {
-        const session = sessionMap.get(apt.id);
-        if (session && session.session_duration) {
-          totalHours += session.session_duration / 60; // convert minutes to hours
-        } else {
-          // Fallback to schedule duration
-          const start = new Date(apt.start_time);
-          const end = new Date(apt.end_time);
-          const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-          totalHours += hours;
-        }
-      });
-
-      // Calculate total materials cost
-      const totalMaterialsCost = sessions?.reduce((sum, session) => 
-        sum + (session.total_materials_cost || 0), 0) || 0;
+      // Calculate total hours
+      const totalHours = appointments?.reduce((sum, apt) => {
+        const start = new Date(apt.start_time);
+        const end = new Date(apt.end_time);
+        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        return sum + hours;
+      }, 0) || 0;
 
       const uniqueClients = new Set(appointments?.map(a => a.client_id)).size;
       const avgAppointmentDuration = totalAppointments > 0 ? totalHours / totalAppointments : 0;
-      const avgAppointmentsPerClient = uniqueClients > 0 ? totalAppointments / uniqueClients : 0;
-      const completionRate = totalAppointments > 0 ? (completedAppointments / totalAppointments) * 100 : 0;
-      
-      // Enhanced performance score including materials efficiency
-      const efficiencyScore = avgAppointmentDuration > 0 ? Math.min(100, (1.5 / avgAppointmentDuration) * 100) : 0;
-      const materialsEfficiency = completedAppointments > 0 ? Math.max(0, 100 - (totalMaterialsCost / completedAppointments)) : 100;
-      const performanceScore = (completionRate * 0.5) + (efficiencyScore * 0.3) + (materialsEfficiency * 0.2);
 
-      // Monthly statistics with enhanced data
+      // Monthly statistics
       const monthlyStats = Array.from({ length: 12 }, (_, i) => {
         const month = i + 1;
         const monthAppointments = appointments?.filter(a => {
@@ -169,49 +116,31 @@ export default function Reports() {
           return date.getMonth() + 1 === month && date.getFullYear() === new Date().getFullYear();
         }) || [];
 
-        const monthSessions = monthAppointments
-          .map(apt => sessionMap.get(apt.id))
-          .filter(Boolean);
-
-        let monthHours = 0;
-        monthAppointments.forEach(apt => {
-          const session = sessionMap.get(apt.id);
-          if (session && session.session_duration) {
-            monthHours += session.session_duration / 60;
-          } else {
-            const start = new Date(apt.start_time);
-            const end = new Date(apt.end_time);
-            monthHours += (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-          }
-        });
-
-        const monthMaterialsCost = monthSessions.reduce((sum, session) => 
-          sum + (session.total_materials_cost || 0), 0);
+        const monthHours = monthAppointments.reduce((sum, apt) => {
+          const start = new Date(apt.start_time);
+          const end = new Date(apt.end_time);
+          return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        }, 0);
 
         return {
           month: new Date(2025, i, 1).toLocaleDateString('pt-BR', { month: 'short' }),
           appointments: monthAppointments.length,
           hours: monthHours,
-          completed: monthAppointments.filter(a => a.status === 'completed').length,
-          cancelled: monthAppointments.filter(a => a.status === 'cancelled').length,
-          materialsCost: monthMaterialsCost
+          completed: monthAppointments.filter(a => a.status === 'completed').length
         };
       });
 
-      // Get unique clients list with appointment count and cancellation info
+      // Get unique clients list with appointment count
       const clientsMap = new Map();
       appointments?.forEach(apt => {
         if (apt.clients) {
           const clientId = apt.clients.id;
           if (clientsMap.has(clientId)) {
-            const client = clientsMap.get(clientId);
-            client.appointmentCount++;
-            if (apt.status === 'cancelled') client.cancelledCount++;
+            clientsMap.get(clientId).appointmentCount++;
           } else {
             clientsMap.set(clientId, {
               ...apt.clients,
-              appointmentCount: 1,
-              cancelledCount: apt.status === 'cancelled' ? 1 : 0
+              appointmentCount: 1
             });
           }
         }
@@ -223,15 +152,9 @@ export default function Reports() {
         employee,
         totalAppointments,
         completedAppointments,
-        cancelledAppointments,
-        inProgressAppointments,
         totalHours: Math.round(totalHours * 100) / 100,
-        totalMaterialsCost: Math.round(totalMaterialsCost * 100) / 100,
         uniqueClients,
         avgAppointmentDuration: Math.round(avgAppointmentDuration * 100) / 100,
-        avgAppointmentsPerClient: Math.round(avgAppointmentsPerClient * 100) / 100,
-        completionRate: Math.round(completionRate * 100) / 100,
-        performanceScore: Math.round(performanceScore * 100) / 100,
         monthlyStats,
         clientsList,
         recentAppointments: appointments || []
@@ -687,56 +610,24 @@ Gerado por: Sistema de Gestão Clínica
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Relatórios de Funcionários</h1>
-        <div className="flex items-center gap-2">
-          {selectedEmployee && (
-            <Button
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              variant={autoRefresh ? "default" : "outline"}
-              size="sm"
-              className="gap-1"
-            >
-              <Activity className="h-4 w-4" />
-              {autoRefresh ? "Tempo Real" : "Ativar Tempo Real"}
+        {employeeStats && (
+          <div className="flex gap-2">
+            <Button onClick={printEmployeeReport} variant="outline" className="gap-2">
+              <Printer className="h-4 w-4" />
+              Imprimir Relatório
             </Button>
-          )}
-          {autoRefresh && selectedEmployee && (
-            <Badge variant="secondary" className="animate-pulse">
-              Atualizando automaticamente a cada 30s
-            </Badge>
-          )}
-          {employeeStats && (
-            <>
-              <Button onClick={printEmployeeReport} variant="outline" className="gap-2">
-                <Printer className="h-4 w-4" />
-                Imprimir
-              </Button>
-              <Button onClick={exportEmployeeReport} className="gap-2">
-                <Download className="h-4 w-4" />
-                Exportar
-              </Button>
-            </>
-          )}
-        </div>
+            <Button onClick={exportEmployeeReport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar Relatório
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            Filtros do Relatório
-            {selectedEmployee && (
-              <Button
-                onClick={generateEmployeeReport}
-                variant="outline"
-                size="sm"
-                disabled={loading}
-                className="gap-1"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Atualizar
-              </Button>
-            )}
-          </CardTitle>
+          <CardTitle>Filtros do Relatório</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -774,12 +665,6 @@ Gerado por: Sistema de Gestão Clínica
               />
             </div>
           </div>
-          {autoRefresh && selectedEmployee && (
-            <div className="text-sm text-muted-foreground flex items-center gap-1">
-              <Activity className="h-3 w-3 animate-pulse" />
-              Relatório atualiza automaticamente a cada 30 segundos
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -821,91 +706,31 @@ Gerado por: Sistema de Gestão Clínica
           </Card>
 
           {/* Key Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Atendimentos</CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{employeeStats.totalAppointments}</div>
-                <p className="text-xs text-muted-foreground">Atendimentos</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
-                <Award className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{employeeStats.completedAppointments}</div>
-                <p className="text-xs text-muted-foreground">{employeeStats.completionRate}% conclusão</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Cancelados</CardTitle>
-                <Calendar className="h-4 w-4 text-red-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">{employeeStats.cancelledAppointments}</div>
                 <p className="text-xs text-muted-foreground">
-                  {employeeStats.totalAppointments > 0 ? ((employeeStats.cancelledAppointments / employeeStats.totalAppointments) * 100).toFixed(1) : 0}% do total
+                  {employeeStats.completedAppointments} concluídos ({employeeStats.totalAppointments > 0 ? ((employeeStats.completedAppointments / employeeStats.totalAppointments) * 100).toFixed(1) : 0}%)
                 </p>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
-                <Activity className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{employeeStats.inProgressAppointments}</div>
-                <p className="text-xs text-muted-foreground">Agendados/Confirmados</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Horas Totais</CardTitle>
+                <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">{employeeStats.totalHours}h</div>
-                <p className="text-xs text-muted-foreground">Média: {employeeStats.avgAppointmentDuration}h/atendimento</p>
+                <div className="text-2xl font-bold">{employeeStats.totalHours}h</div>
+                <p className="text-xs text-muted-foreground">
+                  Média: {employeeStats.avgAppointmentDuration}h por atendimento
+                </p>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Custo Materiais</CardTitle>
-                <Package className="h-4 w-4 text-orange-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-orange-600">
-                  R$ {(employeeStats.totalMaterialsCost || 0).toFixed(2)}
-                </div>
-                <p className="text-xs text-muted-foreground">Total investido</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Performance</CardTitle>
-                <Award className="h-4 w-4 text-purple-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-600">{employeeStats.performanceScore}%</div>
-                <p className="text-xs text-muted-foreground">Score geral</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Secondary Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Clientes Únicos</CardTitle>
@@ -914,34 +739,22 @@ Gerado por: Sistema de Gestão Clínica
               <CardContent>
                 <div className="text-2xl font-bold">{employeeStats.uniqueClients}</div>
                 <p className="text-xs text-muted-foreground">
-                  {employeeStats.avgAppointmentsPerClient} atendimentos/cliente em média
+                  {employeeStats.uniqueClients > 0 ? (employeeStats.totalAppointments / employeeStats.uniqueClients).toFixed(1) : 0} atendimentos/cliente
                 </p>
               </CardContent>
             </Card>
-            
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Produtividade</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Performance</CardTitle>
+                <Award className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {(employeeStats.totalHours / ((new Date(dateRange.end).getTime() - new Date(dateRange.start).getTime()) / (1000 * 60 * 60 * 24 * 30))).toFixed(1)}h
+                  {employeeStats.totalAppointments > 0 ? ((employeeStats.completedAppointments / employeeStats.totalAppointments) * 100).toFixed(1) : 0}%
                 </div>
-                <p className="text-xs text-muted-foreground">Horas por mês</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Eficiência</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {(employeeStats.totalAppointments / 12).toFixed(1)}
-                </div>
-                <p className="text-xs text-muted-foreground">Atendimentos por mês</p>
+                <p className="text-xs text-muted-foreground">
+                  Taxa de conclusão
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -998,16 +811,9 @@ Gerado por: Sistema de Gestão Clínica
                         <div className="font-medium">{client.name}</div>
                         <div className="text-sm text-muted-foreground">
                           {client.unit === 'madre' ? 'Clínica Social (Madre)' : 'Neuro (Floresta)'}
-                          {client.cancelledCount > 0 && (
-                            <span className="ml-2 text-destructive">
-                              • {client.cancelledCount} cancelamento(s)
-                            </span>
-                          )}
                         </div>
                       </div>
-                      <Badge variant={client.cancelledCount > 2 ? "destructive" : "outline"}>
-                        {client.appointmentCount} atendimento{client.appointmentCount !== 1 ? 's' : ''}
-                      </Badge>
+                      <Badge variant="outline">{client.appointmentCount} atendimentos</Badge>
                     </div>
                   ))}
                 </div>
@@ -1027,37 +833,14 @@ Gerado por: Sistema de Gestão Clínica
                         Cliente: {appointment.clients?.name || 'N/A'}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        Profissional: {employeeStats.employee.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
                         {new Date(appointment.start_time).toLocaleString('pt-BR')}
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge 
-                          variant={
-                            appointment.status === 'completed' ? 'default' : 
-                            appointment.status === 'cancelled' ? 'destructive' : 
-                            appointment.status === 'confirmed' || appointment.status === 'scheduled' ? 'secondary' : 
-                            'outline'
-                          }
-                        >
-                          {appointment.status === 'completed' ? 'Concluído' : 
-                           appointment.status === 'cancelled' ? 'Cancelado' :
-                           appointment.status === 'confirmed' ? 'Em andamento' :
-                           appointment.status === 'scheduled' ? 'Em andamento' :
-                           appointment.status}
-                        </Badge>
-                      </div>
-                      {appointment.status === 'cancelled' && appointment.description && (
-                        <div className="text-sm text-red-600 mt-2 p-2 bg-red-50 rounded">
-                          <strong>Motivo do cancelamento:</strong> {appointment.description}
-                        </div>
-                      )}
-                      {appointment.status === 'completed' && appointment.description && (
-                        <div className="text-sm text-muted-foreground mt-2">
-                          <strong>Observações:</strong> {appointment.description}
-                        </div>
-                      )}
+                      <Badge 
+                        variant={appointment.status === 'completed' ? 'default' : 'secondary'}
+                        className="mt-1"
+                      >
+                        {appointment.status === 'completed' ? 'Concluído' : appointment.status}
+                      </Badge>
                     </div>
                   ))}
                 </div>
