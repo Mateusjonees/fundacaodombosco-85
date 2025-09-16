@@ -209,9 +209,23 @@ export default function Schedule() {
 
   const handleCreateAppointment = async () => {
     try {
-      const appointmentData = editingSchedule 
-        ? { ...newAppointment, id: editingSchedule.id }
-        : newAppointment;
+      // Convert datetime-local format to ISO string maintaining local time
+      const convertToISOString = (dateTimeLocal: string) => {
+        if (!dateTimeLocal) return '';
+        // Create date object from local datetime input and convert to ISO
+        const date = new Date(dateTimeLocal);
+        return date.toISOString();
+      };
+
+      const appointmentData = {
+        client_id: newAppointment.client_id,
+        employee_id: newAppointment.employee_id,
+        title: newAppointment.title,
+        start_time: convertToISOString(newAppointment.start_time),
+        end_time: convertToISOString(newAppointment.end_time),
+        notes: newAppointment.notes,
+        created_by: user?.id
+      };
 
       if (editingSchedule) {
         const { error } = await supabase
@@ -379,12 +393,22 @@ export default function Schedule() {
 
   const handleEdit = (schedule: Schedule) => {
     setEditingSchedule(schedule);
+    
+    // Convert ISO strings to local datetime format for datetime-local inputs
+    const formatDateTimeLocal = (isoString: string) => {
+      const date = new Date(isoString);
+      // Get local timezone offset and adjust
+      const offset = date.getTimezoneOffset();
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+      return localDate.toISOString().slice(0, 16);
+    };
+    
     setNewAppointment({
       client_id: schedule.client_id,
       employee_id: schedule.employee_id,
       title: schedule.title,
-      start_time: schedule.start_time,
-      end_time: schedule.end_time,
+      start_time: formatDateTimeLocal(schedule.start_time),
+      end_time: formatDateTimeLocal(schedule.end_time),
       notes: schedule.notes || ''
     });
     setIsDialogOpen(true);
@@ -681,7 +705,7 @@ export default function Schedule() {
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium text-sm md:text-base">
-                              {new Date(schedule.start_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - {new Date(schedule.end_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                              {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
                             </span>
                             <Badge variant="outline" className="text-xs">{schedule.title}</Badge>
                           </div>
@@ -700,8 +724,10 @@ export default function Schedule() {
                             {getStatusLabel(schedule.status)}
                           </Badge>
                           
-                          {/* Botões de ação - apenas para diretores */}
-                          {userProfile?.employee_role === 'director' && (
+                          {/* Botões de ação - permitir edição em qualquer status */}
+                          {(userProfile?.employee_role === 'director' || 
+                            userProfile?.employee_role === 'coordinator_madre' || 
+                            userProfile?.employee_role === 'coordinator_floresta') && (
                             <div className="flex gap-1">
                               {(schedule.status === 'scheduled' || schedule.status === 'confirmed') && (
                                 <Button
@@ -715,11 +741,12 @@ export default function Schedule() {
                                 </Button>
                               )}
                               
+                              {/* Permitir edição em qualquer status */}
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleEdit(schedule)}
-                                title="Editar"
+                                title="Editar Agendamento"
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
