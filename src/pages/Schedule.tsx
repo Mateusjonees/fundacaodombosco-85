@@ -29,6 +29,7 @@ interface Schedule {
   title: string;
   status: string;
   notes?: string;
+  unit?: string;
   clients?: { name: string };
   
 }
@@ -65,7 +66,8 @@ export default function Schedule() {
     title: 'Consulta',
     start_time: '',
     end_time: '',
-    notes: ''
+    notes: '',
+    unit: 'madre'
   });
 
   useEffect(() => {
@@ -213,6 +215,7 @@ export default function Schedule() {
         start_time: convertToISOString(newAppointment.start_time),
         end_time: convertToISOString(newAppointment.end_time),
         notes: newAppointment.notes,
+        unit: newAppointment.unit,
         created_by: user?.id
       };
 
@@ -252,7 +255,8 @@ export default function Schedule() {
         title: 'Consulta',
         start_time: '',
         end_time: '',
-        notes: ''
+        notes: '',
+        unit: 'madre'
       });
       loadSchedules();
     } catch (error) {
@@ -494,7 +498,8 @@ export default function Schedule() {
       title: schedule.title,
       start_time: formatDateTimeLocal(schedule.start_time),
       end_time: formatDateTimeLocal(schedule.end_time),
-      notes: schedule.notes || ''
+      notes: schedule.notes || '',
+      unit: schedule.unit || 'madre'
     });
     setIsDialogOpen(true);
   };
@@ -671,7 +676,8 @@ export default function Schedule() {
                       title: 'Consulta',
                       start_time: '',
                       end_time: '',
-                      notes: ''
+                      notes: '',
+                      unit: 'madre'
                     });
                   }}
                 >
@@ -739,25 +745,38 @@ export default function Schedule() {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título</Label>
-                    <Input
-                      id="title"
-                      value={newAppointment.title}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, title: e.target.value })}
-                      placeholder="Título do agendamento"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Observações</Label>
-                    <Textarea
-                      id="notes"
-                      value={newAppointment.notes}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
-                      placeholder="Informações adicionais sobre o agendamento"
-                    />
-                  </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="title">Título</Label>
+                     <Input
+                       id="title"
+                       value={newAppointment.title}
+                       onChange={(e) => setNewAppointment({ ...newAppointment, title: e.target.value })}
+                       placeholder="Título do agendamento"
+                     />
+                   </div>
+                   
+                   <div className="space-y-2">
+                     <Label htmlFor="unit">Unidade</Label>
+                     <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({ ...newAppointment, unit: value })}>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Selecione a unidade" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                         <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
+                   
+                   <div className="space-y-2">
+                     <Label htmlFor="notes">Observações</Label>
+                     <Textarea
+                       id="notes"
+                       value={newAppointment.notes}
+                       onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
+                       placeholder="Informações adicionais sobre o agendamento"
+                     />
+                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -797,12 +816,16 @@ export default function Schedule() {
                             </span>
                             <Badge variant="outline" className="text-xs">{schedule.title}</Badge>
                           </div>
-                          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2 flex-wrap">
-                            <User className="h-3 w-3" />
-                            <span>Cliente: {schedule.clients?.name || 'N/A'}</span>
-                            <span className="hidden md:inline">•</span>
-                            <span>Profissional: {employees.find(emp => emp.id === schedule.employee_id)?.name || 'N/A'}</span>
-                          </div>
+                           <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2 flex-wrap">
+                             <User className="h-3 w-3" />
+                             <span>Cliente: {schedule.clients?.name || 'N/A'}</span>
+                             <span className="hidden md:inline">•</span>
+                             <span>Profissional: {employees.find(emp => emp.id === schedule.employee_id)?.name || 'N/A'}</span>
+                             <span className="hidden md:inline">•</span>
+                             <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-xs">
+                               {schedule.unit === 'madre' ? 'Madre' : 'Floresta'}
+                             </Badge>
+                           </div>
                           {schedule.notes && (
                             <p className="text-xs md:text-sm text-muted-foreground">{schedule.notes}</p>
                           )}

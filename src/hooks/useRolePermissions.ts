@@ -119,8 +119,20 @@ export const useRolePermissions = () => {
     return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
   };
 
+  // Atualizar as permissões de relatório
   const canViewReports = (): boolean => {
-    return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
+    return isGodMode() || hasAnyRole([
+      'director',
+      'coordinator_madre', 
+      'coordinator_floresta',
+      'financeiro',
+      'psychologist',
+      'psychopedagogue',
+      'speech_therapist',
+      'nutritionist',
+      'physiotherapist',
+      'musictherapist'
+    ]);
   };
 
   const canExportData = (): boolean => {

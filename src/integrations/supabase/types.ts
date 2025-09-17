@@ -1717,6 +1717,7 @@ export type Database = {
           start_time: string
           status: string | null
           title: string
+          unit: string | null
           updated_at: string
         }
         Insert: {
@@ -1739,6 +1740,7 @@ export type Database = {
           start_time: string
           status?: string | null
           title: string
+          unit?: string | null
           updated_at?: string
         }
         Update: {
@@ -1761,6 +1763,7 @@ export type Database = {
           start_time?: string
           status?: string | null
           title?: string
+          unit?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2161,6 +2164,10 @@ export type Database = {
     }
     Functions: {
       can_access_financial: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      can_access_reports: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

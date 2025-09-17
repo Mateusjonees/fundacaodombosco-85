@@ -80,27 +80,24 @@ export default function Clients() {
     clinical_observations: ''
   });
 
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
   useEffect(() => {
     loadUserProfile();
     loadEmployees();
+    loadClients();
   }, [user]);
-
-  useEffect(() => {
-    if (userProfile) {
-      loadClients();
-    }
-  }, [userProfile]);
 
   const loadUserProfile = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('employee_role')
         .eq('user_id', user.id)
         .single();
-      
+
       if (error) throw error;
       setUserProfile(data);
     } catch (error) {
@@ -112,10 +109,10 @@ export default function Clients() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, employee_role')
+        .select('id, name, employee_role, user_id')
         .eq('is_active', true)
         .order('name');
-      
+
       if (error) throw error;
       setEmployees(data || []);
     } catch (error) {
@@ -124,33 +121,40 @@ export default function Clients() {
   };
 
   const loadClients = async () => {
+    if (!userProfile) return;
+
     setLoading(true);
     try {
-      let query;
-      
+      // Load all clients for directors and coordinators, filtered for others
       if (isCoordinatorOrDirector) {
-        // Coordenadores e diretores veem todos os clientes
-        query = supabase
+        const { data, error } = await supabase
           .from('clients')
           .select('*')
           .order('name');
+
+        if (error) throw error;
+        setClients(data || []);
       } else {
-        // Staff vê apenas clientes vinculados a ele
-        query = supabase
-          .from('clients')
+        // For staff, only show assigned clients through client_assignments
+        const { data, error } = await supabase
+          .from('client_assignments')
           .select(`
-            *,
-            client_assignments!inner (employee_id)
+            client_id,
+            clients (*)
           `)
-          .eq('client_assignments.employee_id', user?.id)
-          .eq('client_assignments.is_active', true)
-          .order('name');
+          .eq('employee_id', user?.id)
+          .eq('is_active', true)
+          .eq('clients.is_active', true);
+
+        if (error) throw error;
+        
+        const clientsData = (data || [])
+          .filter(assignment => assignment.clients)
+          .map(assignment => assignment.clients)
+          .filter(Boolean) as Client[];
+
+        setClients(clientsData);
       }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setClients(data || []);
     } catch (error) {
       console.error('Error loading clients:', error);
       toast({
@@ -165,37 +169,20 @@ export default function Clients() {
 
   const handleCreateClient = async () => {
     try {
-      const { data: clientData, error: clientError } = await supabase
+      const { error } = await supabase
         .from('clients')
-        .insert([{
+        .insert({
           ...newClient,
-          is_active: true
-        }])
-        .select()
-        .single();
+          created_by: user?.id
+        });
 
-      if (clientError) throw clientError;
-
-      // Se não for coordenador/diretor, vincular automaticamente ao usuário atual
-      if (!isCoordinatorOrDirector && clientData) {
-        const { error: assignmentError } = await supabase
-          .from('client_assignments')
-          .insert({
-            client_id: clientData.id,
-            employee_id: user?.id,
-            assigned_by: user?.id
-          });
-
-        if (assignmentError) {
-          console.error('Error creating assignment:', assignmentError);
-        }
-      }
+      if (error) throw error;
 
       toast({
-        title: "Sucesso",
+        title: "Cliente cadastrado",
         description: "Cliente cadastrado com sucesso!",
       });
-      
+
       setIsDialogOpen(false);
       resetForm();
       loadClients();
@@ -221,19 +208,14 @@ export default function Clients() {
       if (error) throw error;
 
       toast({
-        title: "Sucesso",
-        description: "Cliente atualizado com sucesso!",
+        title: "Cliente atualizado",
+        description: "Dados atualizados com sucesso!",
       });
-      
+
       setIsDialogOpen(false);
       setEditingClient(null);
       resetForm();
       loadClients();
-      
-      // Atualizar a visualização se o cliente está sendo visualizado
-      if (selectedClient && selectedClient.id === editingClient.id) {
-        setSelectedClient({ ...selectedClient, ...newClient });
-      }
     } catch (error) {
       console.error('Error updating client:', error);
       toast({
@@ -254,10 +236,10 @@ export default function Clients() {
       if (error) throw error;
 
       toast({
-        title: "Sucesso",
-        description: `Cliente ${!currentStatus ? 'ativado' : 'desativado'} com sucesso!`,
+        title: currentStatus ? "Cliente desativado" : "Cliente ativado",
+        description: `Cliente ${currentStatus ? 'desativado' : 'ativado'} com sucesso!`,
       });
-      
+
       loadClients();
     } catch (error) {
       console.error('Error toggling client status:', error);
@@ -319,61 +301,54 @@ export default function Clients() {
       client.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.cpf?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      client.phone?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Unit filter
     const matchesUnit = unitFilter === 'all' || client.unit === unitFilter;
 
-    // Age filter
-    let matchesAge = true;
-    if (ageFilter !== 'all' && client.birth_date) {
+    const matchesAge = ageFilter === 'all' || (() => {
+      if (!client.birth_date) return true;
       const birthDate = new Date(client.birth_date);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
       
-      if (ageFilter === 'minor') {
-        matchesAge = age < 18;
-      } else if (ageFilter === 'adult') {
-        matchesAge = age >= 18;
-      }
-    }
+      if (ageFilter === 'minor') return age < 18;
+      if (ageFilter === 'adult') return age >= 18;
+      return true;
+    })();
 
-    // Professional filter (only for coordinators/directors)
-    let matchesProfessional = true;
-    if (professionalFilter !== 'all' && isCoordinatorOrDirector) {
-      // This would require checking client assignments
-      // For now, we'll keep it simple
-      matchesProfessional = true;
-    }
+    // Professional filter - only show if coordinator/director
+    const matchesProfessional = !isCoordinatorOrDirector || professionalFilter === 'all' || (() => {
+      // This would need to be implemented based on client assignments
+      return true;
+    })();
 
     return matchesSearch && matchesUnit && matchesAge && matchesProfessional;
   });
 
-  if (!userProfile) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    );
-  }
-
-  // Se um cliente está selecionado, mostrar a visualização detalhada
   if (selectedClient) {
     return (
-      <ClientDetailsView
-        client={selectedClient}
-        onEdit={() => openEditDialog(selectedClient)}
-        onBack={() => {
-          setSelectedClient(null);
-        }}
-        onRefresh={loadClients}
-      />
+      <div className="space-y-6">
+        <Button 
+          variant="outline" 
+          onClick={() => setSelectedClient(null)}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar para Lista
+        </Button>
+        <ClientDetailsView 
+          client={selectedClient} 
+          onEdit={() => {
+            setSelectedClient(null);
+            openEditDialog(selectedClient);
+          }}
+          onRefresh={loadClients}
+        />
+      </div>
     );
   }
 
@@ -411,231 +386,234 @@ export default function Clients() {
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingClient ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome Completo *</Label>
-                <Input
-                  id="name"
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                  placeholder="Digite o nome completo"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cpf">CPF</Label>
-                <Input
-                  id="cpf"
-                  value={newClient.cpf}
-                  onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
-                  placeholder="000.000.000-00"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="birth_date">Data de Nascimento</Label>
-                <Input
-                  id="birth_date"
-                  type="date"
-                  value={newClient.birth_date}
-                  onChange={(e) => setNewClient({ ...newClient, birth_date: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unidade de Atendimento</Label>
-                <Select value={newClient.unit} onValueChange={(value) => setNewClient({ ...newClient, unit: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                    <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {isCoordinatorOrDirector && (
+              <DialogHeader>
+                <DialogTitle>
+                  {editingClient ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="client_role">Vincular como</Label>
-                  <Select>
+                  <Label htmlFor="name">Nome Completo *</Label>
+                  <Input
+                    id="name"
+                    value={newClient.name}
+                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                    placeholder="Digite o nome completo"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input
+                    id="phone"
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="birth_date">Data de Nascimento</Label>
+                  <Input
+                    id="birth_date"
+                    type="date"
+                    value={newClient.birth_date}
+                    onChange={(e) => setNewClient({ ...newClient, birth_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cpf">CPF</Label>
+                  <Input
+                    id="cpf"
+                    value={newClient.cpf}
+                    onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="unit">Unidade</Label>
+                  <Select value={newClient.unit} onValueChange={(value) => setNewClient({ ...newClient, unit: value })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma opção" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="client">Cliente Regular</SelectItem>
-                      <SelectItem value="director">Diretor</SelectItem>
-                      <SelectItem value="coordinator">Coordenador</SelectItem>
+                      <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                      <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="responsible_name">Nome do Responsável</Label>
-                <Input
-                  id="responsible_name"
-                  value={newClient.responsible_name}
-                  onChange={(e) => setNewClient({ ...newClient, responsible_name: e.target.value })}
-                  placeholder="Nome do responsável (se menor de idade)"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="responsible_name">Nome do Responsável</Label>
+                  <Input
+                    id="responsible_name"
+                    value={newClient.responsible_name}
+                    onChange={(e) => setNewClient({ ...newClient, responsible_name: e.target.value })}
+                    placeholder="Nome completo do responsável"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="responsible_phone">Telefone do Responsável</Label>
+                  <Input
+                    id="responsible_phone"
+                    value={newClient.responsible_phone}
+                    onChange={(e) => setNewClient({ ...newClient, responsible_phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergency_contact">Contato de Emergência</Label>
+                  <Input
+                    id="emergency_contact"
+                    value={newClient.emergency_contact}
+                    onChange={(e) => setNewClient({ ...newClient, emergency_contact: e.target.value })}
+                    placeholder="Nome do contato de emergência"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergency_phone">Telefone de Emergência</Label>
+                  <Input
+                    id="emergency_phone"
+                    value={newClient.emergency_phone}
+                    onChange={(e) => setNewClient({ ...newClient, emergency_phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="col-span-1 md:col-span-2 space-y-2">
+                  <Label htmlFor="address">Endereço Completo</Label>
+                  <Textarea
+                    id="address"
+                    value={newClient.address}
+                    onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                    placeholder="Rua, número, bairro, cidade, CEP"
+                  />
+                </div>
+                <div className="col-span-1 md:col-span-2 space-y-2">
+                  <Label htmlFor="medical_history">Histórico Médico</Label>
+                  <Textarea
+                    id="medical_history"
+                    value={newClient.medical_history}
+                    onChange={(e) => setNewClient({ ...newClient, medical_history: e.target.value })}
+                    placeholder="Histórico médico relevante, medicações em uso, alergias..."
+                  />
+                </div>
+                <div className="col-span-1 md:col-span-2 space-y-2">
+                  <Label htmlFor="diagnosis">Diagnóstico</Label>
+                  <Textarea
+                    id="diagnosis"
+                    value={newClient.diagnosis}
+                    onChange={(e) => setNewClient({ ...newClient, diagnosis: e.target.value })}
+                    placeholder="Diagnóstico médico ou hipótese diagnóstica"
+                  />
+                </div>
+                <div className="col-span-1 md:col-span-2 space-y-2">
+                  <Label htmlFor="neuropsych_complaint">Queixa Neuropsicológica</Label>
+                  <Textarea
+                    id="neuropsych_complaint"
+                    value={newClient.neuropsych_complaint}
+                    onChange={(e) => setNewClient({ ...newClient, neuropsych_complaint: e.target.value })}
+                    placeholder="Queixa principal relacionada à neuropsicologia"
+                  />
+                </div>
+                <div className="col-span-1 md:col-span-2 space-y-2">
+                  <Label htmlFor="treatment_expectations">Expectativas do Tratamento</Label>
+                  <Textarea
+                    id="treatment_expectations"
+                    value={newClient.treatment_expectations}
+                    onChange={(e) => setNewClient({ ...newClient, treatment_expectations: e.target.value })}
+                    placeholder="O que o cliente/família espera do tratamento"
+                  />
+                </div>
+                <div className="col-span-1 md:col-span-2 space-y-2">
+                  <Label htmlFor="clinical_observations">Observações Clínicas</Label>
+                  <Textarea
+                    id="clinical_observations"
+                    value={newClient.clinical_observations}
+                    onChange={(e) => setNewClient({ ...newClient, clinical_observations: e.target.value })}
+                    placeholder="Observações gerais sobre o cliente"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="responsible_phone">Telefone do Responsável</Label>
-                <Input
-                  id="responsible_phone"
-                  value={newClient.responsible_phone}
-                  onChange={(e) => setNewClient({ ...newClient, responsible_phone: e.target.value })}
-                  placeholder="(11) 99999-9999"
-                />
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={editingClient ? handleUpdateClient : handleCreateClient} 
+                  disabled={!newClient.name}
+                >
+                  {editingClient ? 'Atualizar' : 'Cadastrar'}
+                </Button>
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="address">Endereço Completo</Label>
-                <Input
-                  id="address"
-                  value={newClient.address}
-                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
-                  placeholder="Rua, número, bairro, cidade, estado, CEP"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="diagnosis">Diagnóstico Principal</Label>
-                <Input
-                  id="diagnosis"
-                  value={newClient.diagnosis}
-                  onChange={(e) => setNewClient({ ...newClient, diagnosis: e.target.value })}
-                  placeholder="Diagnóstico médico ou neurológico"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="medical_history">Histórico Médico Relevante</Label>
-                <Textarea
-                  id="medical_history"
-                  value={newClient.medical_history}
-                  onChange={(e) => setNewClient({ ...newClient, medical_history: e.target.value })}
-                  placeholder="Doenças pré-existentes, cirurgias, medicamentos"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="neuropsych_complaint">Queixa Principal Neuropsicológica</Label>
-                <Textarea
-                  id="neuropsych_complaint"
-                  value={newClient.neuropsych_complaint}
-                  onChange={(e) => setNewClient({ ...newClient, neuropsych_complaint: e.target.value })}
-                  placeholder="Relato do cliente/responsável sobre as dificuldades"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="treatment_expectations">Expectativas do Tratamento</Label>
-                <Textarea
-                  id="treatment_expectations"
-                  value={newClient.treatment_expectations}
-                  onChange={(e) => setNewClient({ ...newClient, treatment_expectations: e.target.value })}
-                  placeholder="O que o cliente/família espera do acompanhamento"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="clinical_observations">Observações Gerais</Label>
-                <Textarea
-                  id="clinical_observations"
-                  value={newClient.clinical_observations}
-                  onChange={(e) => setNewClient({ ...newClient, clinical_observations: e.target.value })}
-                  placeholder="Observações gerais sobre o cliente"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={editingClient ? handleUpdateClient : handleCreateClient} 
-                disabled={!newClient.name}
-              >
-                {editingClient ? 'Atualizar' : 'Cadastrar'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filters Section */}
       <Card className="bg-muted/50 border-muted">
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-foreground">Filtros</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-foreground">Unidade:</Label>
-                    <Select value={unitFilter} onValueChange={setUnitFilter}>
-                      <SelectTrigger className="bg-background border-border">
-                        <SelectValue placeholder="Todas as Unidades" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as Unidades</SelectItem>
-                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-foreground">Idade:</Label>
-                    <Select value={ageFilter} onValueChange={setAgeFilter}>
-                      <SelectTrigger className="bg-background border-border">
-                        <SelectValue placeholder="Todas as Idades" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as Idades</SelectItem>
-                        <SelectItem value="minor">Menor de Idade</SelectItem>
-                        <SelectItem value="adult">Maior de Idade</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {isCoordinatorOrDirector && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-foreground">Profissional:</Label>
-                      <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
-                        <SelectTrigger className="bg-background border-border">
-                          <SelectValue placeholder="Todos os Profissionais" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os Profissionais</SelectItem>
-                          {employees.map(employee => (
-                            <SelectItem key={employee.id} value={employee.id}>
-                              {employee.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium text-foreground">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">Unidade:</Label>
+              <Select value={unitFilter} onValueChange={setUnitFilter}>
+                <SelectTrigger className="bg-background border-border">
+                  <SelectValue placeholder="Todas as Unidades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Unidades</SelectItem>
+                  <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                  <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">Idade:</Label>
+              <Select value={ageFilter} onValueChange={setAgeFilter}>
+                <SelectTrigger className="bg-background border-border">
+                  <SelectValue placeholder="Todas as Idades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Idades</SelectItem>
+                  <SelectItem value="minor">Menor de Idade</SelectItem>
+                  <SelectItem value="adult">Maior de Idade</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {isCoordinatorOrDirector && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-foreground">Profissional:</Label>
+                <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
+                  <SelectTrigger className="bg-background border-border">
+                    <SelectValue placeholder="Todos os Profissionais" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Profissionais</SelectItem>
+                    {employees.map(employee => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -671,33 +649,33 @@ export default function Clients() {
       </div>
 
       <Card>
-              <CardHeader>
-                <CardTitle>Lista de Clientes</CardTitle>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="flex items-center space-x-2 flex-1">
-                    <Search className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar por ID, nome, CPF, telefone..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="flex-1"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
-                    <Select value={unitFilter} onValueChange={setUnitFilter}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as Unidades</SelectItem>
-                        <SelectItem value="madre">Madre</SelectItem>
-                        <SelectItem value="floresta">Floresta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
+        <CardHeader>
+          <CardTitle>Lista de Clientes</CardTitle>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex items-center space-x-2 flex-1">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por ID, nome, CPF, telefone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={unitFilter} onValueChange={setUnitFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Unidades</SelectItem>
+                  <SelectItem value="madre">Madre</SelectItem>
+                  <SelectItem value="floresta">Floresta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
         <CardContent>
           {loading ? (
             <p className="text-muted-foreground text-center py-8">Carregando clientes...</p>
