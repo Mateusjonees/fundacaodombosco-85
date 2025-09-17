@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +28,10 @@ import {
   Activity,
   Upload,
   History,
-  ArrowLeft
+  ArrowLeft,
+  UserX,
+  RotateCcw,
+  AlertTriangle
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
@@ -69,6 +74,8 @@ interface ClientDocument {
 
 interface AssignedProfessional {
   id: string;
+  employee_id: string;
+  is_active: boolean;
   profiles?: { name: string; employee_role: string };
   assigned_at: string;
 }
@@ -82,15 +89,17 @@ interface Employee {
 interface ClientDetailsViewProps {
   client: Client;
   onEdit: () => void;
-  onClose: () => void;
+  onBack?: () => void;
+  onRefresh?: () => void;
 }
 
-export default function ClientDetailsView({ client, onEdit, onClose }: ClientDetailsViewProps) {
+export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }: ClientDetailsViewProps) {
   const { user } = useAuth();
   const [notes, setNotes] = useState<ClientNote[]>([]);
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
   const [assignedProfessionals, setAssignedProfessionals] = useState<AssignedProfessional[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [newNote, setNewNote] = useState('');
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
@@ -107,10 +116,28 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
   const loadClientData = async () => {
     await Promise.all([
       loadNotes(),
-      loadDocuments(),
+      loadDocuments(), 
       loadAssignedProfessionals(),
-      loadEmployees()
+      loadEmployees(),
+      loadUserProfile()
     ]);
+  };
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('employee_role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
   };
 
   const loadNotes = async () => {
@@ -170,17 +197,14 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
 
   const loadAssignedProfessionals = async () => {
     try {
-      // Simplificar a query para evitar erros de relacionamento
       const { data: assignments, error } = await supabase
         .from('client_assignments')
-        .select('id, assigned_at, employee_id')
+        .select('id, assigned_at, employee_id, is_active')
         .eq('client_id', client.id)
-        .eq('is_active', true)
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
 
-      // Buscar os dados dos profissionais separadamente
       if (assignments && assignments.length > 0) {
         const employeeIds = assignments.map(a => a.employee_id);
         const { data: profiles, error: profilesError } = await supabase
@@ -192,6 +216,8 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
 
         const assignedWithProfiles = assignments.map(assignment => ({
           id: assignment.id,
+          employee_id: assignment.employee_id,
+          is_active: assignment.is_active,
           assigned_at: assignment.assigned_at,
           profiles: profiles?.find(p => p.user_id === assignment.employee_id) || { name: 'N/A', employee_role: 'N/A' }
         }));
@@ -250,11 +276,7 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
   };
 
   const handleScheduleAppointment = () => {
-    toast({
-      title: "Agendamento", 
-      description: "Redirecionando para a agenda...",
-    });
-    window.open(`/schedule?client=${client.id}`, '_blank');
+    window.location.href = `/schedule?client_id=${client.id}&client_name=${encodeURIComponent(client.name)}`;
   };
 
   const loadEmployees = async () => {
@@ -305,6 +327,72 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível vincular o profissional.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveProfessional = async (assignmentId: string) => {
+    const confirmed = window.confirm('Tem certeza que deseja remover este profissional do cliente?');
+    
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('client_assignments')
+        .update({ is_active: false })
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Profissional removido com sucesso!",
+      });
+
+      loadAssignedProfessionals();
+    } catch (error) {
+      console.error('Error removing professional:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível remover o profissional.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeactivateClient = async () => {
+    const confirmed = window.confirm(
+      `Tem certeza que deseja ${client.is_active ? 'desativar' : 'reativar'} o cliente "${client.name}"?`
+    );
+    
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ is_active: !client.is_active })
+        .eq('id', client.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Cliente ${client.is_active ? 'desativado' : 'reativado'} com sucesso!`,
+      });
+
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error('Error updating client status:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o status do cliente.",
       });
     } finally {
       setLoading(false);
@@ -429,7 +517,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
         description: "O cliente foi marcado como inativo.",
       });
       
-      onClose();
+      onBack && onBack();
     } catch (error) {
       console.error('Error deleting client:', error);
       toast({
@@ -515,7 +603,8 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
             <Edit className="h-4 w-4 mr-2" />
             Editar Dados
           </Button>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
         </div>
@@ -785,11 +874,209 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
         </CardContent>
       </Card>
 
-      {/* Histórico de Serviços */}
-      <ServiceHistory clientId={client.id} />
+      {/* Tabs Section */}
+      <Card>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="details">Detalhes</TabsTrigger>
+              <TabsTrigger value="professionals">Profissionais Vinculados</TabsTrigger>
+              <TabsTrigger value="history">Histórico</TabsTrigger>
+              <TabsTrigger value="contracts">Contratos</TabsTrigger>
+            </TabsList>
 
-      {/* Contratos */}
-      <ContractGenerator client={client} />
+            <TabsContent value="details" className="mt-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4" />
+                    <span className="font-medium">Nome:</span>
+                    <span>{client.name}</span>
+                  </div>
+                  
+                  {client.cpf && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">CPF:</span>
+                      <span>{client.cpf}</span>
+                    </div>
+                  )}
+                  
+                  {client.birth_date && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">Data de Nascimento:</span>
+                      <span>{formatDate(client.birth_date)}</span>
+                    </div>
+                  )}
+                  
+                  {client.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4" />
+                      <span className="font-medium">Telefone:</span>
+                      <span>{client.phone}</span>
+                    </div>
+                  )}
+                  
+                  {client.email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4" />
+                      <span className="font-medium">Email:</span>
+                      <span>{client.email}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  {client.responsible_name && (
+                    <>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">Responsável:</span>
+                        <span>{client.responsible_name}</span>
+                      </div>
+                      
+                      {client.responsible_phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-4 w-4" />
+                          <span className="font-medium">Tel. Responsável:</span>
+                          <span>{client.responsible_phone}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {client.address && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <MapPin className="h-4 w-4 mt-0.5" />
+                      <div>
+                        <span className="font-medium">Endereço:</span>
+                        <p className="mt-1">{client.address}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">Unidade:</span>
+                    <Badge variant={client.unit === 'madre' ? 'default' : 'secondary'}>
+                      {client.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="professionals" className="mt-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">Profissionais Vinculados</h3>
+                  {userProfile?.employee_role && ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role) && (
+                    <Dialog open={linkProfessionalDialogOpen} onOpenChange={setLinkProfessionalDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Vincular Profissional
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="professional">Selecione o Profissional</Label>
+                            <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Escolha um profissional" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {employees.filter(emp => 
+                                  !assignedProfessionals.some(assigned => assigned.employee_id === emp.user_id)
+                                ).map((employee) => (
+                                  <SelectItem key={employee.user_id} value={employee.user_id}>
+                                    {employee.name} - {employee.employee_role}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setLinkProfessionalDialogOpen(false)}>
+                            Cancelar
+                          </Button>
+                          <Button onClick={handleLinkProfessional} disabled={loading || !selectedProfessional}>
+                            {loading ? 'Vinculando...' : 'Vincular'}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+                
+                {assignedProfessionals.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Profissional</TableHead>
+                        <TableHead>Função</TableHead>
+                        <TableHead>Data de Vinculação</TableHead>
+                        <TableHead>Status</TableHead>
+                        {userProfile?.employee_role && ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role) && (
+                          <TableHead>Ações</TableHead>
+                        )}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assignedProfessionals.map((assignment) => (
+                        <TableRow key={assignment.id}>
+                          <TableCell className="font-medium">
+                            {assignment.profiles?.name || 'Nome não encontrado'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {assignment.profiles?.employee_role || 'Função não definida'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(assignment.assigned_at)}</TableCell>
+                          <TableCell>
+                            <Badge variant={assignment.is_active ? 'default' : 'secondary'}>
+                              {assignment.is_active ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </TableCell>
+                          {userProfile?.employee_role && ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role) && (
+                            <TableCell>
+                              {assignment.is_active && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleRemoveProfessional(assignment.id)}
+                                >
+                                  <UserX className="h-4 w-4 mr-1" />
+                                  Remover
+                                </Button>
+                              )}
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    Nenhum profissional vinculado a este cliente.
+                  </p>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="history" className="mt-6">
+              <ServiceHistory clientId={client.id} />
+            </TabsContent>
+
+            <TabsContent value="contracts" className="mt-6">
+              <ContractGenerator client={client} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       {/* Ações */}
       <Card>
@@ -799,44 +1086,6 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <Calendar className="h-4 w-4 mr-2" />
               Agendar Novo Atendimento
             </Button>
-            <Dialog open={linkProfessionalDialogOpen} onOpenChange={setLinkProfessionalDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Users className="h-4 w-4 mr-2" />
-                  Vincular Profissionais
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="professional">Selecione o Profissional</Label>
-                    <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Escolha um profissional" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((employee) => (
-                          <SelectItem key={employee.user_id} value={employee.user_id}>
-                            {employee.name} - {employee.employee_role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setLinkProfessionalDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleLinkProfessional} disabled={loading || !selectedProfessional}>
-                    {loading ? 'Vinculando...' : 'Vincular'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
             <Button variant="outline" onClick={onEdit}>
               <Edit className="h-4 w-4 mr-2" />
               Editar Dados
@@ -849,10 +1098,17 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <FileText className="h-4 w-4 mr-2" />
               Gerar Relatório
             </Button>
-            <Button variant="destructive" size="sm" onClick={() => handleDeleteClient()}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir Cliente
-            </Button>
+            {client.is_active ? (
+              <Button variant="destructive" size="sm" onClick={() => handleDeactivateClient()}>
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Desativar Cliente
+              </Button>
+            ) : (
+              <Button variant="default" size="sm" onClick={() => handleDeactivateClient()}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reativar Cliente
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

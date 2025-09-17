@@ -342,9 +342,10 @@ export default function Clients() {
       <ClientDetailsView
         client={selectedClient}
         onEdit={() => openEditDialog(selectedClient)}
-        onClose={() => {
+        onBack={() => {
           setSelectedClient(null);
         }}
+        onRefresh={loadClients}
       />
     );
   }
