@@ -264,6 +264,46 @@ export default function Schedule() {
       };
 
       if (editingSchedule) {
+        // Verificar conflitos de horário antes de atualizar agendamento
+        const startTime = convertToISOString(newAppointment.start_time);
+        const endTime = convertToISOString(newAppointment.end_time);
+        
+        // Verificar conflitos para o cliente (excluindo o agendamento atual)
+        const { data: clientConflicts } = await supabase
+          .from('schedules')
+          .select('id, start_time, end_time')
+          .eq('client_id', newAppointment.client_id)
+          .neq('id', editingSchedule.id)
+          .neq('status', 'cancelled')
+          .or(`start_time.lte.${endTime},end_time.gte.${startTime}`);
+
+        // Verificar conflitos para o profissional (excluindo o agendamento atual)
+        const { data: employeeConflicts } = await supabase
+          .from('schedules')
+          .select('id, start_time, end_time')
+          .eq('employee_id', newAppointment.employee_id)
+          .neq('id', editingSchedule.id)
+          .neq('status', 'cancelled')
+          .or(`start_time.lte.${endTime},end_time.gte.${startTime}`);
+
+        if (clientConflicts && clientConflicts.length > 0) {
+          toast({
+            variant: "destructive",
+            title: "Conflito de Horário",
+            description: "O cliente já possui um agendamento neste horário.",
+          });
+          return;
+        }
+
+        if (employeeConflicts && employeeConflicts.length > 0) {
+          toast({
+            variant: "destructive",
+            title: "Conflito de Horário", 
+            description: "O profissional já possui um agendamento neste horário.",
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from('schedules')
           .update(appointmentData)
@@ -276,6 +316,44 @@ export default function Schedule() {
           description: "Agendamento atualizado com sucesso!",
         });
       } else {
+        // Verificar conflitos de horário antes de criar novo agendamento
+        const startTime = convertToISOString(newAppointment.start_time);
+        const endTime = convertToISOString(newAppointment.end_time);
+        
+        // Verificar conflitos para o cliente
+        const { data: clientConflicts } = await supabase
+          .from('schedules')
+          .select('id, start_time, end_time')
+          .eq('client_id', newAppointment.client_id)
+          .neq('status', 'cancelled')
+          .or(`start_time.lte.${endTime},end_time.gte.${startTime}`);
+
+        // Verificar conflitos para o profissional
+        const { data: employeeConflicts } = await supabase
+          .from('schedules')
+          .select('id, start_time, end_time')
+          .eq('employee_id', newAppointment.employee_id)
+          .neq('status', 'cancelled')
+          .or(`start_time.lte.${endTime},end_time.gte.${startTime}`);
+
+        if (clientConflicts && clientConflicts.length > 0) {
+          toast({
+            variant: "destructive",
+            title: "Conflito de Horário",
+            description: "O cliente já possui um agendamento neste horário.",
+          });
+          return;
+        }
+
+        if (employeeConflicts && employeeConflicts.length > 0) {
+          toast({
+            variant: "destructive", 
+            title: "Conflito de Horário",
+            description: "O profissional já possui um agendamento neste horário.",
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from('schedules')
           .insert([{
