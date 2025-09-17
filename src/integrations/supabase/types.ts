@@ -99,7 +99,7 @@ export type Database = {
           patient_name: string
           patient_response: string | null
           professional_name: string
-          schedule_id: string
+          schedule_id: string | null
           session_duration: number | null
           session_notes: string | null
           start_time: string
@@ -123,7 +123,7 @@ export type Database = {
           patient_name: string
           patient_response?: string | null
           professional_name: string
-          schedule_id: string
+          schedule_id?: string | null
           session_duration?: number | null
           session_notes?: string | null
           start_time: string
@@ -147,7 +147,7 @@ export type Database = {
           patient_name?: string
           patient_response?: string | null
           professional_name?: string
-          schedule_id?: string
+          schedule_id?: string | null
           session_duration?: number | null
           session_notes?: string | null
           start_time?: string
