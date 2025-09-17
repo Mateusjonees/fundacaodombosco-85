@@ -80,10 +80,29 @@ export default function StockManager() {
     reason: '',
   });
 
+  // Filtros para relatórios
+  const [filters, setFilters] = useState({
+    dateFrom: '',
+    dateTo: '',
+    month: '',
+    year: new Date().getFullYear().toString(),
+    movementType: 'all', // 'all', 'in', 'out'
+    itemId: 'all',
+    responsibleId: 'all'
+  });
+
+  const [profiles, setProfiles] = useState<Array<{ user_id: string; name: string }>>([]);
+
   useEffect(() => {
     loadStockItems();
     loadMovements();
+    loadProfiles();
   }, []);
+
+  // Recarregar movimentações quando filtros mudarem
+  useEffect(() => {
+    loadMovements();
+  }, [filters]);
 
   const loadStockItems = async () => {
     setLoading(true);
@@ -110,12 +129,42 @@ export default function StockManager() {
 
   const loadMovements = async () => {
     try {
-      // Primeiro buscar os movimentos
-      const { data: movementsData, error: movementsError } = await supabase
+      let query = supabase
         .from('stock_movements')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
+
+      // Aplicar filtros
+      if (filters.dateFrom) {
+        query = query.gte('date', filters.dateFrom);
+      }
+      
+      if (filters.dateTo) {
+        query = query.lte('date', filters.dateTo);
+      }
+
+      if (filters.month && filters.year) {
+        const startDate = `${filters.year}-${filters.month.padStart(2, '0')}-01`;
+        const endDate = new Date(parseInt(filters.year), parseInt(filters.month), 0).toISOString().split('T')[0];
+        query = query.gte('date', startDate).lte('date', endDate);
+      } else if (filters.year && !filters.month) {
+        query = query.gte('date', `${filters.year}-01-01`).lte('date', `${filters.year}-12-31`);
+      }
+
+      if (filters.movementType !== 'all') {
+        query = query.eq('type', filters.movementType);
+      }
+
+      if (filters.itemId !== 'all') {
+        query = query.eq('stock_item_id', filters.itemId);
+      }
+
+      if (filters.responsibleId !== 'all') {
+        query = query.eq('created_by', filters.responsibleId);
+      }
+
+      // Limitar para evitar muitos resultados
+      const { data: movementsData, error: movementsError } = await query.limit(200);
 
       if (movementsError) throw movementsError;
 
@@ -131,7 +180,7 @@ export default function StockManager() {
 
       // Buscar nomes dos criadores
       const creatorIds = [...new Set(movements.map(m => m.created_by).filter(Boolean))];
-      const { data: profiles } = await supabase
+      const { data: profilesData } = await supabase
         .from('profiles')
         .select('user_id, name')
         .in('user_id', creatorIds);
@@ -141,12 +190,26 @@ export default function StockManager() {
         ...movement,
         type: movement.type as 'in' | 'out', // Type assertion for database string
         stock_items: items?.find(item => item.id === movement.stock_item_id) || undefined,
-        profiles: profiles?.find(profile => profile.user_id === movement.created_by) || undefined
+        profiles: profilesData?.find(profile => profile.user_id === movement.created_by) || undefined
       }));
 
       setMovements(enrichedMovements);
     } catch (error) {
       console.error('Error loading movements:', error);
+    }
+  };
+
+  const loadProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .order('name');
+
+      if (error) throw error;
+      setProfiles(data || []);
+    } catch (error) {
+      console.error('Error loading profiles:', error);
     }
   };
 
@@ -267,6 +330,41 @@ export default function StockManager() {
       unit_cost: 0,
       reason: '',
     });
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      dateFrom: '',
+      dateTo: '',
+      month: '',
+      year: new Date().getFullYear().toString(),
+      movementType: 'all',
+      itemId: 'all',
+      responsibleId: 'all'
+    });
+  };
+
+  const exportMovements = () => {
+    const csvContent = [
+      ['Data', 'Item', 'Tipo', 'Quantidade', 'Custo Total', 'Motivo', 'Responsável'].join(','),
+      ...movements.map(m => [
+        m.date,
+        m.stock_items?.name || '',
+        m.type === 'in' ? 'Entrada' : 'Saída',
+        m.quantity,
+        m.total_cost || '',
+        m.reason || '',
+        m.profiles?.name || ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `movimentacoes_estoque_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const filteredItems = stockItems.filter(item =>
@@ -645,11 +743,186 @@ export default function StockManager() {
         </TabsContent>
 
         <TabsContent value="movements">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Movimentações</CardTitle>
-            </CardHeader>
-            <CardContent>
+      {/* Resumo de Movimentações */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            Relatório de Movimentações
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={resetFilters}
+              >
+                Limpar Filtros
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={exportMovements}
+                disabled={movements.length === 0}
+              >
+                Exportar CSV
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Filtros Avançados */}
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+            <div>
+              <Label htmlFor="date-from">Data Inicial</Label>
+              <Input
+                id="date-from"
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters({...filters, dateFrom: e.target.value, month: '', year: ''})}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="date-to">Data Final</Label>
+              <Input
+                id="date-to"
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters({...filters, dateTo: e.target.value, month: '', year: ''})}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="month">Mês</Label>
+              <Select 
+                value={filters.month} 
+                onValueChange={(value) => setFilters({...filters, month: value, dateFrom: '', dateTo: ''})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os meses</SelectItem>
+                  <SelectItem value="1">Janeiro</SelectItem>
+                  <SelectItem value="2">Fevereiro</SelectItem>
+                  <SelectItem value="3">Março</SelectItem>
+                  <SelectItem value="4">Abril</SelectItem>
+                  <SelectItem value="5">Maio</SelectItem>
+                  <SelectItem value="6">Junho</SelectItem>
+                  <SelectItem value="7">Julho</SelectItem>
+                  <SelectItem value="8">Agosto</SelectItem>
+                  <SelectItem value="9">Setembro</SelectItem>
+                  <SelectItem value="10">Outubro</SelectItem>
+                  <SelectItem value="11">Novembro</SelectItem>
+                  <SelectItem value="12">Dezembro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="year">Ano</Label>
+              <Input
+                id="year"
+                type="number"
+                min="2020"
+                max="2030"
+                value={filters.year}
+                onChange={(e) => setFilters({...filters, year: e.target.value})}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="movement-type">Tipo</Label>
+              <Select 
+                value={filters.movementType} 
+                onValueChange={(value) => setFilters({...filters, movementType: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="in">Entradas</SelectItem>
+                  <SelectItem value="out">Saídas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="item-filter">Item</Label>
+              <Select 
+                value={filters.itemId} 
+                onValueChange={(value) => setFilters({...filters, itemId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os itens</SelectItem>
+                  {stockItems.map(item => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="responsible-filter">Responsável</Label>
+              <Select 
+                value={filters.responsibleId} 
+                onValueChange={(value) => setFilters({...filters, responsibleId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {profiles.map(profile => (
+                    <SelectItem key={profile.user_id} value={profile.user_id}>
+                      {profile.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Resumo dos Filtros Aplicados */}
+          {(filters.dateFrom || filters.dateTo || filters.month || filters.movementType !== 'all' || 
+            filters.itemId !== 'all' || filters.responsibleId !== 'all') && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 font-medium mb-2">Filtros aplicados:</p>
+              <div className="flex flex-wrap gap-2">
+                {filters.dateFrom && (
+                  <Badge variant="outline">De: {new Date(filters.dateFrom).toLocaleDateString('pt-BR')}</Badge>
+                )}
+                {filters.dateTo && (
+                  <Badge variant="outline">Até: {new Date(filters.dateTo).toLocaleDateString('pt-BR')}</Badge>
+                )}
+                {filters.month && filters.year && (
+                  <Badge variant="outline">
+                    {new Date(parseInt(filters.year), parseInt(filters.month) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                  </Badge>
+                )}
+                {filters.movementType !== 'all' && (
+                  <Badge variant="outline">
+                    {filters.movementType === 'in' ? 'Entradas' : 'Saídas'}
+                  </Badge>
+                )}
+                {filters.itemId !== 'all' && (
+                  <Badge variant="outline">
+                    Item: {stockItems.find(item => item.id === filters.itemId)?.name}
+                  </Badge>
+                )}
+                {filters.responsibleId !== 'all' && (
+                  <Badge variant="outline">
+                    Por: {profiles.find(p => p.user_id === filters.responsibleId)?.name}
+                  </Badge>
+                )}
+                <Badge variant="secondary">{movements.length} registros encontrados</Badge>
+              </div>
+            </div>
+          )}
               {movements.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">
                   Nenhuma movimentação registrada.
