@@ -104,6 +104,20 @@ export default function EmployeesNew() {
 
       if (authError) throw authError;
 
+      // Send confirmation email
+      try {
+        await supabase.functions.invoke('send-employee-confirmation', {
+          body: {
+            name: newEmployee.name,
+            email: newEmployee.email,
+            temporaryPassword: newEmployee.password
+          }
+        });
+      } catch (emailError) {
+        console.warn('Falha ao enviar email de confirmação:', emailError);
+        // Don't throw error here - user was created successfully
+      }
+
       toast({
         title: "Funcionário criado",
         description: "Funcionário criado com sucesso! Um email de confirmação foi enviado.",
