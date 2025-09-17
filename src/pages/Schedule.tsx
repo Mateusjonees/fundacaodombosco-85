@@ -761,10 +761,10 @@ export default function Schedule() {
                        <SelectTrigger>
                          <SelectValue placeholder="Selecione a unidade" />
                        </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                         <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
-                       </SelectContent>
+                        <SelectContent>
+                          <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                          <SelectItem value="floresta">Floresta</SelectItem>
+                        </SelectContent>
                      </Select>
                    </div>
                    
@@ -822,9 +822,9 @@ export default function Schedule() {
                              <span className="hidden md:inline">•</span>
                              <span>Profissional: {employees.find(emp => emp.id === schedule.employee_id)?.name || 'N/A'}</span>
                              <span className="hidden md:inline">•</span>
-                             <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-xs">
-                               {schedule.unit === 'madre' ? 'Madre' : 'Floresta'}
-                             </Badge>
+                              <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-xs">
+                                {schedule.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                              </Badge>
                            </div>
                           {schedule.notes && (
                             <p className="text-xs md:text-sm text-muted-foreground">{schedule.notes}</p>
@@ -1019,6 +1019,19 @@ export default function Schedule() {
                     <SelectItem value="Terapia">Terapia</SelectItem>
                     <SelectItem value="Avaliação">Avaliação</SelectItem>
                     <SelectItem value="Retorno">Retorno</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="unit">Unidade</Label>
+                <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a unidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                    <SelectItem value="floresta">Floresta</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
