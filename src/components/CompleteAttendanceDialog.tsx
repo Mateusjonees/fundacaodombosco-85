@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,16 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, Star, Target, Package, DollarSign, FileText } from 'lucide-react';
+import { Clock, Star, Target, Package, DollarSign, FileText, Plus } from 'lucide-react';
+
+interface StockItem {
+  id: string;
+  name: string;
+  current_quantity: number;
+  unit: string;
+  category: string;
+  unit_cost?: number;
+}
 
 interface Schedule {
   id: string;
@@ -39,6 +48,7 @@ export default function CompleteAttendanceDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
   
   const [attendanceData, setAttendanceData] = useState({
     // Informações básicas
@@ -60,8 +70,11 @@ export default function CompleteAttendanceDialog({
     
     // Materiais utilizados
     materialsUsed: [] as Array<{
+      stock_item_id: string;
       name: string;
       quantity: number;
+      unit: string;
+      available_quantity: number;
       observation?: string;
     }>,
     materialsNotes: '',
@@ -78,6 +91,33 @@ export default function CompleteAttendanceDialog({
     paymentReceived: true,
     paymentNotes: ''
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      loadStockItems();
+    }
+  }, [isOpen]);
+
+  const loadStockItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_items')
+        .select('id, name, current_quantity, unit, category, unit_cost')
+        .eq('is_active', true)
+        .gt('current_quantity', 0)
+        .order('name');
+
+      if (error) throw error;
+      setStockItems(data || []);
+    } catch (error) {
+      console.error('Error loading stock items:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar os itens do estoque.",
+      });
+    }
+  };
 
   const handleComplete = async () => {
     if (!schedule || !user) return;
@@ -172,6 +212,53 @@ export default function CompleteAttendanceDialog({
         if (financialError) console.error('Financial record error:', financialError);
       }
 
+      // 5. Processar materiais utilizados - criar movimentações e atualizar estoque
+      if (attendanceData.materialsUsed.length > 0) {
+        for (const material of attendanceData.materialsUsed) {
+          // Criar movimentação de estoque
+          const { error: movementError } = await supabase
+            .from('stock_movements')
+            .insert({
+              stock_item_id: material.stock_item_id,
+              type: 'out',
+              quantity: material.quantity,
+              reason: 'Utilizado em atendimento',
+              notes: `${attendanceData.sessionType} - ${schedule.clients?.name}${material.observation ? ` - ${material.observation}` : ''}`,
+              created_by: user.id,
+              client_id: schedule.client_id,
+              schedule_id: schedule.id
+            });
+
+          if (movementError) {
+            console.error('Error creating stock movement:', movementError);
+            continue;
+          }
+
+          // Atualizar quantidade no estoque
+          const { data: currentItem, error: fetchError } = await supabase
+            .from('stock_items')
+            .select('current_quantity')
+            .eq('id', material.stock_item_id)
+            .single();
+
+          if (fetchError || !currentItem) {
+            console.error('Error fetching current stock:', fetchError);
+            continue;
+          }
+
+          const newQuantity = Math.max(0, currentItem.current_quantity - material.quantity);
+          
+          const { error: updateStockError } = await supabase
+            .from('stock_items')
+            .update({ current_quantity: newQuantity })
+            .eq('id', material.stock_item_id);
+
+          if (updateStockError) {
+            console.error('Error updating stock quantity:', updateStockError);
+          }
+        }
+      }
+
       toast({
         title: "Atendimento Concluído!",
         description: "Todas as informações foram registradas com sucesso no sistema.",
@@ -191,10 +278,32 @@ export default function CompleteAttendanceDialog({
     }
   };
 
-  const addMaterial = () => {
+  const addMaterial = (stockItemId: string) => {
+    const stockItem = stockItems.find(item => item.id === stockItemId);
+    if (!stockItem) return;
+
+    const existingMaterial = attendanceData.materialsUsed.find(m => m.stock_item_id === stockItemId);
+    if (existingMaterial) {
+      toast({
+        variant: "destructive",
+        title: "Material já adicionado",
+        description: "Este material já está na lista. Use os controles para ajustar a quantidade.",
+      });
+      return;
+    }
+
+    const newMaterial = {
+      stock_item_id: stockItemId,
+      name: stockItem.name,
+      quantity: 1,
+      unit: stockItem.unit,
+      available_quantity: stockItem.current_quantity,
+      observation: ''
+    };
+
     setAttendanceData(prev => ({
       ...prev,
-      materialsUsed: [...prev.materialsUsed, { name: '', quantity: 1 }]
+      materialsUsed: [...prev.materialsUsed, newMaterial]
     }));
   };
 
@@ -206,6 +315,18 @@ export default function CompleteAttendanceDialog({
   };
 
   const updateMaterial = (index: number, field: string, value: any) => {
+    if (field === 'quantity') {
+      const material = attendanceData.materialsUsed[index];
+      if (value > material.available_quantity) {
+        toast({
+          variant: "destructive",
+          title: "Quantidade insuficiente",
+          description: `Quantidade máxima disponível: ${material.available_quantity} ${material.unit}`,
+        });
+        return;
+      }
+    }
+    
     setAttendanceData(prev => ({
       ...prev,
       materialsUsed: prev.materialsUsed.map((material, i) => 
@@ -373,17 +494,19 @@ export default function CompleteAttendanceDialog({
                 <div key={index} className="flex gap-2 items-end">
                   <div className="flex-1">
                     <Label>Material</Label>
-                    <Input
-                      value={material.name}
-                      onChange={(e) => updateMaterial(index, 'name', e.target.value)}
-                      placeholder="Nome do material"
-                    />
+                    <div className="text-sm font-medium p-2 bg-muted rounded">
+                      {material.name}
+                      <Badge variant="outline" className="ml-2">
+                        {material.available_quantity} {material.unit} disponível
+                      </Badge>
+                    </div>
                   </div>
                   <div className="w-20">
                     <Label>Qtd</Label>
                     <Input
                       type="number"
                       min="1"
+                      max={material.available_quantity}
                       value={material.quantity}
                       onChange={(e) => updateMaterial(index, 'quantity', parseInt(e.target.value) || 1)}
                     />
@@ -402,10 +525,28 @@ export default function CompleteAttendanceDialog({
                 </div>
               ))}
               
-              <Button variant="outline" onClick={addMaterial}>
-                <Package className="h-4 w-4 mr-2" />
-                Adicionar Material
-              </Button>
+              <div className="space-y-2">
+                <Label>Adicionar Material do Estoque</Label>
+                <Select onValueChange={addMaterial}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um material" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stockItems
+                      .filter(item => !attendanceData.materialsUsed.some(m => m.stock_item_id === item.id))
+                      .map(item => (
+                        <SelectItem key={item.id} value={item.id}>
+                          <div className="flex justify-between items-center w-full">
+                            <span>{item.name}</span>
+                            <Badge variant="outline" className="ml-2">
+                              {item.current_quantity} {item.unit}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
