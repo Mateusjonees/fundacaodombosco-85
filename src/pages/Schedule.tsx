@@ -71,6 +71,21 @@ export default function Schedule() {
     loadEmployees();
     loadClients();
     loadSchedules();
+    
+    // Verificar se há parâmetros na URL para pré-preencher o formulário
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientId = urlParams.get('client_id') || urlParams.get('client');
+    const clientName = urlParams.get('client_name');
+    
+    if (clientId) {
+      setNewAppointment(prev => ({
+        ...prev,
+        client_id: clientId
+      }));
+      
+      // Se tem ID do cliente, abrir o diálogo de agendamento
+      setIsDialogOpen(true);
+    }
   }, [selectedDate, filterRole, filterEmployee, filterUnit]);
 
   const loadUserProfile = async () => {
@@ -639,9 +654,9 @@ export default function Schedule() {
             {/* Botão Novo Agendamento */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-              <Button 
-                className="w-full py-4 md:py-6 text-base md:text-lg" 
-                onClick={() => {
+                <Button 
+                  className="w-full py-4 md:py-6 text-base md:text-lg" 
+                  onClick={() => {
                     setEditingSchedule(null);
                     setNewAppointment({
                       client_id: '',
@@ -664,7 +679,10 @@ export default function Schedule() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="client_id">Cliente</Label>
-                    <Select value={newAppointment.client_id} onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}>
+                    <Select 
+                      value={newAppointment.client_id} 
+                      onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um cliente" />
                       </SelectTrigger>

@@ -284,7 +284,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   };
 
   const handleScheduleAppointment = () => {
-    window.location.href = `/schedule?client_id=${client.id}&client_name=${encodeURIComponent(client.name)}`;
+    // Use React Router navigate instead of window.location.href
+    const searchParams = new URLSearchParams();
+    searchParams.set('client_id', client.id);
+    searchParams.set('client_name', client.name);
+    window.location.href = `/schedule?${searchParams.toString()}`;
   };
 
   const loadEmployees = async () => {
