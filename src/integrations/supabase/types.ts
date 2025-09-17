@@ -2343,6 +2343,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      manage_user_session: {
+        Args: {
+          p_session_token: string
+          p_user_agent?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       user_has_any_role: {
         Args: { allowed_roles: Database["public"]["Enums"]["employee_role"][] }
         Returns: boolean
