@@ -25,8 +25,10 @@ import {
   User,
   Activity,
   Upload,
-  History
+  History,
+  ArrowLeft
 } from 'lucide-react';
+import { ContractGenerator } from './ContractGenerator';
 
 interface Client {
   id: string;
@@ -1011,6 +1013,9 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
           )}
         </CardContent>
       </Card>
+
+      {/* Contratos */}
+      <ContractGenerator client={client} />
 
       {/* Ações */}
       <Card>

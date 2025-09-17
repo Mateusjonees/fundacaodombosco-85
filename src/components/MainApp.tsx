@@ -13,6 +13,7 @@ import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus } from 'lucide-
 import Clients from '@/pages/Clients';
 import Schedule from '@/pages/Schedule';
 import Financial from '@/pages/Financial';
+import Contracts from '@/pages/Contracts';
 
 interface Profile {
   id: string;
@@ -155,6 +156,7 @@ export const MainApp = () => {
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'schedule', label: 'Agenda', icon: Calendar },
     { id: 'financial', label: 'Financeiro', icon: DollarSign },
+    { id: 'contracts', label: 'Contratos', icon: FileText },
     ...(canViewEmployees ? [{ id: 'employees', label: 'Funcionários', icon: UserPlus }] : []),
   ];
 
@@ -313,6 +315,10 @@ export const MainApp = () => {
 
         {activeTab === 'financial' && (
           <Financial />
+        )}
+
+        {activeTab === 'contracts' && (
+          <Contracts />
         )}
       </main>
     </div>
