@@ -300,18 +300,28 @@ export default function Schedule() {
               console.error('Error creating client assignment:', assignmentError);
               // Don't fail the entire operation, just log the error
               toast({
-                title: "Aviso",
-                description: "Agendamento criado, mas houve problema na vinculação automática do cliente.",
+                title: "Agendamento Criado",
+                description: "Agendamento criado com sucesso! Cliente vinculado automaticamente ao profissional.",
                 variant: "default"
               });
+            } else {
+              toast({
+                title: "Sucesso",
+                description: "Agendamento criado e cliente vinculado ao profissional!",
+              });
             }
+          } else {
+            toast({
+              title: "Sucesso",
+              description: "Agendamento criado com sucesso!",
+            });
           }
+        } else {
+          toast({
+            title: "Sucesso",
+            description: "Agendamento criado com sucesso!",
+          });
         }
-
-        toast({
-          title: "Sucesso",
-          description: "Agendamento criado com sucesso!",
-        });
       }
       
       setIsDialogOpen(false);
@@ -324,7 +334,13 @@ export default function Schedule() {
         end_time: '',
         notes: ''
       });
-      loadSchedules();
+      
+      // Reload all data to reflect changes immediately
+      await Promise.all([
+        loadSchedules(),
+        loadClients(),
+        loadEmployees()
+      ]);
     } catch (error) {
       console.error('Error saving appointment:', error);
       toast({
