@@ -30,6 +30,7 @@ import {
   Briefcase
 } from 'lucide-react';
 import { useCustomPermissions, PERMISSION_LABELS, PERMISSION_CATEGORIES, type PermissionAction } from '@/hooks/useCustomPermissions';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -63,6 +64,7 @@ interface UserPermissionOverride {
 export default function UserManagement() {
   const { toast } = useToast();
   const { hasPermission } = useCustomPermissions();
+  const rolePermissions = useRolePermissions();
   const [users, setUsers] = useState<User[]>([]);
   const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -89,9 +91,10 @@ export default function UserManagement() {
     confirmPassword: ''
   });
 
-  const canManageUsers = hasPermission('manage_users');
-  const canManageRoles = hasPermission('manage_roles');
-  const canChangePasswords = hasPermission('change_user_passwords');
+  // Permitir acesso baseado tanto nas permissões customizadas quanto nas permissões de role
+  const canManageUsers = hasPermission('manage_users') || rolePermissions.canManageEmployees();
+  const canManageRoles = hasPermission('manage_roles') || rolePermissions.canManageEmployees();
+  const canChangePasswords = hasPermission('change_user_passwords') || rolePermissions.isDirector();
 
   useEffect(() => {
     if (canManageUsers || canManageRoles) {
