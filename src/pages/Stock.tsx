@@ -46,7 +46,6 @@ export default function Stock() {
 
   useEffect(() => {
     loadStockItems();
-    loadStockMovements();
   }, []);
 
   const loadStockItems = async () => {
@@ -66,29 +65,12 @@ export default function Stock() {
         title: "Erro",
         description: "Não foi possível carregar os itens do estoque."
       });
-    }
-  };
-
-  const loadStockMovements = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('stock_movements')
-        .select(`
-          *,
-          stock_items!inner(name),
-          profiles!inner(name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      setMovements((data || []) as any);
-    } catch (error) {
-      console.error('Error loading stock movements:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Função loadStockMovements removida temporariamente - tabela stock_movements será criada futuramente
 
   const getLowStockItems = () => {
     return stockItems.filter(item => item.current_quantity <= item.minimum_quantity);
