@@ -339,24 +339,29 @@ export function ClientAssignmentManager() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant={assignment.is_active ? "destructive" : "default"}
-                        onClick={() => handleToggleAssignment(assignment.id, assignment.is_active)}
-                        className="gap-1"
-                      >
+                      <div className="flex gap-1">
                         {assignment.is_active ? (
-                          <>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleToggleAssignment(assignment.id, assignment.is_active)}
+                            className="gap-1"
+                          >
                             <UserX className="h-3 w-3" />
-                            Desativar
-                          </>
+                            Desvincular
+                          </Button>
                         ) : (
-                          <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => handleToggleAssignment(assignment.id, assignment.is_active)}
+                            className="gap-1"
+                          >
                             <UserCheck className="h-3 w-3" />
-                            Ativar
-                          </>
+                            Vincular
+                          </Button>
                         )}
-                      </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

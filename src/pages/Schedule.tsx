@@ -828,10 +828,9 @@ export default function Schedule() {
                                   <CheckCircle className="h-3 w-3" />
                                 </Button>
                               )}
-                                </Button>
-                              )}
                               
                               {/* Permitir edição em qualquer status */}
+                              <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleEdit(schedule)}

@@ -233,6 +233,12 @@ export default function Reports() {
   };
   const getUniqueClients = () => new Set(attendanceReports.map(r => r.client_id)).size;
 
+  const getAverageRating = (reports: EmployeeReport[], field: string) => {
+    const ratingsWithValues = reports.filter(r => r[field] && r[field] > 0);
+    if (ratingsWithValues.length === 0) return 0;
+    return ratingsWithValues.reduce((sum, r) => sum + (r[field] || 0), 0) / ratingsWithValues.length;
+  };
+
   const renderStars = (rating?: number) => {
     if (!rating) return <span className="text-muted-foreground">-</span>;
     
