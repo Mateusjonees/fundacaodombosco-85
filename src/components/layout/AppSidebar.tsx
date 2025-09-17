@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { 
@@ -15,6 +15,7 @@ import {
   Settings,
   Archive,
   Shield,
+  Heart,
   LucideIcon
 } from 'lucide-react';
 
@@ -32,6 +33,7 @@ import {
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
@@ -47,35 +49,122 @@ const iconMapping: Record<string, LucideIcon> = {
   Settings,
   Archive,
   Shield,
+  Heart,
 };
 
-// Static menu items based on user roles
-const getMenuItemsForRole = (userRole: string | null) => {
-  const baseItems = [
-    { id: 'dashboard', title: 'Dashboard', url: '/', icon: 'Home', order_index: 0 },
-    { id: 'clients', title: 'Clientes', url: '/clients', icon: 'Users', order_index: 1 },
-    { id: 'schedule', title: 'Agenda', url: '/schedule', icon: 'Calendar', order_index: 2 },
-  ];
+// Dynamic menu items based on role permissions
+const getMenuItemsForRole = (permissions: any) => {
+  const items = [];
+  
+  // Dashboard - sempre visível para usuários autenticados
+  items.push({ 
+    id: 'dashboard', 
+    title: 'Dashboard', 
+    url: '/', 
+    icon: 'Home', 
+    order_index: 0 
+  });
 
-  const coordinatorItems = [
-    { id: 'financial', title: 'Financeiro', url: '/financial', icon: 'DollarSign', order_index: 3 },
-    { id: 'contracts', title: 'Contratos', url: '/contracts', icon: 'FolderOpen', order_index: 4 },
-    { id: 'stock', title: 'Estoque', url: '/stock', icon: 'Package', order_index: 5 },
-    { id: 'reports', title: 'Relatórios', url: '/reports', icon: 'BarChart3', order_index: 6 },
-    { id: 'employees', title: 'Funcionários', url: '/employees', icon: 'UserPlus', order_index: 7 },
-  ];
-
-  const directorItems = [
-    { id: 'users', title: 'Usuários', url: '/users', icon: 'Shield', order_index: 8 },
-  ];
-
-  if (userRole === 'director') {
-    return [...baseItems, ...coordinatorItems, ...directorItems];
-  } else if (['coordinator_madre', 'coordinator_floresta'].includes(userRole || '')) {
-    return [...baseItems, ...coordinatorItems];
-  } else {
-    return baseItems;
+  // Clientes - baseado em permissões
+  if (permissions.canViewAllClients() || permissions.isProfessional()) {
+    items.push({ 
+      id: 'clients', 
+      title: 'Clientes', 
+      url: '/clients', 
+      icon: 'Users', 
+      order_index: 1 
+    });
   }
+
+  // Meus Pacientes - apenas para profissionais e diretor
+  if (permissions.canViewMyPatients()) {
+    items.push({ 
+      id: 'my-patients', 
+      title: 'Meus Pacientes', 
+      url: '/my-patients', 
+      icon: 'Heart', 
+      order_index: 2 
+    });
+  }
+
+  // Agenda - baseado em permissões
+  if (permissions.canViewAllSchedules() || permissions.isProfessional()) {
+    items.push({ 
+      id: 'schedule', 
+      title: 'Agenda', 
+      url: '/schedule', 
+      icon: 'Calendar', 
+      order_index: 3 
+    });
+  }
+
+  // Financeiro - apenas diretor e financeiro
+  if (permissions.canAccessFinancial()) {
+    items.push({ 
+      id: 'financial', 
+      title: 'Financeiro', 
+      url: '/financial', 
+      icon: 'DollarSign', 
+      order_index: 4 
+    });
+  }
+
+  // Contratos - coordenadores e diretores
+  if (permissions.isDirector() || permissions.isCoordinator()) {
+    items.push({ 
+      id: 'contracts', 
+      title: 'Contratos', 
+      url: '/contracts', 
+      icon: 'FolderOpen', 
+      order_index: 5 
+    });
+  }
+
+  // Estoque - apenas diretor e financeiro
+  if (permissions.canManageStock()) {
+    items.push({ 
+      id: 'stock', 
+      title: 'Estoque', 
+      url: '/stock', 
+      icon: 'Package', 
+      order_index: 6 
+    });
+  }
+
+  // Relatórios - coordenadores e diretores
+  if (permissions.canViewReports()) {
+    items.push({ 
+      id: 'reports', 
+      title: 'Relatórios', 
+      url: '/reports', 
+      icon: 'BarChart3', 
+      order_index: 7 
+    });
+  }
+
+  // Funcionários - coordenadores e diretores
+  if (permissions.canManageEmployees()) {
+    items.push({ 
+      id: 'employees', 
+      title: 'Funcionários', 
+      url: '/employees', 
+      icon: 'UserPlus', 
+      order_index: 8 
+    });
+  }
+
+  // Usuários - apenas diretores
+  if (permissions.isDirector()) {
+    items.push({ 
+      id: 'users', 
+      title: 'Usuários', 
+      url: '/users', 
+      icon: 'Shield', 
+      order_index: 9 
+    });
+  }
+
+  return items.sort((a, b) => a.order_index - b.order_index);
 };
 
 interface MenuItem {
@@ -92,33 +181,17 @@ export function AppSidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const permissions = useRolePermissions();
   const currentPath = location.pathname;
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
 
-  // Load user role
+  // Load navigation items based on permissions
   useEffect(() => {
-    const loadUserRole = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('employee_role')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (error) throw error;
-        setUserRole(data.employee_role);
-        setNavigationItems(getMenuItemsForRole(data.employee_role));
-      } catch (error) {
-        console.error('Error loading user role:', error);
-        setNavigationItems(getMenuItemsForRole(null));
-      }
-    };
-
-    loadUserRole();
-  }, [user]);
+    if (!permissions.loading) {
+      const items = getMenuItemsForRole(permissions);
+      setNavigationItems(items);
+    }
+  }, [permissions]);
 
   const isActive = (path: string) => {
     if (path === '/') {

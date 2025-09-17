@@ -1903,6 +1903,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_financial: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      can_manage_stock: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      can_view_all_clients: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       create_test_employee: {
         Args: {
           p_department?: string
@@ -1982,6 +1994,10 @@ export type Database = {
           source: string
         }[]
       }
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["employee_role"]
+      }
       log_sensitive_access: {
         Args: {
           p_action: string
@@ -1990,6 +2006,10 @@ export type Database = {
           p_entity_type: string
         }
         Returns: undefined
+      }
+      user_has_any_role: {
+        Args: { allowed_roles: Database["public"]["Enums"]["employee_role"][] }
+        Returns: boolean
       }
       user_has_permission: {
         Args:

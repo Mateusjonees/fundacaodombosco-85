@@ -1,366 +1,337 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { useToast } from '@/hooks/use-toast';
-import { Search, Eye, Calendar, FileText, Clock } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { 
+  Heart, 
+  Search, 
+  Calendar, 
+  Phone, 
+  MapPin, 
+  User, 
+  Clock,
+  AlertCircle
+} from 'lucide-react';
+import ClientDetailsView from '@/components/ClientDetailsView';
 
-interface MyPatient {
+interface Client {
   id: string;
   name: string;
-  phone?: string;
-  email?: string;
   birth_date?: string;
+  phone?: string;
+  address?: string;
+  unit?: string;
+  responsible_name?: string;
+  responsible_phone?: string;
   is_active: boolean;
-  last_appointment?: string;
-  next_appointment?: string;
-  total_appointments: number;
+  last_session_date?: string;
+  created_at: string;
 }
 
-export default function MyPatients() {
+const MyPatients = () => {
   const { user } = useAuth();
-  const [patients, setPatients] = useState<MyPatient[]>([]);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+  const permissions = useRolePermissions();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   useEffect(() => {
-    if (user) {
-      loadMyPatients();
-      loadUpcomingAppointments();
+    if (!permissions.canViewMyPatients()) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Você não tem permissão para ver esta página.",
+      });
+      return;
     }
-  }, [user]);
+
+    loadMyPatients();
+  }, [user, permissions]);
 
   const loadMyPatients = async () => {
-    setLoading(true);
+    if (!user) return;
+
     try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (!profileData) return;
-
-      // Get all appointments for this professional where they are assigned
-      const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('schedules')
-        .select(`
-          id,
-          client_id,
-          start_time,
-          status,
-          clients (
-            id,
-            name,
-            phone,
-            email,
-            birth_date,
-            is_active
-          )
-        `)
-        .eq('employee_id', user?.id)
-        .eq('status', 'completed');
-
-      if (appointmentsError) throw appointmentsError;
-
-      // Group by client and calculate statistics
-      const clientMap = new Map();
-      appointmentsData?.forEach(appointment => {
-        const client = appointment.clients;
-        if (!client) return;
-
-        if (!clientMap.has(client.id)) {
-          clientMap.set(client.id, {
-            ...client,
-            total_appointments: 0,
-            last_appointment: null,
-            appointments: []
-          });
-        }
-
-        const clientData = clientMap.get(client.id);
-        clientData.total_appointments++;
-        clientData.appointments.push(appointment);
+      setLoading(true);
+      
+      // Se for diretor, pode ver todos os clientes
+      if (permissions.isDirector()) {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
         
-        if (!clientData.last_appointment || 
-            new Date(appointment.start_time) > new Date(clientData.last_appointment)) {
-          clientData.last_appointment = appointment.start_time;
-        }
-      });
+        if (error) throw error;
+        setClients(data || []);
+      } else {
+        // Para profissionais, apenas clientes vinculados
+        const { data, error } = await supabase
+          .from('client_assignments')
+          .select(`
+            client_id,
+            clients (
+              id,
+              name,
+              birth_date,
+              phone,
+              address,
+              unit,
+              responsible_name,
+              responsible_phone,
+              is_active,
+              last_session_date,
+              created_at
+            )
+          `)
+          .eq('employee_id', user.id)
+          .eq('is_active', true)
+          .eq('clients.is_active', true);
 
-      // Get upcoming appointments for each client
-      for (const [clientId, clientData] of clientMap) {
-        const { data: upcomingData } = await supabase
-          .from('schedules')
-          .select('start_time')
-          .eq('employee_id', user?.id)
-          .eq('client_id', clientId)
-          .in('status', ['scheduled'])
-          .gte('start_time', new Date().toISOString())
-          .order('start_time', { ascending: true })
-          .limit(1);
-
-        if (upcomingData && upcomingData.length > 0) {
-          clientData.next_appointment = upcomingData[0].start_time;
-        }
+        if (error) throw error;
+        
+        const myClients = data?.map(assignment => assignment.clients).filter(Boolean) || [];
+        setClients(myClients);
       }
-
-      const patientsArray = Array.from(clientMap.values());
-      setPatients(patientsArray);
     } catch (error) {
-      console.error('Error loading my patients:', error);
+      console.error('Erro ao carregar meus pacientes:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível carregar seus pacientes.",
+        description: "Erro ao carregar lista de pacientes.",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const loadUpcomingAppointments = async () => {
-    try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.responsible_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-      if (!profileData) return;
-
-      const { data, error } = await supabase
-        .from('schedules')
-        .select(`
-          *,
-          clients (name)
-        `)
-        .eq('employee_id', user?.id)
-        .eq('status', 'scheduled')
-        .gte('start_time', new Date().toISOString())
-        .order('start_time', { ascending: true })
-        .limit(10);
-
-      if (error) throw error;
-      setUpcomingAppointments(data || []);
-    } catch (error) {
-      console.error('Error loading upcoming appointments:', error);
-    }
-  };
-
-  const calculateAge = (birthDate: string) => {
+  const calculateAge = (birthDate?: string) => {
+    if (!birthDate) return null;
     const today = new Date();
     const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
+    const age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
+    
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
+      return age - 1;
     }
     return age;
   };
 
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const daysSinceLastSession = (lastSessionDate?: string) => {
+    if (!lastSessionDate) return null;
+    const today = new Date();
+    const lastSession = new Date(lastSessionDate);
+    const diffTime = Math.abs(today.getTime() - lastSession.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Carregando pacientes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!permissions.canViewMyPatients()) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+              <h3 className="mt-2 text-lg font-semibold">Acesso Negado</h3>
+              <p className="text-muted-foreground">
+                Você não tem permissão para visualizar esta página.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (selectedClient) {
+    return (
+      <ClientDetailsView
+        client={selectedClient}
+        onBack={() => setSelectedClient(null)}
+        onEdit={() => {
+          setSelectedClient(null);
+          loadMyPatients();
+        }}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Meus Pacientes</h1>
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Heart className="h-8 w-8 text-primary" />
+            Meus Pacientes
+          </h1>
+          <p className="text-muted-foreground">
+            {permissions.isDirector() 
+              ? "Todos os pacientes do sistema" 
+              : "Pacientes sob seus cuidados"
+            }
+          </p>
+        </div>
+        <Badge variant="secondary" className="text-lg px-4 py-2">
+          {filteredClients.length} paciente{filteredClients.length !== 1 ? 's' : ''}
+        </Badge>
       </div>
 
-      <Tabs defaultValue="patients" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="patients">Meus Pacientes</TabsTrigger>
-          <TabsTrigger value="appointments">Próximos Atendimentos</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="patients" className="space-y-6">
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Meus Pacientes</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{filteredPatients.length}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pacientes Ativos</CardTitle>
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                 <div className="text-2xl font-bold text-green-600">
-                   {filteredPatients.filter(p => p.is_active).length}
-                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total de Consultas</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {filteredPatients.reduce((sum, p) => sum + p.total_appointments, 0)}
-                </div>
-              </CardContent>
-            </Card>
+      {/* Barra de Pesquisa */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Pesquisar por nome do paciente ou responsável..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Lista de Pacientes</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar paciente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <p className="text-muted-foreground text-center py-8">Carregando pacientes...</p>
-              ) : filteredPatients.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  {searchTerm ? 'Nenhum paciente encontrado.' : 'Você ainda não possui pacientes atendidos.'}
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Idade</TableHead>
-                      <TableHead>Contato</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Consultas</TableHead>
-                      <TableHead>Última Consulta</TableHead>
-                      <TableHead>Próxima Consulta</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPatients.map((patient) => (
-                      <TableRow key={patient.id}>
-                        <TableCell className="font-medium">{patient.name}</TableCell>
-                        <TableCell>
-                          {patient.birth_date ? `${calculateAge(patient.birth_date)} anos` : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {patient.phone && (
-                              <div className="text-sm">{patient.phone}</div>
-                            )}
-                            {patient.email && (
-                              <div className="text-sm text-muted-foreground">{patient.email}</div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                         <Badge variant={patient.is_active ? "default" : "secondary"}>
-                            {patient.is_active ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {patient.total_appointments} consultas
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {patient.last_appointment 
-                            ? new Date(patient.last_appointment).toLocaleDateString('pt-BR')
-                            : '-'
-                          }
-                        </TableCell>
-                        <TableCell>
-                          {patient.next_appointment ? (
-                            <Badge variant="outline">
-                              {new Date(patient.next_appointment).toLocaleDateString('pt-BR')}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">Não agendada</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Calendar className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {/* Lista de Pacientes */}
+      {filteredClients.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Heart className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-2 text-lg font-semibold">
+                {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente vinculado'}
+              </h3>
+              <p className="text-muted-foreground">
+                {searchTerm 
+                  ? 'Tente ajustar os termos de pesquisa.'
+                  : 'Entre em contato com a coordenação para vincular pacientes.'
+                }
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredClients.map((client) => {
+            const age = calculateAge(client.birth_date);
+            const daysSince = daysSinceLastSession(client.last_session_date);
+            const isMinor = age !== null && age < 18;
 
-        <TabsContent value="appointments" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Próximos Atendimentos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {upcomingAppointments.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  Nenhum atendimento agendado.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {upcomingAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {format(new Date(appointment.appointment_date), "dd 'de' MMMM", { locale: ptBR })}
-                          </span>
-                          <Clock className="h-4 w-4 text-muted-foreground ml-4" />
-                          <span>{appointment.start_time} - {appointment.end_time}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Paciente: {appointment.clients?.name}
-                        </div>
-                        <Badge variant="outline" className="mt-2">
-                          {appointment.type}
-                        </Badge>
-                      </div>
-                      <Badge variant={appointment.status === 'confirmed' ? "default" : "secondary"}>
-                        {appointment.status === 'confirmed' ? 'Confirmado' : 'Agendado'}
-                      </Badge>
+            return (
+              <Card key={client.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{client.name}</CardTitle>
+                    <Badge 
+                      variant={client.unit === 'madre' ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {client.unit === 'madre' ? 'Madre' : 'Floresta'}
+                    </Badge>
+                  </div>
+                  {age !== null && (
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {age} anos {isMinor && '(Menor)'}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  )}
+                </CardHeader>
+                
+                <CardContent className="space-y-3">
+                  {/* Contato */}
+                  {(client.phone || client.responsible_phone) && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {isMinor && client.responsible_phone 
+                          ? client.responsible_phone 
+                          : client.phone || 'Não informado'
+                        }
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Responsável (apenas para menores) */}
+                  {isMinor && client.responsible_name && (
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Resp.: {client.responsible_name}</span>
+                    </div>
+                  )}
+
+                  {/* Endereço */}
+                  {client.address && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <span className="text-sm text-muted-foreground line-clamp-2">
+                        {client.address}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Última sessão */}
+                  {client.last_session_date && daysSince !== null && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        Última sessão: {daysSince} dia{daysSince !== 1 ? 's' : ''} atrás
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-2">
+                    <Button 
+                      size="sm" 
+                      onClick={() => setSelectedClient(client)}
+                      className="flex-1"
+                    >
+                      Ver Detalhes
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        // Navegar para agendamento
+                        window.location.href = `/schedule?client=${client.id}`;
+                      }}
+                    >
+                      <Calendar className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default MyPatients;

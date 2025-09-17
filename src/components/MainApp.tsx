@@ -8,9 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { EmployeeManager } from '@/components/EmployeeManager';
 import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus, Shield, Package, Menu } from 'lucide-react';
+import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 
 // Import page components
 import Clients from '@/pages/Clients';
@@ -21,6 +23,7 @@ import UserManagement from '@/pages/UserManagement';
 import Stock from '@/pages/Stock';
 import Reports from '@/pages/Reports';
 import Dashboard from '@/pages/Dashboard';
+import MyPatients from '@/pages/MyPatients';
 
 interface Profile {
   id: string;
@@ -34,23 +37,9 @@ interface Profile {
   department?: string;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  director: 'Diretor(a)',
-  coordinator_madre: 'Coordenador(a) Madre',
-  coordinator_floresta: 'Coordenador(a) Floresta',
-  staff: 'Funcionário(a) Geral',
-  intern: 'Estagiário(a)',
-  musictherapist: 'Musicoterapeuta',
-  financeiro: 'Financeiro',
-  receptionist: 'Recepcionista',
-  psychologist: 'Psicólogo(a)',
-  psychopedagogue: 'Psicopedagogo(a)',
-  speech_therapist: 'Fonoaudiólogo(a)',
-  nutritionist: 'Nutricionista',
-  physiotherapist: 'Fisioterapeuta'
-};
 
 export const MainApp = () => {
+  const permissions = useRolePermissions();
   const { user } = useAuth();
   const { toast } = useToast();
   const { logAction } = useAuditLog();
@@ -167,7 +156,7 @@ export const MainApp = () => {
                 <Route path="/contracts" element={<Contracts />} />
                 <Route path="/stock" element={<Stock />} />
                 <Route path="/reports" element={<Reports />} />
-                <Route path="/employees" element={<EmployeeManager />} />
+                <Route path="/my-patients" element={<MyPatients />} />
                 <Route path="/users" element={<UserManagement />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

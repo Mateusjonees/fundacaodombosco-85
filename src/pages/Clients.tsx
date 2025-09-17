@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter } from 'lucide-react';
 import ClientDetailsView from '@/components/ClientDetailsView';
@@ -41,6 +42,7 @@ interface UserProfile {
 }
 
 export default function Clients() {
+  const permissions = useRolePermissions();
   const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
