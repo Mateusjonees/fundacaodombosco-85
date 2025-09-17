@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Calendar, Users, Clock, User, Award, Printer, Download, RefreshCw, Activity } from 'lucide-react';
+import { Calendar, Users, Clock, User, Award, Printer, Download, RefreshCw, Activity, Package } from 'lucide-react';
 
 interface EmployeeStats {
   employee: any;
@@ -18,6 +18,7 @@ interface EmployeeStats {
   cancelledAppointments: number;
   inProgressAppointments: number;
   totalHours: number;
+  totalMaterialsCost?: number;
   uniqueClients: number;
   avgAppointmentDuration: number;
   avgAppointmentsPerClient: number;
@@ -110,30 +111,57 @@ export default function Reports() {
 
       if (appointmentsError) throw appointmentsError;
 
-      // Calculate statistics
+      // Load appointment sessions for detailed metrics
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('appointment_sessions')
+        .select(`
+          schedule_id, session_duration, materials_used, total_materials_cost, session_notes,
+          schedules:schedule_id (start_time, end_time, employee_id)
+        `)
+        .eq('schedules.employee_id', selectedEmployee);
+
+      if (sessionsError) {
+        console.error('Error loading sessions:', sessionsError);
+      }
+
+      // Calculate statistics with session data
       const totalAppointments = appointments?.length || 0;
       const completedAppointments = appointments?.filter(a => a.status === 'completed').length || 0;
       const cancelledAppointments = appointments?.filter(a => a.status === 'cancelled').length || 0;
       const inProgressAppointments = appointments?.filter(a => a.status === 'confirmed' || a.status === 'scheduled').length || 0;
       
-      // Calculate total hours
-      const totalHours = appointments?.reduce((sum, apt) => {
-        const start = new Date(apt.start_time);
-        const end = new Date(apt.end_time);
-        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-        return sum + hours;
-      }, 0) || 0;
+      // Calculate total hours from sessions when available, fallback to schedule times
+      let totalHours = 0;
+      const sessionMap = new Map(sessions?.map(s => [s.schedule_id, s]) || []);
+      
+      appointments?.forEach(apt => {
+        const session = sessionMap.get(apt.id);
+        if (session && session.session_duration) {
+          totalHours += session.session_duration / 60; // convert minutes to hours
+        } else {
+          // Fallback to schedule duration
+          const start = new Date(apt.start_time);
+          const end = new Date(apt.end_time);
+          const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+          totalHours += hours;
+        }
+      });
+
+      // Calculate total materials cost
+      const totalMaterialsCost = sessions?.reduce((sum, session) => 
+        sum + (session.total_materials_cost || 0), 0) || 0;
 
       const uniqueClients = new Set(appointments?.map(a => a.client_id)).size;
       const avgAppointmentDuration = totalAppointments > 0 ? totalHours / totalAppointments : 0;
       const avgAppointmentsPerClient = uniqueClients > 0 ? totalAppointments / uniqueClients : 0;
       const completionRate = totalAppointments > 0 ? (completedAppointments / totalAppointments) * 100 : 0;
       
-      // Calculate performance score based on completion rate and efficiency
+      // Enhanced performance score including materials efficiency
       const efficiencyScore = avgAppointmentDuration > 0 ? Math.min(100, (1.5 / avgAppointmentDuration) * 100) : 0;
-      const performanceScore = (completionRate * 0.7) + (efficiencyScore * 0.3);
+      const materialsEfficiency = completedAppointments > 0 ? Math.max(0, 100 - (totalMaterialsCost / completedAppointments)) : 100;
+      const performanceScore = (completionRate * 0.5) + (efficiencyScore * 0.3) + (materialsEfficiency * 0.2);
 
-      // Monthly statistics
+      // Monthly statistics with enhanced data
       const monthlyStats = Array.from({ length: 12 }, (_, i) => {
         const month = i + 1;
         const monthAppointments = appointments?.filter(a => {
@@ -141,31 +169,49 @@ export default function Reports() {
           return date.getMonth() + 1 === month && date.getFullYear() === new Date().getFullYear();
         }) || [];
 
-        const monthHours = monthAppointments.reduce((sum, apt) => {
-          const start = new Date(apt.start_time);
-          const end = new Date(apt.end_time);
-          return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-        }, 0);
+        const monthSessions = monthAppointments
+          .map(apt => sessionMap.get(apt.id))
+          .filter(Boolean);
+
+        let monthHours = 0;
+        monthAppointments.forEach(apt => {
+          const session = sessionMap.get(apt.id);
+          if (session && session.session_duration) {
+            monthHours += session.session_duration / 60;
+          } else {
+            const start = new Date(apt.start_time);
+            const end = new Date(apt.end_time);
+            monthHours += (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+          }
+        });
+
+        const monthMaterialsCost = monthSessions.reduce((sum, session) => 
+          sum + (session.total_materials_cost || 0), 0);
 
         return {
           month: new Date(2025, i, 1).toLocaleDateString('pt-BR', { month: 'short' }),
           appointments: monthAppointments.length,
           hours: monthHours,
-          completed: monthAppointments.filter(a => a.status === 'completed').length
+          completed: monthAppointments.filter(a => a.status === 'completed').length,
+          cancelled: monthAppointments.filter(a => a.status === 'cancelled').length,
+          materialsCost: monthMaterialsCost
         };
       });
 
-      // Get unique clients list with appointment count
+      // Get unique clients list with appointment count and cancellation info
       const clientsMap = new Map();
       appointments?.forEach(apt => {
         if (apt.clients) {
           const clientId = apt.clients.id;
           if (clientsMap.has(clientId)) {
-            clientsMap.get(clientId).appointmentCount++;
+            const client = clientsMap.get(clientId);
+            client.appointmentCount++;
+            if (apt.status === 'cancelled') client.cancelledCount++;
           } else {
             clientsMap.set(clientId, {
               ...apt.clients,
-              appointmentCount: 1
+              appointmentCount: 1,
+              cancelledCount: apt.status === 'cancelled' ? 1 : 0
             });
           }
         }
@@ -180,6 +226,7 @@ export default function Reports() {
         cancelledAppointments,
         inProgressAppointments,
         totalHours: Math.round(totalHours * 100) / 100,
+        totalMaterialsCost: Math.round(totalMaterialsCost * 100) / 100,
         uniqueClients,
         avgAppointmentDuration: Math.round(avgAppointmentDuration * 100) / 100,
         avgAppointmentsPerClient: Math.round(avgAppointmentsPerClient * 100) / 100,
@@ -649,8 +696,13 @@ Gerado por: Sistema de Gestão Clínica
               className="gap-1"
             >
               <Activity className="h-4 w-4" />
-              {autoRefresh ? "Atualizando..." : "Atualização Automática"}
+              {autoRefresh ? "Tempo Real" : "Ativar Tempo Real"}
             </Button>
+          )}
+          {autoRefresh && selectedEmployee && (
+            <Badge variant="secondary" className="animate-pulse">
+              Atualizando automaticamente a cada 30s
+            </Badge>
           )}
           {employeeStats && (
             <>
@@ -822,8 +874,21 @@ Gerado por: Sistema de Gestão Clínica
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{employeeStats.totalHours}h</div>
+                <div className="text-2xl font-bold text-primary">{employeeStats.totalHours}h</div>
                 <p className="text-xs text-muted-foreground">Média: {employeeStats.avgAppointmentDuration}h/atendimento</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Custo Materiais</CardTitle>
+                <Package className="h-4 w-4 text-orange-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">
+                  R$ {(employeeStats.totalMaterialsCost || 0).toFixed(2)}
+                </div>
+                <p className="text-xs text-muted-foreground">Total investido</p>
               </CardContent>
             </Card>
 
@@ -933,9 +998,16 @@ Gerado por: Sistema de Gestão Clínica
                         <div className="font-medium">{client.name}</div>
                         <div className="text-sm text-muted-foreground">
                           {client.unit === 'madre' ? 'Clínica Social (Madre)' : 'Neuro (Floresta)'}
+                          {client.cancelledCount > 0 && (
+                            <span className="ml-2 text-destructive">
+                              • {client.cancelledCount} cancelamento(s)
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <Badge variant="outline">{client.appointmentCount} atendimentos</Badge>
+                      <Badge variant={client.cancelledCount > 2 ? "destructive" : "outline"}>
+                        {client.appointmentCount} atendimento{client.appointmentCount !== 1 ? 's' : ''}
+                      </Badge>
                     </div>
                   ))}
                 </div>
