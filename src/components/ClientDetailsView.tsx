@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,7 +94,6 @@ interface ClientDetailsViewProps {
 
 export default function ClientDetailsView({ client, onEdit, onClose }: ClientDetailsViewProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [notes, setNotes] = useState<ClientNote[]>([]);
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
   const [assignedProfessionals, setAssignedProfessionals] = useState<AssignedProfessional[]>([]);
@@ -269,8 +267,12 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
   };
 
   const handleScheduleAppointment = () => {
-    // Navigate to schedule page with client pre-selected
-    navigate(`/schedule?client=${client.id}&name=${encodeURIComponent(client.name)}`);
+    toast({
+      title: "Agendamento",
+      description: "Redirecionando para a agenda...",
+    });
+    // Redirect to schedule page
+    window.open(`/schedule?client=${client.id}`, '_blank');
   };
 
   const loadAppointments = async () => {

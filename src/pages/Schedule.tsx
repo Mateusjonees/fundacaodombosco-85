@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +34,6 @@ interface Schedule {
 
 export default function Schedule() {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -73,30 +71,7 @@ export default function Schedule() {
     loadEmployees();
     loadClients();
     loadSchedules();
-    
-    // Check for URL parameters to pre-fill appointment form
-    const clientId = searchParams.get('client');
-    const clientName = searchParams.get('name');
-    
-    if (clientId) {
-      // Pre-fill client and open dialog
-      setNewAppointment(prev => ({
-        ...prev,
-        client_id: clientId
-      }));
-      
-      // Show toast with client name
-      if (clientName) {
-        toast({
-          title: "Cliente Selecionado",
-          description: `Agendamento para: ${decodeURIComponent(clientName)}`,
-        });
-      }
-      
-      // Auto-open the dialog
-      setIsDialogOpen(true);
-    }
-  }, [selectedDate, filterRole, filterEmployee, filterUnit, searchParams]);
+  }, [selectedDate, filterRole, filterEmployee, filterUnit]);
 
   const loadUserProfile = async () => {
     if (!user) return;
