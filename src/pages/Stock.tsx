@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Package, Plus, Edit, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import StockItemActions from '@/components/StockItemActions';
 
 interface StockItem {
   id: string;
@@ -229,12 +230,12 @@ export default function Stock() {
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>
                       <TableCell>{item.location || '-'}</TableCell>
-                      <TableCell>
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <Edit className="h-3 w-3" />
-                          Editar
-                        </Button>
-                      </TableCell>
+                       <TableCell>
+                         <StockItemActions 
+                           item={item} 
+                           onUpdate={loadStockItems}
+                         />
+                       </TableCell>
                     </TableRow>
                   );
                 })}
