@@ -1698,34 +1698,6 @@ export type Database = {
         }
         Returns: string
       }
-      get_accessible_employee_details: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          address: string
-          birth_date: string
-          created_at: string
-          department: string
-          document_cpf: string
-          document_rg: string
-          emergency_contact: string
-          emergency_phone: string
-          employee_code: string
-          employee_notes: string
-          employee_role: Database["public"]["Enums"]["employee_role"]
-          hire_date: string
-          is_active: boolean
-          name: string
-          permissions: Json
-          phone: string
-          professional_license: string
-          profile_id: string
-          salary: number
-          specialization: string
-          updated_at: string
-          user_id: string
-          work_schedule: Json
-        }[]
-      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["employee_role"]
