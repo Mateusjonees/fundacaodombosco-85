@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,7 @@ interface Client {
   created_at: string;
 }
 
-const MyPatients = () => {
+const MyPatients: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useRolePermissions();
@@ -177,6 +178,7 @@ const MyPatients = () => {
           setSelectedClient(null);
           loadMyPatients();
         }}
+        onRefresh={loadMyPatients}
       />
     );
   }
