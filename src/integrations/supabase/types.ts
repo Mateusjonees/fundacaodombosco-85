@@ -2187,6 +2187,10 @@ export type Database = {
         }
         Returns: string
       }
+      director_has_god_mode: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_accessible_employee_details: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2258,6 +2262,10 @@ export type Database = {
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["employee_role"]
+      }
+      is_god_mode_director: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       log_sensitive_access: {
         Args: {

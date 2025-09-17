@@ -42,8 +42,8 @@ interface UserProfile {
 }
 
 export default function Clients() {
-  const permissions = useRolePermissions();
   const { user } = useAuth();
+  const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -379,29 +379,37 @@ export default function Clients() {
 
   return (
     <div className="space-y-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">Lista de Clientes</h1>
-                  <p className="text-muted-foreground">
-                    {isCoordinatorOrDirector 
-                      ? 'Visualizando todos os clientes' 
-                      : 'Visualizando apenas clientes vinculados a você'
-                    }
-                  </p>
-                </div>
-            <Dialog open={isDialogOpen} onOpenChange={(open) => {
-              setIsDialogOpen(open);
-              if (!open) {
-                setEditingClient(null);
-                resetForm();
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 w-full md:w-auto">
-                  <Plus className="h-4 w-4" />
-                  Cadastrar Cliente
-                </Button>
-              </DialogTrigger>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Lista de Clientes</h1>
+          <p className="text-muted-foreground">
+            {isGodMode() 
+              ? '🔑 Modo Deus Ativo - Acesso total aos clientes' 
+              : isCoordinatorOrDirector 
+                ? 'Visualizando todos os clientes' 
+                : 'Visualizando apenas clientes vinculados a você'
+            }
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isGodMode() && (
+            <Badge variant="default" className="bg-yellow-600 text-white">
+              🔑 Diretor
+            </Badge>
+          )}
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) {
+              setEditingClient(null);
+              resetForm();
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 w-full md:w-auto">
+                <Plus className="h-4 w-4" />
+                Cadastrar Cliente
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
