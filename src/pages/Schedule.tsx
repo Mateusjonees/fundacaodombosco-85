@@ -18,6 +18,7 @@ import { ptBR } from 'date-fns/locale';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { ConfirmAppointmentDialog } from '@/components/ConfirmAppointmentDialog';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
+import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 
 interface Schedule {
   id: string;
@@ -43,6 +44,7 @@ export default function Schedule() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [selectedScheduleForAction, setSelectedScheduleForAction] = useState<Schedule | null>(null);
   const { toast } = useToast();
 
@@ -459,6 +461,11 @@ export default function Schedule() {
     }
   };
 
+  const openCompleteDialog = (schedule: Schedule) => {
+    setSelectedScheduleForAction(schedule);
+    setCompleteDialogOpen(true);
+  };
+
   const openConfirmDialog = (schedule: Schedule) => {
     setSelectedScheduleForAction(schedule);
     setConfirmDialogOpen(true);
@@ -814,16 +821,17 @@ export default function Schedule() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => openConfirmDialog(schedule)}
-                                  title="Confirmar Atendimento"
-                                  className="text-primary hover:text-primary shadow-professional"
+                                  onClick={() => openCompleteDialog(schedule)}
+                                  title="Concluir Atendimento"
+                                  className="text-green-600 hover:text-green-700 shadow-professional"
                                 >
                                   <CheckCircle className="h-3 w-3" />
                                 </Button>
                               )}
+                                </Button>
+                              )}
                               
                               {/* Permitir edição em qualquer status */}
-                              <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleEdit(schedule)}
@@ -1014,6 +1022,27 @@ export default function Schedule() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <CompleteAttendanceDialog
+          schedule={selectedScheduleForAction}
+          isOpen={completeDialogOpen}
+          onClose={() => setCompleteDialogOpen(false)}
+          onComplete={loadSchedules}
+        />
+
+        <ConfirmAppointmentDialog
+          schedule={selectedScheduleForAction}
+          isOpen={confirmDialogOpen}
+          onClose={() => setConfirmDialogOpen(false)}
+          onConfirm={handleConfirmAppointment}
+        />
+
+        <CancelAppointmentDialog
+          schedule={selectedScheduleForAction}
+          isOpen={cancelDialogOpen}
+          onClose={() => setCancelDialogOpen(false)}
+          onCancel={handleCancelAppointment}
+        />
       </div>
     </div>
   );
