@@ -11,7 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, Star, Target, Package, DollarSign, FileText, Plus } from 'lucide-react';
+import { Clock, Star, Target, Package, DollarSign, FileText, Plus, Upload, X, FileIcon } from 'lucide-react';
+
+interface AttachedFile {
+  name: string;
+  file: File;
+  preview?: string;
+}
 
 interface StockItem {
   id: string;
@@ -49,6 +55,7 @@ export default function CompleteAttendanceDialog({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   
   const [attendanceData, setAttendanceData] = useState({
     // Informações básicas
@@ -124,7 +131,35 @@ export default function CompleteAttendanceDialog({
     
     setLoading(true);
     try {
-      // 1. Atualizar o status do agendamento
+      // 1. Upload de arquivos primeiro
+      const uploadedAttachments = [];
+      
+      for (const attachedFile of attachedFiles) {
+        const fileName = `${user.id}/${schedule.id}/${Date.now()}_${attachedFile.file.name}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('attendance-documents')
+          .upload(fileName, attachedFile.file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          toast({
+            variant: "destructive",
+            title: "Erro no upload",
+            description: `Não foi possível fazer upload do arquivo: ${attachedFile.file.name}`,
+          });
+          continue;
+        }
+
+        uploadedAttachments.push({
+          name: attachedFile.file.name,
+          path: uploadData.path,
+          size: attachedFile.file.size,
+          type: attachedFile.file.type
+        });
+      }
+
+      // 2. Atualizar o status do agendamento
       const { error: updateError } = await supabase
         .from('schedules')
         .update({ 
@@ -139,7 +174,7 @@ export default function CompleteAttendanceDialog({
 
       if (updateError) throw updateError;
 
-      // 2. Criar relatório de atendimento
+      // 3. Criar relatório de atendimento
       const { error: reportError } = await supabase
         .from('attendance_reports')
         .insert({
@@ -159,12 +194,13 @@ export default function CompleteAttendanceDialog({
           patient_response: attendanceData.patientResponse,
           next_session_plan: attendanceData.nextSessionPlan,
           amount_charged: attendanceData.sessionValue,
+          attachments: uploadedAttachments,
           created_by: user.id
         });
 
       if (reportError) throw reportError;
 
-      // 3. Criar relatório do funcionário (mais detalhado)
+      // 4. Criar relatório do funcionário (mais detalhado)
       const { error: employeeReportError } = await supabase
         .from('employee_reports')
         .insert({
@@ -185,6 +221,7 @@ export default function CompleteAttendanceDialog({
           next_session_plan: attendanceData.nextSessionPlan,
           materials_used: attendanceData.materialsUsed,
           materials_cost: 0, // Será calculado se necessário
+          attachments: uploadedAttachments,
           session_location: 'Clínica',
           supervision_required: attendanceData.supervisionNeeded,
           follow_up_needed: attendanceData.nextSessionPlan ? true : false
@@ -266,6 +303,9 @@ export default function CompleteAttendanceDialog({
 
       onComplete();
       onClose();
+      
+      // Reset form including attachments
+      setAttachedFiles([]);
     } catch (error) {
       console.error('Error completing attendance:', error);
       toast({
@@ -333,6 +373,75 @@ export default function CompleteAttendanceDialog({
         i === index ? { ...material, [field]: value } : material
       )
     }));
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      // Validar tamanho do arquivo (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          variant: "destructive",
+          title: "Arquivo muito grande",
+          description: `O arquivo ${file.name} é muito grande. Tamanho máximo: 10MB`,
+        });
+        return;
+      }
+
+      // Validar tipo de arquivo
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          variant: "destructive",
+          title: "Tipo de arquivo não permitido",
+          description: `O arquivo ${file.name} não é um tipo permitido.`,
+        });
+        return;
+      }
+
+      const newFile: AttachedFile = {
+        name: file.name,
+        file: file,
+      };
+
+      // Criar preview para imagens
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setAttachedFiles(prev => 
+            prev.map(f => f.name === file.name ? { ...f, preview: e.target?.result as string } : f)
+          );
+        };
+        reader.readAsDataURL(file);
+      }
+
+      setAttachedFiles(prev => [...prev, newFile]);
+    });
+
+    // Reset input
+    event.target.value = '';
+  };
+
+  const removeAttachedFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return '🖼️';
+    if (fileType === 'application/pdf') return '📄';
+    if (fileType.includes('word')) return '📝';
+    return '📋';
   };
 
   const renderStarRating = (field: string, value: number) => (
@@ -573,6 +682,70 @@ export default function CompleteAttendanceDialog({
                   onChange={(e) => setAttendanceData(prev => ({...prev, nextSessionPlan: e.target.value}))}
                   placeholder="Planejamento para o próximo atendimento..."
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Anexos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Documentos Anexos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Lista de arquivos anexados */}
+              {attachedFiles.length > 0 && (
+                <div className="space-y-2">
+                  {attachedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <div className="text-2xl">
+                        {getFileIcon(file.file.type)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      {file.preview && (
+                        <img src={file.preview} alt="Preview" className="w-10 h-10 object-cover rounded" />
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeAttachedFile(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Upload de arquivos */}
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="cursor-pointer flex flex-col items-center gap-2 text-center"
+                >
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Clique para anexar documentos</p>
+                    <p className="text-xs text-muted-foreground">
+                      PDF, DOC, TXT, JPG, PNG (máx. 10MB cada)
+                    </p>
+                  </div>
+                </label>
               </div>
             </CardContent>
           </Card>

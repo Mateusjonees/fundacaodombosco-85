@@ -85,6 +85,7 @@ export type Database = {
       attendance_reports: {
         Row: {
           amount_charged: number | null
+          attachments: Json | null
           attendance_type: string
           client_id: string
           created_at: string
@@ -108,6 +109,7 @@ export type Database = {
         }
         Insert: {
           amount_charged?: number | null
+          attachments?: Json | null
           attendance_type?: string
           client_id: string
           created_at?: string
@@ -131,6 +133,7 @@ export type Database = {
         }
         Update: {
           amount_charged?: number | null
+          attachments?: Json | null
           attendance_type?: string
           client_id?: string
           created_at?: string
@@ -729,6 +732,7 @@ export type Database = {
       }
       employee_reports: {
         Row: {
+          attachments: Json | null
           client_id: string | null
           created_at: string
           effort_rating: number | null
@@ -754,6 +758,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachments?: Json | null
           client_id?: string | null
           created_at?: string
           effort_rating?: number | null
@@ -779,6 +784,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachments?: Json | null
           client_id?: string | null
           created_at?: string
           effort_rating?: number | null
