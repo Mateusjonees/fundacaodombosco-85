@@ -63,18 +63,19 @@ const MyPatients: React.FC = () => {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   useEffect(() => {
-    if (!permissions.canViewMyPatients()) {
+    // Permitir acesso para todos os usuários autenticados
+    if (!user) {
       toast({
         variant: "destructive",
         title: "Acesso negado",
-        description: "Você não tem permissão para ver esta página.",
+        description: "Você precisa estar logado para ver esta página.",
       });
       return;
     }
 
     loadMyPatients();
     loadMySchedules();
-  }, [user, permissions, selectedDate]);
+  }, [user, selectedDate]);
 
   const loadMySchedules = async () => {
     if (!user) return;
@@ -100,10 +101,21 @@ const MyPatients: React.FC = () => {
         .lte('start_time', weekEnd.toISOString())
         .order('start_time');
 
-      // Se não for diretor, filtrar apenas agendamentos do usuário
-      if (!permissions.isDirector()) {
-        query = query.eq('employee_id', user.id);
+      // Para todos os usuários, filtrar apenas agendamentos dos clientes vinculados
+      const { data: assignedClients } = await supabase
+        .from('client_assignments')
+        .select('client_id')
+        .eq('employee_id', user.id)
+        .eq('is_active', true);
+
+      if (!assignedClients || assignedClients.length === 0) {
+        setSchedules([]);
+        return;
       }
+
+      const clientIds = assignedClients.map(a => a.client_id);
+      
+      query = query.in('client_id', clientIds);
 
       const { data, error } = await query;
 
@@ -120,50 +132,38 @@ const MyPatients: React.FC = () => {
     try {
       setLoading(true);
       
-      // Se for diretor, pode ver todos os clientes
-      if (permissions.isDirector()) {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
-        
-        if (error) throw error;
-        setClients(data || []);
-      } else {
-        // Para profissionais, apenas clientes vinculados
-        const { data, error } = await supabase
-          .from('client_assignments')
-          .select(`
-            client_id,
-            clients (
-              id,
-              name,
-              birth_date,
-              phone,
-              address,
-              unit,
-              responsible_name,
-              responsible_phone,
-              is_active,
-              last_session_date,
-              created_at
-            )
-          `)
-          .eq('employee_id', user.id)
-          .eq('is_active', true)
-          .eq('clients.is_active', true);
+      // Para todos os usuários, apenas clientes vinculados através de client_assignments
+      const { data, error } = await supabase
+        .from('client_assignments')
+        .select(`
+          client_id,
+          clients (
+            id,
+            name,
+            birth_date,
+            phone,
+            address,
+            unit,
+            responsible_name,
+            responsible_phone,
+            is_active,
+            last_session_date,
+            created_at
+          )
+        `)
+        .eq('employee_id', user.id)
+        .eq('is_active', true)
+        .eq('clients.is_active', true);
 
-        if (error) throw error;
-        
-        // Extrair os dados dos clientes
-        const clientsData = (data || [])
-          .filter(assignment => assignment.clients)
-          .map(assignment => assignment.clients)
-          .filter(Boolean) as Client[];
+      if (error) throw error;
+      
+      // Extrair os dados dos clientes
+      const clientsData = (data || [])
+        .filter(assignment => assignment.clients)
+        .map(assignment => assignment.clients)
+        .filter(Boolean) as Client[];
 
-        setClients(clientsData);
-      }
+      setClients(clientsData);
     } catch (error) {
       console.error('Error loading patients:', error);
       toast({
