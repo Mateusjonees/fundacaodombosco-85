@@ -192,7 +192,42 @@ export default function Schedule() {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Schedule query error:', error);
+        // Fallback query sem o join de profiles se houver erro
+        const fallbackQuery = supabase
+          .from('schedules')
+          .select(`*, clients (name)`)
+          .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
+          .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
+          .order('start_time');
+
+        const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+        if (fallbackError) throw fallbackError;
+        
+        // Buscar nomes dos profissionais manualmente
+        const schedulesWithProfiles = await Promise.all((fallbackData || []).map(async (schedule) => {
+          if (schedule.employee_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('user_id', schedule.employee_id)
+              .single();
+            
+            return {
+              ...schedule,
+              profiles: { name: profileData?.name || 'Nome não encontrado' }
+            };
+          }
+          return {
+            ...schedule,
+            profiles: { name: 'Não atribuído' }
+          };
+        }));
+        
+        setSchedules(schedulesWithProfiles);
+        return;
+      }
       
       setSchedules(data || []);
     } catch (error) {
