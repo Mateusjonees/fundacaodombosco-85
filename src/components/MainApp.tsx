@@ -9,6 +9,11 @@ import { useAuditLog } from '@/hooks/useAuditLog';
 import { EmployeeManager } from '@/components/EmployeeManager';
 import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus } from 'lucide-react';
 
+// Import page components
+import Clients from '@/pages/Clients';
+import Schedule from '@/pages/Schedule';
+import Financial from '@/pages/Financial';
+
 interface Profile {
   id: string;
   user_id: string;
@@ -299,42 +304,15 @@ export const MainApp = () => {
         )}
 
         {activeTab === 'clients' && (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold">Clientes</h2>
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-muted-foreground">
-                  Funcionalidade de clientes será implementada aqui.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <Clients />
         )}
 
         {activeTab === 'schedule' && (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold">Agenda</h2>
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-muted-foreground">
-                  Funcionalidade de agenda será implementada aqui.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <Schedule />
         )}
 
         {activeTab === 'financial' && (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold">Financeiro</h2>
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-muted-foreground">
-                  Funcionalidade financeira será implementada aqui.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <Financial />
         )}
       </main>
     </div>

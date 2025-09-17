@@ -208,18 +208,11 @@ export const EmployeeManager = () => {
     }
   };
 
-  const handleToggleEmployeeStatus = async (employee: Profile) => {
-    const newStatus = !employee.is_active;
-    const action = newStatus ? 'ativar' : 'desativar';
-    
-    if (!confirm(`Tem certeza que deseja ${action} este funcionário? ${!newStatus ? 'Ele não conseguirá mais acessar o sistema.' : 'Ele poderá acessar o sistema novamente.'}`)) {
-      return;
-    }
-
+  const handleDeactivateEmployee = async (employee: Profile) => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: newStatus })
+        .update({ is_active: false })
         .eq('id', employee.id);
 
       if (error) {
@@ -227,25 +220,25 @@ export const EmployeeManager = () => {
       }
 
       toast({
-        title: newStatus ? "Funcionário ativado" : "Funcionário desativado",
-        description: `O funcionário foi ${newStatus ? 'ativado' : 'desativado'} com sucesso.`,
+        title: "Funcionário desativado",
+        description: "O funcionário foi desativado com sucesso.",
       });
 
       await logAction({
         entityType: 'employees',
         entityId: employee.id,
-        action: newStatus ? 'activated' : 'deactivated',
+        action: 'deactivated',
         oldData: { is_active: employee.is_active },
-        newData: { is_active: newStatus }
+        newData: { is_active: false }
       });
 
       loadEmployees();
     } catch (error) {
-      console.error(`Error ${action}ing employee:`, error);
+      console.error('Error deactivating employee:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: `Não foi possível ${action} o funcionário.`,
+        description: "Não foi possível desativar o funcionário.",
       });
     }
   };
@@ -385,14 +378,15 @@ export const EmployeeManager = () => {
                             >
                               <Key className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleToggleEmployeeStatus(employee)}
-                              title={employee.is_active ? 'Desativar funcionário' : 'Ativar funcionário'}
-                            >
-                              {employee.is_active ? <Trash2 className="h-4 w-4" /> : '✓'}
-                            </Button>
+                            {employee.is_active && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleDeactivateEmployee(employee)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +34,6 @@ interface Schedule {
 
 export default function Schedule() {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -73,30 +71,7 @@ export default function Schedule() {
     loadEmployees();
     loadClients();
     loadSchedules();
-    
-    // Check for URL parameters to pre-fill appointment form
-    const clientId = searchParams.get('client');
-    const clientName = searchParams.get('name');
-    
-    if (clientId) {
-      // Pre-fill client and open dialog
-      setNewAppointment(prev => ({
-        ...prev,
-        client_id: clientId
-      }));
-      
-      // Show toast with client name
-      if (clientName) {
-        toast({
-          title: "Cliente Selecionado",
-          description: `Agendamento para: ${decodeURIComponent(clientName)}`,
-        });
-      }
-      
-      // Auto-open the dialog
-      setIsDialogOpen(true);
-    }
-  }, [selectedDate, filterRole, filterEmployee, filterUnit, searchParams]);
+  }, [selectedDate, filterRole, filterEmployee, filterUnit]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -274,54 +249,10 @@ export default function Schedule() {
 
         if (error) throw error;
 
-        // Auto-assign client to professional if not already assigned
-        if (newAppointment.client_id && newAppointment.employee_id) {
-          // Check if assignment already exists
-          const { data: existingAssignment } = await supabase
-            .from('client_assignments')
-            .select('id')
-            .eq('client_id', newAppointment.client_id)
-            .eq('employee_id', newAppointment.employee_id)
-            .eq('is_active', true)
-            .single();
-
-          // If no assignment exists, create one
-          if (!existingAssignment) {
-            const { error: assignmentError } = await supabase
-              .from('client_assignments')
-              .insert([{
-                client_id: newAppointment.client_id,
-                employee_id: newAppointment.employee_id,
-                assigned_by: user?.id,
-                is_active: true
-              }]);
-
-            if (assignmentError) {
-              console.error('Error creating client assignment:', assignmentError);
-              // Don't fail the entire operation, just log the error
-              toast({
-                title: "Agendamento Criado",
-                description: "Agendamento criado com sucesso! Cliente vinculado automaticamente ao profissional.",
-                variant: "default"
-              });
-            } else {
-              toast({
-                title: "Sucesso",
-                description: "Agendamento criado e cliente vinculado ao profissional!",
-              });
-            }
-          } else {
-            toast({
-              title: "Sucesso",
-              description: "Agendamento criado com sucesso!",
-            });
-          }
-        } else {
-          toast({
-            title: "Sucesso",
-            description: "Agendamento criado com sucesso!",
-          });
-        }
+        toast({
+          title: "Sucesso",
+          description: "Agendamento criado com sucesso!",
+        });
       }
       
       setIsDialogOpen(false);
@@ -334,13 +265,7 @@ export default function Schedule() {
         end_time: '',
         notes: ''
       });
-      
-      // Reload all data to reflect changes immediately
-      await Promise.all([
-        loadSchedules(),
-        loadClients(),
-        loadEmployees()
-      ]);
+      loadSchedules();
     } catch (error) {
       console.error('Error saving appointment:', error);
       toast({
