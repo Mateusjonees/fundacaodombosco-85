@@ -82,6 +82,93 @@ export type Database = {
           },
         ]
       }
+      attendance_reports: {
+        Row: {
+          amount_charged: number | null
+          attendance_type: string
+          client_id: string
+          created_at: string
+          created_by: string
+          employee_id: string
+          end_time: string
+          id: string
+          materials_used: Json | null
+          next_session_plan: string | null
+          observations: string | null
+          patient_name: string
+          patient_response: string | null
+          professional_name: string
+          schedule_id: string
+          session_duration: number | null
+          session_notes: string | null
+          start_time: string
+          status: string
+          techniques_used: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_charged?: number | null
+          attendance_type?: string
+          client_id: string
+          created_at?: string
+          created_by: string
+          employee_id: string
+          end_time: string
+          id?: string
+          materials_used?: Json | null
+          next_session_plan?: string | null
+          observations?: string | null
+          patient_name: string
+          patient_response?: string | null
+          professional_name: string
+          schedule_id: string
+          session_duration?: number | null
+          session_notes?: string | null
+          start_time: string
+          status?: string
+          techniques_used?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_charged?: number | null
+          attendance_type?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          end_time?: string
+          id?: string
+          materials_used?: Json | null
+          next_session_plan?: string | null
+          observations?: string | null
+          patient_name?: string
+          patient_response?: string | null
+          professional_name?: string
+          schedule_id?: string
+          session_duration?: number | null
+          session_notes?: string | null
+          start_time?: string
+          status?: string
+          techniques_used?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_reports_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -126,6 +213,84 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      automatic_financial_records: {
+        Row: {
+          amount: number
+          attendance_report_id: string | null
+          created_at: string
+          created_by: string
+          created_by_name: string
+          description: string
+          id: string
+          metadata: Json | null
+          origin_id: string | null
+          origin_type: string
+          patient_id: string
+          patient_name: string
+          payment_date: string
+          payment_method: string
+          professional_id: string | null
+          professional_name: string | null
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          attendance_report_id?: string | null
+          created_at?: string
+          created_by: string
+          created_by_name: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          origin_id?: string | null
+          origin_type: string
+          patient_id: string
+          patient_name: string
+          payment_date?: string
+          payment_method: string
+          professional_id?: string | null
+          professional_name?: string | null
+          transaction_type?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          attendance_report_id?: string | null
+          created_at?: string
+          created_by?: string
+          created_by_name?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          origin_id?: string | null
+          origin_type?: string
+          patient_id?: string
+          patient_name?: string
+          payment_date?: string
+          payment_method?: string
+          professional_id?: string | null
+          professional_name?: string | null
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automatic_financial_records_attendance_report_id_fkey"
+            columns: ["attendance_report_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automatic_financial_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       channel_members: {
         Row: {
@@ -801,6 +966,50 @@ export type Database = {
           },
         ]
       }
+      financial_audit_log: {
+        Row: {
+          action: string
+          change_reason: string | null
+          changed_by: string
+          changed_by_name: string
+          created_at: string
+          financial_record_id: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+        }
+        Insert: {
+          action: string
+          change_reason?: string | null
+          changed_by: string
+          changed_by_name: string
+          created_at?: string
+          financial_record_id: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+        }
+        Update: {
+          action?: string
+          change_reason?: string | null
+          changed_by?: string
+          changed_by_name?: string
+          created_at?: string
+          financial_record_id?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_audit_log_financial_record_id_fkey"
+            columns: ["financial_record_id"]
+            isOneToOne: false
+            referencedRelation: "automatic_financial_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_notes: {
         Row: {
           created_at: string
@@ -1430,6 +1639,36 @@ export type Database = {
           },
         ]
       }
+      role_module_permissions: {
+        Row: {
+          created_at: string
+          granted: boolean
+          id: string
+          module_name: Database["public"]["Enums"]["system_module"]
+          permission_scope: Database["public"]["Enums"]["permission_scope"]
+          role_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          module_name: Database["public"]["Enums"]["system_module"]
+          permission_scope: Database["public"]["Enums"]["permission_scope"]
+          role_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          module_name?: Database["public"]["Enums"]["system_module"]
+          permission_scope?: Database["public"]["Enums"]["permission_scope"]
+          role_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           created_at: string
@@ -1461,6 +1700,8 @@ export type Database = {
         Row: {
           anamnesis_type_id: string | null
           client_id: string
+          completed_at: string | null
+          completed_by: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -1468,7 +1709,11 @@ export type Database = {
           end_time: string
           id: string
           location: string | null
+          materials_used: Json | null
           notes: string | null
+          payment_method: string | null
+          session_amount: number | null
+          session_notes: string | null
           start_time: string
           status: string | null
           title: string
@@ -1477,6 +1722,8 @@ export type Database = {
         Insert: {
           anamnesis_type_id?: string | null
           client_id: string
+          completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -1484,7 +1731,11 @@ export type Database = {
           end_time: string
           id?: string
           location?: string | null
+          materials_used?: Json | null
           notes?: string | null
+          payment_method?: string | null
+          session_amount?: number | null
+          session_notes?: string | null
           start_time: string
           status?: string | null
           title: string
@@ -1493,6 +1744,8 @@ export type Database = {
         Update: {
           anamnesis_type_id?: string | null
           client_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -1500,7 +1753,11 @@ export type Database = {
           end_time?: string
           id?: string
           location?: string | null
+          materials_used?: Json | null
           notes?: string | null
+          payment_method?: string | null
+          session_amount?: number | null
+          session_notes?: string | null
           start_time?: string
           status?: string | null
           title?: string
@@ -2104,6 +2361,7 @@ export type Database = {
         | "assign_clients"
         | "generate_reports"
         | "access_all_units"
+      permission_scope: "view" | "create" | "edit" | "delete"
       permission_type:
         | "view_clients"
         | "create_clients"
@@ -2137,6 +2395,13 @@ export type Database = {
         | "manage_permissions"
         | "view_audit_logs"
         | "system_admin"
+      system_module:
+        | "attendance"
+        | "reports"
+        | "financial"
+        | "clients"
+        | "users"
+        | "settings"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2338,6 +2603,7 @@ export const Constants = {
         "generate_reports",
         "access_all_units",
       ],
+      permission_scope: ["view", "create", "edit", "delete"],
       permission_type: [
         "view_clients",
         "create_clients",
@@ -2371,6 +2637,14 @@ export const Constants = {
         "manage_permissions",
         "view_audit_logs",
         "system_admin",
+      ],
+      system_module: [
+        "attendance",
+        "reports",
+        "financial",
+        "clients",
+        "users",
+        "settings",
       ],
     },
   },
