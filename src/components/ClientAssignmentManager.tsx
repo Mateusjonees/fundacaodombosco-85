@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, UserCheck, UserX, Shield } from 'lucide-react';
+import { Plus, UserCheck, UserX, Shield, Minus } from 'lucide-react';
 
 interface ClientAssignment {
   id: string;
@@ -341,15 +341,27 @@ export function ClientAssignmentManager() {
                     <TableCell>
                       <div className="flex gap-1">
                         {assignment.is_active ? (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleToggleAssignment(assignment.id, assignment.is_active)}
-                            className="gap-1"
-                          >
-                            <UserX className="h-3 w-3" />
-                            Desvincular
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleToggleAssignment(assignment.id, assignment.is_active)}
+                              className="gap-1 px-2"
+                              title="Desvincular profissional - Remove acesso ao cliente"
+                            >
+                              <Minus className="h-3 w-3" />
+                              -
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleToggleAssignment(assignment.id, assignment.is_active)}
+                              className="gap-1"
+                            >
+                              <UserX className="h-3 w-3" />
+                              Desvincular
+                            </Button>
+                          </>
                         ) : (
                           <Button
                             size="sm"
