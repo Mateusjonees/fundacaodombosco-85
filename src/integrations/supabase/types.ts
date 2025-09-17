@@ -2259,9 +2259,17 @@ export type Database = {
           work_schedule: Json
         }[]
       }
+      get_client_name: {
+        Args: { client_uuid: string }
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["employee_role"]
+      }
+      get_employee_name: {
+        Args: { employee_uuid: string }
+        Returns: string
       }
       get_secure_employee_details: {
         Args: Record<PropertyKey, never>
