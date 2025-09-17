@@ -93,37 +93,42 @@ export const useRolePermissions = () => {
     return userRole === role;
   };
 
-  // Verificações específicas baseadas nos grupos
-  const canViewAllClients = (): boolean => {
-    return hasAnyRole(ROLE_GROUPS.ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES);
-  };
-
-  const canAccessFinancial = (): boolean => {
-    return hasAnyRole(ROLE_GROUPS.DIRECTOR_OR_FINANCE);
-  };
-
-  const canManageStock = (): boolean => {
-    return hasAnyRole(ROLE_GROUPS.STOCK_MANAGERS);
-  };
-
-  const canViewAllSchedules = (): boolean => {
-    return hasAnyRole(ROLE_GROUPS.ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES);
-  };
-
-  const canManageEmployees = (): boolean => {
-    return hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
-  };
-
-  const canViewReports = (): boolean => {
-    return hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
-  };
-
-  const canExportData = (): boolean => {
+  // DIRECTOR HAS GOD-MODE - ALWAYS RETURNS TRUE FOR EVERYTHING
+  const isGodMode = (): boolean => {
     return hasRole('director');
   };
 
+  // Verificações específicas baseadas nos grupos - DIRECTOR SEMPRE TEM ACESSO
+  const canViewAllClients = (): boolean => {
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES);
+  };
+
+  const canAccessFinancial = (): boolean => {
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.DIRECTOR_OR_FINANCE);
+  };
+
+  const canManageStock = (): boolean => {
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.STOCK_MANAGERS);
+  };
+
+  const canViewAllSchedules = (): boolean => {
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES);
+  };
+
+  const canManageEmployees = (): boolean => {
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
+  };
+
+  const canViewReports = (): boolean => {
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
+  };
+
+  const canExportData = (): boolean => {
+    return isGodMode();
+  };
+
   const isProfessional = (): boolean => {
-    return hasAnyRole(ROLE_GROUPS.PROFESSIONAL_ROLES);
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.PROFESSIONAL_ROLES);
   };
 
   const isDirector = (): boolean => {
@@ -136,12 +141,105 @@ export const useRolePermissions = () => {
 
   // Verificação para aba "Meus Pacientes"
   const canViewMyPatients = (): boolean => {
-    return hasAnyRole([...ROLE_GROUPS.PROFESSIONAL_ROLES, 'director']);
+    return isGodMode() || hasAnyRole([...ROLE_GROUPS.PROFESSIONAL_ROLES, 'director']);
   };
 
   // Verificação para cadastro de clientes
   const canCreateClients = (): boolean => {
-    return hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist', 'staff']);
+    return isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist', 'staff']);
+  };
+
+  // NOVAS PERMISSÕES TOTAIS PARA DIRETOR
+  const canDeleteClients = (): boolean => {
+    return isGodMode();
+  };
+
+  const canEditClients = (): boolean => {
+    return isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist']);
+  };
+
+  const canDeleteEmployees = (): boolean => {
+    return isGodMode();
+  };
+
+  const canEditEmployees = (): boolean => {
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
+  };
+
+  const canViewAuditLogs = (): boolean => {
+    return isGodMode();
+  };
+
+  const canManageSystemSettings = (): boolean => {
+    return isGodMode();
+  };
+
+  const canAccessAllData = (): boolean => {
+    return isGodMode();
+  };
+
+  const canManagePermissions = (): boolean => {
+    return isGodMode();
+  };
+
+  const canViewSensitiveData = (): boolean => {
+    return isGodMode();
+  };
+
+  const canDeleteAnyRecord = (): boolean => {
+    return isGodMode();
+  };
+
+  const canEditAnyRecord = (): boolean => {
+    return isGodMode();
+  };
+
+  const canCreateAnyRecord = (): boolean => {
+    return isGodMode();
+  };
+
+  const canViewAnyRecord = (): boolean => {
+    return isGodMode();
+  };
+
+  const canManageFinancialRecords = (): boolean => {
+    return isGodMode() || hasRole('financeiro');
+  };
+
+  const canDeleteFinancialRecords = (): boolean => {
+    return isGodMode();
+  };
+
+  const canViewAllMedicalRecords = (): boolean => {
+    return isGodMode();
+  };
+
+  const canEditAllMedicalRecords = (): boolean => {
+    return isGodMode();
+  };
+
+  const canManageAllAssignments = (): boolean => {
+    return isGodMode();
+  };
+
+  const canViewAllMessages = (): boolean => {
+    return isGodMode();
+  };
+
+  const canDeleteAllMessages = (): boolean => {
+    return isGodMode();
+  };
+
+  const canManageAllNotifications = (): boolean => {
+    return isGodMode();
+  };
+
+  const canAccessAllReports = (): boolean => {
+    return isGodMode();
+  };
+
+  const canBypassAllRestrictions = (): boolean => {
+    return isGodMode();
   };
 
   return {
@@ -149,6 +247,7 @@ export const useRolePermissions = () => {
     loading,
     hasRole,
     hasAnyRole,
+    isGodMode,
     canViewAllClients,
     canAccessFinancial,
     canManageStock,
@@ -161,5 +260,28 @@ export const useRolePermissions = () => {
     isCoordinator,
     canViewMyPatients,
     canCreateClients,
+    canDeleteClients,
+    canEditClients,
+    canDeleteEmployees,
+    canEditEmployees,
+    canViewAuditLogs,
+    canManageSystemSettings,
+    canAccessAllData,
+    canManagePermissions,
+    canViewSensitiveData,
+    canDeleteAnyRecord,
+    canEditAnyRecord,
+    canCreateAnyRecord,
+    canViewAnyRecord,
+    canManageFinancialRecords,
+    canDeleteFinancialRecords,
+    canViewAllMedicalRecords,
+    canEditAllMedicalRecords,
+    canManageAllAssignments,
+    canViewAllMessages,
+    canDeleteAllMessages,
+    canManageAllNotifications,
+    canAccessAllReports,
+    canBypassAllRestrictions,
   };
 };
