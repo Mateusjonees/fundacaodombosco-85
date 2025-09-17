@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, UserCheck, UserX, Shield, X } from 'lucide-react';
+import { Plus, UserCheck, UserX, Shield } from 'lucide-react';
 
 interface ClientAssignment {
   id: string;
@@ -44,8 +44,6 @@ export function ClientAssignmentManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [addingToClient, setAddingToClient] = useState<string | null>(null);
-  const [newEmployeeForClient, setNewEmployeeForClient] = useState('');
 
   useEffect(() => {
     loadData();
@@ -227,79 +225,6 @@ export function ClientAssignmentManager() {
   // Get available employees - allow unlimited assignments (no filtering)
   const availableEmployees = employees;
 
-  // Group assignments by client
-  const clientsWithAssignments = clients.map(client => {
-    const clientAssignments = assignments.filter(a => a.client_id === client.id && a.is_active);
-    return {
-      ...client,
-      assignments: clientAssignments
-    };
-  }).filter(client => client.assignments.length > 0);
-
-  // Get employees not yet assigned to specific client
-  const getAvailableEmployeesForClient = (clientId: string) => {
-    const assignedEmployeeIds = assignments
-      .filter(a => a.client_id === clientId && a.is_active)
-      .map(a => a.employee_id);
-    return employees.filter(emp => !assignedEmployeeIds.includes(emp.user_id));
-  };
-
-  const handleAddEmployeeToClient = async (clientId: string, employeeId: string) => {
-    try {
-      const { error } = await supabase
-        .from('client_assignments')
-        .insert({
-          client_id: clientId,
-          employee_id: employeeId,
-          assigned_by: user?.id,
-          is_active: true
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Profissional vinculado com sucesso!",
-      });
-
-      setAddingToClient(null);
-      setNewEmployeeForClient('');
-      loadData();
-    } catch (error) {
-      console.error('Error adding employee:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível vincular o profissional.",
-      });
-    }
-  };
-
-  const handleRemoveAssignment = async (assignmentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('client_assignments')
-        .update({ is_active: false })
-        .eq('id', assignmentId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Vínculo removido com sucesso!",
-      });
-
-      loadData();
-    } catch (error) {
-      console.error('Error removing assignment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível remover o vínculo.",
-      });
-    }
-  };
-
   return (
     <Card className="shadow-professional">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -326,7 +251,7 @@ export function ClientAssignmentManager() {
                     <SelectValue placeholder="Selecione um cliente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clients.map((client) => (
+                    {availableClients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}
                       </SelectItem>
@@ -342,7 +267,7 @@ export function ClientAssignmentManager() {
                     <SelectValue placeholder="Selecione um funcionário" />
                   </SelectTrigger>
                   <SelectContent>
-                    {employees.map((employee) => (
+                    {availableEmployees.map((employee) => (
                       <SelectItem key={employee.user_id} value={employee.user_id}>
                         {employee.name} - {getRoleLabel(employee.employee_role)}
                       </SelectItem>
@@ -365,93 +290,73 @@ export function ClientAssignmentManager() {
       </CardHeader>
       
       <CardContent>
-        {loading ? (
-          <div className="text-center py-8">Carregando...</div>
-        ) : clientsWithAssignments.length === 0 ? (
-          <div className="text-center py-8">Nenhuma atribuição encontrada</div>
-        ) : (
-          <div className="space-y-4">
-            {clientsWithAssignments.map((client) => (
-              <div key={client.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-lg">{client.name}</h3>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setAddingToClient(addingToClient === client.id ? null : client.id)}
-                    className="gap-1"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Adicionar Profissional
-                  </Button>
-                </div>
-
-                {/* Lista de profissionais vinculados */}
-                <div className="space-y-2">
-                  {client.assignments.map((assignment) => (
-                    <div key={assignment.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <div className="flex items-center gap-3">
-                        <UserCheck className="h-4 w-4 text-green-600" />
-                        <span className="font-medium">{assignment.profiles?.name}</span>
-                        <Badge variant="outline">
-                          {getRoleLabel(employees.find(e => e.user_id === assignment.employee_id)?.employee_role || '')}
-                        </Badge>
-                      </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Funcionário Atribuído</TableHead>
+                <TableHead>Atribuído Por</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    Carregando...
+                  </TableCell>
+                </TableRow>
+              ) : assignments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    Nenhuma atribuição encontrada
+                  </TableCell>
+                </TableRow>
+              ) : (
+                assignments.map((assignment) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell className="font-medium">
+                      {assignment.clients?.name}
+                    </TableCell>
+                    <TableCell>{assignment.profiles?.name}</TableCell>
+                    <TableCell>{assignment.assigned_by_profile?.name}</TableCell>
+                    <TableCell>
+                      {new Date(assignment.assigned_at).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={assignment.is_active ? "default" : "secondary"}>
+                        {assignment.is_active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <Button
                         size="sm"
-                        variant="ghost"
-                        onClick={() => handleRemoveAssignment(assignment.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        variant={assignment.is_active ? "destructive" : "default"}
+                        onClick={() => handleToggleAssignment(assignment.id, assignment.is_active)}
+                        className="gap-1"
                       >
-                        <X className="h-4 w-4" />
+                        {assignment.is_active ? (
+                          <>
+                            <UserX className="h-3 w-3" />
+                            Desativar
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="h-3 w-3" />
+                            Ativar
+                          </>
+                        )}
                       </Button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Formulário para adicionar novo profissional */}
-                {addingToClient === client.id && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded border">
-                    <div className="flex items-center gap-2">
-                      <Select 
-                        value={newEmployeeForClient} 
-                        onValueChange={setNewEmployeeForClient}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Selecione um profissional" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getAvailableEmployeesForClient(client.id).map((employee) => (
-                            <SelectItem key={employee.user_id} value={employee.user_id}>
-                              {employee.name} - {getRoleLabel(employee.employee_role)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddEmployeeToClient(client.id, newEmployeeForClient)}
-                        disabled={!newEmployeeForClient}
-                      >
-                        Adicionar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setAddingToClient(null);
-                          setNewEmployeeForClient('');
-                        }}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
         
         <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h4 className="font-medium text-blue-900 mb-2">
