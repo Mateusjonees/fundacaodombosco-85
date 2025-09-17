@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,7 @@ interface UserProfile {
 
 export default function Clients() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -88,6 +90,17 @@ export default function Clients() {
       loadClients();
     }
   }, [userProfile]);
+
+  // Check for URL parameters to open specific client
+  useEffect(() => {
+    const viewClientId = searchParams.get('view');
+    if (viewClientId && clients.length > 0) {
+      const client = clients.find(c => c.id === viewClientId);
+      if (client) {
+        setSelectedClient(client);
+      }
+    }
+  }, [searchParams, clients]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -344,6 +357,10 @@ export default function Clients() {
         onEdit={() => openEditDialog(selectedClient)}
         onClose={() => {
           setSelectedClient(null);
+          // Remove the view parameter from URL
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete('view');
+          setSearchParams(newSearchParams);
         }}
       />
     );
