@@ -4,10 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
-import { Search, Users, Power, UserCheck, UserX } from 'lucide-react';
+import { Search, Users, Power, UserCheck, UserX, Plus } from 'lucide-react';
 
 interface Employee {
   id: string;
@@ -43,6 +46,15 @@ export default function EmployeesNew() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({
+    name: '',
+    email: '',
+    password: '',
+    employee_role: 'staff',
+    phone: '',
+    department: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -69,6 +81,53 @@ export default function EmployeesNew() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreateEmployee = async () => {
+    try {
+      // Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newEmployee.email,
+        password: newEmployee.password,
+        options: {
+          data: {
+            name: newEmployee.name,
+            employee_role: newEmployee.employee_role,
+            phone: newEmployee.phone,
+            department: newEmployee.department
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      toast({
+        title: "Funcionário criado",
+        description: "Funcionário criado com sucesso! Um email de confirmação foi enviado.",
+      });
+
+      setIsDialogOpen(false);
+      resetForm();
+      loadEmployees();
+    } catch (error: any) {
+      console.error('Error creating employee:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Não foi possível criar o funcionário.",
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setNewEmployee({
+      name: '',
+      email: '',
+      password: '',
+      employee_role: 'staff',
+      phone: '',
+      department: ''
+    });
   };
 
   const handleToggleEmployeeStatus = async (userId: string, currentStatus: boolean) => {
@@ -123,6 +182,107 @@ export default function EmployeesNew() {
             Gerencie status e informações dos funcionários
           </p>
         </div>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            resetForm();
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Funcionário
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Cadastrar Novo Funcionário</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome Completo *</Label>
+                <Input
+                  id="name"
+                  value={newEmployee.name}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                  placeholder="Digite o nome completo"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newEmployee.email}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha Temporária *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newEmployee.password}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
+                  placeholder="Senha temporária"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="employee_role">Cargo *</Label>
+                <Select value={newEmployee.employee_role} onValueChange={(value) => setNewEmployee({ ...newEmployee, employee_role: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="staff">Funcionário(a) Geral</SelectItem>
+                    <SelectItem value="receptionist">Recepcionista</SelectItem>
+                    <SelectItem value="psychologist">Psicólogo(a)</SelectItem>
+                    <SelectItem value="psychopedagogue">Psicopedagogo(a)</SelectItem>
+                    <SelectItem value="musictherapist">Musicoterapeuta</SelectItem>
+                    <SelectItem value="speech_therapist">Fonoaudiólogo(a)</SelectItem>
+                    <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                    <SelectItem value="physiotherapist">Fisioterapeuta</SelectItem>
+                    <SelectItem value="financeiro">Financeiro</SelectItem>
+                    <SelectItem value="intern">Estagiário(a)</SelectItem>
+                    <SelectItem value="coordinator_madre">Coordenador(a) Madre</SelectItem>
+                    <SelectItem value="coordinator_floresta">Coordenador(a) Floresta</SelectItem>
+                    <SelectItem value="director">Diretoria</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input
+                  id="phone"
+                  value={newEmployee.phone}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="department">Departamento</Label>
+                <Input
+                  id="department"
+                  value={newEmployee.department}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
+                  placeholder="Nome do departamento"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCreateEmployee}
+                disabled={!newEmployee.name || !newEmployee.email || !newEmployee.password}
+              >
+                Criar Funcionário
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Statistics Cards */}
