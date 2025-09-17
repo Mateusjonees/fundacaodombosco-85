@@ -14,6 +14,7 @@ import {
   LogOut,
   Settings,
   Archive,
+  Shield,
   LucideIcon
 } from 'lucide-react';
 
@@ -45,15 +46,44 @@ const iconMapping: Record<string, LucideIcon> = {
   Package,
   Settings,
   Archive,
+  Shield,
 };
 
-interface DatabaseMenuItem {
+// Static menu items based on user roles
+const getMenuItemsForRole = (userRole: string | null) => {
+  const baseItems = [
+    { id: 'dashboard', title: 'Dashboard', url: '/', icon: 'Home', order_index: 0 },
+    { id: 'clients', title: 'Clientes', url: '/clients', icon: 'Users', order_index: 1 },
+    { id: 'schedule', title: 'Agenda', url: '/schedule', icon: 'Calendar', order_index: 2 },
+  ];
+
+  const coordinatorItems = [
+    { id: 'financial', title: 'Financeiro', url: '/financial', icon: 'DollarSign', order_index: 3 },
+    { id: 'contracts', title: 'Contratos', url: '/contracts', icon: 'FolderOpen', order_index: 4 },
+    { id: 'stock', title: 'Estoque', url: '/stock', icon: 'Package', order_index: 5 },
+    { id: 'reports', title: 'Relatórios', url: '/reports', icon: 'BarChart3', order_index: 6 },
+    { id: 'employees', title: 'Funcionários', url: '/employees', icon: 'UserPlus', order_index: 7 },
+  ];
+
+  const directorItems = [
+    { id: 'users', title: 'Usuários', url: '/users', icon: 'Shield', order_index: 8 },
+  ];
+
+  if (userRole === 'director') {
+    return [...baseItems, ...coordinatorItems, ...directorItems];
+  } else if (['coordinator_madre', 'coordinator_floresta'].includes(userRole || '')) {
+    return [...baseItems, ...coordinatorItems];
+  } else {
+    return baseItems;
+  }
+};
+
+interface MenuItem {
   id: string;
   title: string;
   url: string;
   icon: string;
   order_index: number;
-  role_required?: string;
 }
 
 export function AppSidebar() {
@@ -64,8 +94,7 @@ export function AppSidebar() {
   const { toast } = useToast();
   const currentPath = location.pathname;
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [navigationItems, setNavigationItems] = useState<DatabaseMenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
 
   // Load user role
   useEffect(() => {
@@ -81,52 +110,25 @@ export function AppSidebar() {
         
         if (error) throw error;
         setUserRole(data.employee_role);
+        setNavigationItems(getMenuItemsForRole(data.employee_role));
       } catch (error) {
         console.error('Error loading user role:', error);
+        setNavigationItems(getMenuItemsForRole(null));
       }
     };
 
     loadUserRole();
   }, [user]);
 
-  // Load menu items from database with cache clear
-  const loadMenuItems = useCallback(async () => {
-    setLoading(true);
-    try {
-      const cacheKey = `menu_items_${Date.now()}`; // Force cache refresh
-      const { data, error } = await supabase
-        .from('menu_items')
-        .select('*')
-        .eq('is_active', true)
-        .order('order_index');
-      
-      if (error) throw error;
-      setNavigationItems(data || []);
-    } catch (error) {
-      console.error('Error loading menu items:', error);
-      // Fallback to empty array if database fails
-      setNavigationItems([]);
-    } finally {
-      setLoading(false);
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return currentPath === '/';
     }
-  }, []);
-
-  useEffect(() => {
-    loadMenuItems();
-    // Auto-refresh menu every 30 seconds to clear cache
-    const interval = setInterval(loadMenuItems, 30000);
-    return () => clearInterval(interval);
-  }, [loadMenuItems]);
-
-  const isActive = (path: string) => currentPath === path;
+    return currentPath.startsWith(path);
+  };
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted/50";
-
-  const shouldShowMenuItem = (item: DatabaseMenuItem) => {
-    if (!item.role_required) return true;
-    return userRole === item.role_required;
-  };
 
   const handleLogout = async () => {
     try {
@@ -170,29 +172,22 @@ export function AppSidebar() {
           
           <SidebarGroupContent>
             <SidebarMenu>
-              {loading ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  Carregando menu...
-                </div>
-              ) : (
-                navigationItems.filter(shouldShowMenuItem).map((item) => {
-                  const IconComponent = iconMapping[item.icon];
-                  return (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton asChild>
-                        <NavLink 
-                          to={item.url} 
-                          end 
-                          className={({ isActive }) => getNavCls({ isActive })}
-                        >
-                          {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
-                          {!collapsed && <span>{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })
-              )}
+              {navigationItems.map((item) => {
+                const IconComponent = iconMapping[item.icon];
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        className={({ isActive }) => getNavCls({ isActive })}
+                      >
+                        {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
