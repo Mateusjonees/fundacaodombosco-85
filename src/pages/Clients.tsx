@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,7 +42,6 @@ interface UserProfile {
 
 export default function Clients() {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -90,17 +88,6 @@ export default function Clients() {
       loadClients();
     }
   }, [userProfile]);
-
-  // Check for URL parameters to open specific client
-  useEffect(() => {
-    const viewClientId = searchParams.get('view');
-    if (viewClientId && clients.length > 0) {
-      const client = clients.find(c => c.id === viewClientId);
-      if (client) {
-        setSelectedClient(client);
-      }
-    }
-  }, [searchParams, clients]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -255,38 +242,6 @@ export default function Clients() {
     }
   };
 
-  const handleToggleClientStatus = async (client: Client) => {
-    const newStatus = !client.is_active;
-    const action = newStatus ? 'ativar' : 'inativar';
-    
-    if (!confirm(`Tem certeza que deseja ${action} este cliente?`)) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('clients')
-        .update({ is_active: newStatus })
-        .eq('id', client.id);
-
-      if (error) throw error;
-
-      toast({
-        title: newStatus ? "Cliente Ativado" : "Cliente Inativado",
-        description: `O cliente foi ${newStatus ? 'ativado' : 'inativado'} com sucesso.`,
-      });
-      
-      loadClients();
-    } catch (error) {
-      console.error(`Error ${action}ing client:`, error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: `Não foi possível ${action} o cliente.`,
-      });
-    }
-  };
-
   const resetForm = () => {
     setNewClient({
       name: '',
@@ -389,10 +344,6 @@ export default function Clients() {
         onEdit={() => openEditDialog(selectedClient)}
         onClose={() => {
           setSelectedClient(null);
-          // Remove the view parameter from URL
-          const newSearchParams = new URLSearchParams(searchParams);
-          newSearchParams.delete('view');
-          setSearchParams(newSearchParams);
         }}
       />
     );
@@ -762,14 +713,6 @@ export default function Clients() {
                           onClick={() => openEditDialog(client)}
                         >
                           <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleToggleClientStatus(client)}
-                          title={client.is_active ? 'Inativar cliente' : 'Ativar cliente'}
-                        >
-                          {client.is_active ? '🔒' : '🔓'}
                         </Button>
                       </div>
                     </TableCell>
