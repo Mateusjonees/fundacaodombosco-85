@@ -410,7 +410,7 @@ export default function Clients() {
                 Cadastrar Cliente
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingClient ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}
@@ -579,8 +579,8 @@ export default function Clients() {
         </Dialog>
       </div>
 
-            {/* Filters Section */}
-            <Card className="bg-muted/50 border-muted">
+      {/* Filters Section */}
+      <Card className="bg-muted/50 border-muted">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-foreground">Filtros</CardTitle>
               </CardHeader>
@@ -635,6 +635,7 @@ export default function Clients() {
                 </div>
               </CardContent>
             </Card>
+            
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -750,7 +751,7 @@ export default function Clients() {
                          >
                            <Edit className="h-3 w-3" />
                          </Button>
-                         {(permissions.canViewAllClients || permissions.canCreateClients) && (
+                         {(canViewAllClients() || canCreateClients()) && (
                            <Button 
                              variant={client.is_active ? "destructive" : "default"}
                              size="sm"
