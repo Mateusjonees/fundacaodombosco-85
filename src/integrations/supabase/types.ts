@@ -2204,6 +2204,16 @@ export type Database = {
         }
         Returns: string
       }
+      debug_user_permissions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          can_access_reports: boolean
+          employee_role: Database["public"]["Enums"]["employee_role"]
+          is_active: boolean
+          profile_exists: boolean
+          user_id: string
+        }[]
+      }
       director_has_god_mode: {
         Args: Record<PropertyKey, never>
         Returns: boolean
