@@ -123,7 +123,6 @@ export const useRolePermissions = () => {
     return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
   };
 
-  // Atualizar as permissões de relatório - SUPER PERMISSIVO PARA DIRETORES E COORDENADORES
   const canViewReports = (): boolean => {
     // Se ainda está carregando, permita acesso
     if (loading) return true;
@@ -149,6 +148,10 @@ export const useRolePermissions = () => {
       'staff',
       'receptionist'
     ]);
+  };
+
+  const canConfigureReports = (): boolean => {
+    return isGodMode() || hasAnyRole(['coordinator_madre', 'coordinator_floresta']);
   };
 
   const canExportData = (): boolean => {
@@ -282,6 +285,7 @@ export const useRolePermissions = () => {
     canViewAllSchedules,
     canManageEmployees,
     canViewReports,
+    canConfigureReports,
     canExportData,
     isProfessional,
     isDirector,
