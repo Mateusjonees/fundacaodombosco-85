@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/components/auth/AuthProvider';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
+import { MainApp } from '@/components/MainApp';
 import { Loader2 } from 'lucide-react';
-import App from '../App';
 
 const AppContent = () => {
   const { user, loading } = useAuth();
+  const [showApp, setShowApp] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      const shouldShowApp = !!user;
+      setShowApp(shouldShowApp);
+    }
+  }, [user, loading]);
 
   if (loading) {
     return (
@@ -25,7 +33,7 @@ const AppContent = () => {
       return (
         <SignUpForm 
           onSuccess={() => {
-            // Auth state will be handled by AuthProvider
+            setShowApp(true);
           }}
           onSwitchToLogin={() => setShowSignUp(false)}
         />
@@ -35,14 +43,14 @@ const AppContent = () => {
     return (
       <LoginForm 
         onSuccess={() => {
-          // Auth state will be handled by AuthProvider
+          setShowApp(true);
         }}
         onSwitchToSignUp={() => setShowSignUp(true)}
       />
     );
   }
 
-  return <App />;
+  return <MainApp />;
 };
 
 const Index = () => {
