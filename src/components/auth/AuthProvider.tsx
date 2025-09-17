@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
   const { toast } = useToast();
 
   // Check if user is active
@@ -61,9 +62,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted || isProcessingAuth) return;
+        
+        setIsProcessingAuth(true);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -72,11 +78,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Check if user is active before completing login
           const isActive = await checkUserActiveStatus(session.user.id);
           if (!isActive) {
+            setIsProcessingAuth(false);
             return; // User was signed out due to inactive status
           }
 
-          setTimeout(() => {
-            AuditService.logAction({
+          // Avoid multiple simultaneous audit calls
+          try {
+            await AuditService.logAction({
               entityType: 'auth',
               action: 'login_success',
               metadata: { 
@@ -84,15 +92,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 login_method: 'email_password'
               }
             });
-            AuditService.updateUserActivity();
-          }, 0);
+            await AuditService.updateUserActivity();
+          } catch (error) {
+            console.error('Error logging auth events:', error);
+          }
           
           const userData = session.user.user_metadata;
           
-          if (userData?.employee_role) {
+          if (userData?.employee_role && mounted) {
             try {
               // Wait a bit for the profile to be created by the trigger
               setTimeout(async () => {
+                if (!mounted) return;
+                
                 const { error } = await supabase
                   .from('profiles')
                   .update({
@@ -112,33 +124,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         
         if (event === 'SIGNED_OUT') {
-          setTimeout(() => {
-            AuditService.logAction({
+          try {
+            await AuditService.logAction({
               entityType: 'auth',
               action: 'logout_completed',
               metadata: { timestamp: new Date().toISOString() }
             });
-          }, 0);
+          } catch (error) {
+            console.error('Error logging logout:', error);
+          }
         }
         
         setLoading(false);
+        setIsProcessingAuth(false);
       }
     );
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session - Add proper error handling
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (!mounted) return;
+      
+      if (error) {
+        console.error('AuthProvider: Error getting initial session', error);
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     }).catch((error) => {
+      if (!mounted) return;
       console.error('AuthProvider: Error getting initial session', error);
       setLoading(false);
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isProcessingAuth]);
 
   return (
     <AuthContext.Provider value={{ user, session, loading }}>

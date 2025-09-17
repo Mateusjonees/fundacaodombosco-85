@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -6,17 +5,9 @@ import { UserPlus, Calendar, Package, FileText, DollarSign, Users } from 'lucide
 
 export function QuickActions() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAction = async (path: string) => {
-    setIsLoading(true);
-    try {
-      // Add a small delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 500));
-      navigate(path);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleAction = (path: string) => {
+    navigate(path);
   };
 
   const actions = [
@@ -79,7 +70,6 @@ export function QuickActions() {
                 variant="outline"
                 className={`h-20 flex flex-col items-center justify-center gap-1 p-3 transition-all hover:shadow-md ${action.color} hover:text-white border-none text-white`}
                 onClick={() => handleAction(action.path)}
-                disabled={isLoading}
               >
                 <Icon className="h-6 w-6" />
                 <span className="text-xs font-medium text-center">{action.title}</span>
