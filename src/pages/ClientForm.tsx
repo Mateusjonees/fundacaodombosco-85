@@ -213,6 +213,7 @@ export default function ClientForm() {
                   type="date"
                   value={formData.birth_date}
                   onChange={(e) => handleInputChange('birth_date', e.target.value)}
+                  placeholder="dd/mm/aaaa"
                   required
                 />
               </div>
@@ -223,7 +224,7 @@ export default function ClientForm() {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border shadow-md z-50">
                     <SelectItem value="masculino">Masculino</SelectItem>
                     <SelectItem value="feminino">Feminino</SelectItem>
                     <SelectItem value="outro">Outro</SelectItem>
@@ -249,7 +250,7 @@ export default function ClientForm() {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-md z-50">
                         <SelectItem value="publica">Pública</SelectItem>
                         <SelectItem value="particular">Particular</SelectItem>
                         <SelectItem value="filantrópica">Filantrópica</SelectItem>
@@ -263,7 +264,7 @@ export default function ClientForm() {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-md z-50 max-h-60 overflow-y-auto">
                         <SelectItem value="maternal">Maternal</SelectItem>
                         <SelectItem value="pre-escola">Pré-escola</SelectItem>
                         <SelectItem value="1ano">1º Ano</SelectItem>
@@ -406,7 +407,7 @@ export default function ClientForm() {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border shadow-md z-50">
                     <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
                     <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
                   </SelectContent>
@@ -518,7 +519,7 @@ export default function ClientForm() {
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background border shadow-md z-50">
                       <SelectItem value="pai">Pai</SelectItem>
                       <SelectItem value="mae">Mãe</SelectItem>
                       <SelectItem value="ambos">Ambos</SelectItem>
