@@ -248,7 +248,7 @@ export default function Schedule() {
     }
   };
 
-  const handleConfirmAppointment = async (scheduleId: string, materials: any[], notes: string) => {
+  const handleConfirmAppointment = async (scheduleId: string, sessionData: any, materials: any[]) => {
     try {
       // Get schedule details for client information
       const { data: scheduleData } = await supabase
@@ -262,11 +262,51 @@ export default function Schedule() {
         .from('schedules')
         .update({ 
           status: 'completed',
-          notes: notes 
+          notes: sessionData.progressNotes || 'Atendimento confirmado'
         })
         .eq('id', scheduleId);
 
       if (updateError) throw updateError;
+
+      // Create medical record with complete session data
+      const { error: medicalRecordError } = await supabase
+        .from('medical_records')
+        .insert({
+          client_id: scheduleData?.client_id,
+          employee_id: user?.id,
+          session_date: new Date().toISOString().split('T')[0],
+          session_type: sessionData.sessionType || 'Atendimento',
+          session_duration: sessionData.actualDuration,
+          symptoms: sessionData.symptoms,
+          progress_notes: sessionData.progressNotes,
+          treatment_plan: sessionData.treatmentPlan,
+          next_appointment_notes: sessionData.nextAppointmentNotes,
+          medications: sessionData.medications ? [{ medication: sessionData.medications }] : [],
+          vital_signs: sessionData.vitalSigns,
+          attachments: []
+        });
+
+      if (medicalRecordError) console.error('Medical record error:', medicalRecordError);
+
+      // Create financial record
+      if (sessionData.sessionValue > 0) {
+        const { error: financialError } = await supabase
+          .from('financial_records')
+          .insert({
+            type: 'revenue',
+            category: 'Consulta',
+            description: `Sessão ${sessionData.sessionType} - ${scheduleData?.client_id}`,
+            amount: sessionData.finalValue,
+            date: new Date().toISOString().split('T')[0],
+            payment_method: sessionData.paymentMethod,
+            client_id: scheduleData?.client_id,
+            employee_id: user?.id,
+            created_by: user?.id,
+            notes: sessionData.paymentNotes
+          });
+
+        if (financialError) console.error('Financial record error:', financialError);
+      }
 
       // Create stock movements for used materials
       if (materials.length > 0) {
@@ -275,12 +315,14 @@ export default function Schedule() {
           type: 'out',
           quantity: material.quantity,
           reason: 'Utilizado em atendimento',
-          notes: `Sessão - Cliente ID: ${scheduleData?.client_id}`,
+          notes: material.observation || `Sessão - Cliente ID: ${scheduleData?.client_id}`,
           date: new Date().toISOString().split('T')[0],
           created_by: user?.id,
           client_id: scheduleData?.client_id,
           schedule_id: scheduleId,
-          session_number: 1
+          session_number: 1,
+          unit_cost: material.unit_cost,
+          total_cost: (material.unit_cost || 0) * material.quantity
         }));
 
         const { error: movementError } = await supabase
@@ -289,11 +331,11 @@ export default function Schedule() {
 
         if (movementError) throw movementError;
 
-        // Update stock quantities - use transactions for better consistency
+        // Update stock quantities
         for (const material of materials) {
           const { data: currentItem } = await supabase
             .from('stock_items')
-            .select('current_quantity, unit_cost')
+            .select('current_quantity')
             .eq('id', material.stock_item_id)
             .single();
 
@@ -309,9 +351,7 @@ export default function Schedule() {
 
       toast({
         title: "Atendimento confirmado!",
-        description: materials.length > 0 
-          ? `Sessão confirmada e ${materials.length} material(is) baixado(s) do estoque.`
-          : `Sessão confirmada com sucesso!`,
+        description: "Dados clínicos, financeiros e de materiais foram registrados com sucesso.",
       });
 
       loadSchedules();
