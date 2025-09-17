@@ -102,12 +102,19 @@ export class AuditService {
       const { data: currentUser } = await supabase.auth.getUser();
       
       if (currentUser?.user) {
-        // Update or insert user session (fixed upsert)
+        // First, deactivate any existing active sessions for this user
+        await supabase
+          .from('user_sessions')
+          .update({ is_active: false })
+          .eq('user_id', currentUser.user.id)
+          .eq('is_active', true);
+
+        // Then insert a new active session
         const { error } = await supabase
           .from('user_sessions')
-          .upsert({
+          .insert({
             user_id: currentUser.user.id,
-            session_token: currentUser.user.id, // Use user ID as token for now
+            session_token: `session_${currentUser.user.id}_${Date.now()}`,
             last_activity: new Date().toISOString(),
             is_active: true,
             user_agent: navigator.userAgent

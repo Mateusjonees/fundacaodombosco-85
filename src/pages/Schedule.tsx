@@ -270,7 +270,7 @@ export default function Schedule() {
         end_time: convertToISOString(newAppointment.end_time),
         notes: newAppointment.notes,
         unit: newAppointment.unit,
-        created_by: userProfile?.id
+        created_by: user?.id
       };
 
       if (editingSchedule) {
