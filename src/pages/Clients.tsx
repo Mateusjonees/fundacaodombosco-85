@@ -742,7 +742,7 @@ export default function Clients() {
                          >
                            <Edit className="h-3 w-3" />
                          </Button>
-                         {permissions.canManageClients && (
+                         {(permissions.canViewAllClients || permissions.canCreateClients) && (
                            <Button 
                              variant={client.is_active ? "destructive" : "default"}
                              size="sm"

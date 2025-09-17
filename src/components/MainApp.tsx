@@ -24,6 +24,7 @@ import Stock from '@/pages/Stock';
 import Reports from '@/pages/Reports';
 import Dashboard from '@/pages/Dashboard';
 import MyPatients from '@/pages/MyPatients';
+import EmployeesNew from '@/pages/EmployeesNew';
 
 interface Profile {
   id: string;
@@ -157,6 +158,7 @@ export const MainApp = () => {
                 <Route path="/stock" element={<Stock />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/my-patients" element={<MyPatients />} />
+                <Route path="/employees-new" element={<EmployeesNew />} />
                 <Route path="/users" element={<UserManagement />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

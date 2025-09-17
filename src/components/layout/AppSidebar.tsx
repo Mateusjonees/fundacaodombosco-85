@@ -147,9 +147,9 @@ const getMenuItemsForRole = (permissions: any) => {
     items.push({ 
       id: 'employees', 
       title: 'Funcionários', 
-      url: '/employees', 
+      url: '/employees-new', 
       icon: 'UserPlus', 
-      order_index: 8 
+      order_index: 8
     });
   }
 

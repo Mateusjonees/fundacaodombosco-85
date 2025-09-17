@@ -1907,6 +1907,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      can_manage_employees: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       can_manage_stock: {
         Args: Record<PropertyKey, never>
         Returns: boolean
