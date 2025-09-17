@@ -153,8 +153,8 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
-  // Usuários - apenas diretores
-  if (permissions.isDirector()) {
+  // Usuários - diretores e coordenadores
+  if (permissions.canManageEmployees()) {
     items.push({ 
       id: 'users', 
       title: 'Usuários', 

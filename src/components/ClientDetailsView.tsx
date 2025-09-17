@@ -16,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Calendar, 
   Edit, 
-  Copy, 
   FileText, 
   Trash2, 
   Plus, 
@@ -31,7 +30,8 @@ import {
   ArrowLeft,
   UserX,
   RotateCcw,
-  AlertTriangle
+  AlertTriangle,
+  UserPlus
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
@@ -105,8 +105,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
+  const [currentAssignments, setCurrentAssignments] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -119,7 +123,9 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       loadDocuments(), 
       loadAssignedProfessionals(),
       loadEmployees(),
-      loadUserProfile()
+      loadUserProfile(),
+      loadAvailableEmployees(),
+      loadCurrentAssignments()
     ]);
   };
 
@@ -399,40 +405,98 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
     }
   };
 
-  const handleDuplicateClient = async () => {
+  const handleAssignProfessional = async () => {
+    if (!selectedEmployee) return;
+
     try {
       const { error } = await supabase
-        .from('clients')
+        .from('client_assignments')
         .insert({
-          name: `${client.name} (Cópia)`,
-          cpf: '',
-          birth_date: client.birth_date,
-          email: '',
-          phone: client.phone,
-          responsible_name: client.responsible_name,
-          responsible_phone: client.responsible_phone,
-          unit: client.unit,
-          address: client.address,
-          diagnosis: client.diagnosis,
-          medical_history: client.medical_history,
-          neuropsych_complaint: client.neuropsych_complaint,
-          treatment_expectations: client.treatment_expectations,
-          clinical_observations: client.clinical_observations,
-          created_by: user?.id
+          client_id: client.id,
+          employee_id: selectedEmployee,
+          assigned_by: user?.id
         });
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Cliente duplicado com sucesso!",
+        description: "Profissional vinculado com sucesso!",
       });
+      
+      setIsAssignDialogOpen(false);
+      setSelectedEmployee('');
+      loadCurrentAssignments();
     } catch (error) {
-      console.error('Error duplicating client:', error);
+      console.error('Error assigning professional:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível duplicar o cliente.",
+        description: "Não foi possível vincular o profissional.",
+      });
+    }
+  };
+
+  const loadAvailableEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, user_id, name, employee_role')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setAvailableEmployees(data || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    }
+  };
+
+  const loadCurrentAssignments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('client_assignments')
+        .select(`
+          id,
+          employee_id,
+          assigned_at,
+          is_active,
+          profiles (
+            name,
+            employee_role
+          )
+        `)
+        .eq('client_id', client.id)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      setCurrentAssignments(data || []);
+    } catch (error) {
+      console.error('Error loading assignments:', error);
+    }
+  };
+
+  const handleRemoveAssignment = async (assignmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_assignments')
+        .update({ is_active: false })
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Vinculação removida com sucesso!",
+      });
+      
+      loadCurrentAssignments();
+    } catch (error) {
+      console.error('Error removing assignment:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível remover a vinculação.",
       });
     }
   };
@@ -1090,9 +1154,13 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <Edit className="h-4 w-4 mr-2" />
               Editar Dados
             </Button>
-            <Button variant="outline" onClick={() => handleDuplicateClient()}>
-              <Copy className="h-4 w-4 mr-2" />
-              Duplicar Cliente
+            <Button variant="outline" onClick={() => {
+              setIsAssignDialogOpen(true);
+              loadAvailableEmployees();
+              loadCurrentAssignments();
+            }}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Vincular Profissional
             </Button>
             <Button variant="outline" onClick={() => handleGenerateReport()}>
               <FileText className="h-4 w-4 mr-2" />
@@ -1112,6 +1180,66 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog para Vincular Profissional */}
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Profissionais Já Vinculados */}
+            {currentAssignments.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2">Profissionais Vinculados:</h4>
+                <div className="space-y-2">
+                  {currentAssignments.map((assignment: any) => (
+                    <div key={assignment.id} className="flex items-center justify-between p-2 border rounded">
+                      <span>{assignment.profiles?.name} - {assignment.profiles?.employee_role}</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleRemoveAssignment(assignment.id)}
+                      >
+                        <UserX className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Adicionar Novo Profissional */}
+            <div>
+              <Label htmlFor="employee">Selecionar Profissional:</Label>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um profissional" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableEmployees
+                    .filter(emp => !currentAssignments.some((a: any) => a.employee_id === emp.user_id))
+                    .map((employee: any) => (
+                    <SelectItem key={employee.user_id} value={employee.user_id}>
+                      {employee.name} - {employee.employee_role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAssignProfessional} disabled={!selectedEmployee}>
+              Vincular
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
