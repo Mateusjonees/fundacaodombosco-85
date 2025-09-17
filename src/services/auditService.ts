@@ -102,20 +102,15 @@ export class AuditService {
       const { data: currentUser } = await supabase.auth.getUser();
       
       if (currentUser?.user) {
-        // Generate unique session token to avoid duplicates
-        const sessionToken = `${currentUser.user.id}_${Date.now()}`;
-        
-        // Update or insert user session with proper unique constraint handling
+        // Update or insert user session (fixed upsert)
         const { error } = await supabase
           .from('user_sessions')
           .upsert({
             user_id: currentUser.user.id,
-            session_token: sessionToken,
+            session_token: currentUser.user.id, // Use user ID as token for now
             last_activity: new Date().toISOString(),
             is_active: true,
             user_agent: navigator.userAgent
-          }, {
-            onConflict: 'user_id' // Use user_id as conflict resolution
           });
 
         if (error) {
