@@ -622,8 +622,12 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
   };
 
   const handleFileUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      console.log('No file selected');
+      return;
+    }
 
+    console.log('Starting file upload:', selectedFile.name, 'for client:', client.id);
     setLoading(true);
     try {
       // Upload file to Supabase Storage
@@ -631,12 +635,17 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
       const fileName = `${Date.now()}_${selectedFile.name}`;
       const filePath = `client-documents/${client.id}/${fileName}`;
 
+      console.log('Uploading to storage:', filePath);
       const { error: uploadError } = await supabase.storage
         .from('user-documents')
         .upload(filePath, selectedFile);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
 
+      console.log('Storage upload successful, saving to database');
       // Save document record to database
       const { error: dbError } = await supabase
         .from('client_documents')
@@ -649,8 +658,12 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
           uploaded_by: user?.id
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database insert error:', dbError);
+        throw dbError;
+      }
 
+      console.log('Document uploaded successfully');
       toast({
         title: "Sucesso",
         description: "Documento enviado com sucesso!",
@@ -664,7 +677,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível enviar o documento.",
+        description: `Não foi possível enviar o documento: ${error.message || error}`,
       });
     } finally {
       setLoading(false);
