@@ -26,7 +26,7 @@ interface CancelAppointmentDialogProps {
 }
 
 const CANCELLATION_CATEGORIES = [
-  { value: 'client_request', label: 'Solicitação do Cliente' },
+  { value: 'client_request', label: 'Solicitação do Paciente' },
   { value: 'professional_unavailable', label: 'Indisponibilidade do Profissional' },
   { value: 'emergency', label: 'Emergência' },
   { value: 'illness', label: 'Doença' },
@@ -98,7 +98,7 @@ export function CancelAppointmentDialog({
               <div>
                 <h4 className="font-semibold text-destructive">Atenção</h4>
                 <p className="text-sm text-destructive/80">
-                  Esta ação cancelará permanentemente o agendamento. O cliente será notificado automaticamente via email sobre o cancelamento.
+                  Esta ação cancelará permanentemente o agendamento. O paciente será notificado automaticamente via email sobre o cancelamento.
                 </p>
               </div>
             </div>
@@ -114,7 +114,7 @@ export function CancelAppointmentDialog({
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Cliente</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Paciente</Label>
                     <p className="font-medium">{schedule.clients?.name}</p>
                   </div>
                   <div>

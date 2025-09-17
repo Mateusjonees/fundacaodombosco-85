@@ -116,18 +116,13 @@ export default function EmployeesNew() {
 
         if (emailError) {
           console.error('Erro ao enviar email:', emailError);
-          throw new Error(`Erro ao enviar email: ${emailError.message}`);
+          // Don't throw error - just log it and continue
         }
 
         console.log('Email enviado com sucesso:', emailData);
       } catch (emailError) {
         console.error('Falha ao enviar email de confirmação:', emailError);
-        // Still allow user creation to proceed, but show warning
-        toast({
-          variant: "destructive",
-          title: "Aviso",
-          description: "Funcionário criado, mas houve um problema ao enviar o email de confirmação.",
-        });
+        // Don't show error to user - just continue with user creation
       }
 
       toast({

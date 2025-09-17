@@ -354,7 +354,7 @@ export function ConfirmAppointmentDialog({
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Cliente</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Paciente</Label>
                     <p className="font-medium">{schedule.clients?.name}</p>
                   </div>
                   <div>
@@ -453,12 +453,12 @@ export function ConfirmAppointmentDialog({
                     </div>
 
                     <div>
-                      <Label htmlFor="evolutionNotes">Evolução do Cliente</Label>
+                      <Label htmlFor="evolutionNotes">Evolução do Paciente</Label>
                       <Textarea
                         id="evolutionNotes"
                         value={sessionData.evolutionNotes}
                         onChange={(e) => setSessionData(prev => ({ ...prev, evolutionNotes: e.target.value }))}
-                        placeholder="Como o cliente evoluiu desde a última sessão..."
+                        placeholder="Como o paciente evoluiu desde a última sessão..."
                         rows={3}
                       />
                     </div>
@@ -658,12 +658,12 @@ export function ConfirmAppointmentDialog({
                     </div>
 
                     <div>
-                      <Label htmlFor="clientResponse">Resposta do Cliente</Label>
+                      <Label htmlFor="clientResponse">Resposta do Paciente</Label>
                       <Textarea
                         id="clientResponse"
                         value={sessionData.clientResponse}
                         onChange={(e) => setSessionData(prev => ({ ...prev, clientResponse: e.target.value }))}
-                        placeholder="Como o cliente respondeu às intervenções..."
+                        placeholder="Como o paciente respondeu às intervenções..."
                         rows={3}
                       />
                     </div>
@@ -840,7 +840,7 @@ export function ConfirmAppointmentDialog({
                     <StarRating
                       value={sessionData.clientSatisfaction}
                       onChange={(value) => setSessionData(prev => ({ ...prev, clientSatisfaction: value }))}
-                      label="Satisfação do Cliente"
+                      label="Satisfação do Paciente"
                     />
 
                     <div>

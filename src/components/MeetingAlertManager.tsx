@@ -289,13 +289,13 @@ export const MeetingAlertManager = () => {
                   />
                 </div>
                 <div>
-                  <Label>Cliente (Opcional)</Label>
+                  <Label>Paciente (Opcional)</Label>
                   <Select value={newAlert.client_id} onValueChange={(value) => setNewAlert({ ...newAlert, client_id: value })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecionar cliente" />
+                      <SelectValue placeholder="Selecionar paciente" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum cliente</SelectItem>
+                      <SelectItem value="">Nenhum paciente</SelectItem>
                       {clients.map(client => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}

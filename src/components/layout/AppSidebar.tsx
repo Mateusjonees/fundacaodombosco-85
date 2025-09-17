@@ -65,11 +65,11 @@ const getMenuItemsForRole = (permissions: any) => {
     order_index: 0 
   });
 
-  // Clientes - baseado em permissões
+  // Pacientes - baseado em permissões
   if (permissions.canViewAllClients() || permissions.isProfessional()) {
     items.push({ 
       id: 'clients', 
-      title: 'Clientes', 
+      title: 'Pacientes',
       url: '/clients', 
       icon: 'Users', 
       order_index: 1 

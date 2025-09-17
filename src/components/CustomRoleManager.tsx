@@ -23,10 +23,10 @@ interface CustomRole {
 }
 
 const AVAILABLE_PERMISSIONS = [
-  { key: 'clients_view', label: 'Visualizar Clientes', category: 'Clientes' },
-  { key: 'clients_create', label: 'Criar Clientes', category: 'Clientes' },
-  { key: 'clients_edit', label: 'Editar Clientes', category: 'Clientes' },
-  { key: 'clients_delete', label: 'Excluir Clientes', category: 'Clientes' },
+  { key: 'clients_view', label: 'Visualizar Pacientes', category: 'Pacientes' },
+  { key: 'clients_create', label: 'Criar Pacientes', category: 'Pacientes' },
+  { key: 'clients_edit', label: 'Editar Pacientes', category: 'Pacientes' },
+  { key: 'clients_delete', label: 'Excluir Pacientes', category: 'Pacientes' },
   { key: 'schedules_view', label: 'Visualizar Agenda', category: 'Agenda' },
   { key: 'schedules_create', label: 'Criar Agendamentos', category: 'Agenda' },
   { key: 'schedules_edit', label: 'Editar Agendamentos', category: 'Agenda' },

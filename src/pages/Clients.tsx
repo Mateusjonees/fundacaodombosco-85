@@ -172,7 +172,7 @@ export default function Clients() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível carregar os clientes.",
+        description: "Não foi possível carregar os pacientes.",
       });
     } finally {
       setLoading(false);
@@ -191,8 +191,8 @@ export default function Clients() {
       if (error) throw error;
 
       toast({
-        title: "Cliente cadastrado",
-        description: "Cliente cadastrado com sucesso!",
+        title: "Paciente cadastrado",
+        description: "Paciente cadastrado com sucesso!",
       });
 
       setIsDialogOpen(false);
@@ -203,7 +203,7 @@ export default function Clients() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível cadastrar o cliente.",
+        description: "Não foi possível cadastrar o paciente.",
       });
     }
   };
@@ -220,7 +220,7 @@ export default function Clients() {
       if (error) throw error;
 
       toast({
-        title: "Cliente atualizado",
+        title: "Paciente atualizado",
         description: "Dados atualizados com sucesso!",
       });
 
@@ -233,7 +233,7 @@ export default function Clients() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar o cliente.",
+        description: "Não foi possível atualizar o paciente.",
       });
     }
   };
@@ -248,8 +248,8 @@ export default function Clients() {
       if (error) throw error;
 
       toast({
-        title: currentStatus ? "Cliente desativado" : "Cliente ativado",
-        description: `Cliente ${currentStatus ? 'desativado' : 'ativado'} com sucesso!`,
+        title: currentStatus ? "Paciente desativado" : "Paciente ativado",
+        description: `Paciente ${currentStatus ? 'desativado' : 'ativado'} com sucesso!`,
       });
 
       loadClients();
@@ -258,7 +258,7 @@ export default function Clients() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível alterar o status do cliente.",
+        description: "Não foi possível alterar o status do paciente.",
       });
     }
   };
@@ -368,13 +368,13 @@ export default function Clients() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Lista de Clientes</h1>
+          <h1 className="text-3xl font-bold text-foreground">Lista de Pacientes</h1>
           <p className="text-muted-foreground">
             {isGodMode() 
-              ? '🔑 Modo Deus Ativo - Acesso total aos clientes' 
+              ? '🔑 Modo Deus Ativo - Acesso total aos pacientes' 
               : isCoordinatorOrDirector() 
-                ? 'Visualizando todos os clientes' 
-                : 'Visualizando apenas clientes vinculados a você'
+                ? 'Visualizando todos os pacientes' 
+                : 'Visualizando apenas pacientes vinculados a você'
             }
           </p>
         </div>
@@ -394,13 +394,13 @@ export default function Clients() {
             <DialogTrigger asChild>
               <Button className="gap-2 w-full md:w-auto">
                 <Plus className="h-4 w-4" />
-                Cadastrar Cliente
+                Cadastrar Paciente
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingClient ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}
+                  {editingClient ? 'Editar Paciente' : 'Cadastrar Novo Paciente'}
                 </DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
@@ -540,7 +540,7 @@ export default function Clients() {
                     id="treatment_expectations"
                     value={newClient.treatment_expectations}
                     onChange={(e) => setNewClient({ ...newClient, treatment_expectations: e.target.value })}
-                    placeholder="O que o cliente/família espera do tratamento"
+                    placeholder="O que o paciente/família espera do tratamento"
                   />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
@@ -549,7 +549,7 @@ export default function Clients() {
                     id="clinical_observations"
                     value={newClient.clinical_observations}
                     onChange={(e) => setNewClient({ ...newClient, clinical_observations: e.target.value })}
-                    placeholder="Observações gerais sobre o cliente"
+                    placeholder="Observações gerais sobre o paciente"
                   />
                 </div>
               </div>
@@ -629,7 +629,7 @@ export default function Clients() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Pacientes</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -662,7 +662,7 @@ export default function Clients() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Clientes</CardTitle>
+          <CardTitle>Lista de Pacientes</CardTitle>
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-4 w-4 text-muted-foreground" />
@@ -690,10 +690,10 @@ export default function Clients() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-muted-foreground text-center py-8">Carregando clientes...</p>
+            <p className="text-muted-foreground text-center py-8">Carregando pacientes...</p>
           ) : filteredClients.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              {searchTerm ? 'Nenhum cliente encontrado com o termo de busca.' : 'Nenhum cliente cadastrado.'}
+              {searchTerm ? 'Nenhum paciente encontrado com o termo de busca.' : 'Nenhum paciente cadastrado.'}
             </p>
           ) : (
             <Table>

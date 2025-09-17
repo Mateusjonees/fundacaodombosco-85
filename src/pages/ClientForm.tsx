@@ -131,7 +131,7 @@ export default function ClientForm() {
 
       toast({
         title: "Sucesso",
-        description: "Cliente cadastrado com sucesso!",
+        description: "Paciente cadastrado com sucesso!",
       });
 
       // Reset form
@@ -152,7 +152,7 @@ export default function ClientForm() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível cadastrar o cliente.",
+        description: "Não foi possível cadastrar o paciente.",
       });
     } finally {
       setLoading(false);

@@ -88,7 +88,7 @@ export default function Schedule() {
         client_id: clientId
       }));
       
-      // Se tem ID do cliente, abrir o diálogo de agendamento
+      // Se tem ID do paciente, abrir o diálogo de agendamento
       setIsDialogOpen(true);
     }
   }, [selectedDate, filterRole, filterEmployee, filterUnit]);
@@ -151,7 +151,7 @@ export default function Schedule() {
         .order('name');
 
       // Se o usuário não for administrativo (diretor, coordenador ou recepcionista),
-      // só mostrar clientes vinculados a ele através de client_assignments
+      // só mostrar pacientes vinculados a ele através de client_assignments
       if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'].includes(userProfile.employee_role)) {
         const { data: assignments } = await supabase
           .from('client_assignments')
@@ -163,7 +163,7 @@ export default function Schedule() {
         if (clientIds.length > 0) {
           query = query.in('id', clientIds);
         } else {
-          // Se não há clientes vinculados, não mostrar nenhum
+          // Se não há pacientes vinculados, não mostrar nenhum
           setClients([]);
           return;
         }
@@ -278,7 +278,7 @@ export default function Schedule() {
         const startTime = convertToISOString(newAppointment.start_time);
         const endTime = convertToISOString(newAppointment.end_time);
         
-        // Verificar conflitos para o cliente (excluindo o agendamento atual)
+        // Verificar conflitos para o paciente (excluindo o agendamento atual)
         const { data: clientConflicts } = await supabase
           .from('schedules')
           .select('id, start_time, end_time')
@@ -300,7 +300,7 @@ export default function Schedule() {
           toast({
             variant: "destructive",
             title: "Conflito de Horário",
-            description: "O cliente já possui um agendamento neste horário.",
+            description: "O paciente já possui um agendamento neste horário.",
           });
           return;
         }
@@ -330,7 +330,7 @@ export default function Schedule() {
         const startTime = convertToISOString(newAppointment.start_time);
         const endTime = convertToISOString(newAppointment.end_time);
         
-        // Verificar conflitos para o cliente
+        // Verificar conflitos para o paciente
         const { data: clientConflicts } = await supabase
           .from('schedules')
           .select('id, start_time, end_time')
@@ -350,7 +350,7 @@ export default function Schedule() {
           toast({
             variant: "destructive",
             title: "Conflito de Horário",
-            description: "O cliente já possui um agendamento neste horário.",
+            description: "O paciente já possui um agendamento neste horário.",
           });
           return;
         }
@@ -519,7 +519,7 @@ export default function Schedule() {
           type: 'out',
           quantity: material.quantity,
           reason: 'Utilizado em atendimento',
-          notes: material.observation || `Sessão - Cliente ID: ${scheduleData?.client_id}`,
+          notes: material.observation || `Sessão - Paciente ID: ${scheduleData?.client_id}`,
           date: new Date().toISOString().split('T')[0],
           created_by: user?.id,
           client_id: scheduleData?.client_id,
@@ -825,10 +825,10 @@ export default function Schedule() {
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="client_id">Cliente</Label>
+                    <Label htmlFor="client_id">Paciente</Label>
                     {!isAdmin && (
                       <p className="text-sm text-muted-foreground mb-2">
-                        Você só pode agendar para clientes vinculados ao seu atendimento.
+                        Você só pode agendar para pacientes vinculados ao seu atendimento.
                       </p>
                     )}
                     <Select 
@@ -836,7 +836,7 @@ export default function Schedule() {
                       onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cliente" />
+                        <SelectValue placeholder="Selecione um paciente" />
                       </SelectTrigger>
                       <SelectContent>
                         {clients.map(client => (
@@ -966,7 +966,7 @@ export default function Schedule() {
                           </div>
                            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2 flex-wrap">
                              <User className="h-3 w-3" />
-                             <span>Cliente: {schedule.clients?.name || 'N/A'}</span>
+                             <span>Paciente: {schedule.clients?.name || 'N/A'}</span>
                              <span className="hidden md:inline">•</span>
                              <span>Profissional: {employees.find(emp => emp.id === schedule.employee_id)?.name || 'N/A'}</span>
                              <span className="hidden md:inline">•</span>
@@ -1125,10 +1125,10 @@ export default function Schedule() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="client">Cliente</Label>
+                <Label htmlFor="client">Paciente</Label>
                 <Select value={newAppointment.client_id} onValueChange={(value) => setNewAppointment({...newAppointment, client_id: value})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
+                    <SelectValue placeholder="Selecione um paciente" />
                   </SelectTrigger>
                   <SelectContent>
                     {clients.map((client) => (

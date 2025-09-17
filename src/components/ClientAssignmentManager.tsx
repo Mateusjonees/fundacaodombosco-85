@@ -104,7 +104,7 @@ export function ClientAssignmentManager() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Selecione um cliente e um funcionário.",
+        description: "Selecione um paciente e um funcionário.",
       });
       return;
     }
@@ -123,7 +123,7 @@ export function ClientAssignmentManager() {
           toast({
             variant: "destructive",
             title: "Atribuição já existe",
-            description: "Este funcionário já está atribuído a este cliente.",
+            description: "Este funcionário já está atribuído a este paciente.",
           });
           return;
         } else {
@@ -237,7 +237,7 @@ export function ClientAssignmentManager() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-primary" />
-          Gerenciar Atribuições de Clientes
+          Gerenciar Atribuições de Pacientes
         </CardTitle>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -252,10 +252,10 @@ export function ClientAssignmentManager() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Cliente:</label>
+                <label className="text-sm font-medium mb-2 block">Paciente:</label>
                 <Select value={selectedClient} onValueChange={setSelectedClient}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
+                    <SelectValue placeholder="Selecione um paciente" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableClients.map((client) => (
@@ -301,7 +301,7 @@ export function ClientAssignmentManager() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Cliente</TableHead>
+                <TableHead>Paciente</TableHead>
                 <TableHead>Funcionário Atribuído</TableHead>
                 <TableHead>Atribuído Por</TableHead>
                 <TableHead>Data</TableHead>

@@ -21,8 +21,8 @@ export function QuickActions() {
 
   const actions = [
     {
-      title: 'Novo Cliente',
-      description: 'Cadastrar novo cliente',
+      title: 'Novo Paciente',
+      description: 'Cadastrar novo paciente',
       icon: UserPlus,
       path: '/clients/new',
       color: 'bg-blue-500 hover:bg-blue-600'

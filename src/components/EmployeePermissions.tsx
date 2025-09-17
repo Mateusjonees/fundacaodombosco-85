@@ -18,7 +18,7 @@ interface EmployeePermissionsProps {
 }
 
 const PERMISSION_OPTIONS = [
-  { key: 'cadastrar_cliente', label: 'Cadastrar Cliente' },
+  { key: 'cadastrar_cliente', label: 'Cadastrar Paciente' },
   { key: 'agenda_dia', label: 'Agenda do Dia' },
   { key: 'todos_pacientes', label: 'Todos os Pacientes' },
   { key: 'meus_pacientes', label: 'Meus Pacientes' },

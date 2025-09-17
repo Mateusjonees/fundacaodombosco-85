@@ -429,16 +429,16 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="clientName">Nome do Cliente</Label>
+                  <Label htmlFor="clientName">Nome do Paciente</Label>
                   <Input
                     id="clientName"
                     value={contractData.clientName}
                     onChange={(e) => setContractData({ ...contractData, clientName: e.target.value })}
-                    placeholder="Nome completo do cliente"
+                    placeholder="Nome completo do paciente"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="clientCpf">CPF do Cliente</Label>
+                  <Label htmlFor="clientCpf">CPF do Paciente</Label>
                   <Input
                     id="clientCpf"
                     value={contractData.clientCpf}
@@ -547,7 +547,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           <div className="text-center py-8 text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <p className="text-lg font-medium mb-2">Nenhum contrato gerado ainda</p>
-            <p className="text-sm mb-4">Clique em "Novo Contrato PDF" para gerar um contrato personalizado em PDF para este cliente.</p>
+            <p className="text-sm mb-4">Clique em "Novo Contrato PDF" para gerar um contrato personalizado em PDF para este paciente.</p>
             <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Gerar Primeiro Contrato PDF
@@ -558,7 +558,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Informações do Cliente</CardTitle>
+          <CardTitle>Informações do Paciente</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
