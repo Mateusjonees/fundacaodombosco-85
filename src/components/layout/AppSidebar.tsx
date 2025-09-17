@@ -191,7 +191,7 @@ export function AppSidebar() {
       const items = getMenuItemsForRole(permissions);
       setNavigationItems(items);
     }
-  }, [permissions]);
+  }, [permissions.loading, permissions.userRole]);
 
   const isActive = (path: string) => {
     if (path === '/') {
