@@ -106,16 +106,28 @@ export default function EmployeesNew() {
 
       // Send confirmation email
       try {
-        await supabase.functions.invoke('send-employee-confirmation', {
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-employee-confirmation', {
           body: {
             name: newEmployee.name,
             email: newEmployee.email,
             temporaryPassword: newEmployee.password
           }
         });
+
+        if (emailError) {
+          console.error('Erro ao enviar email:', emailError);
+          throw new Error(`Erro ao enviar email: ${emailError.message}`);
+        }
+
+        console.log('Email enviado com sucesso:', emailData);
       } catch (emailError) {
-        console.warn('Falha ao enviar email de confirmação:', emailError);
-        // Don't throw error here - user was created successfully
+        console.error('Falha ao enviar email de confirmação:', emailError);
+        // Still allow user creation to proceed, but show warning
+        toast({
+          variant: "destructive",
+          title: "Aviso",
+          description: "Funcionário criado, mas houve um problema ao enviar o email de confirmação.",
+        });
       }
 
       toast({

@@ -25,7 +25,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { name, email, temporaryPassword }: EmployeeConfirmationRequest = await req.json();
 
     const emailResponse = await resend.emails.send({
-      from: "Fundação Dom Bosco <dominio@fundacaodombosco.org>",
+      from: "Fundação Dom Bosco <onboarding@resend.dev>",
       to: [email],
       subject: "Bem-vindo(a) à Fundação Dom Bosco - Confirmação de Vinculação",
       html: `
