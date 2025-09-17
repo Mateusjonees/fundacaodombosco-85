@@ -60,8 +60,7 @@ export function ScheduleAlerts() {
         .from('schedules')
         .select(`
           id, title, start_time, status,
-          clients (name),
-          profiles (name)
+          clients (name)
         `)
         .gte('start_time', startOfDay)
         .lte('start_time', endOfDay)
@@ -178,9 +177,9 @@ export function ScheduleAlerts() {
                   <Badge variant="outline" className="text-xs">
                     {nextAppointment.title}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    com {nextAppointment.profiles?.name}
-                  </span>
+                   <span className="text-xs text-muted-foreground">
+                     Atendimento agendado
+                   </span>
                 </div>
               </AlertDescription>
             </Alert>

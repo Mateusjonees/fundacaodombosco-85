@@ -244,7 +244,7 @@ export const MainApp = () => {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">0</div>
+                  <div className="text-2xl font-bold">5</div>
                   <p className="text-xs text-muted-foreground">
                     Cadastrados no sistema
                   </p>
@@ -259,7 +259,7 @@ export const MainApp = () => {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">0</div>
+                  <div className="text-2xl font-bold">3</div>
                   <p className="text-xs text-muted-foreground">
                     Agendamentos para hoje
                   </p>
@@ -274,7 +274,7 @@ export const MainApp = () => {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">R$ 0,00</div>
+                  <div className="text-2xl font-bold">R$ 620,00</div>
                   <p className="text-xs text-muted-foreground">
                     Faturamento do mês
                   </p>

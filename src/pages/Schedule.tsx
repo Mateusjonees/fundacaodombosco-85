@@ -29,7 +29,7 @@ interface Schedule {
   status: string;
   notes?: string;
   clients?: { name: string };
-  profiles?: { name: string; employee_role: string; department: string };
+  
 }
 
 export default function Schedule() {
@@ -147,8 +147,7 @@ export default function Schedule() {
         .from('schedules')
         .select(`
           *,
-          clients (name),
-          profiles (name, employee_role, department)
+          clients (name)
         `)
         .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
         .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
@@ -167,34 +166,7 @@ export default function Schedule() {
       const { data, error } = await query;
       if (error) throw error;
       
-      let filteredData = data || [];
-
-      // Apply role and unit filters only for coordinators/directors
-      if (userProfile && ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role)) {
-        // Filter by role
-        if (filterRole !== 'all') {
-          filteredData = filteredData.filter(schedule => 
-            schedule.profiles?.employee_role === filterRole
-          );
-        }
-
-        // Filter by unit
-        if (filterUnit !== 'all') {
-          filteredData = filteredData.filter(schedule => {
-            if (filterUnit === 'madre') {
-              return schedule.profiles?.department?.toLowerCase().includes('madre') || 
-                     schedule.profiles?.employee_role === 'coordinator_madre';
-            }
-            if (filterUnit === 'floresta') {
-              return schedule.profiles?.department?.toLowerCase().includes('floresta') || 
-                     schedule.profiles?.employee_role === 'coordinator_floresta';
-            }
-            return true;
-          });
-        }
-      }
-
-      setSchedules(filteredData);
+      setSchedules(data || []);
     } catch (error) {
       console.error('Error loading schedules:', error);
       toast({
@@ -713,7 +685,7 @@ export default function Schedule() {
                             <User className="h-3 w-3" />
                             <span>Cliente: {schedule.clients?.name || 'N/A'}</span>
                             <span className="hidden md:inline">•</span>
-                            <span>Profissional: {schedule.profiles?.name || 'N/A'}</span>
+                            <span>Profissional: {employees.find(emp => emp.id === schedule.employee_id)?.name || 'N/A'}</span>
                           </div>
                           {schedule.notes && (
                             <p className="text-xs md:text-sm text-muted-foreground">{schedule.notes}</p>
