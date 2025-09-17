@@ -79,16 +79,6 @@ interface Employee {
   employee_role: string;
 }
 
-interface Appointment {
-  id: string;
-  title: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  description?: string;
-  profiles?: { name: string };
-}
-
 interface ClientDetailsViewProps {
   client: Client;
   onEdit: () => void;
@@ -265,64 +255,6 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
       description: "Redirecionando para a agenda...",
     });
     window.open(`/schedule?client=${client.id}`, '_blank');
-  };
-
-  const loadEmployees = async () => {
-    try {
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('user_id, name, employee_role')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw error;
-      setEmployees(profiles || []);
-    } catch (error) {
-      console.error('Error loading employees:', error);
-    }
-  };
-    try {
-      const { data: schedules, error } = await supabase
-        .from('schedules')
-        .select(`
-          id,
-          title,
-          start_time,
-          end_time,
-          status,
-          description,
-          created_by
-        `)
-        .eq('client_id', client.id)
-        .order('start_time', { ascending: false });
-
-      if (error) throw error;
-
-      // Buscar nomes dos criadores dos agendamentos
-      if (schedules && schedules.length > 0) {
-        const creatorIds = [...new Set(schedules.map(s => s.created_by))].filter(id => id);
-        let profiles: any[] = [];
-        
-        if (creatorIds.length > 0) {
-          const { data: profilesData } = await supabase
-            .from('profiles')
-            .select('user_id, name')
-            .in('user_id', creatorIds);
-          profiles = profilesData || [];
-        }
-
-        const appointmentsWithProfiles = schedules.map(schedule => ({
-          ...schedule,
-          profiles: profiles.find(p => p.user_id === schedule.created_by) || { name: 'Sistema' }
-        }));
-
-        setAppointments(appointmentsWithProfiles);
-      } else {
-        setAppointments([]);
-      }
-    } catch (error) {
-      console.error('Error loading appointments:', error);
-    }
   };
 
   const loadEmployees = async () => {
@@ -561,7 +493,6 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
       setLoading(false);
     }
   };
-
 
   const getUnitLabel = (unit: string) => {
     switch (unit) {
