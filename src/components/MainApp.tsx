@@ -20,7 +20,7 @@ import Schedule from '@/pages/Schedule';
 import Financial from '@/pages/Financial';
 import Contracts from '@/pages/Contracts';
 import UserManagement from '@/pages/UserManagement';
-import Stock from '@/pages/Stock';
+import StockManager from '@/pages/StockManager';
 import Reports from '@/pages/Reports';
 import Dashboard from '@/pages/Dashboard';
 import MyPatients from '@/pages/MyPatients';
@@ -155,7 +155,7 @@ export const MainApp = () => {
                 <Route path="/schedule" element={<Schedule />} />
                 <Route path="/financial" element={<Financial />} />
                 <Route path="/contracts" element={<Contracts />} />
-                <Route path="/stock" element={<Stock />} />
+                <Route path="/stock" element={<StockManager />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/my-patients" element={<MyPatients />} />
                 <Route path="/employees-new" element={<EmployeesNew />} />
