@@ -274,40 +274,6 @@ export default function Schedule() {
 
         if (error) throw error;
 
-        // Auto-assign client to professional if not already assigned
-        if (newAppointment.client_id && newAppointment.employee_id) {
-          // Check if assignment already exists
-          const { data: existingAssignment } = await supabase
-            .from('client_assignments')
-            .select('id')
-            .eq('client_id', newAppointment.client_id)
-            .eq('employee_id', newAppointment.employee_id)
-            .eq('is_active', true)
-            .single();
-
-          // If no assignment exists, create one
-          if (!existingAssignment) {
-            const { error: assignmentError } = await supabase
-              .from('client_assignments')
-              .insert([{
-                client_id: newAppointment.client_id,
-                employee_id: newAppointment.employee_id,
-                assigned_by: user?.id,
-                is_active: true
-              }]);
-
-            if (assignmentError) {
-              console.error('Error creating client assignment:', assignmentError);
-              // Don't fail the entire operation, just log the error
-              toast({
-                title: "Aviso",
-                description: "Agendamento criado, mas houve problema na vinculação automática do cliente.",
-                variant: "default"
-              });
-            }
-          }
-        }
-
         toast({
           title: "Sucesso",
           description: "Agendamento criado com sucesso!",
