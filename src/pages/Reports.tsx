@@ -131,8 +131,9 @@ export default function Reports() {
         .from('attendance_reports')
         .select(`
           *,
-          clients(name),
-          profiles(name)
+          clients!attendance_reports_client_id_fkey(name),
+          professional_name,
+          patient_name
         `)
         .order('start_time', { ascending: false });
 
@@ -167,7 +168,28 @@ export default function Reports() {
       const { data, error } = await query.limit(200);
 
       if (error) throw error;
-      setAttendanceReports(data || []);
+      
+      // Mapeamos os dados para incluir os nomes dos professionals
+      const reportsWithNames = await Promise.all((data || []).map(async (report) => {
+        if (!report.professional_name) {
+          // Buscar nome do profissional usando nossa função helper
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('user_id', report.employee_id)
+            .single();
+          
+          report.professional_name = profileData?.name || 'Nome não encontrado';
+        }
+        
+        return {
+          ...report,
+          profiles: { name: report.professional_name },
+          clients: { name: report.patient_name || report.clients?.name }
+        };
+      }));
+      
+      setAttendanceReports(reportsWithNames);
     } catch (error) {
       console.error('Error loading attendance reports:', error);
       toast({
@@ -199,8 +221,7 @@ export default function Reports() {
         .from('employee_reports')
         .select(`
           *,
-          clients(name),
-          profiles(name)
+          clients!employee_reports_client_id_fkey(name)
         `)
         .order('session_date', { ascending: false })
         .limit(100);
@@ -212,7 +233,22 @@ export default function Reports() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setEmployeeReports(data || []);
+      
+      // Buscar nomes dos profissionais para cada relatório
+      const reportsWithNames = await Promise.all((data || []).map(async (report) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('user_id', report.employee_id)
+          .single();
+        
+        return {
+          ...report,
+          profiles: { name: profileData?.name || 'Nome não encontrado' }
+        };
+      }));
+      
+      setEmployeeReports(reportsWithNames);
     } catch (error) {
       console.error('Error loading employee reports:', error);
       toast({
@@ -315,7 +351,7 @@ export default function Reports() {
   }
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Relatórios de Atendimento</h1>
         <div className="flex gap-2">
@@ -331,6 +367,19 @@ export default function Reports() {
           </Button>
         </div>
       </div>
+
+      {/* Aviso sobre geração automática de relatórios */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 text-blue-800">
+            <BarChart3 className="h-5 w-5" />
+            <p className="text-sm font-medium">
+              <strong>Novo!</strong> Os relatórios de funcionários agora são gerados automaticamente quando você completa um atendimento. 
+              Isso garante maior controle e rastreabilidade das atividades.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filtros Avançados */}
       <Card>
