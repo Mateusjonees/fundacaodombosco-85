@@ -54,11 +54,12 @@ export default function Schedule() {
   const [filterEmployee, setFilterEmployee] = useState('all');
   const [filterUnit, setFilterUnit] = useState('all');
 
-  // Verificar se o usuário é coordenador ou diretor
+  // Verificar se o usuário tem permissões administrativas
   const [userProfile, setUserProfile] = useState<any>(null);
-  const isCoordinatorOrDirector = userProfile?.employee_role === 'director' || 
-                                  userProfile?.employee_role === 'coordinator_madre' || 
-                                  userProfile?.employee_role === 'coordinator_floresta';
+  const isAdmin = userProfile?.employee_role === 'director' || 
+                  userProfile?.employee_role === 'coordinator_madre' || 
+                  userProfile?.employee_role === 'coordinator_floresta' ||
+                  userProfile?.employee_role === 'receptionist';
 
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
@@ -111,12 +112,19 @@ export default function Schedule() {
 
   const loadEmployees = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
-        .select('id, name, employee_role, department')
+        .select('user_id, id, name, employee_role, department')
         .eq('is_active', true)
         .order('name');
+
+      // Se o usuário não for administrativo (diretor, coordenador ou recepcionista),
+      // só mostrar ele mesmo na lista de profissionais
+      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'].includes(userProfile.employee_role)) {
+        query = query.eq('user_id', user?.id);
+      }
       
+      const { data, error } = await query;
       if (error) throw error;
       setEmployees(data || []);
     } catch (error) {
@@ -132,9 +140,9 @@ export default function Schedule() {
         .eq('is_active', true)
         .order('name');
 
-      // Apply role-based filtering using client_assignments (matches RLS policies)
-      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role)) {
-        // For staff members, only show clients they are assigned to via client_assignments
+      // Se o usuário não for administrativo (diretor, coordenador ou recepcionista),
+      // só mostrar clientes vinculados a ele através de client_assignments
+      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'].includes(userProfile.employee_role)) {
         const { data: assignments } = await supabase
           .from('client_assignments')
           .select('client_id')
@@ -145,7 +153,7 @@ export default function Schedule() {
         if (clientIds.length > 0) {
           query = query.in('id', clientIds);
         } else {
-          // If no assignments, show no clients
+          // Se não há clientes vinculados, não mostrar nenhum
           setClients([]);
           return;
         }
@@ -166,18 +174,19 @@ export default function Schedule() {
         .from('schedules')
         .select(`
           *,
-          clients (name)
+          clients (name),
+          profiles!schedules_employee_id_fkey (name)
         `)
         .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
         .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
         .order('start_time');
 
-      // Apply role-based filtering - staff only see appointments where they are assigned
-      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role)) {
+      // Se o usuário não for administrativo, só mostrar agendamentos onde ele é o profissional
+      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'].includes(userProfile.employee_role)) {
         query = query.eq('employee_id', user?.id);
       }
 
-      // Apply additional filters for coordinators/directors
+      // Filtros adicionais para administradores
       if (filterEmployee !== 'all') {
         query = query.eq('employee_id', filterEmployee);
       }
@@ -666,13 +675,15 @@ export default function Schedule() {
             {/* Botão Novo Agendamento */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                 <Button 
                   className="w-full py-4 md:py-6 text-base md:text-lg" 
                   onClick={() => {
                     setEditingSchedule(null);
+                    // Para profissionais comuns, pré-selecionar eles mesmos
+                    const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
                     setNewAppointment({
                       client_id: '',
-                      employee_id: '',
+                      employee_id: defaultEmployeeId,
                       title: 'Consulta',
                       start_time: '',
                       end_time: '',
@@ -680,7 +691,7 @@ export default function Schedule() {
                       unit: 'madre'
                     });
                   }}
-                >
+                 >
                   <Plus className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                   Novo Agendamento
                 </Button>
@@ -692,6 +703,11 @@ export default function Schedule() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="client_id">Cliente</Label>
+                    {!isAdmin && (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Você só pode agendar para clientes vinculados ao seu atendimento.
+                      </p>
+                    )}
                     <Select 
                       value={newAppointment.client_id} 
                       onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
@@ -711,13 +727,22 @@ export default function Schedule() {
 
                   <div className="space-y-2">
                     <Label htmlFor="employee_id">Profissional</Label>
-                    <Select value={newAppointment.employee_id} onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}>
+                    {!isAdmin && (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Como profissional, você só pode agendar para si mesmo.
+                      </p>
+                    )}
+                    <Select 
+                      value={newAppointment.employee_id} 
+                      onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
+                      disabled={!isAdmin && employees.length === 1}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um profissional" />
                       </SelectTrigger>
                       <SelectContent>
                         {employees.map(employee => (
-                          <SelectItem key={employee.id} value={employee.id}>
+                          <SelectItem key={employee.user_id} value={employee.user_id}>
                             {employee.name} ({employee.employee_role})
                           </SelectItem>
                         ))}
