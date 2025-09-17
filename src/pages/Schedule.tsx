@@ -93,6 +93,16 @@ export default function Schedule() {
     }
   }, [selectedDate, filterRole, filterEmployee, filterUnit]);
 
+  // Auto-selecionar o profissional para usuários não-administrativos
+  useEffect(() => {
+    if (userProfile && !isAdmin) {
+      setNewAppointment(prev => ({
+        ...prev,
+        employee_id: userProfile.id
+      }));
+    }
+  }, [userProfile, isAdmin]);
+
   const loadUserProfile = async () => {
     if (!user) return;
     
@@ -146,7 +156,7 @@ export default function Schedule() {
         const { data: assignments } = await supabase
           .from('client_assignments')
           .select('client_id')
-          .eq('employee_id', user?.id)
+          .eq('employee_id', userProfile.id)
           .eq('is_active', true);
         
         const clientIds = [...new Set(assignments?.map(a => a.client_id) || [])];
@@ -183,7 +193,7 @@ export default function Schedule() {
 
       // Se o usuário não for administrativo, só mostrar agendamentos onde ele é o profissional
       if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'].includes(userProfile.employee_role)) {
-        query = query.eq('employee_id', user?.id);
+        query = query.eq('employee_id', userProfile.id);
       }
 
       // Filtros adicionais para administradores
@@ -252,7 +262,7 @@ export default function Schedule() {
         return date.toISOString();
       };
 
-      const appointmentData = {
+        const appointmentData = {
         client_id: newAppointment.client_id,
         employee_id: newAppointment.employee_id,
         title: newAppointment.title,
@@ -260,7 +270,7 @@ export default function Schedule() {
         end_time: convertToISOString(newAppointment.end_time),
         notes: newAppointment.notes,
         unit: newAppointment.unit,
-        created_by: user?.id
+        created_by: userProfile?.id
       };
 
       if (editingSchedule) {
@@ -433,7 +443,7 @@ export default function Schedule() {
         .from('medical_records')
         .insert({
           client_id: scheduleData?.client_id,
-          employee_id: user?.id,
+          employee_id: userProfile?.id,
           session_date: new Date().toISOString().split('T')[0],
           session_type: sessionData.sessionType || 'Atendimento',
           session_duration: sessionData.actualDuration,
@@ -452,7 +462,7 @@ export default function Schedule() {
       const { error: employeeReportError } = await supabase
         .from('employee_reports')
         .insert({
-          employee_id: user?.id,
+          employee_id: userProfile?.id,
           client_id: scheduleData?.client_id,
           schedule_id: scheduleId,
           session_date: new Date().toISOString().split('T')[0],
@@ -854,11 +864,11 @@ export default function Schedule() {
                         <SelectValue placeholder="Selecione um profissional" />
                       </SelectTrigger>
                       <SelectContent>
-                        {employees.map(employee => (
-                          <SelectItem key={employee.user_id} value={employee.user_id}>
-                            {employee.name} ({employee.employee_role})
-                          </SelectItem>
-                        ))}
+                         {employees.map(employee => (
+                           <SelectItem key={employee.user_id} value={employee.id}>
+                             {employee.name} ({employee.employee_role})
+                           </SelectItem>
+                         ))}
                       </SelectContent>
                     </Select>
                   </div>
