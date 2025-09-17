@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
-import { Search, Users, Power, UserCheck, UserX, Plus } from 'lucide-react';
+import { Search, Users, Power, UserCheck, UserX, Plus, Edit } from 'lucide-react';
 
 interface Employee {
   id: string;
@@ -47,6 +47,8 @@ export default function EmployeesNew() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
@@ -115,6 +117,45 @@ export default function EmployeesNew() {
         variant: "destructive",
         title: "Erro",
         description: error.message || "Não foi possível criar o funcionário.",
+      });
+    }
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateEmployee = async () => {
+    if (!editingEmployee) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: editingEmployee.name,
+          employee_role: editingEmployee.employee_role as any,
+          phone: editingEmployee.phone,
+          department: editingEmployee.department
+        })
+        .eq('user_id', editingEmployee.user_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Funcionário atualizado",
+        description: "Informações do funcionário atualizadas com sucesso!",
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingEmployee(null);
+      loadEmployees();
+    } catch (error: any) {
+      console.error('Error updating employee:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Não foi possível atualizar o funcionário.",
       });
     }
   };
@@ -283,6 +324,96 @@ export default function EmployeesNew() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Employee Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) {
+            setEditingEmployee(null);
+          }
+        }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Funcionário</DialogTitle>
+            </DialogHeader>
+            {editingEmployee && (
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Nome Completo *</Label>
+                  <Input
+                    id="edit-name"
+                    value={editingEmployee.name}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, name: e.target.value })}
+                    placeholder="Digite o nome completo"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">E-mail</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editingEmployee.email}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-employee_role">Cargo *</Label>
+                  <Select value={editingEmployee.employee_role} onValueChange={(value) => setEditingEmployee({ ...editingEmployee, employee_role: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="staff">Funcionário(a) Geral</SelectItem>
+                      <SelectItem value="receptionist">Recepcionista</SelectItem>
+                      <SelectItem value="psychologist">Psicólogo(a)</SelectItem>
+                      <SelectItem value="psychopedagogue">Psicopedagogo(a)</SelectItem>
+                      <SelectItem value="musictherapist">Musicoterapeuta</SelectItem>
+                      <SelectItem value="speech_therapist">Fonoaudiólogo(a)</SelectItem>
+                      <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                      <SelectItem value="physiotherapist">Fisioterapeuta</SelectItem>
+                      <SelectItem value="financeiro">Financeiro</SelectItem>
+                      <SelectItem value="intern">Estagiário(a)</SelectItem>
+                      <SelectItem value="coordinator_madre">Coordenador(a) Madre</SelectItem>
+                      <SelectItem value="coordinator_floresta">Coordenador(a) Floresta</SelectItem>
+                      <SelectItem value="director">Diretoria</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Telefone</Label>
+                  <Input
+                    id="edit-phone"
+                    value={editingEmployee.phone || ''}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-department">Departamento</Label>
+                  <Input
+                    id="edit-department"
+                    value={editingEmployee.department || ''}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, department: e.target.value })}
+                    placeholder="Nome do departamento"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleUpdateEmployee}
+                disabled={!editingEmployee?.name}
+              >
+                Salvar Alterações
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Statistics Cards */}
@@ -376,6 +507,14 @@ export default function EmployeesNew() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditEmployee(employee)}
+                          title="Editar funcionário"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
                         <Button 
                           variant={employee.is_active ? "destructive" : "default"}
                           size="sm"
