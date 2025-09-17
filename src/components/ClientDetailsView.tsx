@@ -29,6 +29,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
+import ServiceHistory from './ServiceHistory';
 
 interface Client {
   id: string;
@@ -99,22 +100,13 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
   const [notes, setNotes] = useState<ClientNote[]>([]);
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
   const [assignedProfessionals, setAssignedProfessionals] = useState<AssignedProfessional[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [newNote, setNewNote] = useState('');
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
-  const [addAppointmentDialogOpen, setAddAppointmentDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [appointmentData, setAppointmentData] = useState({
-    title: '',
-    date: '',
-    time: '',
-    duration: '60',
-    description: ''
-  });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -127,7 +119,6 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
       loadNotes(),
       loadDocuments(),
       loadAssignedProfessionals(),
-      loadAppointments(),
       loadEmployees()
     ]);
   };
@@ -270,14 +261,26 @@ export default function ClientDetailsView({ client, onEdit, onClose }: ClientDet
 
   const handleScheduleAppointment = () => {
     toast({
-      title: "Agendamento",
+      title: "Agendamento", 
       description: "Redirecionando para a agenda...",
     });
-    // Redirect to schedule page
     window.open(`/schedule?client=${client.id}`, '_blank');
   };
 
-  const loadAppointments = async () => {
+  const loadEmployees = async () => {
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('user_id, name, employee_role')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setEmployees(profiles || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    }
+  };
     try {
       const { data: schedules, error } = await supabase
         .from('schedules')
@@ -559,57 +562,6 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
     }
   };
 
-  const handleAddToHistory = () => {
-    setAddAppointmentDialogOpen(true);
-  };
-
-  const handleAddAppointment = async () => {
-    if (!appointmentData.title || !appointmentData.date || !appointmentData.time) return;
-
-    setLoading(true);
-    try {
-      const startTime = new Date(`${appointmentData.date}T${appointmentData.time}`);
-      const endTime = new Date(startTime.getTime() + parseInt(appointmentData.duration) * 60000);
-
-      const { error } = await supabase
-        .from('schedules')
-        .insert({
-          client_id: client.id,
-          title: appointmentData.title,
-          description: appointmentData.description,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          status: 'completed',
-          created_by: user?.id
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Atendimento adicionado ao histórico!",
-      });
-
-      setAppointmentData({
-        title: '',
-        date: '',
-        time: '',
-        duration: '60',
-        description: ''
-      });
-      setAddAppointmentDialogOpen(false);
-      loadAppointments();
-    } catch (error) {
-      console.error('Error adding appointment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível adicionar o atendimento.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getUnitLabel = (unit: string) => {
     switch (unit) {
@@ -902,117 +854,8 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
         </CardContent>
       </Card>
 
-      {/* Histórico de Atendimentos */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              Histórico de Atendimentos
-            </CardTitle>
-            <Dialog open={addAppointmentDialogOpen} onOpenChange={setAddAppointmentDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar ao Histórico
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Adicionar Atendimento ao Histórico</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="appointmentTitle">Título do Atendimento</Label>
-                    <Input
-                      id="appointmentTitle"
-                      value={appointmentData.title}
-                      onChange={(e) => setAppointmentData({...appointmentData, title: e.target.value})}
-                      placeholder="Ex: Sessão de Neuropsicologia"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="appointmentDate">Data</Label>
-                      <Input
-                        id="appointmentDate"
-                        type="date"
-                        value={appointmentData.date}
-                        onChange={(e) => setAppointmentData({...appointmentData, date: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="appointmentTime">Horário</Label>
-                      <Input
-                        id="appointmentTime"
-                        type="time"
-                        value={appointmentData.time}
-                        onChange={(e) => setAppointmentData({...appointmentData, time: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Duração (minutos)</Label>
-                    <Select value={appointmentData.duration} onValueChange={(value) => setAppointmentData({...appointmentData, duration: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 minutos</SelectItem>
-                        <SelectItem value="60">60 minutos</SelectItem>
-                        <SelectItem value="90">90 minutos</SelectItem>
-                        <SelectItem value="120">120 minutos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="appointmentDescription">Observações</Label>
-                    <Textarea
-                      id="appointmentDescription"
-                      value={appointmentData.description}
-                      onChange={(e) => setAppointmentData({...appointmentData, description: e.target.value})}
-                      placeholder="Descreva o que foi realizado na sessão..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setAddAppointmentDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleAddAppointment} disabled={loading || !appointmentData.title || !appointmentData.date || !appointmentData.time}>
-                    {loading ? 'Salvando...' : 'Salvar'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {appointments.length > 0 ? (
-            <div className="space-y-3">
-              {appointments.map((appointment) => (
-                <div key={appointment.id} className="flex items-center justify-between p-3 border rounded">
-                  <div>
-                    <div className="font-medium">{appointment.title}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatDateTime(appointment.start_time)} - {new Date(appointment.end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    {appointment.description && (
-                      <div className="text-sm mt-1">{appointment.description}</div>
-                    )}
-                  </div>
-                  <Badge variant={appointment.status === 'completed' ? 'default' : 'secondary'}>
-                    {appointment.status === 'completed' ? 'Realizado' : appointment.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Nenhum atendimento registrado.</p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Histórico de Serviços */}
+      <ServiceHistory clientId={client.id} />
 
       {/* Contratos */}
       <ContractGenerator client={client} />
