@@ -216,13 +216,6 @@ export type Database = {
             foreignKeyName: "client_assignments_assigned_by_fkey"
             columns: ["assigned_by"]
             isOneToOne: false
-            referencedRelation: "employee_details"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "client_assignments_assigned_by_fkey"
-            columns: ["assigned_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
@@ -232,13 +225,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "client_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employee_details"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "client_assignments_employee_id_fkey"
@@ -295,13 +281,6 @@ export type Database = {
             foreignKeyName: "client_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
-            referencedRelation: "employee_details"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "client_documents_uploaded_by_fkey"
-            columns: ["uploaded_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
@@ -345,13 +324,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "client_notes_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "employee_details"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "client_notes_created_by_fkey"
@@ -531,13 +503,6 @@ export type Database = {
             foreignKeyName: "documents_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employee_details"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "documents_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -635,13 +600,6 @@ export type Database = {
           work_schedule?: Json | null
         }
         Relationships: [
-          {
-            foreignKeyName: "employees_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "employee_details"
-            referencedColumns: ["profile_id"]
-          },
           {
             foreignKeyName: "employees_profile_id_fkey"
             columns: ["profile_id"]
@@ -781,13 +739,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "financial_records_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employee_details"
-            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "financial_records_employee_id_fkey"
@@ -1077,13 +1028,6 @@ export type Database = {
             foreignKeyName: "notes_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
-            referencedRelation: "employee_details"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "notes_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1334,13 +1278,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedules_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employee_details"
-            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "schedules_employee_id_fkey"
@@ -1657,34 +1594,7 @@ export type Database = {
       }
     }
     Views: {
-      employee_details: {
-        Row: {
-          address: string | null
-          birth_date: string | null
-          created_at: string | null
-          department: string | null
-          document_cpf: string | null
-          document_rg: string | null
-          emergency_contact: string | null
-          emergency_phone: string | null
-          employee_code: string | null
-          employee_notes: string | null
-          employee_role: Database["public"]["Enums"]["employee_role"] | null
-          hire_date: string | null
-          is_active: boolean | null
-          name: string | null
-          permissions: Json | null
-          phone: string | null
-          professional_license: string | null
-          profile_id: string | null
-          salary: number | null
-          specialization: string | null
-          updated_at: string | null
-          user_id: string | null
-          work_schedule: Json | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       create_test_employee: {
@@ -1698,9 +1608,65 @@ export type Database = {
         }
         Returns: string
       }
+      get_accessible_employee_details: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          address: string
+          birth_date: string
+          created_at: string
+          department: string
+          document_cpf: string
+          document_rg: string
+          emergency_contact: string
+          emergency_phone: string
+          employee_code: string
+          employee_notes: string
+          employee_role: Database["public"]["Enums"]["employee_role"]
+          hire_date: string
+          is_active: boolean
+          name: string
+          permissions: Json
+          phone: string
+          professional_license: string
+          profile_id: string
+          salary: number
+          specialization: string
+          updated_at: string
+          user_id: string
+          work_schedule: Json
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["employee_role"]
+      }
+      get_secure_employee_details: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          address: string
+          birth_date: string
+          created_at: string
+          department: string
+          document_cpf: string
+          document_rg: string
+          emergency_contact: string
+          emergency_phone: string
+          employee_code: string
+          employee_notes: string
+          employee_role: Database["public"]["Enums"]["employee_role"]
+          hire_date: string
+          is_active: boolean
+          name: string
+          permissions: Json
+          phone: string
+          professional_license: string
+          profile_id: string
+          salary: number
+          specialization: string
+          updated_at: string
+          user_id: string
+          work_schedule: Json
+        }[]
       }
       get_user_permissions: {
         Args: Record<PropertyKey, never>
