@@ -23,14 +23,15 @@ interface Client {
 }
 
 interface ContractData {
+  contractType: string;
   clientName: string;
   clientCpf: string;
   responsibleName: string;
   responsibleCpf: string;
-  address: string;
   paymentMethod: string;
   value: string;
   contractDate: string;
+  address: string;
 }
 
 interface ContractGeneratorProps {
@@ -43,14 +44,15 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const contractRef = useRef<HTMLDivElement>(null);
   const [contractData, setContractData] = useState<ContractData>({
+    contractType: 'Avaliação Neuropsicológica',
     clientName: client.name || '',
     clientCpf: client.cpf || '',
     responsibleName: client.responsible_name || client.name || '',
     responsibleCpf: client.cpf || '',
-    address: client.address || '',
-    paymentMethod: 'pix',
+    paymentMethod: 'PIX',
     value: '1.600,00',
-    contractDate: new Date().toISOString().split('T')[0]
+    contractDate: new Date().toISOString().split('T')[0],
+    address: client.address || ''
   });
 
   const generateContractHTML = () => {
@@ -409,87 +411,106 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
             <DialogHeader>
               <DialogTitle>Gerar Contrato PDF de Avaliação Neuropsicológica</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="clientName">Nome do Cliente</Label>
-                <Input
-                  id="clientName"
-                  value={contractData.clientName}
-                  onChange={(e) => setContractData({ ...contractData, clientName: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="clientCpf">CPF do Cliente</Label>
-                <Input
-                  id="clientCpf"
-                  value={contractData.clientCpf}
-                  onChange={(e) => setContractData({ ...contractData, clientCpf: e.target.value })}
-                  placeholder="000.000.000-00"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="responsibleName">Responsável Financeiro</Label>
-                <Input
-                  id="responsibleName"
-                  value={contractData.responsibleName}
-                  onChange={(e) => setContractData({ ...contractData, responsibleName: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="responsibleCpf">CPF do Responsável</Label>
-                <Input
-                  id="responsibleCpf"
-                  value={contractData.responsibleCpf}
-                  onChange={(e) => setContractData({ ...contractData, responsibleCpf: e.target.value })}
-                  placeholder="000.000.000-00"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="address">Endereço Completo</Label>
-                <Textarea
-                  id="address"
-                  value={contractData.address}
-                  onChange={(e) => setContractData({ ...contractData, address: e.target.value })}
-                  placeholder="Rua, número, bairro, cidade, estado, CEP"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
+                <Label htmlFor="contractType">Tipo de Contrato</Label>
                 <Select 
-                  value={contractData.paymentMethod} 
-                  onValueChange={(value) => setContractData({ ...contractData, paymentMethod: value })}
+                  value={contractData.contractType} 
+                  onValueChange={(value) => setContractData({ ...contractData, contractType: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PIX">PIX</SelectItem>
-                    <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                    <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                    <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
-                    <SelectItem value="Transferência Bancária">Transferência Bancária</SelectItem>
-                    <SelectItem value="Cheque">Cheque</SelectItem>
-                    <SelectItem value="Boleto Bancário">Boleto Bancário</SelectItem>
+                    <SelectItem value="Avaliação Neuropsicológica">Avaliação Neuropsicológica</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="value">Valor (R$)</Label>
-                <Input
-                  id="value"
-                  value={contractData.value}
-                  onChange={(e) => setContractData({ ...contractData, value: e.target.value })}
-                  placeholder="500,00"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="contractDate">Data do Contrato</Label>
-                <Input
-                  id="contractDate"
-                  type="date"
-                  value={contractData.contractDate}
-                  onChange={(e) => setContractData({ ...contractData, contractDate: e.target.value })}
-                />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clientName">Nome do Cliente</Label>
+                  <Input
+                    id="clientName"
+                    value={contractData.clientName}
+                    onChange={(e) => setContractData({ ...contractData, clientName: e.target.value })}
+                    placeholder="Nome completo do cliente"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="clientCpf">CPF do Cliente</Label>
+                  <Input
+                    id="clientCpf"
+                    value={contractData.clientCpf}
+                    onChange={(e) => setContractData({ ...contractData, clientCpf: e.target.value })}
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="responsibleName">Responsável Financeiro</Label>
+                  <Input
+                    id="responsibleName"
+                    value={contractData.responsibleName}
+                    onChange={(e) => setContractData({ ...contractData, responsibleName: e.target.value })}
+                    placeholder="Nome do responsável"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="responsibleCpf">CPF do Responsável</Label>
+                  <Input
+                    id="responsibleCpf"
+                    value={contractData.responsibleCpf}
+                    onChange={(e) => setContractData({ ...contractData, responsibleCpf: e.target.value })}
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
+                  <Select 
+                    value={contractData.paymentMethod} 
+                    onValueChange={(value) => setContractData({ ...contractData, paymentMethod: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PIX">PIX</SelectItem>
+                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                      <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                      <SelectItem value="Transferência Bancária">Transferência Bancária</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
+                      <SelectItem value="Boleto Bancário">Boleto Bancário</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="value">Valor (R$)</Label>
+                  <Input
+                    id="value"
+                    value={contractData.value}
+                    onChange={(e) => setContractData({ ...contractData, value: e.target.value })}
+                    placeholder="1.600,00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contractDate">Data do Contrato</Label>
+                  <Input
+                    id="contractDate"
+                    type="date"
+                    value={contractData.contractDate}
+                    onChange={(e) => setContractData({ ...contractData, contractDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Endereço Completo</Label>
+                  <Input
+                    id="address"
+                    value={contractData.address}
+                    onChange={(e) => setContractData({ ...contractData, address: e.target.value })}
+                    placeholder="Rua, número, bairro, cidade, estado, CEP"
+                  />
+                </div>
               </div>
             </div>
             <div className="flex justify-end gap-2">
