@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ interface Schedule {
 
 export default function Schedule() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -71,7 +73,30 @@ export default function Schedule() {
     loadEmployees();
     loadClients();
     loadSchedules();
-  }, [selectedDate, filterRole, filterEmployee, filterUnit]);
+    
+    // Check for URL parameters to pre-fill appointment form
+    const clientId = searchParams.get('client');
+    const clientName = searchParams.get('name');
+    
+    if (clientId) {
+      // Pre-fill client and open dialog
+      setNewAppointment(prev => ({
+        ...prev,
+        client_id: clientId
+      }));
+      
+      // Show toast with client name
+      if (clientName) {
+        toast({
+          title: "Cliente Selecionado",
+          description: `Agendamento para: ${decodeURIComponent(clientName)}`,
+        });
+      }
+      
+      // Auto-open the dialog
+      setIsDialogOpen(true);
+    }
+  }, [selectedDate, filterRole, filterEmployee, filterUnit, searchParams]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -209,9 +234,23 @@ export default function Schedule() {
 
   const handleCreateAppointment = async () => {
     try {
-      const appointmentData = editingSchedule 
-        ? { ...newAppointment, id: editingSchedule.id }
-        : newAppointment;
+      // Convert datetime-local format to ISO string maintaining local time
+      const convertToISOString = (dateTimeLocal: string) => {
+        if (!dateTimeLocal) return '';
+        // Create date object from local datetime input and convert to ISO
+        const date = new Date(dateTimeLocal);
+        return date.toISOString();
+      };
+
+      const appointmentData = {
+        client_id: newAppointment.client_id,
+        employee_id: newAppointment.employee_id,
+        title: newAppointment.title,
+        start_time: convertToISOString(newAppointment.start_time),
+        end_time: convertToISOString(newAppointment.end_time),
+        notes: newAppointment.notes,
+        created_by: user?.id
+      };
 
       if (editingSchedule) {
         const { error } = await supabase
@@ -235,10 +274,54 @@ export default function Schedule() {
 
         if (error) throw error;
 
-        toast({
-          title: "Sucesso",
-          description: "Agendamento criado com sucesso!",
-        });
+        // Auto-assign client to professional if not already assigned
+        if (newAppointment.client_id && newAppointment.employee_id) {
+          // Check if assignment already exists
+          const { data: existingAssignment } = await supabase
+            .from('client_assignments')
+            .select('id')
+            .eq('client_id', newAppointment.client_id)
+            .eq('employee_id', newAppointment.employee_id)
+            .eq('is_active', true)
+            .single();
+
+          // If no assignment exists, create one
+          if (!existingAssignment) {
+            const { error: assignmentError } = await supabase
+              .from('client_assignments')
+              .insert([{
+                client_id: newAppointment.client_id,
+                employee_id: newAppointment.employee_id,
+                assigned_by: user?.id,
+                is_active: true
+              }]);
+
+            if (assignmentError) {
+              console.error('Error creating client assignment:', assignmentError);
+              // Don't fail the entire operation, just log the error
+              toast({
+                title: "Agendamento Criado",
+                description: "Agendamento criado com sucesso! Cliente vinculado automaticamente ao profissional.",
+                variant: "default"
+              });
+            } else {
+              toast({
+                title: "Sucesso",
+                description: "Agendamento criado e cliente vinculado ao profissional!",
+              });
+            }
+          } else {
+            toast({
+              title: "Sucesso",
+              description: "Agendamento criado com sucesso!",
+            });
+          }
+        } else {
+          toast({
+            title: "Sucesso",
+            description: "Agendamento criado com sucesso!",
+          });
+        }
       }
       
       setIsDialogOpen(false);
@@ -251,7 +334,13 @@ export default function Schedule() {
         end_time: '',
         notes: ''
       });
-      loadSchedules();
+      
+      // Reload all data to reflect changes immediately
+      await Promise.all([
+        loadSchedules(),
+        loadClients(),
+        loadEmployees()
+      ]);
     } catch (error) {
       console.error('Error saving appointment:', error);
       toast({
@@ -379,12 +468,22 @@ export default function Schedule() {
 
   const handleEdit = (schedule: Schedule) => {
     setEditingSchedule(schedule);
+    
+    // Convert ISO strings to local datetime format for datetime-local inputs
+    const formatDateTimeLocal = (isoString: string) => {
+      const date = new Date(isoString);
+      // Get local timezone offset and adjust
+      const offset = date.getTimezoneOffset();
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+      return localDate.toISOString().slice(0, 16);
+    };
+    
     setNewAppointment({
       client_id: schedule.client_id,
       employee_id: schedule.employee_id,
       title: schedule.title,
-      start_time: schedule.start_time,
-      end_time: schedule.end_time,
+      start_time: formatDateTimeLocal(schedule.start_time),
+      end_time: formatDateTimeLocal(schedule.end_time),
       notes: schedule.notes || ''
     });
     setIsDialogOpen(true);
@@ -681,7 +780,7 @@ export default function Schedule() {
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium text-sm md:text-base">
-                              {new Date(schedule.start_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - {new Date(schedule.end_time).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                              {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
                             </span>
                             <Badge variant="outline" className="text-xs">{schedule.title}</Badge>
                           </div>
@@ -700,8 +799,10 @@ export default function Schedule() {
                             {getStatusLabel(schedule.status)}
                           </Badge>
                           
-                          {/* Botões de ação - apenas para diretores */}
-                          {userProfile?.employee_role === 'director' && (
+                          {/* Botões de ação - permitir edição em qualquer status */}
+                          {(userProfile?.employee_role === 'director' || 
+                            userProfile?.employee_role === 'coordinator_madre' || 
+                            userProfile?.employee_role === 'coordinator_floresta') && (
                             <div className="flex gap-1">
                               {(schedule.status === 'scheduled' || schedule.status === 'confirmed') && (
                                 <Button
@@ -715,11 +816,12 @@ export default function Schedule() {
                                 </Button>
                               )}
                               
+                              {/* Permitir edição em qualquer status */}
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleEdit(schedule)}
-                                title="Editar"
+                                title="Editar Agendamento"
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
