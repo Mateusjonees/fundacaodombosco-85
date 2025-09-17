@@ -31,7 +31,8 @@ import {
   UserX,
   RotateCcw,
   AlertTriangle,
-  UserPlus
+  UserPlus,
+  Minus
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
@@ -106,6 +107,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>(['']); // Array para múltiplas seleções
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -406,35 +408,58 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   };
 
   const handleAssignProfessional = async () => {
-    if (!selectedEmployee) return;
+    // Filtrar apenas seleções válidas (não vazias)
+    const validEmployees = selectedEmployees.filter(emp => emp && emp.trim() !== '');
+    
+    if (validEmployees.length === 0) return;
 
     try {
+      // Criar múltiplas vinculações
+      const assignments = validEmployees.map(employeeId => ({
+        client_id: client.id,
+        employee_id: employeeId,
+        assigned_by: user?.id
+      }));
+
       const { error } = await supabase
         .from('client_assignments')
-        .insert({
-          client_id: client.id,
-          employee_id: selectedEmployee,
-          assigned_by: user?.id
-        });
+        .insert(assignments);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Profissional vinculado com sucesso!",
+        description: `${validEmployees.length} profissional(is) vinculado(s) com sucesso!`,
       });
       
       setIsAssignDialogOpen(false);
-      setSelectedEmployee('');
+      setSelectedEmployees(['']); // Reset para um campo vazio
       loadCurrentAssignments();
     } catch (error) {
-      console.error('Error assigning professional:', error);
+      console.error('Error assigning professionals:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível vincular o profissional.",
+        description: "Não foi possível vincular os profissionais.",
       });
     }
+  };
+
+  const addEmployeeField = () => {
+    setSelectedEmployees([...selectedEmployees, '']);
+  };
+
+  const removeEmployeeField = (index: number) => {
+    if (selectedEmployees.length > 1) {
+      const newEmployees = selectedEmployees.filter((_, i) => i !== index);
+      setSelectedEmployees(newEmployees);
+    }
+  };
+
+  const updateEmployeeSelection = (index: number, value: string) => {
+    const newEmployees = [...selectedEmployees];
+    newEmployees[index] = value;
+    setSelectedEmployees(newEmployees);
   };
 
   const loadAvailableEmployees = async () => {
@@ -1154,11 +1179,14 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <Edit className="h-4 w-4 mr-2" />
               Editar Dados
             </Button>
-            <Button variant="outline" onClick={() => {
-              setIsAssignDialogOpen(true);
-              loadAvailableEmployees();
-              loadCurrentAssignments();
-            }}>
+            <Button 
+              onClick={() => {
+                setIsAssignDialogOpen(true);
+                setSelectedEmployees(['']); // Reset
+                loadAvailableEmployees();
+                loadCurrentAssignments();
+              }}
+            >
               <UserPlus className="h-4 w-4 mr-2" />
               Vincular Profissional
             </Button>
@@ -1210,32 +1238,78 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               </div>
             )}
 
-            {/* Adicionar Novo Profissional */}
-            <div>
-              <Label htmlFor="employee">Selecionar Profissional:</Label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha um profissional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableEmployees
-                    .filter(emp => !currentAssignments.some((a: any) => a.employee_id === emp.user_id))
-                    .map((employee: any) => (
-                    <SelectItem key={employee.user_id} value={employee.user_id}>
-                      {employee.name} - {employee.employee_role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Adicionar Novos Profissionais */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Selecionar Profissionais:</Label>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  size="sm" 
+                  onClick={addEmployeeField}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
+              
+              {selectedEmployees.map((selectedEmployee, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Select 
+                    value={selectedEmployee} 
+                    onValueChange={(value) => updateEmployeeSelection(index, value)}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Escolha um profissional" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-md z-50">
+                      {availableEmployees
+                        .filter(emp => {
+                          // Não mostrar se já está vinculado
+                          const isAlreadyAssigned = currentAssignments.some((a: any) => a.employee_id === emp.user_id);
+                          // Não mostrar se já foi selecionado em outro campo
+                          const isAlreadySelected = selectedEmployees.some((selEmp, selIndex) => 
+                            selIndex !== index && selEmp === emp.user_id
+                          );
+                          return !isAlreadyAssigned && !isAlreadySelected;
+                        })
+                        .map((employee: any) => (
+                        <SelectItem key={employee.user_id} value={employee.user_id}>
+                          {employee.name} - {employee.employee_role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {selectedEmployees.length > 1 && (
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => removeEmployeeField(index)}
+                      className="px-2"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsAssignDialogOpen(false);
+                setSelectedEmployees(['']); // Reset
+              }}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleAssignProfessional} disabled={!selectedEmployee}>
-              Vincular
+            <Button onClick={handleAssignProfessional} disabled={!selectedEmployees.some(emp => emp && emp.trim() !== '')}>
+              Vincular Selecionados
             </Button>
           </DialogFooter>
         </DialogContent>
