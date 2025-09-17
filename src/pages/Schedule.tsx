@@ -268,6 +268,23 @@ export default function Schedule() {
 
       if (updateError) throw updateError;
 
+      // Update client data with session information
+      const { error: clientUpdateError } = await supabase
+        .from('clients')
+        .update({
+          last_session_notes: sessionData.progressNotes,
+          last_session_date: new Date().toISOString().split('T')[0],
+          last_session_type: sessionData.sessionType,
+          treatment_progress: sessionData.treatmentPlan,
+          current_symptoms: sessionData.symptoms,
+          current_medications: sessionData.medications ? [{ medication: sessionData.medications }] : [],
+          vital_signs_history: sessionData.vitalSigns,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', scheduleData?.client_id);
+
+      if (clientUpdateError) console.error('Client update error:', clientUpdateError);
+
       // Create medical record with complete session data
       const { error: medicalRecordError } = await supabase
         .from('medical_records')
@@ -287,6 +304,40 @@ export default function Schedule() {
         });
 
       if (medicalRecordError) console.error('Medical record error:', medicalRecordError);
+
+      // Create employee report
+      const { error: employeeReportError } = await supabase
+        .from('employee_reports')
+        .insert({
+          employee_id: user?.id,
+          client_id: scheduleData?.client_id,
+          schedule_id: scheduleId,
+          session_date: new Date().toISOString().split('T')[0],
+          session_type: sessionData.sessionType,
+          session_duration: sessionData.actualDuration,
+          effort_rating: sessionData.effortRating,
+          quality_rating: sessionData.qualityRating,
+          patient_cooperation: sessionData.patientCooperationRating,
+          goal_achievement: sessionData.goalAchievementRating,
+          session_objectives: sessionData.sessionObjectives,
+          techniques_used: sessionData.techniquesUsed,
+          patient_response: sessionData.patientResponse,
+          professional_notes: sessionData.professionalNotes,
+          next_session_plan: sessionData.nextSessionPlan,
+          materials_used: materials.map(m => ({
+            stock_item_id: m.stock_item_id,
+            name: m.name,
+            quantity: m.quantity,
+            unit_cost: m.unit_cost,
+            observation: m.observation
+          })),
+          materials_cost: materials.reduce((sum, m) => sum + ((m.unit_cost || 0) * m.quantity), 0),
+          session_location: sessionData.sessionLocation,
+          supervision_required: sessionData.supervisionRequired,
+          follow_up_needed: sessionData.followUpNeeded
+        });
+
+      if (employeeReportError) console.error('Employee report error:', employeeReportError);
 
       // Create financial record
       if (sessionData.sessionValue > 0) {

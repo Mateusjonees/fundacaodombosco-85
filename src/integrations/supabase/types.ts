@@ -342,12 +342,17 @@ export type Database = {
           cpf: string | null
           created_at: string
           created_by: string | null
+          current_medications: Json | null
+          current_symptoms: string | null
           diagnosis: string | null
           email: string | null
           emergency_contact: string | null
           emergency_phone: string | null
           id: string
           is_active: boolean | null
+          last_session_date: string | null
+          last_session_notes: string | null
+          last_session_type: string | null
           medical_history: string | null
           name: string
           neuropsych_complaint: string | null
@@ -357,8 +362,10 @@ export type Database = {
           responsible_phone: string | null
           rg: string | null
           treatment_expectations: string | null
+          treatment_progress: string | null
           unit: string | null
           updated_at: string
+          vital_signs_history: Json | null
         }
         Insert: {
           address?: string | null
@@ -367,12 +374,17 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           created_by?: string | null
+          current_medications?: Json | null
+          current_symptoms?: string | null
           diagnosis?: string | null
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
           id?: string
           is_active?: boolean | null
+          last_session_date?: string | null
+          last_session_notes?: string | null
+          last_session_type?: string | null
           medical_history?: string | null
           name: string
           neuropsych_complaint?: string | null
@@ -382,8 +394,10 @@ export type Database = {
           responsible_phone?: string | null
           rg?: string | null
           treatment_expectations?: string | null
+          treatment_progress?: string | null
           unit?: string | null
           updated_at?: string
+          vital_signs_history?: Json | null
         }
         Update: {
           address?: string | null
@@ -392,12 +406,17 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           created_by?: string | null
+          current_medications?: Json | null
+          current_symptoms?: string | null
           diagnosis?: string | null
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
           id?: string
           is_active?: boolean | null
+          last_session_date?: string | null
+          last_session_notes?: string | null
+          last_session_type?: string | null
           medical_history?: string | null
           name?: string
           neuropsych_complaint?: string | null
@@ -407,8 +426,10 @@ export type Database = {
           responsible_phone?: string | null
           rg?: string | null
           treatment_expectations?: string | null
+          treatment_progress?: string | null
           unit?: string | null
           updated_at?: string
+          vital_signs_history?: Json | null
         }
         Relationships: []
       }
@@ -537,6 +558,106 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_reports: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          effort_rating: number | null
+          employee_id: string
+          follow_up_needed: boolean | null
+          goal_achievement: number | null
+          id: string
+          materials_cost: number | null
+          materials_used: Json | null
+          next_session_plan: string | null
+          patient_cooperation: number | null
+          patient_response: string | null
+          professional_notes: string | null
+          quality_rating: number | null
+          schedule_id: string | null
+          session_date: string
+          session_duration: number | null
+          session_location: string | null
+          session_objectives: string | null
+          session_type: string
+          supervision_required: boolean | null
+          techniques_used: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          effort_rating?: number | null
+          employee_id: string
+          follow_up_needed?: boolean | null
+          goal_achievement?: number | null
+          id?: string
+          materials_cost?: number | null
+          materials_used?: Json | null
+          next_session_plan?: string | null
+          patient_cooperation?: number | null
+          patient_response?: string | null
+          professional_notes?: string | null
+          quality_rating?: number | null
+          schedule_id?: string | null
+          session_date?: string
+          session_duration?: number | null
+          session_location?: string | null
+          session_objectives?: string | null
+          session_type: string
+          supervision_required?: boolean | null
+          techniques_used?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          effort_rating?: number | null
+          employee_id?: string
+          follow_up_needed?: boolean | null
+          goal_achievement?: number | null
+          id?: string
+          materials_cost?: number | null
+          materials_used?: Json | null
+          next_session_plan?: string | null
+          patient_cooperation?: number | null
+          patient_response?: string | null
+          professional_notes?: string | null
+          quality_rating?: number | null
+          schedule_id?: string | null
+          session_date?: string
+          session_duration?: number | null
+          session_location?: string | null
+          session_objectives?: string | null
+          session_type?: string
+          supervision_required?: boolean | null
+          techniques_used?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_reports_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_reports_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
             referencedColumns: ["id"]
           },
         ]
