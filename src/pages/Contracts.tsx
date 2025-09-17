@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Download, Edit, Plus, Users, Search, Eye, Calendar } from 'lucide-react';
+import { FileText, Download, Edit, Plus, Users, Search, Eye, Calendar, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Client {
   id: string;
@@ -41,6 +42,7 @@ interface ContractData {
 export default function Contracts() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -232,19 +234,28 @@ Fundação Dom Bosco                     ${contractData.responsibleName}
             Crie contratos personalizados para clientes
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) {
-            resetForm();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Contrato
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => navigate('/client-form')}
+          >
+            <UserPlus className="h-4 w-4" />
+            Novo Cliente
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) {
+              resetForm();
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Contrato
+             </Button>
+             </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Gerar Novo Contrato</DialogTitle>
             </DialogHeader>
@@ -432,8 +443,9 @@ Fundação Dom Bosco                     ${contractData.responsibleName}
                 Baixar Contrato
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+           </DialogContent>
+         </Dialog>
+        </div>
       </div>
 
       {/* Lista de Clientes para Referência */}
