@@ -2204,6 +2204,19 @@ export type Database = {
         }
         Returns: string
       }
+      debug_my_permissions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          can_access_reports: boolean
+          can_configure_reports: boolean
+          is_active: boolean
+          is_coordinator: boolean
+          is_director: boolean
+          is_manager: boolean
+          my_role: Database["public"]["Enums"]["employee_role"]
+          my_user_id: string
+        }[]
+      }
       debug_user_permissions: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2290,7 +2303,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["employee_role"]
       }
+      is_coordinator: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_director: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_god_mode_director: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_manager: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

@@ -60,17 +60,21 @@ export const useRolePermissions = () => {
       }
 
       try {
+        // Usar .maybeSingle() ao invés de .single() para evitar erros
         const { data, error } = await supabase
           .from('profiles')
-          .select('employee_role')
+          .select('employee_role, is_active')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Erro ao buscar role do usuário:', error);
           setUserRole(null);
-        } else {
+        } else if (data && data.is_active) {
           setUserRole(data.employee_role);
+        } else {
+          console.log('Usuário não tem perfil ativo:', data);
+          setUserRole(null);
         }
       } catch (error) {
         console.error('Erro inesperado ao buscar role:', error);
@@ -119,9 +123,19 @@ export const useRolePermissions = () => {
     return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
   };
 
-  // Atualizar as permissões de relatório
+  // Atualizar as permissões de relatório - SUPER PERMISSIVO PARA DIRETORES E COORDENADORES
   const canViewReports = (): boolean => {
-    return isGodMode() || hasAnyRole([
+    // Se ainda está carregando, permita acesso
+    if (loading) return true;
+    
+    // Se é diretor, sempre pode ver relatórios
+    if (isGodMode()) return true;
+    
+    // Se é coordenador, sempre pode ver relatórios
+    if (hasAnyRole(['coordinator_madre', 'coordinator_floresta'])) return true;
+    
+    // Para outros roles, verificar a lista
+    return hasAnyRole([
       'director',
       'coordinator_madre', 
       'coordinator_floresta',
@@ -131,7 +145,9 @@ export const useRolePermissions = () => {
       'speech_therapist',
       'nutritionist',
       'physiotherapist',
-      'musictherapist'
+      'musictherapist',
+      'staff',
+      'receptionist'
     ]);
   };
 

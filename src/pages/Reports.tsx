@@ -55,24 +55,54 @@ export default function Reports() {
   const [sessionType, setSessionType] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { canViewReports, isDirector } = useRolePermissions();
+  const { canViewReports, isDirector, userRole, loading: roleLoading } = useRolePermissions();
   const { toast } = useToast();
 
+  // Debug: Log user info
   useEffect(() => {
+    console.log('Reports Debug:', {
+      user: user?.id,
+      userRole,
+      canViewReports: canViewReports(),
+      isDirector: isDirector(),
+      roleLoading
+    });
+  }, [user, userRole, roleLoading]);
+
+  useEffect(() => {
+    // Se ainda está carregando roles, aguarde
+    if (roleLoading) {
+      console.log('Still loading user role...');
+      return;
+    }
+
+    // Para diretores e coordenadores, sempre permitir acesso
+    if (userRole === 'director' || userRole === 'coordinator_madre' || userRole === 'coordinator_floresta') {
+      console.log('Director/Coordinator detected, allowing access');
+      loadEmployees();
+      loadClients();
+      loadAttendanceReports();
+      loadEmployeeReports();
+      return;
+    }
+
+    // Verificação de permissão para outros roles
     if (!canViewReports()) {
+      console.log('No permission to view reports');
       toast({
         variant: "destructive",
         title: "Acesso Negado",
-        description: "Você não tem permissão para acessar os relatórios."
+        description: `Você não tem permissão para acessar os relatórios. Role atual: ${userRole || 'não definido'}`
       });
       return;
     }
     
+    console.log('Loading reports data...');
     loadEmployees();
     loadClients();
     loadAttendanceReports();
     loadEmployeeReports();
-  }, [selectedEmployee, selectedClient, dateFrom, dateTo, selectedMonth, sessionType]);
+  }, [selectedEmployee, selectedClient, dateFrom, dateTo, selectedMonth, sessionType, roleLoading, userRole]);
 
   const loadClients = async () => {
     try {
@@ -256,15 +286,24 @@ export default function Reports() {
     );
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return <div className="p-6">Carregando relatórios...</div>;
   }
 
-  if (!canViewReports()) {
+  // Para diretores e coordenadores, sempre mostrar a página
+  const hasManagerAccess = userRole === 'director' || userRole === 'coordinator_madre' || userRole === 'coordinator_floresta';
+
+  if (!hasManagerAccess && !canViewReports()) {
     return (
       <div className="p-6 text-center">
         <h2 className="text-xl font-semibold text-red-600 mb-2">Acesso Restrito</h2>
-        <p className="text-muted-foreground">Você não tem permissão para acessar os relatórios.</p>
+        <p className="text-muted-foreground">
+          Você não tem permissão para acessar os relatórios.
+          <br />
+          Role atual: {userRole || 'não definido'}
+          <br />
+          User ID: {user?.id || 'não logado'}
+        </p>
       </div>
     );
   }
