@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter } from 'lucide-react';
+import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power } from 'lucide-react';
 import ClientDetailsView from '@/components/ClientDetailsView';
 
 interface Client {
@@ -240,6 +240,31 @@ export default function Clients() {
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível atualizar o cliente.",
+      });
+    }
+  };
+
+  const handleToggleClientStatus = async (clientId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ is_active: !currentStatus })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Cliente ${!currentStatus ? 'ativado' : 'desativado'} com sucesso!`,
+      });
+      
+      loadClients();
+    } catch (error) {
+      console.error('Error toggling client status:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível alterar o status do cliente.",
       });
     }
   };
@@ -701,24 +726,33 @@ export default function Clients() {
                     <TableCell>
                       {new Date(client.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setSelectedClient(client)}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openEditDialog(client)}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                     <TableCell>
+                       <div className="flex gap-2">
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => setSelectedClient(client)}
+                         >
+                           <Eye className="h-3 w-3" />
+                         </Button>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => openEditDialog(client)}
+                         >
+                           <Edit className="h-3 w-3" />
+                         </Button>
+                         {permissions.canManageClients && (
+                           <Button 
+                             variant={client.is_active ? "destructive" : "default"}
+                             size="sm"
+                             onClick={() => handleToggleClientStatus(client.id, client.is_active)}
+                           >
+                             <Power className="h-3 w-3" />
+                           </Button>
+                         )}
+                       </div>
+                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

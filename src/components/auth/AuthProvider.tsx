@@ -39,18 +39,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Log authentication events
+        // Check if user is active when logging in
         if (event === 'SIGNED_IN' && session?.user) {
-          setTimeout(() => {
-            AuditService.logAction({
-              entityType: 'auth',
-              action: 'login_success',
-              metadata: { 
-                user_email: session.user.email,
-                login_method: 'email_password'
+          setTimeout(async () => {
+            try {
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('is_active, employee_role')
+                .eq('user_id', session.user.id)
+                .single();
+              
+              if (error) {
+                console.error('AuthProvider: Error checking user status', error);
+                return;
               }
-            });
-            AuditService.updateUserActivity();
+              
+              // If user is inactive, sign them out immediately
+              if (profile && !profile.is_active) {
+                await supabase.auth.signOut();
+                // Don't log audit event here as signOut will trigger its own event
+                return;
+              }
+              
+              // Continue with normal login process
+              AuditService.logAction({
+                entityType: 'auth',
+                action: 'login_success',
+                metadata: { 
+                  user_email: session.user.email,
+                  login_method: 'email_password'
+                }
+              });
+              AuditService.updateUserActivity();
+            } catch (error) {
+              console.error('AuthProvider: Error in login validation', error);
+            }
           }, 0);
           
           const userData = session.user.user_metadata;
