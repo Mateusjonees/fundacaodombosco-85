@@ -55,7 +55,13 @@ export default function Reports() {
   const [sessionType, setSessionType] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { canViewReports, canConfigureReports, isDirector, userRole, loading: roleLoading } = useRolePermissions();
+  const { 
+    canViewReports, 
+    canConfigureReports, 
+    isDirector, 
+    userRole, 
+    loading: roleLoading 
+  } = useRolePermissions();
   const { toast } = useToast();
 
   // Debug: Log user info
@@ -313,7 +319,7 @@ export default function Reports() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Relatórios de Atendimento</h1>
         <div className="flex gap-2">
-          {canConfigureReports() && (
+          {canConfigureReports?.() && (
             <Button variant="outline" onClick={clearFilters}>
               <Filter className="h-4 w-4 mr-2" />
               Limpar Filtros
