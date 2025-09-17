@@ -57,9 +57,12 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
 
-  const isCoordinatorOrDirector = userProfile?.employee_role === 'director' || 
-                                  userProfile?.employee_role === 'coordinator_madre' || 
-                                  userProfile?.employee_role === 'coordinator_floresta';
+  // Helper function to check if user is coordinator or director
+  const isCoordinatorOrDirector = () => {
+    return userProfile?.employee_role === 'director' || 
+           userProfile?.employee_role === 'coordinator_madre' || 
+           userProfile?.employee_role === 'coordinator_floresta';
+  };
 
   const [newClient, setNewClient] = useState({
     name: '',
@@ -85,8 +88,14 @@ export default function Clients() {
   useEffect(() => {
     loadUserProfile();
     loadEmployees();
-    loadClients();
   }, [user]);
+
+  // Separate useEffect to load clients after userProfile is available
+  useEffect(() => {
+    if (userProfile) {
+      loadClients();
+    }
+  }, [userProfile, user]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -125,8 +134,11 @@ export default function Clients() {
 
     setLoading(true);
     try {
+      // Check if user is coordinator or director within the function
+      const isCoordOrDir = isCoordinatorOrDirector();
+
       // Load all clients for directors and coordinators, filtered for others
-      if (isCoordinatorOrDirector) {
+      if (isCoordOrDir) {
         const { data, error } = await supabase
           .from('clients')
           .select('*')
@@ -321,7 +333,7 @@ export default function Clients() {
     })();
 
     // Professional filter - only show if coordinator/director
-    const matchesProfessional = !isCoordinatorOrDirector || professionalFilter === 'all' || (() => {
+    const matchesProfessional = !isCoordinatorOrDirector() || professionalFilter === 'all' || (() => {
       // This would need to be implemented based on client assignments
       return true;
     })();
@@ -360,7 +372,7 @@ export default function Clients() {
           <p className="text-muted-foreground">
             {isGodMode() 
               ? '🔑 Modo Deus Ativo - Acesso total aos clientes' 
-              : isCoordinatorOrDirector 
+              : isCoordinatorOrDirector() 
                 ? 'Visualizando todos os clientes' 
                 : 'Visualizando apenas clientes vinculados a você'
             }
@@ -592,7 +604,7 @@ export default function Clients() {
               </Select>
             </div>
             
-            {isCoordinatorOrDirector && (
+            {isCoordinatorOrDirector() && (
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-foreground">Profissional:</Label>
                 <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
