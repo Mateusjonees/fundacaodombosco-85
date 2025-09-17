@@ -49,22 +49,21 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     responsibleCpf: client.cpf || '',
     address: client.address || '',
     paymentMethod: 'pix',
-    value: '500,00',
+    value: '1.600,00',
     contractDate: new Date().toISOString().split('T')[0]
   });
 
   const generateContractHTML = () => {
     return `
-      <div style="font-family: Arial, sans-serif; padding: 40px; line-height: 1.8; color: #333; max-width: 800px; margin: 0 auto;">
-        <div style="text-align: center; margin-bottom: 40px;">
-          <img src="/assets/fundacao-dom-bosco-logo.png" alt="Fundação Dom Bosco" style="max-width: 200px; margin-bottom: 20px;" />
-          <h1 style="color: #2563eb; font-size: 24px; font-weight: bold; margin: 0;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h1>
-          <h2 style="color: #1e40af; font-size: 18px; margin: 10px 0;">AVALIAÇÃO NEUROPSICOLÓGICA</h2>
+      <div style="font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; font-size: 12px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #1e40af; font-size: 20px; font-weight: bold; margin: 0;">Contrato de Prestação de Serviços</h1>
+          <h2 style="color: #1e40af; font-size: 16px; margin: 10px 0;">Avaliação Neuropsicológica</h2>
         </div>
 
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #1e40af; font-size: 16px; border-bottom: 2px solid #2563eb; padding-bottom: 5px;">1. DAS PARTES</h3>
-          <p style="text-align: justify; margin: 15px 0;">
+        <div style="margin-bottom: 25px;">
+          <h3 style="color: #1e40af; font-size: 14px; font-weight: bold; margin-bottom: 10px;">1. Das partes</h3>
+          <p style="text-align: justify; margin: 10px 0; line-height: 1.5;">
             A pessoa jurídica <strong>Fundação Dom Bosco</strong>, registrada no CNPJ sob o nº <strong>17.278.904/0001-86</strong>, 
             com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como 
             <strong>CONTRATADA</strong> e a pessoa física <strong>${contractData.responsibleName}</strong>, registrada no CPF 
@@ -76,92 +75,217 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           </p>
         </div>
 
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #1e40af; font-size: 16px; border-bottom: 2px solid #2563eb; padding-bottom: 5px;">2. CLÁUSULAS</h3>
+        <div style="margin-bottom: 25px;">
+          <h3 style="color: #1e40af; font-size: 14px; font-weight: bold; margin-bottom: 10px;">2. Cláusulas</h3>
           
-          <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 14px; margin-bottom: 10px;">2.1. DO OBJETO</h4>
-            <p style="text-align: justify; margin: 10px 0;">
-              <strong>2.1.1.</strong> A avaliação neuropsicológica é um exame complementar realizado por profissional 
-              especializado em neuropsicologia e que neste contrato é denominada como CONTRATADA, e compreende três etapas, 
-              sendo: anamnese ou entrevista inicial, aplicação dos instrumentos de avaliação neuropsicológica e entrevista 
-              devolutiva para entrega do laudo.
+          <div style="margin: 15px 0;">
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.1.</h4>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              A avaliação neuropsicológica é um exame complementar realizado por profissional especializado em neuropsicologia 
+              e que neste contrato é denominada como CONTRATADA, e compreende três etapas, sendo: anamnese ou entrevista inicial, 
+              aplicação dos instrumentos de avaliação neuropsicológica e entrevista devolutiva para entrega do laudo.
             </p>
-            <p style="text-align: justify; margin: 10px 0;">
-              <strong>2.1.2.</strong> Serão realizadas sessões para a coleta de dados, entrevistas, aplicações de escalas 
-              e testes e possíveis reuniões com outros informantes, sendo que ao final do processo o CONTRATANTE terá direito 
-              ao LAUDO NEUROPSICOLÓGICO, com a finalidade de atestar, aconselhar e encaminhar o paciente para o melhor 
-              tratamento adequado com suas necessidades.
+          </div>
+
+          <div style="margin: 15px 0;">
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.2.</h4>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Serão realizadas sessões para a coleta de dados, entrevistas, aplicações de escalas e testes e possíveis reuniões 
+              com outros informantes, sendo que ao final do processo o CONTRATANTE terá direito ao LAUDO NEUROPSICOLÓGICO, 
+              com a finalidade de atestar, aconselhar e encaminhar o paciente para o melhor tratamento adequado com suas necessidades.
             </p>
-            <p style="text-align: justify; margin: 10px 0;">
-              <strong>2.1.3.</strong> O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em 
-              acordo com o contratante durante a Sessão de Devolutiva com duração de 1 (uma) hora, podendo ser no formato 
-              online ou presencial, a ser definido pelo neuropsicólogo.
+          </div>
+
+          <div style="margin: 15px 0;">
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.3.</h4>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em acordo com o contratante 
+              durante a Sessão de Devolutiva com duração de 1 (uma) hora, podendo ser no formato online ou presencial, 
+              a ser definido pelo neuropsicólogo.
+            </p>
+          </div>
+
+          <div style="margin: 15px 0;">
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.4.</h4>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Os instrumentos de avaliação neuropsicológicos serão compostos de questionários, escalas, inventários, tarefas 
+              e testes neuropsicológicos aprovados e validados para aplicação na população brasileira obedecendo aos critérios 
+              de aprovação para uso do Conselho Federal de Psicologia.
+            </p>
+          </div>
+
+          <div style="margin: 15px 0;">
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.5.</h4>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              As sessões de avaliação serão realizadas em horário combinado, estando a neuropsicóloga à disposição do 
+              beneficiário do serviço naquele período.
             </p>
           </div>
 
           <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 14px; margin-bottom: 10px;">2.2. DO SIGILO</h4>
-            <p style="text-align: justify; margin: 10px 0;">
-              <strong>2.2.1.</strong> A neuropsicóloga respeitará o sigilo profissional a fim de proteger, por meio da 
-              confiabilidade, a intimidade das pessoas, grupos ou organizações, a que tenha acesso no exercício profissional 
-              (Código de Ética do Psicólogo, artigo 9º).
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.2. Sigilo</h4>
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.2.1.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              A neuropsicóloga respeitará o sigilo profissional a fim de proteger, por meio da confiabilidade, a intimidade 
+              das pessoas, grupos ou organizações, a que tenha acesso no exercício profissional (Código de Ética do Psicólogo, artigo 9º).
             </p>
           </div>
 
           <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 14px; margin-bottom: 10px;">2.3. ETAPAS E VIGÊNCIA</h4>
-            <p style="text-align: justify; margin: 10px 0;">
-              <strong>2.3.1.</strong> O processo de aplicação dos instrumentos ocorre com a utilização de, no mínimo 4 sessões 
-              e no máximo 14 sessões, com duração 1 (uma) hora, a serem definidas pelo profissional a realizá-las, agendadas 
-              previamente com o contratante.
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.3. Etapas da Avaliação Neuropsicológica e Vigência do Contrato</h4>
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.1.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              O processo de aplicação dos instrumentos ocorre com a utilização de, no mínimo 4 sessões e no máximo 14 sessões, 
+              com duração 1 (uma) hora, a serem definidas pelo profissional a realizá-las, agendadas previamente com o contratante.
+            </p>
+            
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.2.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              O número de sessões, bem como a duração delas, será definido pela neuropsicóloga, de acordo com a direcionamento 
+              e conhecimento da profissional, de maneira a obter-se sempre a melhor qualidade de resultados.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.3.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Caso o paciente a ser avaliado ser estudante e/ou estar em acompanhamento terapêutico será realizada entrevista 
+              com a equipe escolar e multidisciplinar como parte integrante da avaliação, conforme for possível e necessário, 
+              através de questionários e/ou vídeo conferência.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.4.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              A vigência deste contrato encerrar-se-á imediatamente após a entrega do laudo neuropsicológico e à quitação 
+              do valor correspondente à prestação de serviço acordada.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.5.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              As datas das sessões de avaliação serão definidas em comum acordo entre as partes e registradas neste contrato.
             </p>
           </div>
 
           <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 14px; margin-bottom: 10px;">2.4. VALOR E FORMA DE PAGAMENTO</h4>
-            <p style="text-align: justify; margin: 10px 0;">
-              <strong>2.4.1.</strong> O valor total dos serviços é de <strong>R$ ${contractData.value}</strong>, a ser pago 
-              através de <strong>${contractData.paymentMethod}</strong>.
-            </p>
-            <p style="text-align: justify; margin: 10px 0;">
-              <strong>2.4.2.</strong> O pagamento deverá ser efetuado de acordo com o cronograma estabelecido pela CONTRATADA.
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.4. Cancelamento e reagendamento de sessões</h4>
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.4.1.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              O Contratante concorda em notificar o Contratado com antecedência de 12 horas em caso de cancelamento ou reagendamento de sessões.
             </p>
           </div>
 
           <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 14px; margin-bottom: 10px;">2.5. DISPOSIÇÕES GERAIS</h4>
-            <p style="text-align: justify; margin: 10px 0;">
-              <strong>2.5.1.</strong> A vigência deste contrato encerrar-se-á imediatamente após a entrega do laudo 
-              neuropsicológico e à quitação do valor correspondente à prestação de serviço acordada.
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.5. Avaliação de menores de 18 anos</h4>
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.5.1.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              A avaliação neuropsicológica de menores de 18 anos será realizada somente com a ciência e concordância de um responsável pela criança ou adolescente.
+            </p>
+            
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.5.2.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              A criança/adolescente deverá comparecer ao consultório para avaliação acompanhado de um responsável, o qual deverá 
+              estar presente no consultório ao final de cada sessão a fim de acompanhar o menor até sua casa.
+            </p>
+          </div>
+
+          <div style="margin: 20px 0;">
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.6. Honorários e formas de pagamento</h4>
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.1.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              A forma de pagamento deverá ser definida e devidamente registrada neste contrato durante a primeira sessão de avaliação (anamnese).
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.2.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado será no total de 
+              <strong>R$ ${contractData.value}</strong>. O pagamento dos honorários 
+              referentes ao serviço de Avaliação Neuropsicológica será efetuado através de <strong>${contractData.paymentMethod}</strong>.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.3.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              O laudo será entregue SOMENTE após a quitação do valor total da avaliação.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.4.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              As sessões de avaliação SOMENTE terão início após o pagamento da primeira parcela.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.5.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Os pagamentos por transferência, deposito bancário ou pix deverão ser realizados conforme os dados informados 
+              e posteriormente com o envio do respectivo comprovante para o e-mail: financeiro@fundacaodombosco.org com os 
+              dados referentes ao paciente e o responsável financeiro descriminados no corpo do e-mail.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.6.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Caso o contratante opte pelo parcelamento do pagamento em 2 (duas) ou mais parcelas, fica vedada a condição 
+              de vincular o pagamento do serviço à entrega do Laudo Neuropsicológico. O contratante deve, de forma imperativa, 
+              cumprir rigorosamente as datas estipuladas nas cláusulas anteriores, sob pena de rescisão contratual, nos termos 
+              contantes no item 2.7 deste contrato.
+            </p>
+          </div>
+
+          <div style="margin: 20px 0;">
+            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.7. Da Rescisão</h4>
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.1.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              O presente instrumento poderá ser rescindido caso qualquer das partes descumpra o disposto neste contrato.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.2.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Na hipótese de a CONTRATANTE solicitar a rescisão antecipada deste contrato sem justa causa, será obrigada a 
+              pagar a CONTRATADA por inteiro qualquer retribuição vencida e não paga e 50% (cinquenta por cento) do que ela 
+              receberia até o final do contrato.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.3.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Na hipótese de a CONTRATADA solicitar a rescisão antecipada deste contrato sem justa causa terá direito a retribuição vencida.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.4.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Caso a CONTRATANTE não compareça a 4 sessões seguidas sem informar a CONTRATADA e não houver possibilidade 
+              de contato após esse período, este contrato fica rescindido automaticamente e fica obrigada a pagar 100% do valor do contrato.
+            </p>
+
+            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.5.</h5>
+            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
+              Com a assinatura, ambas as partes atestam que tiveram oportunidade de ler, discutir, definir e concordar com todas as cláusulas deste contrato.
             </p>
           </div>
         </div>
 
-        <div style="margin: 40px 0; text-align: center;">
-          <p style="margin: 20px 0; font-weight: bold;">
-            Data do Contrato: ${new Date(contractData.contractDate).toLocaleDateString('pt-BR')}
+        <div style="margin: 30px 0; text-align: center;">
+          <p style="margin: 15px 0; font-weight: bold;">
+            Belo Horizonte, ${new Date(contractData.contractDate).toLocaleDateString('pt-BR')}
           </p>
         </div>
 
-        <div style="margin: 40px 0; text-align: center; background-color: #f8fafc; padding: 20px; border: 1px solid #e2e8f0;">
-          <h4 style="color: #1e40af; margin-bottom: 10px;">FUNDAÇÃO DOM BOSCO</h4>
-          <p style="font-size: 12px; margin: 5px 0;">Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: (31) 3226-2616</p>
-          <p style="font-size: 12px; margin: 5px 0;">Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: (31) 3386-1600</p>
-          <p style="font-size: 12px; margin: 5px 0;">Belo Horizonte - MG - www.fundacaodombosco.org</p>
+        <div style="display: flex; justify-content: space-between; margin: 40px 0; padding: 0 20px;">
+          <div style="text-align: center; width: 250px;">
+            <div style="border-bottom: 1px solid #333; margin-bottom: 5px; height: 40px;"></div>
+            <p style="font-weight: bold; margin: 0; font-size: 12px;">Contratada</p>
+          </div>
+          <div style="text-align: center; width: 250px;">
+            <div style="border-bottom: 1px solid #333; margin-bottom: 5px; height: 40px;"></div>
+            <p style="font-weight: bold; margin: 0; font-size: 12px;">Contratante</p>
+          </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 60px; padding: 0 40px;">
-          <div style="text-align: center; width: 250px;">
-            <div style="border-bottom: 1px solid #333; margin-bottom: 5px; height: 40px;"></div>
-            <p style="font-weight: bold; margin: 0;">CONTRATADA</p>
-            <p style="font-size: 12px; margin: 0;">Fundação Dom Bosco</p>
-          </div>
-          <div style="text-align: center; width: 250px;">
-            <div style="border-bottom: 1px solid #333; margin-bottom: 5px; height: 40px;"></div>
-            <p style="font-weight: bold; margin: 0;">CONTRATANTE</p>
-            <p style="font-size: 12px; margin: 0;">${contractData.responsibleName}</p>
-          </div>
+        <div style="margin: 30px 0; text-align: center; background-color: #f8fafc; padding: 15px; border: 1px solid #e2e8f0; page-break-inside: avoid;">
+          <h4 style="color: #1e40af; margin-bottom: 8px; font-size: 14px;">FUNDAÇÃO DOM BOSCO</h4>
+          <p style="font-size: 11px; margin: 3px 0;">Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: (31) 3226-2616</p>
+          <p style="font-size: 11px; margin: 3px 0;">Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: (31) 3386-1600</p>
+          <p style="font-size: 11px; margin: 3px 0;">Belo Horizonte - MG - www.fundacaodombosco.org</p>
+          <p style="font-size: 10px; margin: 8px 0; text-align: justify;">
+            Em cumprimento à Lei Geral de Proteção de dados n° 13.709/2020, o destinatário deste documento se responsabiliza 
+            por manter medidas de segurança, técnicas e administrativas suficientes a proteger os dados pessoais do Titular 
+            de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum 
+            incidente de segurança que possa.
+          </p>
         </div>
       </div>
     `;
