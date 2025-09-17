@@ -7,13 +7,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { EmployeeManager } from '@/components/EmployeeManager';
-import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus } from 'lucide-react';
+import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus, Shield } from 'lucide-react';
 
 // Import page components
 import Clients from '@/pages/Clients';
 import Schedule from '@/pages/Schedule';
 import Financial from '@/pages/Financial';
 import Contracts from '@/pages/Contracts';
+import UserManagement from '@/pages/UserManagement';
 
 interface Profile {
   id: string;
@@ -151,6 +152,8 @@ export const MainApp = () => {
                           currentUserProfile?.employee_role === 'coordinator_madre' || 
                           currentUserProfile?.employee_role === 'coordinator_floresta';
 
+  const canManageUsers = currentUserProfile?.employee_role === 'director';
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: FileText },
     { id: 'clients', label: 'Clientes', icon: Users },
@@ -158,6 +161,7 @@ export const MainApp = () => {
     { id: 'financial', label: 'Financeiro', icon: DollarSign },
     { id: 'contracts', label: 'Contratos', icon: FileText },
     ...(canViewEmployees ? [{ id: 'employees', label: 'Funcionários', icon: UserPlus }] : []),
+    ...(canManageUsers ? [{ id: 'user-management', label: 'Usuários', icon: Shield }] : []),
   ];
 
   return (
@@ -319,6 +323,10 @@ export const MainApp = () => {
 
         {activeTab === 'contracts' && (
           <Contracts />
+        )}
+
+        {activeTab === 'user-management' && canManageUsers && (
+          <UserManagement />
         )}
       </main>
     </div>

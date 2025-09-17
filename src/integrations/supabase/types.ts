@@ -412,6 +412,39 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_job_positions: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       custom_roles: {
         Row: {
           created_at: string
@@ -1069,6 +1102,94 @@ export type Database = {
         }
         Relationships: []
       }
+      permission_audit_log: {
+        Row: {
+          action: string
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_value: Json | null
+          old_value: Json | null
+          permission: Database["public"]["Enums"]["permission_action"] | null
+          position_id: string | null
+          reason: string | null
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_value?: Json | null
+          old_value?: Json | null
+          permission?: Database["public"]["Enums"]["permission_action"] | null
+          position_id?: string | null
+          reason?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_value?: Json | null
+          old_value?: Json | null
+          permission?: Database["public"]["Enums"]["permission_action"] | null
+          position_id?: string | null
+          reason?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_audit_log_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "custom_job_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      position_permissions: {
+        Row: {
+          conditions: Json | null
+          created_at: string | null
+          granted: boolean | null
+          id: string
+          permission: Database["public"]["Enums"]["permission_action"]
+          position_id: string | null
+        }
+        Insert: {
+          conditions?: Json | null
+          created_at?: string | null
+          granted?: boolean | null
+          id?: string
+          permission: Database["public"]["Enums"]["permission_action"]
+          position_id?: string | null
+        }
+        Update: {
+          conditions?: Json | null
+          created_at?: string | null
+          granted?: boolean | null
+          id?: string
+          permission?: Database["public"]["Enums"]["permission_action"]
+          position_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "position_permissions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "custom_job_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -1495,6 +1616,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_job_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          position_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          position_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          position_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_job_assignments_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "custom_job_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           created_at: string
@@ -1585,6 +1744,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_specific_permissions: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          granted: boolean
+          granted_by: string | null
+          id: string
+          permission: Database["public"]["Enums"]["permission_action"]
+          reason: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          granted: boolean
+          granted_by?: string | null
+          id?: string
+          permission: Database["public"]["Enums"]["permission_action"]
+          reason?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          granted?: boolean
+          granted_by?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["permission_action"]
+          reason?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1662,9 +1854,11 @@ export type Database = {
         }[]
       }
       get_user_permissions: {
-        Args: Record<PropertyKey, never>
+        Args: Record<PropertyKey, never> | { user_uuid: string }
         Returns: {
-          permission: Database["public"]["Enums"]["permission_type"]
+          granted: boolean
+          permission: Database["public"]["Enums"]["permission_action"]
+          source: string
         }[]
       }
       log_sensitive_access: {
@@ -1677,9 +1871,14 @@ export type Database = {
         Returns: undefined
       }
       user_has_permission: {
-        Args: {
-          required_permission: Database["public"]["Enums"]["permission_type"]
-        }
+        Args:
+          | {
+              required_permission: Database["public"]["Enums"]["permission_action"]
+              user_uuid: string
+            }
+          | {
+              required_permission: Database["public"]["Enums"]["permission_type"]
+            }
         Returns: boolean
       }
       user_has_role: {
@@ -1702,6 +1901,64 @@ export type Database = {
         | "speech_therapist"
         | "nutritionist"
         | "physiotherapist"
+      permission_action:
+        | "view_dashboard"
+        | "view_clients"
+        | "view_schedules"
+        | "view_financial"
+        | "view_reports"
+        | "view_stock"
+        | "view_employees"
+        | "view_medical_records"
+        | "view_contracts"
+        | "view_messages"
+        | "view_files"
+        | "view_quality_control"
+        | "view_timesheet"
+        | "view_meeting_alerts"
+        | "create_clients"
+        | "create_schedules"
+        | "create_financial_records"
+        | "create_stock_items"
+        | "create_employees"
+        | "create_medical_records"
+        | "create_contracts"
+        | "create_messages"
+        | "create_files"
+        | "create_quality_evaluations"
+        | "create_meeting_alerts"
+        | "edit_clients"
+        | "edit_schedules"
+        | "edit_financial_records"
+        | "edit_stock_items"
+        | "edit_employees"
+        | "edit_medical_records"
+        | "edit_contracts"
+        | "edit_files"
+        | "edit_system_settings"
+        | "edit_user_permissions"
+        | "delete_clients"
+        | "delete_schedules"
+        | "delete_financial_records"
+        | "delete_stock_items"
+        | "delete_employees"
+        | "delete_medical_records"
+        | "delete_contracts"
+        | "delete_files"
+        | "manage_users"
+        | "manage_roles"
+        | "change_user_passwords"
+        | "view_audit_logs"
+        | "manage_system_settings"
+        | "export_data"
+        | "import_data"
+        | "view_sensitive_data"
+        | "confirm_appointments"
+        | "cancel_appointments"
+        | "approve_timesheet"
+        | "assign_clients"
+        | "generate_reports"
+        | "access_all_units"
       permission_type:
         | "view_clients"
         | "create_clients"
@@ -1876,6 +2133,65 @@ export const Constants = {
         "speech_therapist",
         "nutritionist",
         "physiotherapist",
+      ],
+      permission_action: [
+        "view_dashboard",
+        "view_clients",
+        "view_schedules",
+        "view_financial",
+        "view_reports",
+        "view_stock",
+        "view_employees",
+        "view_medical_records",
+        "view_contracts",
+        "view_messages",
+        "view_files",
+        "view_quality_control",
+        "view_timesheet",
+        "view_meeting_alerts",
+        "create_clients",
+        "create_schedules",
+        "create_financial_records",
+        "create_stock_items",
+        "create_employees",
+        "create_medical_records",
+        "create_contracts",
+        "create_messages",
+        "create_files",
+        "create_quality_evaluations",
+        "create_meeting_alerts",
+        "edit_clients",
+        "edit_schedules",
+        "edit_financial_records",
+        "edit_stock_items",
+        "edit_employees",
+        "edit_medical_records",
+        "edit_contracts",
+        "edit_files",
+        "edit_system_settings",
+        "edit_user_permissions",
+        "delete_clients",
+        "delete_schedules",
+        "delete_financial_records",
+        "delete_stock_items",
+        "delete_employees",
+        "delete_medical_records",
+        "delete_contracts",
+        "delete_files",
+        "manage_users",
+        "manage_roles",
+        "change_user_passwords",
+        "view_audit_logs",
+        "manage_system_settings",
+        "export_data",
+        "import_data",
+        "view_sensitive_data",
+        "confirm_appointments",
+        "cancel_appointments",
+        "approve_timesheet",
+        "assign_clients",
+        "generate_reports",
+        "access_all_units",
       ],
       permission_type: [
         "view_clients",
