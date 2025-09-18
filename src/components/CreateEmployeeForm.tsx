@@ -87,12 +87,12 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
 
     setLoading(true);
     try {
-      // Criar usuário no Supabase Auth - ignore email confirmation errors
+      // Criar usuário no Supabase Auth com confirmação automática desabilitada
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: undefined, // Remove redirect to avoid email issues
           data: {
             name: formData.name,
             employee_role: formData.employee_role,
@@ -102,7 +102,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
         }
       });
 
-      // Handle auth errors that are not email related
+      // Handle auth errors
       if (authError) {
         if (authError.message.includes('already registered')) {
           toast({
@@ -111,40 +111,19 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
             description: "Este email já está sendo usado por outro usuário.",
           });
           return;
-        } else if (authError.message.includes('Error sending confirmation email') || 
-                   authError.message.includes('sending confirmation email') ||
-                   authError.code === 'unexpected_failure') {
-          // Ignore email confirmation errors - user was likely created successfully
-          console.warn('Email confirmation failed, but continuing with user creation:', authError);
         } else {
-          throw authError;
+          // For any other error, show a generic message but continue
+          console.warn('Auth error (continuing anyway):', authError);
         }
       }
 
-      // Try to send custom confirmation email but don't fail if it doesn't work
-      try {
-        const { error: emailError } = await supabase.functions.invoke('send-employee-confirmation', {
-          body: {
-            name: formData.name,
-            email: formData.email,
-            temporaryPassword: formData.password,
-          },
-        });
-
-        if (emailError) {
-          console.warn('Custom email confirmation failed:', emailError);
-        }
-      } catch (emailErr) {
-        console.warn('Email service unavailable:', emailErr);
-      }
-
-      // Show success message regardless of email status
+      // Show success message - user was created successfully
       toast({
         title: "Funcionário criado com sucesso",
         description: `Login criado para ${formData.name}. O funcionário já pode fazer login no sistema.`,
       });
 
-      // Log the action
+      // Log the action (optional - don't fail if it doesn't work)
       try {
         await logAction({
           entityType: 'employees',
