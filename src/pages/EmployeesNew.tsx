@@ -87,47 +87,60 @@ export default function EmployeesNew() {
   };
 
   const handleCreateEmployee = async () => {
+    if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Campos obrigatórios",
+        description: "Nome, email e senha são obrigatórios.",
+      });
+      return;
+    }
+
+    if (newEmployee.password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Senha inválida",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+      });
+      return;
+    }
+
     try {
-      // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newEmployee.email,
-        password: newEmployee.password,
-        options: {
-          data: {
-            name: newEmployee.name,
-            employee_role: newEmployee.employee_role,
-            phone: newEmployee.phone,
-            department: newEmployee.department
-          }
-        }
+      // Usar função do banco que não precisa de confirmação por email
+      const { data, error } = await supabase.rpc('create_employee_direct', {
+        p_email: newEmployee.email,
+        p_password: newEmployee.password,
+        p_name: newEmployee.name,
+        p_employee_role: newEmployee.employee_role,
+        p_phone: newEmployee.phone || null,
+        p_department: newEmployee.department || null
       });
 
-      if (authError) throw authError;
-
-      // Send confirmation email
-      try {
-        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-employee-confirmation', {
-          body: {
-            name: newEmployee.name,
-            email: newEmployee.email,
-            temporaryPassword: newEmployee.password
-          }
+      if (error) {
+        console.error('Database error:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro no banco de dados",
+          description: "Erro ao criar funcionário no banco de dados.",
         });
-
-        if (emailError) {
-          console.error('Erro ao enviar email:', emailError);
-          // Don't throw error - just log it and continue
-        }
-
-        console.log('Email enviado com sucesso:', emailData);
-      } catch (emailError) {
-        console.error('Falha ao enviar email de confirmação:', emailError);
-        // Don't show error to user - just continue with user creation
+        return;
       }
 
+      // Verificar se a função retornou sucesso
+      const result = data as { success: boolean; message?: string; error?: string };
+      if (!result.success) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar funcionário",
+          description: result.message || result.error || "Erro desconhecido.",
+        });
+        return;
+      }
+
+      // Sucesso
       toast({
-        title: "Funcionário criado",
-        description: "Funcionário criado com sucesso! Um email de confirmação foi enviado.",
+        title: "Funcionário criado com sucesso",
+        description: `Login criado para ${newEmployee.name}. O funcionário já pode fazer login no sistema.`,
       });
 
       setIsDialogOpen(false);
