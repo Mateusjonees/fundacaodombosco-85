@@ -87,37 +87,38 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
 
     setLoading(true);
     try {
-      // Criar usuário no Supabase Auth com confirmação automática desabilitada
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: undefined, // Remove redirect to avoid email issues
-          data: {
-            name: formData.name,
-            employee_role: formData.employee_role,
-            phone: formData.phone,
-            department: formData.department
-          }
-        }
+      // Usar função do banco que não precisa de confirmação por email
+      const { data, error } = await supabase.rpc('create_employee_direct', {
+        p_email: formData.email,
+        p_password: formData.password,
+        p_name: formData.name,
+        p_employee_role: formData.employee_role,
+        p_phone: formData.phone || null,
+        p_department: formData.department || null
       });
 
-      // Handle auth errors
-      if (authError) {
-        if (authError.message.includes('already registered')) {
-          toast({
-            variant: "destructive",
-            title: "Email já cadastrado",
-            description: "Este email já está sendo usado por outro usuário.",
-          });
-          return;
-        } else {
-          // For any other error, show a generic message but continue
-          console.warn('Auth error (continuing anyway):', authError);
-        }
+      if (error) {
+        console.error('Database error:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro no banco de dados",
+          description: "Erro ao criar funcionário no banco de dados.",
+        });
+        return;
       }
 
-      // Show success message - user was created successfully
+      // Verificar se a função retornou sucesso
+      const result = data as { success: boolean; message?: string; error?: string };
+      if (!result.success) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar funcionário",
+          description: result.message || result.error || "Erro desconhecido.",
+        });
+        return;
+      }
+
+      // Sucesso
       toast({
         title: "Funcionário criado com sucesso",
         description: `Login criado para ${formData.name}. O funcionário já pode fazer login no sistema.`,
