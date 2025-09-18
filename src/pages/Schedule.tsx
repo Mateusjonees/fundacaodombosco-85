@@ -1148,7 +1148,7 @@ export default function Schedule() {
                   </SelectTrigger>
                   <SelectContent>
                     {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id}>
+                      <SelectItem key={employee.id} value={employee.user_id}>
                         {employee.name}
                       </SelectItem>
                     ))}

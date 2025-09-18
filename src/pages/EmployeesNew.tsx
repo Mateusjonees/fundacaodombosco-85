@@ -111,7 +111,7 @@ export default function EmployeesNew() {
         p_email: newEmployee.email,
         p_password: newEmployee.password,
         p_name: newEmployee.name,
-        p_employee_role: newEmployee.employee_role,
+        p_employee_role: newEmployee.employee_role as any,
         p_phone: newEmployee.phone || null,
         p_department: newEmployee.department || null
       });
