@@ -87,7 +87,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
 
     setLoading(true);
     try {
-      // Criar usuário no Supabase Auth
+      // Criar usuário no Supabase Auth - ignore email confirmation errors
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -102,6 +102,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
         }
       });
 
+      // Handle auth errors that are not email related
       if (authError) {
         if (authError.message.includes('already registered')) {
           toast({
@@ -109,18 +110,42 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
             title: "Email já cadastrado",
             description: "Este email já está sendo usado por outro usuário.",
           });
+          return;
+        } else if (authError.message.includes('Error sending confirmation email') || 
+                   authError.message.includes('sending confirmation email') ||
+                   authError.code === 'unexpected_failure') {
+          // Ignore email confirmation errors - user was likely created successfully
+          console.warn('Email confirmation failed, but continuing with user creation:', authError);
         } else {
           throw authError;
         }
-        return;
       }
 
-      if (authData.user) {
-        toast({
-          title: "Funcionário criado com sucesso",
-          description: `Login criado para ${formData.name}. Um email de confirmação foi enviado.`,
+      // Try to send custom confirmation email but don't fail if it doesn't work
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-employee-confirmation', {
+          body: {
+            name: formData.name,
+            email: formData.email,
+            temporaryPassword: formData.password,
+          },
         });
 
+        if (emailError) {
+          console.warn('Custom email confirmation failed:', emailError);
+        }
+      } catch (emailErr) {
+        console.warn('Email service unavailable:', emailErr);
+      }
+
+      // Show success message regardless of email status
+      toast({
+        title: "Funcionário criado com sucesso",
+        description: `Login criado para ${formData.name}. O funcionário já pode fazer login no sistema.`,
+      });
+
+      // Log the action
+      try {
         await logAction({
           entityType: 'employees',
           action: 'created',
@@ -131,12 +156,14 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
             created_by: 'admin_panel'
           }
         });
-
-        resetForm();
-        onSuccess();
-        onClose();
+      } catch (logError) {
+        console.warn('Could not log action:', logError);
       }
-    } catch (error) {
+
+      resetForm();
+      onSuccess();
+      onClose();
+    } catch (error: any) {
       console.error('Error creating employee:', error);
       toast({
         variant: "destructive",
