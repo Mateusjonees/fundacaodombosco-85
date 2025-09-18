@@ -2201,14 +2201,23 @@ export type Database = {
         Returns: boolean
       }
       create_employee_direct: {
-        Args: {
-          p_department?: string
-          p_email: string
-          p_employee_role?: Database["public"]["Enums"]["employee_role"]
-          p_name: string
-          p_password: string
-          p_phone?: string
-        }
+        Args:
+          | {
+              p_department?: string
+              p_email: string
+              p_employee_role: string
+              p_name: string
+              p_password: string
+              p_phone?: string
+            }
+          | {
+              p_department?: string
+              p_email: string
+              p_employee_role?: Database["public"]["Enums"]["employee_role"]
+              p_name: string
+              p_password: string
+              p_phone?: string
+            }
         Returns: Json
       }
       create_test_employee: {
