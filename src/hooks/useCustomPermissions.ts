@@ -92,7 +92,15 @@ export const useCustomPermissions = () => {
         .rpc('get_user_permissions', { user_uuid: user.id });
 
       if (error) throw error;
-      setPermissions(data || []);
+      
+      // Mapear dados para a interface correta
+      const mappedPermissions: UserPermission[] = (data || []).map((item: any) => ({
+        permission: item.permission,
+        granted: item.granted ?? true,
+        source: item.source ?? 'system'
+      }));
+      
+      setPermissions(mappedPermissions);
     } catch (error) {
       console.error('Error loading user permissions:', error);
     } finally {

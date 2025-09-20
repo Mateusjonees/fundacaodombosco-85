@@ -87,62 +87,72 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
 
     setLoading(true);
     try {
-      // Usar função do banco que não precisa de confirmação por email
-      const { data, error } = await supabase.rpc('create_employee_direct', {
-        p_email: formData.email,
-        p_password: formData.password,
-        p_name: formData.name,
-        p_employee_role: formData.employee_role,
-        p_phone: formData.phone || null,
-        p_department: formData.department || null
+      // Usar supabase.auth.signUp para criação segura
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: formData.name,
+            employee_role: formData.employee_role,
+            phone: formData.phone || null,
+            department: formData.department || null
+          }
+        }
       });
 
       if (error) {
-        console.error('Database error:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro no banco de dados",
-          description: "Erro ao criar funcionário no banco de dados.",
-        });
-        return;
-      }
-
-      // Verificar se a função retornou sucesso
-      const result = data as { success: boolean; message?: string; error?: string };
-      if (!result.success) {
+        console.error('Signup error:', error);
         toast({
           variant: "destructive",
           title: "Erro ao criar funcionário",
-          description: result.message || result.error || "Erro desconhecido.",
+          description: error.message || "Erro ao criar funcionário.",
         });
         return;
       }
 
-      // Sucesso
-      toast({
-        title: "Funcionário criado com sucesso",
-        description: `Login criado para ${formData.name}. O funcionário já pode fazer login no sistema.`,
-      });
+      // Verificar se o usuário foi criado
+      if (data?.user) {
+        // Enviar email de boas-vindas
+        try {
+          await supabase.functions.invoke('send-employee-confirmation', {
+            body: {
+              name: formData.name,
+              email: formData.email,
+              employeeRole: formData.employee_role
+            }
+          });
+        } catch (emailError) {
+          console.log('Warning: Could not send welcome email:', emailError);
+        }
 
-      // Log the action (optional - don't fail if it doesn't work)
-      try {
-        await logAction({
-          entityType: 'employees',
-          action: 'created',
-          metadata: { 
-            employee_name: formData.name,
-            employee_email: formData.email,
-            employee_role: formData.employee_role,
-            created_by: 'admin_panel'
-          }
+        // Sucesso
+        toast({
+          title: "Funcionário criado com sucesso",
+          description: `Login criado para ${formData.name}. O funcionário já pode fazer login no sistema.`,
         });
-      } catch (logError) {
-        console.warn('Could not log action:', logError);
-      }
 
-      resetForm();
-      onSuccess();
-      onClose();
+        // Log the action (optional - don't fail if it doesn't work)
+        try {
+          await logAction({
+            entityType: 'employees',
+            action: 'created',
+            metadata: { 
+              employee_name: formData.name,
+              employee_email: formData.email,
+              employee_role: formData.employee_role,
+              created_by: 'admin_panel'
+            }
+          });
+        } catch (logError) {
+          console.warn('Could not log action:', logError);
+        }
+
+        resetForm();
+        onSuccess();
+        onClose();
+      }
     } catch (error: any) {
       console.error('Error creating employee:', error);
       toast({

@@ -12,7 +12,7 @@ const corsHeaders = {
 interface EmployeeConfirmationRequest {
   name: string;
   email: string;
-  temporaryPassword: string;
+  employeeRole: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { name, email, temporaryPassword }: EmployeeConfirmationRequest = await req.json();
+    const { name, email, employeeRole }: EmployeeConfirmationRequest = await req.json();
 
     const emailResponse = await resend.emails.send({
       from: "Fundação Dom Bosco <onboarding@resend.dev>",
@@ -64,12 +64,13 @@ const handler = async (req: Request): Promise<Response> => {
               <p>Seja bem-vindo(a) à Fundação Dom Bosco! Sua conta foi criada com sucesso.</p>
               
               <div class="credentials">
-                <h3>Suas credenciais temporárias:</h3>
+                <h3>Detalhes da sua conta:</h3>
+                <p><strong>Nome:</strong> ${name}</p>
                 <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Senha temporária:</strong> ${temporaryPassword}</p>
+                <p><strong>Função:</strong> ${employeeRole}</p>
               </div>
               
-              <p>Para completar sua vinculação e acessar o sistema, clique no botão abaixo:</p>
+              <p>Para ativar sua conta, verifique seu email e clique no link de confirmação enviado pelo sistema.</p>
               
               <div style="text-align: center;">
                 <a href="https://www.sistemafundacaodombosco.org" class="button">
@@ -79,8 +80,8 @@ const handler = async (req: Request): Promise<Response> => {
               
               <p><strong>Importante:</strong></p>
               <ul>
-                <li>Altere sua senha temporária no primeiro acesso</li>
-                <li>Mantenha suas credenciais em segurança</li>
+                <li>Confirme seu email clicando no link de ativação</li>
+                <li>Use a senha que foi definida durante o cadastro</li>
                 <li>Entre em contato com o administrador caso tenha dúvidas</li>
               </ul>
             </div>

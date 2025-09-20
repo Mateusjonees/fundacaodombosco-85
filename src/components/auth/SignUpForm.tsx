@@ -88,6 +88,22 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         }
       });
 
+      // Send welcome email
+      if (data.user && !error) {
+        try {
+          await supabase.functions.invoke('send-employee-confirmation', {
+            body: {
+              name: name,
+              email: email,
+              employeeRole: employeeRole
+            }
+          });
+        } catch (emailError) {
+          console.log('Warning: Could not send welcome email:', emailError);
+          // Don't fail the signup if email fails
+        }
+      }
+
       if (error) {
         // Log failed signup
         await AuditService.logAction({

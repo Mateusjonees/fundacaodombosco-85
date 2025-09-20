@@ -2200,17 +2200,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
-      create_employee_direct: {
-        Args: {
-          p_department?: string
-          p_email: string
-          p_employee_role?: Database["public"]["Enums"]["employee_role"]
-          p_name: string
-          p_password: string
-          p_phone?: string
-        }
-        Returns: Json
-      }
       create_test_employee: {
         Args: {
           p_department?: string
@@ -2320,9 +2309,7 @@ export type Database = {
       get_user_permissions: {
         Args: Record<PropertyKey, never> | { user_uuid: string }
         Returns: {
-          granted: boolean
-          permission: Database["public"]["Enums"]["permission_action"]
-          source: string
+          permission: Database["public"]["Enums"]["permission_type"]
         }[]
       }
       get_user_role: {
