@@ -120,7 +120,7 @@ export const useRolePermissions = () => {
   };
 
   const canManageEmployees = (): boolean => {
-    return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
+    return isGodMode(); // Apenas diretores
   };
 
   const canViewReports = (): boolean => {

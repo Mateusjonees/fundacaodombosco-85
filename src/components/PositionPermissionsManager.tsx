@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, CheckCircle, XCircle, Save, Eye, EyeOff } from 'lucide-react';
 import { PERMISSION_LABELS, PERMISSION_CATEGORIES, type PermissionAction } from '@/hooks/useCustomPermissions';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface JobPosition {
   id: string;
@@ -32,15 +33,35 @@ interface PositionPermissionsManagerProps {
 }
 
 export const PositionPermissionsManager = ({ position, onClose }: PositionPermissionsManagerProps) => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [permissions, setPermissions] = useState<PositionPermission[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showOnlyGranted, setShowOnlyGranted] = useState(false);
+  const [isDirector, setIsDirector] = useState(false);
 
   useEffect(() => {
+    checkUserRole();
     loadPermissions();
-  }, [position.id]);
+  }, [position.id, user]);
+
+  const checkUserRole = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('employee_role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      setIsDirector(data.employee_role === 'director');
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  };
 
   const loadPermissions = async () => {
     try {
@@ -82,6 +103,15 @@ export const PositionPermissionsManager = ({ position, onClose }: PositionPermis
   };
 
   const savePermissions = async () => {
+    if (!isDirector) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Apenas diretores podem gerenciar permissões."
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       // Primeira, deletar todas as permissões existentes para este cargo
@@ -141,6 +171,22 @@ export const PositionPermissionsManager = ({ position, onClose }: PositionPermis
       total + category.permissions.length, 0
     );
   };
+
+  if (!isDirector) {
+    return (
+      <Card className="max-w-4xl">
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium">Acesso Restrito</h3>
+            <p className="text-sm text-muted-foreground">
+              Apenas diretores podem gerenciar permissões de cargos.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (

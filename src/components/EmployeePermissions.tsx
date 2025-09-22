@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { Shield } from 'lucide-react';
 
 interface Permission {
   id: string;
@@ -37,13 +39,33 @@ const ACCESS_LEVELS = [
 ];
 
 export default function EmployeePermissions({ employeeId, employeeName }: EmployeePermissionsProps) {
+  const { user } = useAuth();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isDirector, setIsDirector] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    checkUserRole();
     loadPermissions();
-  }, [employeeId]);
+  }, [employeeId, user]);
+
+  const checkUserRole = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('employee_role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      setIsDirector(data.employee_role === 'director');
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  };
 
   const loadPermissions = async () => {
     try {
@@ -65,6 +87,15 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
   };
 
   const updatePermission = async (permissionKey: string, value: string) => {
+    if (!isDirector) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Apenas diretores podem alterar permissões."
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -100,6 +131,19 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
     const permission = permissions.find(p => p.permission_key === key);
     return permission?.permission_value || 'none';
   };
+
+  if (!isDirector) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Acesso restrito a diretores</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

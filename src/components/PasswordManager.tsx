@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Key } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { Key, Shield } from 'lucide-react';
 
 interface PasswordManagerProps {
   employeeId: string;
@@ -14,13 +15,45 @@ interface PasswordManagerProps {
 }
 
 export default function PasswordManager({ employeeId, employeeName, employeeEmail }: PasswordManagerProps) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isDirector, setIsDirector] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    checkUserRole();
+  }, [user]);
+
+  const checkUserRole = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('employee_role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      setIsDirector(data.employee_role === 'director');
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  };
+
   const handlePasswordReset = async () => {
+    if (!isDirector) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Apenas diretores podem alterar senhas de outros usuários."
+      });
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       toast({
         variant: "destructive",
@@ -83,6 +116,10 @@ export default function PasswordManager({ employeeId, employeeName, employeeEmai
       setLoading(false);
     }
   };
+
+  if (!isDirector) {
+    return null; // Não exibe o botão se não for diretor
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

@@ -10,6 +10,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionService } from '@/services/permissionService';
 import { Separator } from '@/components/ui/separator';
 import { Shield, Users, Settings } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 type EmployeeRole = 
   | 'director' 
@@ -32,22 +34,42 @@ interface RolePermission {
 }
 
 export const PermissionManager = () => {
+  const { user } = useAuth();
   const [selectedRole, setSelectedRole] = useState<EmployeeRole | ''>('');
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isDirector, setIsDirector] = useState(false);
   const { toast } = useToast();
-  const { hasPermission } = usePermissions();
 
   const roles = PermissionService.getAvailableRoles();
   const availablePermissions = PermissionService.getAvailablePermissions();
 
-  const canManagePermissions = hasPermission('manage_permissions');
+  useEffect(() => {
+    checkUserRole();
+  }, [user]);
 
   useEffect(() => {
     if (selectedRole) {
       loadRolePermissions(selectedRole);
     }
   }, [selectedRole]);
+
+  const checkUserRole = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('employee_role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      setIsDirector(data.employee_role === 'director');
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  };
 
   const loadRolePermissions = async (role: EmployeeRole) => {
     setLoading(true);
@@ -79,7 +101,7 @@ export const PermissionManager = () => {
   };
 
   const savePermissions = async () => {
-    if (!selectedRole || !canManagePermissions) return;
+    if (!selectedRole || !isDirector) return;
 
     setLoading(true);
     try {
@@ -119,19 +141,14 @@ export const PermissionManager = () => {
     return acc;
   }, {} as Record<string, typeof availablePermissions>);
 
-  if (!canManagePermissions) {
+  if (!isDirector) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center p-8">
-          <div className="text-center space-y-2">
-            <Shield className="h-12 w-12 text-muted-foreground mx-auto" />
-            <h3 className="text-lg font-medium">Acesso Negado</h3>
-            <p className="text-sm text-muted-foreground">
-              Você não tem permissão para gerenciar permissões do sistema.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Acesso restrito a diretores</p>
+        </div>
+      </div>
     );
   }
 
