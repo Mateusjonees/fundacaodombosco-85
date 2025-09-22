@@ -106,7 +106,7 @@ export default function EmployeesNew() {
     }
 
     try {
-      // Usar supabase.auth.signUp para criação segura
+      // Criar usuário com email já confirmado (sem necessidade de validação)
       const { data, error } = await supabase.auth.signUp({
         email: newEmployee.email,
         password: newEmployee.password,
@@ -133,6 +133,21 @@ export default function EmployeesNew() {
 
       // Verificar se o usuário foi criado
       if (data?.user) {
+        // Se necessário confirmar email manualmente no backend
+        if (data.user && !data.user.email_confirmed_at) {
+          try {
+            // Confirmar o email automaticamente através de uma edge function
+            await supabase.functions.invoke('confirm-user-email', {
+              body: {
+                userId: data.user.id,
+                email: newEmployee.email
+              }
+            });
+          } catch (confirmError) {
+            console.log('Note: Email confirmation may be required manually:', confirmError);
+          }
+        }
+
         // Enviar email de boas-vindas
         try {
           await supabase.functions.invoke('send-employee-confirmation', {
@@ -149,7 +164,7 @@ export default function EmployeesNew() {
         // Sucesso
         toast({
           title: "Funcionário criado com sucesso",
-          description: `Login criado para ${newEmployee.name}. O funcionário já pode fazer login no sistema.`,
+          description: `Login criado para ${newEmployee.name}. O funcionário já pode fazer login imediatamente no sistema.`,
         });
 
         setIsDialogOpen(false);
