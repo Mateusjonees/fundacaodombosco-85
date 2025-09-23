@@ -114,7 +114,15 @@ export default function StockManager() {
         .order('name');
 
       if (error) throw error;
-      setStockItems(data || []);
+      
+      // Garantir que os dados sempre tenham valores válidos para o Select
+      const processedData = (data || []).map(item => ({
+        ...item,
+        category: item.category || 'Outros',
+        unit: item.unit || 'Unidade'
+      }));
+      
+      setStockItems(processedData);
     } catch (error) {
       console.error('Error loading stock items:', error);
       toast({
