@@ -60,8 +60,8 @@ export default function EditStockItemDialog({ item, isOpen, onClose, onUpdate }:
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: '',
-    unit: '',
+    category: 'Outros', // Valor padrão válido
+    unit: 'Unidade', // Valor padrão válido
     current_quantity: 0,
     minimum_quantity: 0,
     unit_cost: 0,

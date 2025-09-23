@@ -52,7 +52,7 @@ export default function Financial() {
 
   const [newRecord, setNewRecord] = useState({
     type: 'income',
-    category: '',
+    category: 'consultation', // Valor padrão válido para income
     amount: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
@@ -131,7 +131,7 @@ export default function Financial() {
       setIsDialogOpen(false);
       setNewRecord({
         type: 'income',
-        category: '',
+        category: 'consultation', // Valor padrão válido para income
         amount: '',
         description: '',
         date: new Date().toISOString().split('T')[0],

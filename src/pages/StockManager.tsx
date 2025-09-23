@@ -62,7 +62,7 @@ export default function StockManager() {
   const [newItem, setNewItem] = useState({
     name: '',
     description: '',
-    category: '',
+    category: 'medical', // Valor padrão válido
     unit: 'unit',
     current_quantity: 0,
     minimum_quantity: 0,
@@ -84,7 +84,7 @@ export default function StockManager() {
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
-    month: '',
+    month: 'all', // Valor padrão válido
     year: new Date().getFullYear().toString(),
     movementType: 'all', // 'all', 'in', 'out'
     itemId: 'all',
@@ -311,7 +311,7 @@ export default function StockManager() {
     setNewItem({
       name: '',
       description: '',
-      category: '',
+      category: 'medical', // Valor padrão válido
       unit: 'unit',
       current_quantity: 0,
       minimum_quantity: 0,
@@ -336,7 +336,7 @@ export default function StockManager() {
     setFilters({
       dateFrom: '',
       dateTo: '',
-      month: '',
+      month: 'all', // Valor padrão válido
       year: new Date().getFullYear().toString(),
       movementType: 'all',
       itemId: 'all',
@@ -800,7 +800,7 @@ export default function StockManager() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os meses</SelectItem>
+                  <SelectItem value="all">Todos os meses</SelectItem>
                   <SelectItem value="1">Janeiro</SelectItem>
                   <SelectItem value="2">Fevereiro</SelectItem>
                   <SelectItem value="3">Março</SelectItem>

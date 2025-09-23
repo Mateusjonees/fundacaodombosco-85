@@ -60,7 +60,7 @@ export const MeetingAlertManager = () => {
     meeting_time: '',
     meeting_location: '',
     meeting_room: '',
-    client_id: '',
+    client_id: 'none', // Valor padrão válido
     participants: [] as string[]
   });
 
@@ -153,7 +153,7 @@ export const MeetingAlertManager = () => {
           meeting_date: meetingDateTime,
           meeting_location: newAlert.meeting_location,
           meeting_room: newAlert.meeting_room,
-          client_id: newAlert.client_id || null,
+          client_id: newAlert.client_id === 'none' ? null : newAlert.client_id,
           created_by: user?.id,
           participants: newAlert.participants
         }]);
@@ -295,7 +295,7 @@ export const MeetingAlertManager = () => {
                       <SelectValue placeholder="Selecionar paciente" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum paciente</SelectItem>
+                      <SelectItem value="none">Nenhum paciente</SelectItem>
                       {clients.map(client => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
