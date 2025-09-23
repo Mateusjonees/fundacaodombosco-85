@@ -49,6 +49,7 @@ export default function Stock() {
 
   useEffect(() => {
     loadStockItems();
+    loadStockMovements();
   }, []);
 
   const loadStockItems = async () => {
@@ -73,7 +74,44 @@ export default function Stock() {
     }
   };
 
-  // Função loadStockMovements removida temporariamente - tabela stock_movements será criada futuramente
+  const loadStockMovements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .select(`
+          id,
+          stock_item_id,
+          type,
+          quantity,
+          reason,
+          date,
+          created_by,
+          stock_items(name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      
+      // Mapear os dados para o formato esperado
+      const mappedMovements: StockMovement[] = (data || []).map(movement => ({
+        id: movement.id,
+        stock_item_id: movement.stock_item_id,
+        type: movement.type,
+        quantity: movement.quantity,
+        reason: movement.reason,
+        date: movement.date,
+        created_by: movement.created_by,
+        stock_items: movement.stock_items,
+        profiles: undefined // Será buscado depois se necessário
+      }));
+      
+      setMovements(mappedMovements);
+    } catch (error) {
+      console.error('Error loading stock movements:', error);
+      // Não mostrar erro se a tabela não existir ainda
+    }
+  };
 
   const getLowStockItems = () => {
     return stockItems.filter(item => item.current_quantity <= item.minimum_quantity);
