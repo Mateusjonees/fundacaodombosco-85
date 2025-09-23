@@ -23,6 +23,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Minus, Edit, MoreHorizontal, Trash } from 'lucide-react';
+import EditStockItemDialog from './EditStockItemDialog';
 
 interface StockItem {
   id: string;
@@ -52,6 +53,7 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const [addQuantity, setAddQuantity] = useState(1);
@@ -346,7 +348,7 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Editar Item
             </DropdownMenuItem>
@@ -378,6 +380,14 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Edição */}
+      <EditStockItemDialog
+        item={item}
+        isOpen={isEditDialogOpen} 
+        onClose={() => setIsEditDialogOpen(false)}
+        onUpdate={onUpdate}
+      />
     </div>
   );
 }

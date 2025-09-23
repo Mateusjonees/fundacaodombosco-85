@@ -10,6 +10,7 @@ import { Package, Plus, Edit, TrendingDown, TrendingUp, AlertTriangle } from 'lu
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import StockItemActions from '@/components/StockItemActions';
+import AddStockItemDialog from '@/components/AddStockItemDialog';
 
 interface StockItem {
   id: string;
@@ -43,6 +44,7 @@ export default function Stock() {
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('items');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,10 +93,16 @@ export default function Stock() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Controle de Estoque</h1>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="h-4 w-4" />
           Novo Item
         </Button>
+        
+        <AddStockItemDialog
+          isOpen={isAddDialogOpen}
+          onClose={() => setIsAddDialogOpen(false)}
+          onUpdate={loadStockItems}
+        />
       </div>
 
       {/* Resumo */}
