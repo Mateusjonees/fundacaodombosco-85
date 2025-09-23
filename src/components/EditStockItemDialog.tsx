@@ -76,8 +76,8 @@ export default function EditStockItemDialog({ item, isOpen, onClose, onUpdate }:
       setFormData({
         name: item.name || '',
         description: item.description || '',
-        category: item.category || '',
-        unit: item.unit || '',
+        category: item.category || 'Outros', // Usar valor padrão válido
+        unit: item.unit || 'Unidade', // Usar valor padrão válido
         current_quantity: item.current_quantity || 0,
         minimum_quantity: item.minimum_quantity || 0,
         unit_cost: item.unit_cost || 0,
@@ -108,7 +108,7 @@ export default function EditStockItemDialog({ item, isOpen, onClose, onUpdate }:
         .update({
           name: formData.name.trim(),
           description: formData.description.trim() || null,
-          category: formData.category || null,
+          category: formData.category && formData.category !== '' ? formData.category : null,
           unit: formData.unit,
           current_quantity: formData.current_quantity,
           minimum_quantity: formData.minimum_quantity,

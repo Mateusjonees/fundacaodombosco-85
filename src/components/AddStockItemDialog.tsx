@@ -45,7 +45,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: '',
+    category: 'Material Médico', // Valor padrão válido
     unit: 'Unidade',
     current_quantity: 0,
     minimum_quantity: 5,
@@ -84,7 +84,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
         .insert({
           name: formData.name.trim(),
           description: formData.description.trim() || null,
-          category: formData.category || null,
+          category: formData.category && formData.category !== '' ? formData.category : null,
           unit: formData.unit,
           current_quantity: formData.current_quantity,
           minimum_quantity: formData.minimum_quantity,
@@ -108,7 +108,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
       setFormData({
         name: '',
         description: '',
-        category: '',
+        category: 'Material Médico', // Valor padrão válido
         unit: 'Unidade',
         current_quantity: 0,
         minimum_quantity: 5,
