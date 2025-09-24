@@ -12,9 +12,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload } from 'lucide-react';
+import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload, Database } from 'lucide-react';
 import ClientDetailsView from '@/components/ClientDetailsView';
 import { BulkImportClientsDialog } from '@/components/BulkImportClientsDialog';
+import { AutoImportClientsDialog } from '@/components/AutoImportClientsDialog';
 
 interface Client {
   id: string;
@@ -104,6 +105,7 @@ export default function Clients() {
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
@@ -413,6 +415,13 @@ export default function Clients() {
           >
             <Upload className="h-4 w-4" />
             Importar Excel
+          </Button>
+          <Button 
+            onClick={() => setIsAutoImportOpen(true)}
+            className="gap-2"
+          >
+            <Database className="h-4 w-4" />
+            Importar Planilha FDB
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
@@ -815,6 +824,15 @@ export default function Clients() {
         onImportComplete={() => {
           loadClients();
           setIsBulkImportOpen(false);
+        }}
+      />
+      
+      <AutoImportClientsDialog 
+        isOpen={isAutoImportOpen}
+        onClose={() => setIsAutoImportOpen(false)}
+        onImportComplete={() => {
+          loadClients();
+          setIsAutoImportOpen(false);
         }}
       />
     </div>
