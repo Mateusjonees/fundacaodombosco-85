@@ -146,27 +146,36 @@ export default function Schedule() {
     try {
       let query = supabase
         .from('clients')
-        .select('id, name')
+        .select('id, name, unit')
         .eq('is_active', true)
         .order('name');
 
-      // Se o usuário não for administrativo (diretor, coordenador ou recepcionista),
-      // só mostrar pacientes vinculados a ele através de client_assignments
-      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'].includes(userProfile.employee_role)) {
-        const { data: assignments } = await supabase
-          .from('client_assignments')
-          .select('client_id')
-          .eq('employee_id', userProfile.id)
-          .eq('is_active', true);
-        
-        const clientIds = [...new Set(assignments?.map(a => a.client_id) || [])];
-        if (clientIds.length > 0) {
-          query = query.in('id', clientIds);
-        } else {
-          // Se não há pacientes vinculados, não mostrar nenhum
-          setClients([]);
-          return;
+      // Aplicar filtros baseados no role do usuário
+      if (userProfile) {
+        if (userProfile.employee_role === 'coordinator_madre') {
+          // Coordenador Madre vê apenas clientes da unidade madre ou sem unidade definida
+          query = query.or('unit.eq.madre,unit.is.null');
+        } else if (userProfile.employee_role === 'coordinator_floresta') {
+          // Coordenador Floresta vê apenas clientes da unidade floresta
+          query = query.eq('unit', 'floresta');
+        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
+          // Para outros profissionais, mostrar apenas pacientes vinculados
+          const { data: assignments } = await supabase
+            .from('client_assignments')
+            .select('client_id')
+            .eq('employee_id', userProfile.id)
+            .eq('is_active', true);
+          
+          const clientIds = [...new Set(assignments?.map(a => a.client_id) || [])];
+          if (clientIds.length > 0) {
+            query = query.in('id', clientIds);
+          } else {
+            // Se não há pacientes vinculados, não mostrar nenhum
+            setClients([]);
+            return;
+          }
         }
+        // Diretores e recepcionistas veem todos os clientes (sem filtro adicional)
       }
 
       const { data, error } = await query;
