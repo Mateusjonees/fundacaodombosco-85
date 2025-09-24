@@ -12,10 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload, Database } from 'lucide-react';
+import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload, Database, FileDown } from 'lucide-react';
 import ClientDetailsView from '@/components/ClientDetailsView';
 import { BulkImportClientsDialog } from '@/components/BulkImportClientsDialog';
 import { AutoImportClientsDialog } from '@/components/AutoImportClientsDialog';
+import { importClientsFromFile } from '@/utils/importClients';
 
 interface Client {
   id: string;
@@ -106,6 +107,7 @@ export default function Clients() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
@@ -308,6 +310,39 @@ export default function Clients() {
     });
   };
 
+  const handleDirectImport = async () => {
+    setIsImporting(true);
+    try {
+      const result = await importClientsFromFile();
+      
+      if (result.success > 0) {
+        toast({
+          title: "Importação concluída",
+          description: `${result.success} pacientes importados com sucesso.`,
+        });
+        loadClients();
+      }
+      
+      if (result.errors.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Alguns erros ocorreram",
+          description: `${result.errors.length} erro(s) encontrado(s). Verifique o console para detalhes.`,
+        });
+        console.error('Erros na importação:', result.errors);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível importar os pacientes.",
+      });
+      console.error('Erro na importação:', error);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const openEditDialog = (client: Client) => {
     setEditingClient(client);
     setNewClient({
@@ -422,6 +457,15 @@ export default function Clients() {
           >
             <Database className="h-4 w-4" />
             Importar Planilha FDB
+          </Button>
+          <Button 
+            onClick={handleDirectImport}
+            disabled={isImporting}
+            className="gap-2"
+            variant="secondary"
+          >
+            <FileDown className="h-4 w-4" />
+            {isImporting ? 'Importando...' : 'Importar Arquivo Carregado'}
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
