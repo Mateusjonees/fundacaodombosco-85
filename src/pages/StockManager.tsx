@@ -12,8 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Package2, Plus, AlertTriangle, TrendingUp, Activity, Upload } from 'lucide-react';
+import { Package2, Plus, AlertTriangle, TrendingUp, Activity, Upload, Edit } from 'lucide-react';
 import BulkImportTestsDialog from '@/components/BulkImportTestsDialog';
+import StockItemInlineActions from '@/components/StockItemInlineActions';
 
 interface StockItem {
   id: string;
@@ -29,6 +30,7 @@ interface StockItem {
   expiry_date?: string;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 interface StockMovement {
@@ -688,35 +690,78 @@ export default function StockManager() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Quantidade</TableHead>
-                      <TableHead>Estoque Mín.</TableHead>
+                      <TableHead>Nome do Teste</TableHead>
+                      <TableHead>Folha de Resposta</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Editora</TableHead>
+                      <TableHead>Construto</TableHead>
+                      <TableHead>Qtde em Estoque</TableHead>
                       <TableHead>Valor Unit.</TableHead>
-                      <TableHead>Localização</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredItems.map((item) => (
-                      <TableRow key={item.id} className={item.current_quantity <= item.minimum_quantity ? 'bg-orange-50' : ''}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.category}</TableCell>
-                        <TableCell>{item.current_quantity} {item.unit}</TableCell>
-                        <TableCell>{item.minimum_quantity}</TableCell>
-                        <TableCell>R$ {item.unit_cost.toFixed(2)}</TableCell>
-                        <TableCell>{item.location || '-'}</TableCell>
-                        <TableCell>
-                          {item.current_quantity <= item.minimum_quantity ? (
-                            <Badge variant="destructive">Baixo</Badge>
-                          ) : item.current_quantity <= item.minimum_quantity * 2 ? (
-                            <Badge variant="secondary">Atenção</Badge>
-                          ) : (
-                            <Badge variant="default">Normal</Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredItems.map((item) => {
+                      // Separar nome do teste e folha de resposta
+                      const parts = item.name.split(' - ');
+                      const testName = parts[0] || item.name;
+                      const responseSheet = parts[1] || '-';
+                      
+                      return (
+                        <TableRow key={item.id} className={item.current_quantity <= item.minimum_quantity ? 'bg-orange-50/50' : ''}>
+                          <TableCell className="font-medium max-w-xs">
+                            <div className="truncate" title={testName}>
+                              {testName}
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-xs">
+                            <div className="truncate text-sm" title={responseSheet}>
+                              {responseSheet}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                              {item.unit}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {item.supplier || '-'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {item.category || '-'}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={`font-medium ${
+                              item.current_quantity === 0 
+                                ? 'text-red-600' 
+                                : item.current_quantity <= item.minimum_quantity 
+                                  ? 'text-orange-600' 
+                                  : 'text-green-600'
+                            }`}>
+                              {item.current_quantity}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="font-medium">
+                              R$ {item.unit_cost.toFixed(2)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {item.current_quantity === 0 ? (
+                              <Badge variant="destructive">Esgotado</Badge>
+                            ) : item.current_quantity <= item.minimum_quantity ? (
+                              <Badge variant="secondary">Baixo</Badge>
+                            ) : (
+                              <Badge variant="default">Normal</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <StockItemInlineActions item={item} onUpdate={loadStockItems} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -735,26 +780,31 @@ export default function StockManager() {
                   Nenhum item com estoque baixo.
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {lowStockItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg bg-orange-50">
-                      <div>
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Categoria: {item.category}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="destructive">
-                          {item.current_quantity} / {item.minimum_quantity}
-                        </Badge>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Localização: {item.location || 'Não definida'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                 <div className="space-y-4">
+                   {lowStockItems.map((item) => (
+                     <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg bg-orange-50">
+                       <div className="flex-1">
+                         <h3 className="font-medium">{item.name}</h3>
+                         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                           <span>Categoria: {item.category || '-'}</span>
+                           <span>Editora: {item.supplier || '-'}</span>
+                           <span>R$ {item.unit_cost.toFixed(2)}</span>
+                         </div>
+                       </div>
+                       <div className="flex items-center gap-4">
+                         <div className="text-right">
+                           <Badge variant="destructive" className="text-base px-3 py-1">
+                             {item.current_quantity} em estoque
+                           </Badge>
+                           <p className="text-xs text-muted-foreground mt-1">
+                             Mínimo: {item.minimum_quantity}
+                           </p>
+                         </div>
+                         <StockItemInlineActions item={item} onUpdate={loadStockItems} />
+                       </div>
+                     </div>
+                   ))}
+                 </div>
               )}
             </CardContent>
           </Card>
