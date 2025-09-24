@@ -27,6 +27,7 @@ interface Client {
 }
 
 interface ContractData {
+  contractType: string;
   clientId: string;
   clientName: string;
   clientCpf: string;
@@ -36,7 +37,6 @@ interface ContractData {
   paymentMethod: string;
   value: string;
   contractDate: string;
-  contractType: string;
 }
 
 export default function Contracts() {
@@ -48,16 +48,16 @@ export default function Contracts() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [contractData, setContractData] = useState<ContractData>({
+    contractType: 'Avaliação Neuropsicológica',
     clientId: '',
     clientName: '',
     clientCpf: '',
     responsibleName: '',
     responsibleCpf: '',
     address: '',
-    paymentMethod: 'pix',
-    value: '500,00',
-    contractDate: new Date().toISOString().split('T')[0],
-    contractType: 'neuropsychological_assessment'
+    paymentMethod: 'PIX',
+    value: '1.600,00',
+    contractDate: new Date().toISOString().split('T')[0]
   });
 
   useEffect(() => {
@@ -105,52 +105,81 @@ export default function Contracts() {
   const generateContract = () => {
     const contractContent = `
 CONTRATO DE PRESTAÇÃO DE SERVIÇOS
-${contractData.contractType === 'neuropsychological_assessment' ? 'AVALIAÇÃO NEUROPSICOLÓGICA' : 'SERVIÇOS TERAPÊUTICOS'}
+AVALIAÇÃO NEUROPSICOLÓGICA
 
 1. Das partes
 
-A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName}, registrada no CPF sob o nº ${contractData.responsibleCpf}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName}, inscrito no CPF sob o nº ${contractData.clientCpf}, denominado neste como beneficiário do serviço, residente à ${contractData.address}, firmam contrato de prestação de serviço de ${contractData.contractType === 'neuropsychological_assessment' ? 'avaliação neuropsicológica' : 'terapia'} que será realizado conforme as cláusulas abaixo.
+A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName}, registrada no CPF sob o nº ${contractData.responsibleCpf}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName}, inscrito no CPF sob o nº ${contractData.clientCpf}, denominado neste como beneficiário do serviço, residente à ${contractData.address}, firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.
 
 2. Cláusulas
 
-${contractData.contractType === 'neuropsychological_assessment' ? `
 2.1.1. A avaliação neuropsicológica é um exame complementar realizado por profissional especializado em neuropsicologia e que neste contrato é denominada como CONTRATADA, e compreende três etapas, sendo: anamnese ou entrevista inicial, aplicação dos instrumentos de avaliação neuropsicológica e entrevista devolutiva para entrega do laudo.
 
 2.1.2. Serão realizadas sessões para a coleta de dados, entrevistas, aplicações de escalas e testes e possíveis reuniões com outros informantes, sendo que ao final do processo o CONTRATANTE terá direito ao LAUDO NEUROPSICOLÓGICO, com a finalidade de atestar, aconselhar e encaminhar o paciente para o melhor tratamento adequado com suas necessidades.
 
 2.1.3. O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em acordo com o contratante durante a Sessão de Devolutiva com duração de 1 (uma) hora, podendo ser no formato online ou presencial, a ser definido pelo neuropsicólogo.
 
-2.3.1. O processo de aplicação dos instrumentos ocorre com a utilização de, no mínimo 4 sessões e no máximo 14 sessões, com duração 1 (uma) hora, a serem definidas pelo profissional a realizá-las, agendadas previamente com o contratante.
-` : `
-2.1.1. Os serviços terapêuticos serão prestados por profissionais especializados, conforme a necessidade específica do beneficiário do serviço.
+2.1.4. Os instrumentos de avaliação neuropsicológicos serão compostos de questionários, escalas, inventários, tarefas e testes neuropsicológicos aprovados e validados para aplicação na população brasileira obedecendo aos critérios de aprovação para uso do Conselho Federal de Psicologia.
 
-2.1.2. As sessões terapêuticas serão realizadas em horário combinado, com duração e frequência a serem definidas pelo profissional responsável.
-
-2.1.3. O acompanhamento será realizado de forma individualizada, respeitando as particularidades e necessidades específicas do beneficiário.
-`}
+2.1.5. As sessões de avaliação serão realizadas em horário combinado, estando a neuropsicóloga à disposição do beneficiário do serviço naquele período.
 
 2.2. Sigilo
-2.2.1. Os profissionais respeitarão o sigilo profissional a fim de proteger, por meio da confiabilidade, a intimidade das pessoas, grupos ou organizações, a que tenham acesso no exercício profissional.
+2.2.1. A neuropsicóloga respeitará o sigilo profissional a fim de proteger, por meio da confiabilidade, a intimidade das pessoas, grupos ou organizações, a que tenha acesso no exercício profissional (Código de Ética do Psicólogo, artigo 9º).
 
-2.4. Valor e Forma de Pagamento
-2.4.1. O valor total dos serviços é de R$ ${contractData.value}, a ser pago através de ${contractData.paymentMethod}.
-2.4.2. O pagamento deverá ser efetuado de acordo com o cronograma estabelecido pela CONTRATADA.
+2.3. Etapas da Avaliação Neuropsicológica e Vigência do Contrato
+2.3.1. O processo de aplicação dos instrumentos ocorre com a utilização de, no mínimo 4 sessões e no máximo 14 sessões, com duração 1 (uma) hora, a serem definidas pelo profissional a realizá-las, agendadas previamente com o contratante.
 
-2.5. Disposições Gerais
-2.5.1. A vigência deste contrato ${contractData.contractType === 'neuropsychological_assessment' ? 'encerrar-se-á imediatamente após a entrega do laudo neuropsicológico' : 'será definida conforme acordo entre as partes'} e à quitação do valor correspondente à prestação de serviço acordada.
+2.3.2. O número de sessões, bem como a duração delas, será definido pela neuropsicóloga, de acordo com a direcionamento e conhecimento da profissional, de maneira a obter-se sempre a melhor qualidade de resultados.
 
-Data do Contrato: ${new Date(contractData.contractDate).toLocaleDateString('pt-BR')}
+2.3.3. Caso o paciente a ser avaliado ser estudante e/ou estar em acompanhamento terapêutico será realizada entrevista com a equipe escolar e multidisciplinar como parte integrante da avaliação, conforme for possível e necessário, através de questionários e/ou vídeo conferência.
+
+2.3.4. A vigência deste contrato encerrar-se-á imediatamente após a entrega do laudo neuropsicológico e à quitação do valor correspondente à prestação de serviço acordada.
+
+2.3.5. As datas das sessões de avaliação serão definidas em comum acordo entre as partes e registradas neste contrato.
+
+2.4. Cancelamento e reagendamento de sessões
+2.4.1. O Contratante concorda em notificar o Contratado com antecedência de 12 horas em caso de cancelamento ou reagendamento de sessões.
+
+2.5. Avaliação de menores de 18 anos
+2.5.1. A avaliação neuropsicológica de menores de 18 anos será realizada somente com a ciência e concordância de um responsável pela criança ou adolescente.
+
+2.5.2. A criança/adolescente deverá comparecer ao consultório para avaliação acompanhado de um responsável, o qual deverá estar presente no consultório ao final de cada sessão a fim de acompanhar o menor até sua casa.
+
+2.6. Honorários e formas de pagamento
+2.6.1. A forma de pagamento deverá ser definida e devidamente registrada neste contrato durante a primeira sessão de avaliação (anamnese).
+
+2.6.2. O valor referente à prestação de serviço de Avaliação Neuropsicológica será no total de R$ ${contractData.value}. O pagamento dos honorários referentes ao serviço de Avaliação Neuropsicológica será efetuado através de ${contractData.paymentMethod}.
+
+2.6.3. O laudo será entregue SOMENTE após a quitação do valor total da avaliação.
+
+2.6.4. As sessões de avaliação SOMENTE terão início após o pagamento da primeira parcela.
+
+2.6.5. Os pagamentos por transferência, depósito bancário ou pix deverão ser realizados conforme os dados informados e posteriormente com o envio do respectivo comprovante para o e-mail: financeiro@fundacaodombosco.org com os dados referentes ao paciente e o responsável financeiro discriminados no corpo do e-mail.
+
+2.6.6. Caso o contratante opte pelo parcelamento do pagamento em 2 (duas) ou mais parcelas, fica vedada a condição de vincular o pagamento do serviço à entrega do Laudo Neuropsicológico. O contratante deve, de forma imperativa, cumprir rigorosamente as datas estipuladas nas cláusulas anteriores, sob pena de rescisão contratual, nos termos constantes no item 2.7 deste contrato.
+
+2.7. Da Rescisão
+2.7.1. O presente instrumento poderá ser rescindido caso qualquer das partes descumpra o disposto neste contrato.
+
+2.7.2. Na hipótese de a CONTRATANTE solicitar a rescisão antecipada deste contrato sem justa causa, será obrigada a pagar a CONTRATADA por inteiro qualquer retribuição vencida e não paga e 50% (cinquenta por cento) do que ela receberia até o final do contrato.
+
+2.7.3. Na hipótese de a CONTRATADA solicitar a rescisão antecipada deste contrato sem justa causa terá direito a retribuição vencida.
+
+2.7.4. Caso a CONTRATANTE não compareça a 4 sessões seguidas sem informar a CONTRATADA e não houver possibilidade de contato após esse período, este contrato fica rescindido automaticamente e fica obrigada a pagar 100% do valor do contrato.
+
+2.7.5. Com a assinatura, ambas as partes atestam que tiveram oportunidade de ler, discutir, definir e concordar com todas as cláusulas deste contrato.
 
 FUNDAÇÃO DOM BOSCO
 Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: 31 3226-2616
 Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: 31 3386-1600
 Belo Horizonte - MG - www.fundacaodombosco.org
 
-Em cumprimento à Lei Geral de Proteção de dados n13.709/2020, o destinatário deste documento se responsabiliza por manter medidas de segurança, técnicas e administrativas suficientes a proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas.
+Belo Horizonte, ${new Date(contractData.contractDate).toLocaleDateString('pt-BR')}
 
-_________________________              _________________________
-CONTRATADA                             CONTRATANTE
-Fundação Dom Bosco                     ${contractData.responsibleName}
+_____________________________                           _____________________________
+Contratada                                              Contratante
+
+Em cumprimento à Lei Geral de Proteção de dados nº 13.709/2020, o destinatário deste documento deve proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante, conforme artigo 48 da Lei e assumindo as sanções cabíveis.
 `;
 
     return contractContent;
@@ -207,16 +236,16 @@ Fundação Dom Bosco                     ${contractData.responsibleName}
 
   const resetForm = () => {
     setContractData({
+      contractType: 'Avaliação Neuropsicológica',
       clientId: '',
       clientName: '',
       clientCpf: '',
       responsibleName: '',
       responsibleCpf: '',
       address: '',
-      paymentMethod: 'pix',
-      value: '500,00',
-      contractDate: new Date().toISOString().split('T')[0],
-      contractType: 'neuropsychological_assessment'
+      paymentMethod: 'PIX',
+      value: '1.600,00',
+      contractDate: new Date().toISOString().split('T')[0]
     });
   };
 
