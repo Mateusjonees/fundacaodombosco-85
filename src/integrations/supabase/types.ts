@@ -2330,6 +2330,32 @@ export type Database = {
           work_schedule: Json
         }[]
       }
+      get_stock_movements_with_details: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          attendance_id: string
+          client_id: string
+          client_name: string
+          created_at: string
+          date: string
+          from_location: string
+          id: string
+          item_name: string
+          moved_by: string
+          moved_by_name: string
+          movement_type: string
+          new_quantity: number
+          notes: string
+          previous_quantity: number
+          quantity: number
+          reason: string
+          schedule_id: string
+          stock_item_id: string
+          to_location: string
+          total_cost: number
+          unit_cost: number
+        }[]
+      }
       get_user_permissions: {
         Args: Record<PropertyKey, never> | { user_uuid: string }
         Returns: {

@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Package, Plus, Edit, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingUp, TrendingDown, ArrowLeftRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import StockItemActions from '@/components/StockItemActions';
 import AddStockItemDialog from '@/components/AddStockItemDialog';
+import { StockMovementDialog } from '@/components/StockMovementDialog';
+import { StockMovementHistory } from '@/components/StockMovementHistory';
 
 interface StockItem {
   id: string;
@@ -27,29 +28,23 @@ interface StockItem {
   updated_at: string;
 }
 
-interface StockMovement {
+interface Client {
   id: string;
-  stock_item_id: string;
-  type: string;
-  quantity: number;
-  reason?: string;
-  date: string;
-  created_by?: string;
-  stock_items?: { name: string };
-  profiles?: { name: string };
+  name: string;
 }
 
 export default function Stock() {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
-  const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('items');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadStockItems();
-    loadStockMovements();
+    loadClients();
   }, []);
 
   const loadStockItems = async () => {
@@ -82,42 +77,18 @@ export default function Stock() {
     }
   };
 
-  const loadStockMovements = async () => {
+  const loadClients = async () => {
     try {
       const { data, error } = await supabase
-        .from('stock_movements')
-        .select(`
-          id,
-          stock_item_id,
-          type,
-          quantity,
-          reason,
-          date,
-          created_by,
-          stock_items(name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100);
+        .from('clients')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
 
       if (error) throw error;
-      
-      // Mapear os dados para o formato esperado
-      const mappedMovements: StockMovement[] = (data || []).map(movement => ({
-        id: movement.id,
-        stock_item_id: movement.stock_item_id,
-        type: movement.type,
-        quantity: movement.quantity,
-        reason: movement.reason,
-        date: movement.date,
-        created_by: movement.created_by,
-        stock_items: movement.stock_items,
-        profiles: undefined // Será buscado depois se necessário
-      }));
-      
-      setMovements(mappedMovements);
+      setClients(data || []);
     } catch (error) {
-      console.error('Error loading stock movements:', error);
-      // Não mostrar erro se a tabela não existir ainda
+      console.error('Error loading clients:', error);
     }
   };
 
@@ -139,15 +110,33 @@ export default function Stock() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Controle de Estoque</h1>
-        <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Novo Item
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            className="gap-2" 
+            variant="outline"
+            onClick={() => setIsMovementDialogOpen(true)}
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+            Nova Movimentação
+          </Button>
+          <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Novo Item
+          </Button>
+        </div>
         
         <AddStockItemDialog
           isOpen={isAddDialogOpen}
           onClose={() => setIsAddDialogOpen(false)}
           onUpdate={loadStockItems}
+        />
+        
+        <StockMovementDialog
+          open={isMovementDialogOpen}
+          onOpenChange={setIsMovementDialogOpen}
+          stockItems={stockItems}
+          clients={clients}
+          onMovementCreated={loadStockItems}
         />
       </div>
 
@@ -191,11 +180,11 @@ export default function Stock() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Movimentações</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+            <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{movements.length}</div>
-            <p className="text-xs text-muted-foreground">Últimas 100 movimentações</p>
+            <div className="text-2xl font-bold">-</div>
+            <p className="text-xs text-muted-foreground">Sistema de rastreamento</p>
           </CardContent>
         </Card>
       </div>
@@ -300,43 +289,7 @@ export default function Stock() {
       )}
 
       {activeTab === 'movements' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Histórico de Movimentações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Quantidade</TableHead>
-                  <TableHead>Motivo</TableHead>
-                  <TableHead>Responsável</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {movements.map((movement) => (
-                  <TableRow key={movement.id}>
-                    <TableCell>
-                      {format(new Date(movement.date), 'dd/MM/yyyy', { locale: ptBR })}
-                    </TableCell>
-                    <TableCell>{movement.stock_items?.name}</TableCell>
-                    <TableCell>
-                      <Badge variant={movement.type === 'in' ? 'default' : 'secondary'}>
-                        {movement.type === 'in' ? 'Entrada' : 'Saída'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{movement.quantity}</TableCell>
-                    <TableCell>{movement.reason || '-'}</TableCell>
-                    <TableCell>{movement.profiles?.name || '-'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <StockMovementHistory />
       )}
     </div>
   );

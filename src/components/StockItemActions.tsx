@@ -22,8 +22,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Minus, Edit, MoreHorizontal, Trash } from 'lucide-react';
+import { Plus, Minus, Edit, MoreHorizontal, Trash, ArrowLeftRight } from 'lucide-react';
 import EditStockItemDialog from './EditStockItemDialog';
+import { StockMovementDialog } from './StockMovementDialog';
 
 interface StockItem {
   id: string;
@@ -40,12 +41,18 @@ interface StockItem {
   updated_at: string;
 }
 
+interface Client {
+  id: string;
+  name: string;
+}
+
 interface StockItemActionsProps {
   item: StockItem;
   onUpdate: () => void;
+  clients?: Client[];
 }
 
-export default function StockItemActions({ item, onUpdate }: StockItemActionsProps) {
+export default function StockItemActions({ item, onUpdate, clients = [] }: StockItemActionsProps) {
   const { user } = useAuth();
   const { canManageStock } = useRolePermissions();
   const { toast } = useToast();
@@ -54,6 +61,7 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const [addQuantity, setAddQuantity] = useState(1);
@@ -72,16 +80,22 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
 
     setLoading(true);
     try {
+      const previousQuantity = item.current_quantity;
+      const newQuantity = previousQuantity + addQuantity;
+
       // Registrar movimentação
       const { error: movementError } = await supabase
         .from('stock_movements')
         .insert([{
           stock_item_id: item.id,
-          type: 'in',
+          type: 'entrada',
           quantity: addQuantity,
+          previous_quantity: previousQuantity,
+          new_quantity: newQuantity,
           reason: reason || 'Ajuste manual de estoque',
           date: new Date().toISOString().split('T')[0],
-          created_by: user?.id
+          created_by: user?.id,
+          moved_by: user?.id
         }]);
 
       if (movementError) throw movementError;
@@ -90,7 +104,7 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
       const { error: updateError } = await supabase
         .from('stock_items')
         .update({ 
-          current_quantity: item.current_quantity + addQuantity 
+          current_quantity: newQuantity 
         })
         .eq('id', item.id);
 
@@ -138,16 +152,22 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
 
     setLoading(true);
     try {
+      const previousQuantity = item.current_quantity;
+      const newQuantity = Math.max(0, previousQuantity - removeQuantity);
+
       // Registrar movimentação
       const { error: movementError } = await supabase
         .from('stock_movements')
         .insert([{
           stock_item_id: item.id,
-          type: 'out',
+          type: 'saida',
           quantity: removeQuantity,
+          previous_quantity: previousQuantity,
+          new_quantity: newQuantity,
           reason: reason || 'Ajuste manual de estoque',
           date: new Date().toISOString().split('T')[0],
-          created_by: user?.id
+          created_by: user?.id,
+          moved_by: user?.id
         }]);
 
       if (movementError) throw movementError;
@@ -156,7 +176,7 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
       const { error: updateError } = await supabase
         .from('stock_items')
         .update({ 
-          current_quantity: Math.max(0, item.current_quantity - removeQuantity)
+          current_quantity: newQuantity
         })
         .eq('id', item.id);
 
@@ -348,6 +368,10 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsMovementDialogOpen(true)}>
+              <ArrowLeftRight className="h-4 w-4 mr-2" />
+              Nova Movimentação
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Editar Item
@@ -387,6 +411,16 @@ export default function StockItemActions({ item, onUpdate }: StockItemActionsPro
         isOpen={isEditDialogOpen} 
         onClose={() => setIsEditDialogOpen(false)}
         onUpdate={onUpdate}
+      />
+
+      {/* Dialog de Movimentação Completa */}
+      <StockMovementDialog
+        open={isMovementDialogOpen}
+        onOpenChange={setIsMovementDialogOpen}
+        stockItems={[item]}
+        clients={clients}
+        selectedItemId={item.id}
+        onMovementCreated={onUpdate}
       />
     </div>
   );

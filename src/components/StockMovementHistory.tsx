@@ -68,22 +68,54 @@ export function StockMovementHistory({ selectedItemId }: StockMovementHistoryPro
   const loadMovements = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_stock_movements_with_details');
+      // Build the query
+      let query = supabase
+        .from('stock_movements')
+        .select(`
+          *,
+          stock_items (name),
+          profiles!stock_movements_moved_by_fkey (name),
+          clients (name)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Filter by selected item if provided
+      if (selectedItemId) {
+        query = query.eq('stock_item_id', selectedItemId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
       }
 
-      let filteredData = data || [];
+      // Transform the data to match our interface
+      const transformedData: StockMovement[] = (data || []).map((movement: any) => ({
+        id: movement.id,
+        stock_item_id: movement.stock_item_id,
+        item_name: movement.stock_items?.name || 'Item não encontrado',
+        moved_by: movement.moved_by || movement.created_by,
+        moved_by_name: movement.profiles?.name || 'Usuário não encontrado',
+        movement_type: movement.type,
+        quantity: movement.quantity,
+        previous_quantity: movement.previous_quantity,
+        new_quantity: movement.new_quantity,
+        unit_cost: movement.unit_cost,
+        total_cost: movement.total_cost,
+        reason: movement.reason || '',
+        notes: movement.notes || '',
+        attendance_id: movement.attendance_id,
+        client_id: movement.client_id,
+        client_name: movement.clients?.name || '',
+        schedule_id: movement.schedule_id,
+        from_location: movement.from_location || '',
+        to_location: movement.to_location || '',
+        date: movement.date,
+        created_at: movement.created_at,
+      }));
 
-      // Filter by selected item if provided
-      if (selectedItemId) {
-        filteredData = filteredData.filter((movement: StockMovement) => 
-          movement.stock_item_id === selectedItemId
-        );
-      }
-
-      setMovements(filteredData);
+      setMovements(transformedData);
     } catch (error: any) {
       toast({
         variant: "destructive",
