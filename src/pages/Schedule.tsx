@@ -196,10 +196,14 @@ export default function Schedule() {
         query = query.eq('employee_id', userProfile.id);
       }
 
-      // Filtros adicionais para administradores
-      if (filterEmployee !== 'all') {
-        query = query.eq('employee_id', filterEmployee);
-      }
+            // Filtros adicionais para administradores
+            if (filterEmployee !== 'all') {
+              query = query.eq('employee_id', filterEmployee);
+            }
+            
+            if (filterUnit !== 'all') {
+              query = query.eq('unit', filterUnit);
+            }
 
       const { data, error } = await query;
       if (error) {
@@ -731,8 +735,10 @@ export default function Schedule() {
               <span>{format(selectedDate, "dd/MM/yyyy")}</span>
             </div>
 
-            {/* Filtros - Apenas para Diretores */}
-            {userProfile?.employee_role === 'director' && (
+            {/* Filtros - Para Diretores e Coordenadores */}
+            {(userProfile?.employee_role === 'director' || 
+              userProfile?.employee_role === 'coordinator_madre' || 
+              userProfile?.employee_role === 'coordinator_floresta') && (
               <Card className="gradient-card shadow-professional border-primary/10">
                 <CardContent className="pt-6">
                   <div className="space-y-4">
