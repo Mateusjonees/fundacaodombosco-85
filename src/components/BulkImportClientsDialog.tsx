@@ -82,7 +82,7 @@ export function BulkImportClientsDialog({ isOpen, onClose, onImportComplete }: B
           responsible_name: row['Nome do Responsável'] || '',
           responsible_cpf: cleanCPF(row['CPF - Responsável']) || '',
           is_active: row['Ativo ou inativo']?.toLowerCase() === 'ativo',
-          unit: 'madre' // Definir unidade padrão como madre
+          unit: 'floresta' // Definir unidade padrão como floresta (neuro)
         };
       });
 
