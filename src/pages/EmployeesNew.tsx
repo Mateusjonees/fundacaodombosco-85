@@ -20,6 +20,7 @@ interface Employee {
   employee_role: string;
   phone?: string;
   department?: string;
+  unit?: string;
   is_active: boolean;
   created_at: string;
   hire_date?: string;
@@ -56,7 +57,8 @@ export default function EmployeesNew() {
     password: '',
     employee_role: 'staff',
     phone: '',
-    department: ''
+    department: '',
+    unit: ''
   });
   const { toast } = useToast();
 
@@ -87,11 +89,11 @@ export default function EmployeesNew() {
   };
 
   const handleCreateEmployee = async () => {
-    if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim()) {
+    if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim() || !newEmployee.unit.trim()) {
       toast({
         variant: "destructive",
         title: "Campos obrigatórios",
-        description: "Nome, email e senha são obrigatórios.",
+        description: "Nome, email, senha e unidade são obrigatórios.",
       });
       return;
     }
@@ -116,7 +118,8 @@ export default function EmployeesNew() {
             name: newEmployee.name,
             employee_role: newEmployee.employee_role,
             phone: newEmployee.phone || null,
-            department: newEmployee.department || null
+            department: newEmployee.department || null,
+            unit: newEmployee.unit || null
           }
         }
       });
@@ -196,7 +199,8 @@ export default function EmployeesNew() {
           name: editingEmployee.name,
           employee_role: editingEmployee.employee_role as any,
           phone: editingEmployee.phone,
-          department: editingEmployee.department
+          department: editingEmployee.department,
+          unit: editingEmployee.unit
         })
         .eq('user_id', editingEmployee.user_id);
 
@@ -227,7 +231,8 @@ export default function EmployeesNew() {
       password: '',
       employee_role: 'staff',
       phone: '',
-      department: ''
+      department: '',
+      unit: ''
     });
   };
 
@@ -381,6 +386,19 @@ export default function EmployeesNew() {
                   placeholder="Nome do departamento"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="unit">Unidade *</Label>
+                <Select value={newEmployee.unit} onValueChange={(value) => setNewEmployee({ ...newEmployee, unit: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma unidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Selecione uma unidade</SelectItem>
+                    <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                    <SelectItem value="floresta">Floresta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -388,7 +406,7 @@ export default function EmployeesNew() {
               </Button>
               <Button 
                 onClick={handleCreateEmployee}
-                disabled={!newEmployee.name || !newEmployee.email || !newEmployee.password}
+                disabled={!newEmployee.name || !newEmployee.email || !newEmployee.password || !newEmployee.unit}
               >
                 Criar Funcionário
               </Button>
@@ -469,6 +487,19 @@ export default function EmployeesNew() {
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, department: e.target.value })}
                     placeholder="Nome do departamento"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-unit">Unidade</Label>
+                  <Select value={editingEmployee.unit || ''} onValueChange={(value) => setEditingEmployee({ ...editingEmployee, unit: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma unidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma unidade</SelectItem>
+                      <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                      <SelectItem value="floresta">Floresta</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
