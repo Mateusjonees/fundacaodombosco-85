@@ -12,10 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload, Database, FileDown } from 'lucide-react';
+import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload, Database, FileDown, FileText } from 'lucide-react';
 import ClientDetailsView from '@/components/ClientDetailsView';
 import { BulkImportClientsDialog } from '@/components/BulkImportClientsDialog';
 import { AutoImportClientsDialog } from '@/components/AutoImportClientsDialog';
+import { PatientReportGenerator } from '@/components/PatientReportGenerator';
 import { importClientsFromFile } from '@/utils/importClients';
 import { executeDirectImport } from '@/utils/directImport';
 
@@ -59,6 +60,7 @@ export default function Clients() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [reportClient, setReportClient] = useState<Client | null>(null);
   const { toast } = useToast();
 
   // Helper function to check if user is coordinator or director
@@ -817,33 +819,40 @@ export default function Clients() {
                     <TableCell>
                       {new Date(client.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
-                     <TableCell>
-                       <div className="flex gap-2">
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => setSelectedClient(client)}
-                         >
-                           <Eye className="h-3 w-3" />
-                         </Button>
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => openEditDialog(client)}
-                         >
-                           <Edit className="h-3 w-3" />
-                         </Button>
-                         {(canViewAllClients() || canCreateClients()) && (
-                           <Button 
-                             variant={client.is_active ? "destructive" : "default"}
-                             size="sm"
-                             onClick={() => handleToggleClientStatus(client.id, client.is_active)}
-                           >
-                             <Power className="h-3 w-3" />
-                           </Button>
-                         )}
-                       </div>
-                     </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedClient(client)}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openEditDialog(client)}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setReportClient(client)}
+                          >
+                            <FileText className="h-3 w-3" />
+                          </Button>
+                          {(canViewAllClients() || canCreateClients()) && (
+                            <Button 
+                              variant={client.is_active ? "destructive" : "default"}
+                              size="sm"
+                              onClick={() => handleToggleClientStatus(client.id, client.is_active)}
+                            >
+                              <Power className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -869,6 +878,14 @@ export default function Clients() {
           setIsAutoImportOpen(false);
         }}
       />
+
+      {reportClient && (
+        <PatientReportGenerator
+          client={reportClient}
+          isOpen={!!reportClient}
+          onClose={() => setReportClient(null)}
+        />
+      )}
     </div>
   );
 }
