@@ -109,7 +109,7 @@ AVALIAÇÃO NEUROPSICOLÓGICA
 
 1. Das partes
 
-A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName}, registrada no CPF sob o nº ${contractData.responsibleCpf}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName}, inscrito no CPF sob o nº ${contractData.clientCpf}, denominado neste como beneficiário do serviço, residente à ${contractData.address}, firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.
+A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName}, registrada no CPF sob o nº ${contractData.responsibleCpf}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName}, inscrito no CPF sob o nº ${contractData.clientCpf}, denominado neste como beneficiário do serviço, residente à ${contractData.address} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.
 
 2. Cláusulas
 
@@ -148,7 +148,13 @@ A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904
 2.6. Honorários e formas de pagamento
 2.6.1. A forma de pagamento deverá ser definida e devidamente registrada neste contrato durante a primeira sessão de avaliação (anamnese).
 
-2.6.2. O valor referente à prestação de serviço de Avaliação Neuropsicológica será no total de R$ ${contractData.value}. O pagamento dos honorários referentes ao serviço de Avaliação Neuropsicológica será efetuado através de ${contractData.paymentMethod}.
+2.6.2. O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado será no total de R$ ${contractData.value}.
+
+O pagamento dos honorários referentes ao serviço de Avaliação Neuropsicológica será efetuado:
+${contractData.paymentMethod === 'à vista' ? '[X]' : '[ ]'} R$ ${contractData.value} à vista pagos na data da anamnese.
+${contractData.paymentMethod === 'boleto' ? '[X]' : '[ ]'} R$ ${contractData.value} parcelado no Boleto
+${contractData.paymentMethod === 'cartão' ? '[X]' : '[ ]'} R$ ${contractData.value} no Cartão de crédito, parcelado
+${contractData.paymentMethod === 'pix' ? '[X]' : '[ ]'} PIX
 
 2.6.3. O laudo será entregue SOMENTE após a quitação do valor total da avaliação.
 
@@ -176,8 +182,11 @@ Belo Horizonte - MG - www.fundacaodombosco.org
 
 Belo Horizonte, ${new Date(contractData.contractDate).toLocaleDateString('pt-BR')}
 
-_____________________________                           _____________________________
-Contratada                                              Contratante
+__________________________________________________
+Contratada
+
+___________________________________________________
+Contratante
 
 Em cumprimento à Lei Geral de Proteção de dados nº 13.709/2020, o destinatário deste documento deve proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante, conforme artigo 48 da Lei e assumindo as sanções cabíveis.
 `;
@@ -408,12 +417,10 @@ Em cumprimento à Lei Geral de Proteção de dados nº 13.709/2020, o destinatá
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pix">PIX</SelectItem>
-                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                        <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                        <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                        <SelectItem value="à vista">À vista</SelectItem>
+                        <SelectItem value="boleto">Boleto</SelectItem>
+                        <SelectItem value="cartão">Cartão de Crédito</SelectItem>
                         <SelectItem value="transferencia">Transferência Bancária</SelectItem>
-                        <SelectItem value="cheque">Cheque</SelectItem>
-                        <SelectItem value="boleto">Boleto Bancário</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

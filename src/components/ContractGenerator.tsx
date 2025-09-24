@@ -55,257 +55,111 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     address: client.address || ''
   });
 
-  const generateContractHTML = () => {
+  const generateContract = () => {
     return `
-      <div style="font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; font-size: 12px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #1e40af; font-size: 20px; font-weight: bold; margin: 0;">Contrato de Prestação de Serviços</h1>
-          <h2 style="color: #1e40af; font-size: 16px; margin: 10px 0;">Avaliação Neuropsicológica</h2>
-        </div>
+CONTRATO DE PRESTAÇÃO DE SERVIÇOS
+AVALIAÇÃO NEUROPSICOLÓGICA
 
-        <div style="margin-bottom: 25px;">
-          <h3 style="color: #1e40af; font-size: 14px; font-weight: bold; margin-bottom: 10px;">1. Das partes</h3>
-          <p style="text-align: justify; margin: 10px 0; line-height: 1.5;">
-            A pessoa jurídica <strong>Fundação Dom Bosco</strong>, registrada no CNPJ sob o nº <strong>17.278.904/0001-86</strong>, 
-            com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como 
-            <strong>CONTRATADA</strong> e a pessoa física <strong>${contractData.responsibleName}</strong>, registrada no CPF 
-            sob o nº <strong>${contractData.responsibleCpf}</strong>, denominada neste como <strong>CONTRATANTE</strong>, 
-            responsável legal ou financeiro por <strong>${contractData.clientName}</strong>, inscrito no CPF sob o nº 
-            <strong>${contractData.clientCpf}</strong>, denominado neste como beneficiário do serviço, residente à 
-            <strong>${contractData.address}</strong>, firmam contrato de prestação de serviço de avaliação neuropsicológica 
-            que será realizado conforme as cláusulas abaixo.
-          </p>
-        </div>
+1. Das partes
 
-        <div style="margin-bottom: 25px;">
-          <h3 style="color: #1e40af; font-size: 14px; font-weight: bold; margin-bottom: 10px;">2. Cláusulas</h3>
-          
-          <div style="margin: 15px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.1.</h4>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              A avaliação neuropsicológica é um exame complementar realizado por profissional especializado em neuropsicologia 
-              e que neste contrato é denominada como CONTRATADA, e compreende três etapas, sendo: anamnese ou entrevista inicial, 
-              aplicação dos instrumentos de avaliação neuropsicológica e entrevista devolutiva para entrega do laudo.
-            </p>
-          </div>
+A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName}, registrada no CPF sob o nº ${contractData.responsibleCpf}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName}, inscrito no CPF sob o nº ${contractData.clientCpf}, denominado neste como beneficiário do serviço, residente à ${contractData.address} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.
 
-          <div style="margin: 15px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.2.</h4>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Serão realizadas sessões para a coleta de dados, entrevistas, aplicações de escalas e testes e possíveis reuniões 
-              com outros informantes, sendo que ao final do processo o CONTRATANTE terá direito ao LAUDO NEUROPSICOLÓGICO, 
-              com a finalidade de atestar, aconselhar e encaminhar o paciente para o melhor tratamento adequado com suas necessidades.
-            </p>
-          </div>
+2. Cláusulas
 
-          <div style="margin: 15px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.3.</h4>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em acordo com o contratante 
-              durante a Sessão de Devolutiva com duração de 1 (uma) hora, podendo ser no formato online ou presencial, 
-              a ser definido pelo neuropsicólogo.
-            </p>
-          </div>
+2.1.1. A avaliação neuropsicológica é um exame complementar realizado por profissional especializado em neuropsicologia e que neste contrato é denominada como CONTRATADA, e compreende três etapas, sendo: anamnese ou entrevista inicial, aplicação dos instrumentos de avaliação neuropsicológica e entrevista devolutiva para entrega do laudo.
 
-          <div style="margin: 15px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.4.</h4>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Os instrumentos de avaliação neuropsicológicos serão compostos de questionários, escalas, inventários, tarefas 
-              e testes neuropsicológicos aprovados e validados para aplicação na população brasileira obedecendo aos critérios 
-              de aprovação para uso do Conselho Federal de Psicologia.
-            </p>
-          </div>
+2.1.2. Serão realizadas sessões para a coleta de dados, entrevistas, aplicações de escalas e testes e possíveis reuniões com outros informantes, sendo que ao final do processo o CONTRATANTE terá direito ao LAUDO NEUROPSICOLÓGICO, com a finalidade de atestar, aconselhar e encaminhar o paciente para o melhor tratamento adequado com suas necessidades.
 
-          <div style="margin: 15px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.1.5.</h4>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              As sessões de avaliação serão realizadas em horário combinado, estando a neuropsicóloga à disposição do 
-              beneficiário do serviço naquele período.
-            </p>
-          </div>
+2.1.3. O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em acordo com o contratante durante a Sessão de Devolutiva com duração de 1 (uma) hora, podendo ser no formato online ou presencial, a ser definido pelo neuropsicólogo.
 
-          <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.2. Sigilo</h4>
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.2.1.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              A neuropsicóloga respeitará o sigilo profissional a fim de proteger, por meio da confiabilidade, a intimidade 
-              das pessoas, grupos ou organizações, a que tenha acesso no exercício profissional (Código de Ética do Psicólogo, artigo 9º).
-            </p>
-          </div>
+2.1.4. Os instrumentos de avaliação neuropsicológicos serão compostos de questionários, escalas, inventários, tarefas e testes neuropsicológicos aprovados e validados para aplicação na população brasileira obedecendo aos critérios de aprovação para uso do Conselho Federal de Psicologia.
 
-          <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.3. Etapas da Avaliação Neuropsicológica e Vigência do Contrato</h4>
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.1.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              O processo de aplicação dos instrumentos ocorre com a utilização de, no mínimo 4 sessões e no máximo 14 sessões, 
-              com duração 1 (uma) hora, a serem definidas pelo profissional a realizá-las, agendadas previamente com o contratante.
-            </p>
-            
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.2.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              O número de sessões, bem como a duração delas, será definido pela neuropsicóloga, de acordo com a direcionamento 
-              e conhecimento da profissional, de maneira a obter-se sempre a melhor qualidade de resultados.
-            </p>
+2.1.5. As sessões de avaliação serão realizadas em horário combinado, estando a neuropsicóloga à disposição do beneficiário do serviço naquele período.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.3.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Caso o paciente a ser avaliado ser estudante e/ou estar em acompanhamento terapêutico será realizada entrevista 
-              com a equipe escolar e multidisciplinar como parte integrante da avaliação, conforme for possível e necessário, 
-              através de questionários e/ou vídeo conferência.
-            </p>
+2.2. Sigilo
+2.2.1. A neuropsicóloga respeitará o sigilo profissional a fim de proteger, por meio da confiabilidade, a intimidade das pessoas, grupos ou organizações, a que tenha acesso no exercício profissional (Código de Ética do Psicólogo, artigo 9º).
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.4.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              A vigência deste contrato encerrar-se-á imediatamente após a entrega do laudo neuropsicológico e à quitação 
-              do valor correspondente à prestação de serviço acordada.
-            </p>
+2.3. Etapas da Avaliação Neuropsicológica e Vigência do Contrato
+2.3.1. O processo de aplicação dos instrumentos ocorre com a utilização de, no mínimo 4 sessões e no máximo 14 sessões, com duração 1 (uma) hora, a serem definidas pelo profissional a realizá-las, agendadas previamente com o contratante.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.3.5.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              As datas das sessões de avaliação serão definidas em comum acordo entre as partes e registradas neste contrato.
-            </p>
-          </div>
+2.3.2. O número de sessões, bem como a duração delas, será definido pela neuropsicóloga, de acordo com a direcionamento e conhecimento da profissional, de maneira a obter-se sempre a melhor qualidade de resultados.
 
-          <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.4. Cancelamento e reagendamento de sessões</h4>
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.4.1.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              O Contratante concorda em notificar o Contratado com antecedência de 12 horas em caso de cancelamento ou reagendamento de sessões.
-            </p>
-          </div>
+2.3.3. Caso o paciente a ser avaliado ser estudante e/ou estar em acompanhamento terapêutico será realizada entrevista com a equipe escolar e multidisciplinar como parte integrante da avaliação, conforme for possível e necessário, através de questionários e/ou vídeo conferência.
 
-          <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.5. Avaliação de menores de 18 anos</h4>
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.5.1.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              A avaliação neuropsicológica de menores de 18 anos será realizada somente com a ciência e concordância de um responsável pela criança ou adolescente.
-            </p>
-            
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.5.2.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              A criança/adolescente deverá comparecer ao consultório para avaliação acompanhado de um responsável, o qual deverá 
-              estar presente no consultório ao final de cada sessão a fim de acompanhar o menor até sua casa.
-            </p>
-          </div>
+2.3.4. A vigência deste contrato encerrar-se-á imediatamente após a entrega do laudo neuropsicológico e à quitação do valor correspondente à prestação de serviço acordada.
 
-          <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.6. Honorários e formas de pagamento</h4>
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.1.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              A forma de pagamento deverá ser definida e devidamente registrada neste contrato durante a primeira sessão de avaliação (anamnese).
-            </p>
+2.3.5. As datas das sessões de avaliação serão definidas em comum acordo entre as partes e registradas neste contrato.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.2.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado será no total de 
-              <strong>R$ ${contractData.value}</strong>. O pagamento dos honorários 
-              referentes ao serviço de Avaliação Neuropsicológica será efetuado através de <strong>${contractData.paymentMethod}</strong>.
-            </p>
+2.4. Cancelamento e reagendamento de sessões
+2.4.1. O Contratante concorda em notificar o Contratado com antecedência de 12 horas em caso de cancelamento ou reagendamento de sessões.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.3.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              O laudo será entregue SOMENTE após a quitação do valor total da avaliação.
-            </p>
+2.5. Avaliação de menores de 18 anos
+2.5.1. A avaliação neuropsicológica de menores de 18 anos será realizada somente com a ciência e concordância de um responsável pela criança ou adolescente.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.4.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              As sessões de avaliação SOMENTE terão início após o pagamento da primeira parcela.
-            </p>
+2.5.2. A criança/adolescente deverá comparecer ao consultório para avaliação acompanhado de um responsável, o qual deverá estar presente no consultório ao final de cada sessão a fim de acompanhar o menor até sua casa.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.5.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Os pagamentos por transferência, deposito bancário ou pix deverão ser realizados conforme os dados informados 
-              e posteriormente com o envio do respectivo comprovante para o e-mail: financeiro@fundacaodombosco.org com os 
-              dados referentes ao paciente e o responsável financeiro descriminados no corpo do e-mail.
-            </p>
+2.6. Honorários e formas de pagamento
+2.6.1. A forma de pagamento deverá ser definida e devidamente registrada neste contrato durante a primeira sessão de avaliação (anamnese).
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.6.6.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Caso o contratante opte pelo parcelamento do pagamento em 2 (duas) ou mais parcelas, fica vedada a condição 
-              de vincular o pagamento do serviço à entrega do Laudo Neuropsicológico. O contratante deve, de forma imperativa, 
-              cumprir rigorosamente as datas estipuladas nas cláusulas anteriores, sob pena de rescisão contratual, nos termos 
-              contantes no item 2.7 deste contrato.
-            </p>
-          </div>
+2.6.2. O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado será no total de R$ ${contractData.value}.
 
-          <div style="margin: 20px 0;">
-            <h4 style="color: #1e40af; font-size: 13px; font-weight: bold; margin-bottom: 8px;">2.7. Da Rescisão</h4>
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.1.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              O presente instrumento poderá ser rescindido caso qualquer das partes descumpra o disposto neste contrato.
-            </p>
+O pagamento dos honorários referentes ao serviço de Avaliação Neuropsicológica será efetuado:
+${contractData.paymentMethod === 'à vista' ? '[X]' : '[ ]'} R$ ${contractData.value} à vista pagos na data da anamnese.
+${contractData.paymentMethod === 'boleto' ? '[X]' : '[ ]'} R$ ${contractData.value} parcelado no Boleto
+${contractData.paymentMethod === 'cartão' ? '[X]' : '[ ]'} R$ ${contractData.value} no Cartão de crédito, parcelado
+${contractData.paymentMethod === 'PIX' ? '[X]' : '[ ]'} PIX
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.2.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Na hipótese de a CONTRATANTE solicitar a rescisão antecipada deste contrato sem justa causa, será obrigada a 
-              pagar a CONTRATADA por inteiro qualquer retribuição vencida e não paga e 50% (cinquenta por cento) do que ela 
-              receberia até o final do contrato.
-            </p>
+2.6.3. O laudo será entregue SOMENTE após a quitação do valor total da avaliação.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.3.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Na hipótese de a CONTRATADA solicitar a rescisão antecipada deste contrato sem justa causa terá direito a retribuição vencida.
-            </p>
+2.6.4. As sessões de avaliação SOMENTE terão início após o pagamento da primeira parcela.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.4.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Caso a CONTRATANTE não compareça a 4 sessões seguidas sem informar a CONTRATADA e não houver possibilidade 
-              de contato após esse período, este contrato fica rescindido automaticamente e fica obrigada a pagar 100% do valor do contrato.
-            </p>
+2.6.5. Os pagamentos por transferência, depósito bancário ou pix deverão ser realizados conforme os dados informados e posteriormente com o envio do respectivo comprovante para o e-mail: financeiro@fundacaodombosco.org com os dados referentes ao paciente e o responsável financeiro discriminados no corpo do e-mail.
 
-            <h5 style="color: #1e40af; font-size: 12px; font-weight: bold; margin-bottom: 5px;">2.7.5.</h5>
-            <p style="text-align: justify; margin: 8px 0; line-height: 1.5;">
-              Com a assinatura, ambas as partes atestam que tiveram oportunidade de ler, discutir, definir e concordar com todas as cláusulas deste contrato.
-            </p>
-          </div>
-        </div>
+2.6.6. Caso o contratante opte pelo parcelamento do pagamento em 2 (duas) ou mais parcelas, fica vedada a condição de vincular o pagamento do serviço à entrega do Laudo Neuropsicológico. O contratante deve, de forma imperativa, cumprir rigorosamente as datas estipuladas nas cláusulas anteriores, sob pena de rescisão contratual, nos termos constantes no item 2.7 deste contrato.
 
-        <div style="margin: 30px 0; text-align: center;">
-          <p style="margin: 15px 0; font-weight: bold;">
-            Belo Horizonte, ${new Date(contractData.contractDate).toLocaleDateString('pt-BR')}
-          </p>
-        </div>
+2.7. Da Rescisão
+2.7.1. O presente instrumento poderá ser rescindido caso qualquer das partes descumpra o disposto neste contrato.
 
-        <div style="display: flex; justify-content: space-between; margin: 40px 0; padding: 0 20px;">
-          <div style="text-align: center; width: 250px;">
-            <div style="border-bottom: 1px solid #333; margin-bottom: 5px; height: 40px;"></div>
-            <p style="font-weight: bold; margin: 0; font-size: 12px;">Contratada</p>
-          </div>
-          <div style="text-align: center; width: 250px;">
-            <div style="border-bottom: 1px solid #333; margin-bottom: 5px; height: 40px;"></div>
-            <p style="font-weight: bold; margin: 0; font-size: 12px;">Contratante</p>
-          </div>
-        </div>
+2.7.2. Na hipótese de a CONTRATANTE solicitar a rescisão antecipada deste contrato sem justa causa, será obrigada a pagar a CONTRATADA por inteiro qualquer retribuição vencida e não paga e 50% (cinquenta por cento) do que ela receberia até o final do contrato.
 
-        <div style="margin: 30px 0; text-align: center; background-color: #f8fafc; padding: 15px; border: 1px solid #e2e8f0; page-break-inside: avoid;">
-          <h4 style="color: #1e40af; margin-bottom: 8px; font-size: 14px;">FUNDAÇÃO DOM BOSCO</h4>
-          <p style="font-size: 11px; margin: 3px 0;">Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: (31) 3226-2616</p>
-          <p style="font-size: 11px; margin: 3px 0;">Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: (31) 3386-1600</p>
-          <p style="font-size: 11px; margin: 3px 0;">Belo Horizonte - MG - www.fundacaodombosco.org</p>
-          <p style="font-size: 10px; margin: 8px 0; text-align: justify;">
-            Em cumprimento à Lei Geral de Proteção de dados n° 13.709/2020, o destinatário deste documento se responsabiliza 
-            por manter medidas de segurança, técnicas e administrativas suficientes a proteger os dados pessoais do Titular 
-            de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum 
-            incidente de segurança que possa.
-          </p>
-        </div>
-      </div>
-    `;
+2.7.3. Na hipótese de a CONTRATADA solicitar a rescisão antecipada deste contrato sem justa causa terá direito a retribuição vencida.
+
+2.7.4. Caso a CONTRATANTE não compareça a 4 sessões seguidas sem informar a CONTRATADA e não houver possibilidade de contato após esse período, este contrato fica rescindido automaticamente e fica obrigada a pagar 100% do valor do contrato.
+
+2.7.5. Com a assinatura, ambas as partes atestam que tiveram oportunidade de ler, discutir, definir e concordar com todas as cláusulas deste contrato.
+
+FUNDAÇÃO DOM BOSCO
+Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: 31 3226-2616
+Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: 31 3386-1600
+Belo Horizonte - MG - www.fundacaodombosco.org
+
+Belo Horizonte, ${new Date(contractData.contractDate).toLocaleDateString('pt-BR')}
+
+__________________________________________________
+Contratada
+
+___________________________________________________
+Contratante
+
+Em cumprimento à Lei Geral de Proteção de dados nº 13.709/2020, o destinatário deste documento deve proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante, conforme artigo 48 da Lei e assumindo as sanções cabíveis.
+    `.trim();
   };
 
   const generatePDF = async () => {
     setIsGenerating(true);
-    
     try {
-      // Create a temporary div for rendering
+      if (!contractRef.current) return;
+
+      const contractContent = generateContract();
+      const doc = new jsPDF();
+      
+      // Adicionar conteúdo do contrato ao canvas temporário
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = generateContractHTML();
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.width = '800px';
+      tempDiv.innerHTML = `<pre style="font-family: Arial, sans-serif; font-size: 12px; white-space: pre-wrap; line-height: 1.4; margin: 20px;">${contractContent}</pre>`;
+      tempDiv.style.width = '210mm';
+      tempDiv.style.background = 'white';
       document.body.appendChild(tempDiv);
 
-      // Convert to canvas
       const canvas = await html2canvas(tempDiv, {
         scale: 2,
         useCORS: true,
@@ -313,46 +167,39 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
         backgroundColor: '#ffffff'
       });
 
-      // Remove temp div
       document.body.removeChild(tempDiv);
 
-      // Create PDF
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 210;
+      const pageHeight = 295;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
 
-      const pdf = new jsPDF('p', 'mm');
       let position = 0;
 
-      // Add first page
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      // Add more pages if needed
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        doc.addPage();
+        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
 
-      // Download PDF
       const fileName = `contrato-${contractData.clientName.replace(/\s+/g, '-').toLowerCase()}-${contractData.contractDate}.pdf`;
-      pdf.save(fileName);
+      doc.save(fileName);
 
       toast({
-        title: "Contrato PDF gerado!",
-        description: "O arquivo PDF foi baixado com sucesso.",
+        title: "Contrato gerado!",
+        description: "O PDF foi baixado com sucesso.",
       });
-
-      setIsDialogOpen(false);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       toast({
         variant: "destructive",
-        title: "Erro ao gerar PDF",
-        description: "Não foi possível gerar o PDF do contrato.",
+        title: "Erro",
+        description: "Não foi possível gerar o PDF.",
       });
     } finally {
       setIsGenerating(false);
@@ -360,35 +207,36 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
   };
 
   const handlePreviewContract = () => {
-    const contractHTML = generateContractHTML();
+    const contractContent = generateContract();
     const newWindow = window.open('', '_blank');
     if (newWindow) {
       newWindow.document.write(`
-        <!DOCTYPE html>
         <html>
           <head>
             <title>Contrato - ${contractData.clientName}</title>
-            <meta charset="utf-8">
             <style>
-              @media print {
-                @page { margin: 2cm; }
-                body { -webkit-print-color-adjust: exact; }
+              body { 
+                font-family: Arial, sans-serif; 
+                padding: 20px; 
+                line-height: 1.4; 
+                max-width: 800px; 
+                margin: 0 auto; 
+                font-size: 12px;
               }
-              body { margin: 0; padding: 20px; }
+              .contract-content { 
+                white-space: pre-line; 
+                margin-top: 20px;
+              }
+              .no-print { margin-bottom: 20px; }
+              @media print { .no-print { display: none; } }
             </style>
           </head>
           <body>
-            ${contractHTML}
-            <div style="text-align: center; margin: 20px 0; no-print;">
-              <button onclick="window.print()" 
-                      style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px;">
-                <span style="margin-right: 8px;">🖨️</span> Imprimir
-              </button>
-              <button onclick="window.close()" 
-                      style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                Fechar
-              </button>
+            <div class="no-print">
+              <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
+              <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
             </div>
+            <div class="contract-content">${contractContent}</div>
           </body>
         </html>
       `);
@@ -397,199 +245,189 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold">Contratos</h3>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Contrato PDF
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Gerar Contrato PDF de Avaliação Neuropsicológica</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="contractType">Tipo de Contrato</Label>
-                <Select 
-                  value={contractData.contractType} 
-                  onValueChange={(value) => setContractData({ ...contractData, contractType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Avaliação Neuropsicológica">Avaliação Neuropsicológica</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Gerar Contrato
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Contrato
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Gerar Contrato para {client.name}</DialogTitle>
+              </DialogHeader>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="clientName">Nome do Paciente</Label>
+                <div>
+                  <Label htmlFor="contractType">Tipo de Contrato</Label>
+                  <Input
+                    id="contractType"
+                    value={contractData.contractType}
+                    onChange={(e) => setContractData(prev => ({ ...prev, contractType: e.target.value }))}
+                    placeholder="Avaliação Neuropsicológica"
+                    disabled
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="clientName">Nome do Cliente</Label>
                   <Input
                     id="clientName"
                     value={contractData.clientName}
-                    onChange={(e) => setContractData({ ...contractData, clientName: e.target.value })}
-                    placeholder="Nome completo do paciente"
+                    onChange={(e) => setContractData(prev => ({ ...prev, clientName: e.target.value }))}
+                    placeholder="Nome completo do cliente"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="clientCpf">CPF do Paciente</Label>
+                <div>
+                  <Label htmlFor="clientCpf">CPF do Cliente</Label>
                   <Input
                     id="clientCpf"
                     value={contractData.clientCpf}
-                    onChange={(e) => setContractData({ ...contractData, clientCpf: e.target.value })}
+                    onChange={(e) => setContractData(prev => ({ ...prev, clientCpf: e.target.value }))}
                     placeholder="000.000.000-00"
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="responsibleName">Responsável Financeiro</Label>
                   <Input
                     id="responsibleName"
                     value={contractData.responsibleName}
-                    onChange={(e) => setContractData({ ...contractData, responsibleName: e.target.value })}
-                    placeholder="Nome do responsável"
+                    onChange={(e) => setContractData(prev => ({ ...prev, responsibleName: e.target.value }))}
+                    placeholder="Nome completo do responsável"
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="responsibleCpf">CPF do Responsável</Label>
                   <Input
                     id="responsibleCpf"
                     value={contractData.responsibleCpf}
-                    onChange={(e) => setContractData({ ...contractData, responsibleCpf: e.target.value })}
+                    onChange={(e) => setContractData(prev => ({ ...prev, responsibleCpf: e.target.value }))}
                     placeholder="000.000.000-00"
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
-                  <Select 
-                    value={contractData.paymentMethod} 
-                    onValueChange={(value) => setContractData({ ...contractData, paymentMethod: value })}
-                  >
+                  <Select
+                    value={contractData.paymentMethod}
+                    onValueChange={(value) => setContractData(prev => ({ ...prev, paymentMethod: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PIX">PIX</SelectItem>
-                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                      <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
-                      <SelectItem value="Transferência Bancária">Transferência Bancária</SelectItem>
-                      <SelectItem value="Cheque">Cheque</SelectItem>
-                      <SelectItem value="Boleto Bancário">Boleto Bancário</SelectItem>
+                      <SelectItem value="à vista">À vista</SelectItem>
+                      <SelectItem value="boleto">Boleto</SelectItem>
+                      <SelectItem value="cartão">Cartão de Crédito</SelectItem>
+                      <SelectItem value="transferencia">Transferência Bancária</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="value">Valor (R$)</Label>
                   <Input
                     id="value"
                     value={contractData.value}
-                    onChange={(e) => setContractData({ ...contractData, value: e.target.value })}
+                    onChange={(e) => setContractData(prev => ({ ...prev, value: e.target.value }))}
                     placeholder="1.600,00"
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="contractDate">Data do Contrato</Label>
                   <Input
                     id="contractDate"
                     type="date"
                     value={contractData.contractDate}
-                    onChange={(e) => setContractData({ ...contractData, contractDate: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Endereço Completo</Label>
-                  <Input
-                    id="address"
-                    value={contractData.address}
-                    onChange={(e) => setContractData({ ...contractData, address: e.target.value })}
-                    placeholder="Rua, número, bairro, cidade, estado, CEP"
+                    onChange={(e) => setContractData(prev => ({ ...prev, contractDate: e.target.value }))}
                   />
                 </div>
               </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={handlePreviewContract}>
-                <Eye className="h-4 w-4 mr-2" />
-                Visualizar
-              </Button>
-              <Button onClick={generatePDF} disabled={isGenerating}>
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Gerando PDF...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Gerar PDF
-                  </>
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+              <div className="mt-4">
+                <Label htmlFor="address">Endereço Completo</Label>
+                <Textarea
+                  id="address"
+                  value={contractData.address}
+                  onChange={(e) => setContractData(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="Endereço completo do cliente"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={handlePreviewContract}
+                  className="gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  Visualizar
+                </Button>
+                <Button
+                  onClick={generatePDF}
+                  disabled={isGenerating}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {isGenerating ? "Gerando..." : "Baixar PDF"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Contratos Disponíveis
-          </CardTitle>
+          <CardTitle>Contratos Disponíveis</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p className="text-lg font-medium mb-2">Nenhum contrato gerado ainda</p>
-            <p className="text-sm mb-4">Clique em "Novo Contrato PDF" para gerar um contrato personalizado em PDF para este paciente.</p>
-            <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Gerar Primeiro Contrato PDF
-            </Button>
-          </div>
+          <p className="text-muted-foreground text-center py-8">
+            Nenhum contrato disponível no momento
+          </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Informações do Paciente</CardTitle>
+          <CardTitle>Informações do Cliente</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">Nome</Label>
-              <p className="text-sm">{client.name}</p>
+              <p><strong>Nome:</strong> {client.name}</p>
+              <p><strong>CPF:</strong> {client.cpf || 'Não informado'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">CPF</Label>
-              <p className="text-sm">{client.cpf || 'Não informado'}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-muted-foreground">Responsável</Label>
-              <p className="text-sm">{client.responsible_name || 'Não informado'}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-muted-foreground">Telefone</Label>
-              <p className="text-sm">{client.phone || 'Não informado'}</p>
-            </div>
-            <div className="md:col-span-2">
-              <Label className="text-sm font-medium text-muted-foreground">Endereço</Label>
-              <p className="text-sm">{client.address || 'Não informado'}</p>
+              <p><strong>Telefone:</strong> {client.phone || 'Não informado'}</p>
+              <p><strong>Email:</strong> {client.email || 'Não informado'}</p>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Hidden contract template for PDF generation */}
-      <div ref={contractRef} style={{ display: 'none' }}>
-        <div dangerouslySetInnerHTML={{ __html: generateContractHTML() }} />
-      </div>
+      
+      {/* Hidden contract preview for PDF generation */}
+      <div 
+        ref={contractRef}
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: '-9999px',
+          width: '210mm',
+          minHeight: '297mm',
+          padding: '20mm',
+          backgroundColor: 'white',
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '12px',
+          lineHeight: '1.4'
+        }}
+      />
     </div>
   );
 };
