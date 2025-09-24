@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,14 +8,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { UserPlus } from 'lucide-react';
 
 type AgeType = 'adult' | 'minor';
 
 export default function ClientForm() {
+  const { user } = useAuth();
   const [ageType, setAgeType] = useState<AgeType>('adult');
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('employee_role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (!error && data) {
+          setUserProfile(data);
+          
+          // Auto-definir unidade com base no papel do coordenador
+          if (data.employee_role === 'coordinator_madre') {
+            setFormData(prev => ({ ...prev, unidade_atendimento: 'madre' }));
+          } else if (data.employee_role === 'coordinator_floresta') {
+            setFormData(prev => ({ ...prev, unidade_atendimento: 'floresta' }));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+      }
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   const [formData, setFormData] = useState({
     // Dados Pessoais
@@ -111,6 +143,14 @@ export default function ClientForm() {
         notesData = `Tipo: Menor de Idade\nGênero: ${formData.gender}\nEscola: ${formData.nome_escola}\nTipo de Escola: ${formData.tipo_escola}\nAno Escolar: ${formData.ano_escolar}\nUnidade: ${formData.unidade_atendimento}\nPai: ${formData.nome_pai} (${formData.idade_pai} anos) - ${formData.profissao_pai} - ${formData.telefone_pai}\nMãe: ${formData.nome_mae} (${formData.idade_mae} anos) - ${formData.profissao_mae} - ${formData.telefone_mae}\nResponsável Financeiro: ${formData.responsavel_financeiro}\nOutro Responsável: ${formData.outro_responsavel}\nDiagnóstico: ${formData.diagnostico_principal}\nQueixa: ${formData.queixa_neuropsicologica}\nExpectativas: ${formData.expectativas_tratamento}\nObservações: ${formData.observacoes}`;
       }
 
+      // Determinar a unidade com base no papel do usuário
+      let unitToAssign = formData.unidade_atendimento;
+      if (userProfile?.employee_role === 'coordinator_madre') {
+        unitToAssign = 'madre';
+      } else if (userProfile?.employee_role === 'coordinator_floresta') {
+        unitToAssign = 'floresta';
+      }
+
       const { error } = await supabase
         .from('clients')
         .insert([{
@@ -124,6 +164,7 @@ export default function ClientForm() {
           emergency_phone: ageType === 'adult' ? formData.emergency_phone : `${formData.telefone_pai} / ${formData.telefone_mae}`,
           medical_history: formData.medical_history,
           notes: notesData,
+          unit: unitToAssign,
           is_active: true
         }]);
 
@@ -403,7 +444,11 @@ export default function ClientForm() {
               
               <div>
                 <Label htmlFor="unidade_atendimento">Unidade de Atendimento</Label>
-                <Select value={formData.unidade_atendimento} onValueChange={(value) => handleInputChange('unidade_atendimento', value)}>
+                <Select 
+                  value={formData.unidade_atendimento} 
+                  onValueChange={(value) => handleInputChange('unidade_atendimento', value)}
+                  disabled={userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta'}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
@@ -412,6 +457,11 @@ export default function ClientForm() {
                     <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
                   </SelectContent>
                 </Select>
+                {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Unidade definida automaticamente com base no seu papel de coordenador
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

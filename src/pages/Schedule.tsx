@@ -200,9 +200,37 @@ export default function Schedule() {
         .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
         .order('start_time');
 
-      // Se o usuário não for administrativo, só mostrar agendamentos onde ele é o profissional
-      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'].includes(userProfile.employee_role)) {
-        query = query.eq('employee_id', userProfile.id);
+      // Aplicar filtros baseados no role do usuário para agendamentos
+      if (userProfile) {
+        if (userProfile.employee_role === 'coordinator_madre') {
+          // Coordenador Madre vê agendamentos de clientes da unidade madre
+          const { data: clientsInUnit } = await supabase
+            .from('clients')
+            .select('id')
+            .or('unit.eq.madre,unit.is.null')
+            .eq('is_active', true);
+          
+          const clientIds = clientsInUnit?.map(c => c.id) || [];
+          if (clientIds.length > 0) {
+            query = query.in('client_id', clientIds);
+          }
+        } else if (userProfile.employee_role === 'coordinator_floresta') {
+          // Coordenador Floresta vê agendamentos de clientes da unidade floresta
+          const { data: clientsInUnit } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('unit', 'floresta')
+            .eq('is_active', true);
+          
+          const clientIds = clientsInUnit?.map(c => c.id) || [];
+          if (clientIds.length > 0) {
+            query = query.in('client_id', clientIds);
+          }
+        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
+          // Para outros profissionais, mostrar apenas seus próprios agendamentos
+          query = query.eq('employee_id', userProfile.id);
+        }
+        // Diretores e recepcionistas veem todos os agendamentos (sem filtro adicional)
       }
 
             // Filtros adicionais para administradores
