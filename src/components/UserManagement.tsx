@@ -42,76 +42,32 @@ export default function UserManagement() {
 
   // Função para criar usuários específicos
   const createSpecificUsers = async () => {
-    const usersToCreate = [
-      {
-        name: "Christopher Menezes Coelho",
-        email: "christopher.coelho@fundacaodombosco.org",
-        password: "educa123",
-        employee_role: "receptionist" as any,
-        phone: "(31) 9 95963147",
-        department: "Clínica Social"
-      },
-      {
-        name: "Amanda Paola Lobo Guimarães", 
-        email: "amandapaola@fundacaodombosco.org",
-        password: "85019597",
-        employee_role: "coordinator_floresta",
-        phone: "(31) 98468-7271",
-        department: "Avaliação Neuropsicológica"
-      }
-    ];
-
-    for (const userData of usersToCreate) {
-      try {
-        // Create user in auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: userData.email,
-          password: userData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              name: userData.name,
-              employee_role: userData.employee_role,
-              phone: userData.phone,
-              department: userData.department
-            }
-          }
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('create-users');
+      
+      if (error) {
+        toast({
+          title: "Erro",
+          description: `Erro ao criar usuários: ${error.message}`,
+          variant: "destructive"
         });
-
-        if (authError) {
-          throw authError;
-        }
-
-        if (authData.user) {
-          // Update profile with additional data
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-              name: userData.name,
-              phone: userData.phone,
-              department: userData.department,
-              employee_role: userData.employee_role,
-              is_active: true
-            })
-            .eq('user_id', authData.user.id);
-
-          if (profileError) {
-            console.error('Error updating profile:', profileError);
-          }
-
-          console.log(`Usuário ${userData.name} criado com sucesso`);
-        }
-      } catch (error: any) {
-        console.error(`Erro ao criar usuário ${userData.name}:`, error);
+      } else {
+        toast({
+          title: "Sucesso",
+          description: data.message,
+        });
+        loadEmployees(); // Recarregar a lista
       }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: `Erro inesperado: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    toast({
-      title: "Usuários criados",
-      description: "Christopher e Amanda foram criados no sistema",
-    });
-    
-    loadEmployees();
   };
 
   useEffect(() => {
@@ -269,10 +225,11 @@ export default function UserManagement() {
         <div className="flex gap-2">
           <Button 
             onClick={createSpecificUsers}
+            disabled={loading}
             variant="default"
             className="gap-2 bg-green-600 hover:bg-green-700"
           >
-            Criar Christopher e Amanda
+            {loading ? "Criando..." : "Criar Christopher e Amanda"}
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
