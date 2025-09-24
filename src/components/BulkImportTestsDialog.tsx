@@ -44,24 +44,50 @@ export default function BulkImportTestsDialog({ isOpen, onClose, onUpdate }: Bul
       const lines = csvData.trim().split('\n');
       const items: TestItem[] = [];
       
+      console.log('Analisando dados...', { totalLines: lines.length });
+      
       // Skip header line and parse data
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         
-        // Split by tab or comma, handling quoted fields
-        const fields = line.split('\t').map(field => field.trim());
+        // Detectar separador automaticamente (tab ou vírgula)
+        let fields: string[];
+        if (line.includes('\t')) {
+          // Dados separados por tab
+          fields = line.split('\t').map(field => field.trim().replace(/^"|"$/g, ''));
+        } else {
+          // Dados separados por vírgula - parsing mais sofisticado para lidar com vírgulas dentro de aspas
+          fields = [];
+          let current = '';
+          let inQuotes = false;
+          
+          for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              fields.push(current.trim().replace(/^"|"$/g, ''));
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          fields.push(current.trim().replace(/^"|"$/g, ''));
+        }
         
-        if (fields.length >= 10) {
+        console.log(`Linha ${i}:`, { fieldsCount: fields.length, fields: fields.slice(0, 3) });
+        
+        if (fields.length >= 9) { // Reduzir para 9 campos mínimos ao invés de 10
           // Parse monetary values (remove R$ and convert commas to dots)
           const parseMoneyValue = (value: string): number => {
-            if (!value || value === '#DIV/0!') return 0;
-            return parseFloat(value.replace(/R\$\s?/, '').replace(',', '.')) || 0;
+            if (!value || value === '#DIV/0!' || value === '') return 0;
+            return parseFloat(value.replace(/R\$\s?/, '').replace(/\./g, '').replace(',', '.')) || 0;
           };
 
           const parseIntValue = (value: string): number => {
-            if (!value || value === '#DIV/0!') return 0;
-            return parseInt(value) || 0;
+            if (!value || value === '#DIV/0!' || value === '') return 0;
+            return parseInt(value.replace(/\./g, '')) || 0;
           };
 
           items.push({
@@ -76,9 +102,12 @@ export default function BulkImportTestsDialog({ isOpen, onClose, onUpdate }: Bul
             stockQuantity: parseIntValue(fields[8]),
             observations: fields[9] || ''
           });
+        } else {
+          console.log(`Linha ${i} ignorada - poucos campos:`, fields.length);
         }
       }
       
+      console.log('Total de itens identificados:', items.length);
       setParsedItems(items);
       toast({
         title: "Dados Analisados",
