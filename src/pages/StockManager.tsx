@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Package2, Plus, AlertTriangle, TrendingUp, Activity } from 'lucide-react';
+import { Package2, Plus, AlertTriangle, TrendingUp, Activity, Upload } from 'lucide-react';
+import BulkImportTestsDialog from '@/components/BulkImportTestsDialog';
 
 interface StockItem {
   id: string;
@@ -58,6 +59,7 @@ export default function StockManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
+  const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
   
   const [newItem, setNewItem] = useState({
     name: '',
@@ -393,6 +395,14 @@ export default function StockManager() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Gestão de Estoque</h1>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => setIsBulkImportDialogOpen(true)}
+          >
+            <Upload className="h-4 w-4" />
+            Importar Testes
+          </Button>
           <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -980,8 +990,18 @@ export default function StockManager() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
+         </TabsContent>
+       </Tabs>
+
+       {/* Bulk Import Dialog */}
+       <BulkImportTestsDialog
+         isOpen={isBulkImportDialogOpen}
+         onClose={() => setIsBulkImportDialogOpen(false)}
+         onUpdate={() => {
+           loadStockItems();
+           loadMovements();
+         }}
+       />
+     </div>
+   );
+ }
