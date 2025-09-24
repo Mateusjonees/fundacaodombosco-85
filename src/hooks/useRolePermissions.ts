@@ -22,7 +22,7 @@ export const ROLE_GROUPS = {
   DIRECTOR_ONLY: ['director'] as EmployeeRole[],
   FINANCE_ONLY: ['financeiro'] as EmployeeRole[],
   DIRECTOR_OR_FINANCE: ['director', 'financeiro'] as EmployeeRole[],
-  STOCK_MANAGERS: ['director', 'financeiro'] as EmployeeRole[],
+  STOCK_MANAGERS: ['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta'] as EmployeeRole[],
   COORDINATOR_AND_HIGHER: ['director', 'coordinator_madre', 'coordinator_floresta'] as EmployeeRole[],
   NON_FINANCE_ACCESS: ['director', 'coordinator_madre', 'coordinator_floresta', 'staff', 'intern', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
   PROFESSIONAL_ROLES: ['staff', 'intern', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
