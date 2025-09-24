@@ -457,30 +457,6 @@ export default function Clients() {
               🔑 Diretor
             </Badge>
           )}
-          <Button 
-            variant="outline" 
-            onClick={() => setIsBulkImportOpen(true)}
-            className="gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Importar Excel
-          </Button>
-          <Button 
-            onClick={() => setIsAutoImportOpen(true)}
-            className="gap-2"
-          >
-            <Database className="h-4 w-4" />
-            Importar Planilha FDB
-          </Button>
-          <Button 
-            onClick={handleDirectImport}
-            disabled={isImporting}
-            className="gap-2"
-            variant="secondary"
-          >
-            <FileDown className="h-4 w-4" />
-            {isImporting ? 'Importando...' : 'Importar Arquivo Carregado'}
-          </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
