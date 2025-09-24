@@ -1543,6 +1543,7 @@ export type Database = {
           permissions: Json | null
           phone: string | null
           salary: number | null
+          unit: string | null
           updated_at: string
           user_id: string
         }
@@ -1562,6 +1563,7 @@ export type Database = {
           permissions?: Json | null
           phone?: string | null
           salary?: number | null
+          unit?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1581,6 +1583,7 @@ export type Database = {
           permissions?: Json | null
           phone?: string | null
           salary?: number | null
+          unit?: string | null
           updated_at?: string
           user_id?: string
         }

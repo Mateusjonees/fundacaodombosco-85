@@ -45,7 +45,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
     password: '',
     employee_role: 'staff' as EmployeeRole,
     phone: '',
-    department: ''
+    department: '',
+    unit: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -59,7 +60,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
       password: '',
       employee_role: 'staff',
       phone: '',
-      department: ''
+      department: '',
+      unit: ''
     });
     setShowPassword(false);
   };
@@ -67,11 +69,11 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim() || !formData.unit.trim()) {
       toast({
         variant: "destructive",
         title: "Campos obrigatórios",
-        description: "Nome, email e senha são obrigatórios.",
+        description: "Nome, email, senha e unidade são obrigatórios.",
       });
       return;
     }
@@ -97,7 +99,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
             name: formData.name,
             employee_role: formData.employee_role,
             phone: formData.phone || null,
-            department: formData.department || null
+            department: formData.department || null,
+            unit: formData.unit || null
           }
         }
       });
@@ -267,6 +270,23 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
               onChange={(e) => handleInputChange('department', e.target.value)}
               placeholder="ex: Psicologia, Fisioterapia"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="unit">Unidade *</Label>
+            <Select 
+              value={formData.unit} 
+              onValueChange={(value) => handleInputChange('unit', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma unidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Selecione uma unidade</SelectItem>
+                <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                <SelectItem value="floresta">Floresta</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-2 pt-4">

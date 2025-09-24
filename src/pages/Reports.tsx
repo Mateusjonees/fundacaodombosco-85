@@ -49,6 +49,7 @@ export default function Reports() {
   const [clients, setClients] = useState<any[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [selectedClient, setSelectedClient] = useState<string>('all');
+  const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
@@ -108,7 +109,7 @@ export default function Reports() {
     loadClients();
     loadAttendanceReports();
     loadEmployeeReports();
-  }, [selectedEmployee, selectedClient, dateFrom, dateTo, selectedMonth, sessionType, roleLoading, userRole]);
+  }, [selectedEmployee, selectedClient, selectedUnit, dateFrom, dateTo, selectedMonth, sessionType, roleLoading, userRole]);
 
   const loadClients = async () => {
     try {
@@ -202,11 +203,18 @@ export default function Reports() {
 
   const loadEmployees = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
         .select('*')
         .not('employee_role', 'is', null)
         .order('name');
+
+      // Filtrar por unidade se selecionado
+      if (selectedUnit !== 'all') {
+        query = query.eq('unit', selectedUnit);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setEmployees(data || []);
@@ -290,6 +298,7 @@ export default function Reports() {
   const clearFilters = () => {
     setSelectedEmployee('all');
     setSelectedClient('all');
+    setSelectedUnit('all');
     setDateFrom('');
     setDateTo('');
     setSelectedMonth(format(new Date(), 'yyyy-MM'));
@@ -390,7 +399,7 @@ export default function Reports() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             <div>
               <Label>Funcionário</Label>
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
@@ -421,6 +430,20 @@ export default function Reports() {
                       {client.name}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Unidade</Label>
+              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as unidades</SelectItem>
+                  <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                  <SelectItem value="floresta">Floresta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -474,7 +497,7 @@ export default function Reports() {
           </div>
           
           {/* Resumo dos filtros */}
-          {(selectedEmployee !== 'all' || selectedClient !== 'all' || dateFrom || dateTo || sessionType !== 'all') && (
+          {(selectedEmployee !== 'all' || selectedClient !== 'all' || selectedUnit !== 'all' || dateFrom || dateTo || sessionType !== 'all') && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800 mb-2">Filtros aplicados:</p>
               <div className="flex flex-wrap gap-2">
@@ -486,6 +509,11 @@ export default function Reports() {
                 {selectedClient !== 'all' && (
                   <Badge variant="outline">
                     Cliente: {clients.find(c => c.id === selectedClient)?.name}
+                  </Badge>
+                )}
+                {selectedUnit !== 'all' && (
+                  <Badge variant="outline">
+                    Unidade: {selectedUnit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
                   </Badge>
                 )}
                 {sessionType !== 'all' && (

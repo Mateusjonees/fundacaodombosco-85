@@ -29,6 +29,7 @@ interface Profile {
   document_rg?: string;
   address?: string;
   department?: string;
+  unit?: string;
   is_active: boolean;
   hire_date: string;
   salary?: number;
@@ -45,6 +46,7 @@ interface FormData {
   document_rg: string;
   address: string;
   department: string;
+  unit: string;
   salary: string;
   birth_date: string;
 }
@@ -91,6 +93,7 @@ export const EmployeeManager = () => {
     document_rg: '',
     address: '',
     department: '',
+    unit: '',
     salary: '',
     birth_date: '',
   });
@@ -174,6 +177,7 @@ export const EmployeeManager = () => {
           document_rg: formData.document_rg,
           address: formData.address,
           department: formData.department,
+          unit: formData.unit,
           salary: formData.salary ? parseFloat(formData.salary) : null,
           birth_date: formData.birth_date || null,
         })
@@ -254,6 +258,7 @@ export const EmployeeManager = () => {
       document_rg: employee.document_rg || '',
       address: employee.address || '',
       department: employee.department || '',
+      unit: employee.unit || '',
       salary: employee.salary?.toString() || '',
       birth_date: employee.birth_date || '',
     });
@@ -281,6 +286,7 @@ export const EmployeeManager = () => {
       document_rg: '',
       address: '',
       department: '',
+      unit: '',
       salary: '',
       birth_date: '',
     });
@@ -324,6 +330,7 @@ export const EmployeeManager = () => {
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Função</TableHead>
+                  <TableHead>Unidade</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data de Contratação</TableHead>
@@ -339,6 +346,11 @@ export const EmployeeManager = () => {
                       <Badge variant="outline">
                         {ROLE_LABELS[employee.employee_role] || employee.employee_role}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {employee.unit === 'madre' ? 'Madre Mazzarello' : 
+                       employee.unit === 'floresta' ? 'Floresta' : 
+                       employee.unit || '-'}
                     </TableCell>
                     <TableCell>{employee.phone || '-'}</TableCell>
                     <TableCell>
@@ -437,6 +449,14 @@ export const EmployeeManager = () => {
                 <div>
                   <Label>Departamento</Label>
                   <p className="text-sm text-muted-foreground">{selectedEmployee.department || '-'}</p>
+                </div>
+                <div>
+                  <Label>Unidade</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedEmployee.unit === 'madre' ? 'Madre Mazzarello' : 
+                     selectedEmployee.unit === 'floresta' ? 'Floresta' : 
+                     selectedEmployee.unit || '-'}
+                  </p>
                 </div>
               </div>
               <div>
@@ -538,14 +558,30 @@ export const EmployeeManager = () => {
                   onChange={(e) => setFormData({ ...formData, document_rg: e.target.value })}
                 />
               </div>
-              <div>
-                <Label htmlFor="department">Departamento</Label>
-                <Input
-                  id="department"
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                />
-              </div>
+               <div>
+                 <Label htmlFor="department">Departamento</Label>
+                 <Input
+                   id="department"
+                   value={formData.department}
+                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                 />
+               </div>
+               <div>
+                 <Label htmlFor="unit">Unidade</Label>
+                 <Select 
+                   value={formData.unit} 
+                   onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                 >
+                   <SelectTrigger>
+                     <SelectValue placeholder="Selecione uma unidade" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="">Nenhuma unidade</SelectItem>
+                     <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                     <SelectItem value="floresta">Floresta</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
               <div>
                 <Label htmlFor="birth_date">Data de Nascimento</Label>
                 <Input
