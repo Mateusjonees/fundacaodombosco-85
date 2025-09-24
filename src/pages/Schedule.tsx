@@ -128,10 +128,19 @@ export default function Schedule() {
         .eq('is_active', true)
         .order('name');
 
-      // Se o usuário não for administrativo (diretor, coordenador ou recepcionista),
-      // só mostrar ele mesmo na lista de profissionais
-      if (userProfile && !['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'].includes(userProfile.employee_role)) {
-        query = query.eq('user_id', user?.id);
+      // Aplicar filtros baseados no role do usuário para funcionários
+      if (userProfile) {
+        if (userProfile.employee_role === 'coordinator_madre') {
+          // Coordenador Madre pode ver funcionários da unidade madre e ele mesmo
+          query = query.or(`employee_role.eq.coordinator_madre,department.ilike.%madre%,user_id.eq.${user?.id}`);
+        } else if (userProfile.employee_role === 'coordinator_floresta') {
+          // Coordenador Floresta pode ver funcionários da unidade floresta e ele mesmo
+          query = query.or(`employee_role.eq.coordinator_floresta,department.ilike.%floresta%,user_id.eq.${user?.id}`);
+        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
+          // Para outros profissionais, só mostrar eles mesmos
+          query = query.eq('user_id', user?.id);
+        }
+        // Diretores e recepcionistas veem todos os funcionários (sem filtro adicional)
       }
       
       const { data, error } = await query;
@@ -781,7 +790,15 @@ export default function Schedule() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-4">
                       <Filter className="h-4 w-4 text-primary" />
-                      <h3 className="font-semibold text-primary">Filtros Avançados</h3>
+                      <h3 className="font-semibold text-primary">
+                        Filtros Avançados
+                        {userProfile?.employee_role === 'coordinator_madre' && 
+                          <span className="text-xs text-muted-foreground ml-2">(Unidade Madre)</span>
+                        }
+                        {userProfile?.employee_role === 'coordinator_floresta' && 
+                          <span className="text-xs text-muted-foreground ml-2">(Unidade Floresta)</span>
+                        }
+                      </h3>
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-foreground">Filtrar por Cargo:</Label>
@@ -869,7 +886,17 @@ export default function Schedule() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="client_id">Paciente</Label>
-                    {!isAdmin && (
+                    {userProfile?.employee_role === 'coordinator_madre' && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Você pode agendar apenas para pacientes da unidade Madre.
+                      </p>
+                    )}
+                    {userProfile?.employee_role === 'coordinator_floresta' && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Você pode agendar apenas para pacientes da unidade Floresta.
+                      </p>
+                    )}
+                    {!isAdmin && !['coordinator_madre', 'coordinator_floresta'].includes(userProfile?.employee_role || '') && (
                       <p className="text-sm text-muted-foreground mb-2">
                         Você só pode agendar para pacientes vinculados ao seu atendimento.
                       </p>
