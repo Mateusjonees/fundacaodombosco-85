@@ -119,6 +119,10 @@ export const useRolePermissions = () => {
     return isGodMode() || hasAnyRole(ROLE_GROUPS.ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES);
   };
 
+  const canManageAllSchedules = (): boolean => {
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER); // Diretores e coordenadores podem gerenciar todos os agendamentos
+  };
+
   const canManageEmployees = (): boolean => {
     return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER); // Diretores e coordenadores
   };
@@ -320,5 +324,6 @@ export const useRolePermissions = () => {
     canAccessAllReports,
     canBypassAllRestrictions,
     canManageUsers,
+    canManageAllSchedules,
   };
 };
