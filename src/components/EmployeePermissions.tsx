@@ -98,16 +98,31 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
 
     setLoading(true);
     try {
+      // Primeiro obter o usuário atual
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        throw new Error('Erro ao obter dados do usuário: ' + userError.message);
+      }
+
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Depois fazer o upsert
       const { error } = await supabase
         .from('user_permissions')
         .upsert({
           user_id: employeeId,
           permission_key: permissionKey,
           permission_value: value,
-          granted_by: (await supabase.auth.getUser()).data.user?.id,
+          granted_by: user.id,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error('Erro do banco de dados: ' + error.message);
+      }
 
       toast({
         title: "Sucesso",
@@ -115,12 +130,12 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
       });
 
       loadPermissions();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating permission:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar a permissão.",
+        description: error.message || "Não foi possível atualizar a permissão.",
       });
     } finally {
       setLoading(false);
