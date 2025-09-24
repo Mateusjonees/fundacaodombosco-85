@@ -12,8 +12,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power } from 'lucide-react';
+import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload } from 'lucide-react';
 import ClientDetailsView from '@/components/ClientDetailsView';
+import { BulkImportClientsDialog } from '@/components/BulkImportClientsDialog';
 
 interface Client {
   id: string;
@@ -102,6 +103,7 @@ export default function Clients() {
   }, [userProfile]);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
@@ -404,6 +406,14 @@ export default function Clients() {
               🔑 Diretor
             </Badge>
           )}
+          <Button 
+            variant="outline" 
+            onClick={() => setIsBulkImportOpen(true)}
+            className="gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Importar Excel
+          </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
@@ -798,6 +808,15 @@ export default function Clients() {
           )}
         </CardContent>
       </Card>
+      
+      <BulkImportClientsDialog 
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onImportComplete={() => {
+          loadClients();
+          setIsBulkImportOpen(false);
+        }}
+      />
     </div>
   );
 }
