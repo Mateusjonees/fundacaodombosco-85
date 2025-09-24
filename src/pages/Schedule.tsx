@@ -71,6 +71,24 @@ export default function Schedule() {
     unit: 'madre'
   });
 
+  // Auto-definir a unidade baseada no coordenador logado
+  useEffect(() => {
+    if (userProfile) {
+      let defaultUnit = 'madre';
+      
+      if (userProfile.employee_role === 'coordinator_floresta') {
+        defaultUnit = 'floresta';
+      } else if (userProfile.employee_role === 'coordinator_madre') {
+        defaultUnit = 'madre';
+      }
+      
+      setNewAppointment(prev => ({
+        ...prev,
+        unit: defaultUnit
+      }));
+    }
+  }, [userProfile]);
+
   useEffect(() => {
     loadUserProfile();
     loadEmployees();
@@ -131,11 +149,11 @@ export default function Schedule() {
       // Aplicar filtros baseados no role do usuário para funcionários
       if (userProfile) {
         if (userProfile.employee_role === 'coordinator_madre') {
-          // Coordenador Madre pode ver funcionários da unidade madre e ele mesmo
-          query = query.or(`employee_role.eq.coordinator_madre,department.ilike.%madre%,user_id.eq.${user?.id}`);
+          // Coordenador Madre pode ver profissionais da unidade madre
+          query = query.or(`employee_role.eq.coordinator_madre,employee_role.eq.staff,employee_role.eq.psychologist,employee_role.eq.psychopedagogue,employee_role.eq.speech_therapist,employee_role.eq.nutritionist,employee_role.eq.physiotherapist,employee_role.eq.musictherapist,user_id.eq.${user?.id}`);
         } else if (userProfile.employee_role === 'coordinator_floresta') {
-          // Coordenador Floresta pode ver funcionários da unidade floresta e ele mesmo
-          query = query.or(`employee_role.eq.coordinator_floresta,department.ilike.%floresta%,user_id.eq.${user?.id}`);
+          // Coordenador Floresta pode ver profissionais da unidade floresta
+          query = query.or(`employee_role.eq.coordinator_floresta,employee_role.eq.staff,employee_role.eq.psychologist,employee_role.eq.psychopedagogue,employee_role.eq.speech_therapist,employee_role.eq.nutritionist,employee_role.eq.physiotherapist,employee_role.eq.musictherapist,user_id.eq.${user?.id}`);
         } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
           // Para outros profissionais, só mostrar eles mesmos
           query = query.eq('user_id', user?.id);
@@ -975,15 +993,34 @@ export default function Schedule() {
                    
                    <div className="space-y-2">
                      <Label htmlFor="unit">Unidade</Label>
-                     <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({ ...newAppointment, unit: value })}>
+                     <Select 
+                       value={newAppointment.unit} 
+                       onValueChange={(value) => setNewAppointment({ ...newAppointment, unit: value })}
+                       disabled={userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta'}
+                     >
                        <SelectTrigger>
                          <SelectValue placeholder="Selecione a unidade" />
                        </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="madre">Madre Mazzarello</SelectItem>
-                          <SelectItem value="floresta">Floresta</SelectItem>
+                          {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'receptionist') && (
+                            <>
+                              <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                              <SelectItem value="floresta">Floresta</SelectItem>
+                            </>
+                          )}
+                          {userProfile?.employee_role === 'coordinator_madre' && (
+                            <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                          )}
+                          {userProfile?.employee_role === 'coordinator_floresta' && (
+                            <SelectItem value="floresta">Floresta</SelectItem>
+                          )}
                         </SelectContent>
                      </Select>
+                     {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && (
+                       <p className="text-sm text-muted-foreground">
+                         Você só pode agendar para sua unidade.
+                       </p>
+                     )}
                    </div>
                    
                    <div className="space-y-2">

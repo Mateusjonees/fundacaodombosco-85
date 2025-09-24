@@ -83,6 +83,24 @@ export default function Clients() {
     clinical_observations: ''
   });
 
+  // Auto-definir a unidade baseada no coordenador logado
+  useEffect(() => {
+    if (userProfile) {
+      let defaultUnit = 'madre';
+      
+      if (userProfile.employee_role === 'coordinator_floresta') {
+        defaultUnit = 'floresta';
+      } else if (userProfile.employee_role === 'coordinator_madre') {
+        defaultUnit = 'madre';
+      }
+      
+      setNewClient(prev => ({
+        ...prev,
+        unit: defaultUnit
+      }));
+    }
+  }, [userProfile]);
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -264,6 +282,8 @@ export default function Clients() {
   };
 
   const resetForm = () => {
+    const defaultUnit = userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' : 'madre';
+    
     setNewClient({
       name: '',
       phone: '',
@@ -276,7 +296,7 @@ export default function Clients() {
       cpf: '',
       responsible_name: '',
       responsible_phone: '',
-      unit: 'madre',
+      unit: defaultUnit,
       diagnosis: '',
       neuropsych_complaint: '',
       treatment_expectations: '',
@@ -452,15 +472,34 @@ export default function Clients() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="unit">Unidade</Label>
-                  <Select value={newClient.unit} onValueChange={(value) => setNewClient({ ...newClient, unit: value })}>
+                  <Select 
+                    value={newClient.unit} 
+                    onValueChange={(value) => setNewClient({ ...newClient, unit: value })}
+                    disabled={userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta'}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                      <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                      {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'receptionist') && (
+                        <>
+                          <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                          <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                        </>
+                      )}
+                      {userProfile?.employee_role === 'coordinator_madre' && (
+                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                      )}
+                      {userProfile?.employee_role === 'coordinator_floresta' && (
+                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
+                  {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && (
+                    <p className="text-sm text-muted-foreground">
+                      Você só pode cadastrar clientes para sua unidade.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="responsible_name">Nome do Responsável</Label>
