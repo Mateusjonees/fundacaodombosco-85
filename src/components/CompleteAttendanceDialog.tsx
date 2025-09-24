@@ -234,8 +234,8 @@ export default function CompleteAttendanceDialog({
         const { error: financialError } = await supabase
           .from('financial_records')
           .insert({
-            type: 'revenue',
-            category: 'Atendimento',
+            type: 'income',
+            category: 'consultation',
             description: `${attendanceData.sessionType} - ${schedule.clients?.name}`,
             amount: attendanceData.sessionValue,
             date: new Date().toISOString().split('T')[0],
@@ -250,20 +250,41 @@ export default function CompleteAttendanceDialog({
       }
 
       // 5. Processar materiais utilizados - criar movimentações e atualizar estoque
+      let totalMaterialsCost = 0;
+      
       if (attendanceData.materialsUsed.length > 0) {
         for (const material of attendanceData.materialsUsed) {
+          // Buscar custo unitário do item
+          const { data: stockItem, error: stockItemError } = await supabase
+            .from('stock_items')
+            .select('current_quantity, unit_cost')
+            .eq('id', material.stock_item_id)
+            .single();
+
+          if (stockItemError || !stockItem) {
+            console.error('Error fetching stock item:', stockItemError);
+            continue;
+          }
+
+          const unitCost = stockItem.unit_cost || 0;
+          const materialCost = unitCost * material.quantity;
+          totalMaterialsCost += materialCost;
+
           // Criar movimentação de estoque
           const { error: movementError } = await supabase
             .from('stock_movements')
             .insert({
               stock_item_id: material.stock_item_id,
-              type: 'out',
+              type: 'saida',
               quantity: material.quantity,
-              reason: 'Utilizado em atendimento',
+              unit_cost: unitCost,
+              total_cost: materialCost,
+              reason: 'atendimento',
               notes: `${attendanceData.sessionType} - ${schedule.clients?.name}${material.observation ? ` - ${material.observation}` : ''}`,
-              created_by: user.id,
+              moved_by: user.id,
               client_id: schedule.client_id,
-              schedule_id: schedule.id
+              attendance_id: schedule.id,
+              date: new Date().toISOString().split('T')[0]
             });
 
           if (movementError) {
@@ -272,18 +293,7 @@ export default function CompleteAttendanceDialog({
           }
 
           // Atualizar quantidade no estoque
-          const { data: currentItem, error: fetchError } = await supabase
-            .from('stock_items')
-            .select('current_quantity')
-            .eq('id', material.stock_item_id)
-            .single();
-
-          if (fetchError || !currentItem) {
-            console.error('Error fetching current stock:', fetchError);
-            continue;
-          }
-
-          const newQuantity = Math.max(0, currentItem.current_quantity - material.quantity);
+          const newQuantity = Math.max(0, stockItem.current_quantity - material.quantity);
           
           const { error: updateStockError } = await supabase
             .from('stock_items')
@@ -292,6 +302,30 @@ export default function CompleteAttendanceDialog({
 
           if (updateStockError) {
             console.error('Error updating stock quantity:', updateStockError);
+          }
+        }
+
+        // 6. Criar registro financeiro para custo dos materiais utilizados
+        if (totalMaterialsCost > 0) {
+          const materialsList = attendanceData.materialsUsed.map(m => `${m.name} (${m.quantity} ${m.unit})`).join(', ');
+          
+          const { error: materialCostError } = await supabase
+            .from('financial_records')
+            .insert({
+              type: 'expense',
+              category: 'supplies',
+              description: `Materiais utilizados em atendimento - ${schedule.clients?.name}: ${materialsList}`,
+              amount: totalMaterialsCost,
+              date: new Date().toISOString().split('T')[0],
+              payment_method: 'internal',
+              client_id: schedule.client_id,
+              employee_id: user.id,
+              created_by: user.id,
+              notes: `Custo de materiais para ${attendanceData.sessionType}`
+            });
+
+          if (materialCostError) {
+            console.error('Material cost financial record error:', materialCostError);
           }
         }
       }

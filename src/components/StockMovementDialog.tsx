@@ -177,6 +177,64 @@ export function StockMovementDialog({
         throw updateError;
       }
 
+      // Create financial record if there's a cost
+      if (totalCost && totalCost > 0) {
+        let financialType: 'income' | 'expense' = 'expense';
+        let financialCategory: string = 'supplies';
+        let financialDescription: string = '';
+
+        const itemName = selectedItem.name;
+
+        switch (data.type) {
+          case "entrada":
+            financialType = 'expense';
+            financialCategory = 'supplies';
+            financialDescription = `Entrada de estoque: ${itemName} (${data.quantity} unidades)`;
+            
+            if (data.reason === 'Compra') {
+              financialDescription = `Compra de estoque: ${itemName} (${data.quantity} unidades)`;
+            }
+            break;
+          case "saida":
+            financialType = 'expense';
+            financialCategory = 'supplies';
+            financialDescription = `Saída de estoque: ${itemName} (${data.quantity} unidades)`;
+            
+            if (data.reason === 'Uso em atendimento') {
+              financialDescription = `Custo de materiais - Atendimento: ${itemName} (${data.quantity} unidades)`;
+            }
+            break;
+          case "ajuste":
+            if (data.quantity < previousQuantity) {
+              financialType = 'expense';
+              financialDescription = `Ajuste de estoque (redução): ${itemName} (${Math.abs(previousQuantity - data.quantity)} unidades)`;
+            }
+            break;
+        }
+
+        if (financialDescription) {
+          const { error: financialError } = await supabase
+            .from('financial_records')
+            .insert({
+              type: financialType,
+              category: financialCategory,
+              description: financialDescription,
+              amount: totalCost,
+              date: new Date().toISOString().split('T')[0],
+              payment_method: 'internal',
+              client_id: data.client_id || null,
+              employee_id: user.id,
+              created_by: user.id,
+              notes: `Movimentação de estoque - ${data.reason}${data.notes ? ` - ${data.notes}` : ''}`
+            });
+
+          if (financialError) {
+            console.error('Financial record error:', financialError);
+            // Não interrompe o processo se houver erro no financeiro
+          }
+        }
+      }
+
       toast({
         title: "Movimentação registrada",
         description: `${data.type.charAt(0).toUpperCase() + data.type.slice(1)} de ${data.quantity} unidades registrada com sucesso.`,
