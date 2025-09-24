@@ -139,7 +139,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-3xl font-bold">Dashboard</h2>
+      <h2 className="text-3xl font-bold">Painel</h2>
         <div className="text-center py-8">Carregando...</div>
       </div>
     );
@@ -149,7 +149,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold">Dashboard</h2>
+      <h2 className="text-3xl font-bold">Painel</h2>
       
       <Card>
         <CardHeader>

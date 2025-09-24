@@ -21,7 +21,7 @@ const PERMISSION_CATEGORIES = {
   viewing: {
     label: 'Visualização',
     permissions: [
-      { key: 'view_dashboard', label: 'Ver Dashboard' },
+      { key: 'view_dashboard', label: 'Ver Painel' },
       { key: 'view_clients', label: 'Ver Clientes' },
       { key: 'view_schedules', label: 'Ver Agendamentos' },
       { key: 'view_financial', label: 'Ver Financeiro' },

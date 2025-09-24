@@ -139,7 +139,7 @@ export const useCustomPermissions = () => {
 
 export const PERMISSION_LABELS: Record<PermissionAction, string> = {
   // Visualização
-  view_dashboard: 'Ver Dashboard',
+  view_dashboard: 'Ver Painel',
   view_clients: 'Ver Clientes',
   view_schedules: 'Ver Agendamentos',
   view_financial: 'Ver Financeiro',

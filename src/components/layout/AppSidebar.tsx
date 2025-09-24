@@ -56,10 +56,10 @@ const iconMapping: Record<string, LucideIcon> = {
 const getMenuItemsForRole = (permissions: any) => {
   const items = [];
   
-  // Dashboard - sempre visível para usuários autenticados
+  // Painel - sempre visível para usuários autenticados
   items.push({ 
     id: 'dashboard', 
-    title: 'Dashboard', 
+    title: 'Painel', 
     url: '/', 
     icon: 'Home', 
     order_index: 0 
@@ -153,8 +153,8 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
-  // Usuários - diretores e coordenadores
-  if (permissions.canManageEmployees()) {
+  // Usuários - apenas diretores
+  if (permissions.canManageUsers?.()) {
     items.push({ 
       id: 'users', 
       title: 'Usuários', 

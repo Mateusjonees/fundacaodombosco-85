@@ -120,7 +120,11 @@ export const useRolePermissions = () => {
   };
 
   const canManageEmployees = (): boolean => {
-    return isGodMode(); // Apenas diretores
+    return isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER); // Diretores e coordenadores
+  };
+
+  const canManageUsers = (): boolean => {
+    return isGodMode(); // Apenas diretores para usuários
   };
 
   const canViewReports = (): boolean => {
@@ -315,5 +319,6 @@ export const useRolePermissions = () => {
     canManageAllNotifications,
     canAccessAllReports,
     canBypassAllRestrictions,
+    canManageUsers,
   };
 };
