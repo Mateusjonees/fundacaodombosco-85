@@ -40,12 +40,12 @@ export default function UserManagement() {
     department: ''
   });
 
-  // Função temporária para resetar senha da Amanda
-  const resetAmandaPassword = async () => {
+  // Função temporária para resetar senhas
+  const resetUserPassword = async (userId: string, userName: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('change-user-password', {
         body: {
-          userId: 'd137ae9c-fb15-4a07-8a99-3016cd5da132',
+          userId: userId,
           newPassword: '123456'
         }
       });
@@ -59,7 +59,7 @@ export default function UserManagement() {
       } else {
         toast({
           title: "Sucesso",
-          description: "Senha da Amanda Paola foi resetada para: 123456",
+          description: `Senha do ${userName} foi resetada para: 123456`,
         });
       }
     } catch (error: any) {
@@ -225,11 +225,18 @@ export default function UserManagement() {
         </div>
         <div className="flex gap-2">
           <Button 
-            onClick={resetAmandaPassword}
+            onClick={() => resetUserPassword('d137ae9c-fb15-4a07-8a99-3016cd5da132', 'Amanda Paola')}
             variant="outline"
             className="gap-2 text-orange-600 border-orange-600 hover:bg-orange-50"
           >
             Reset Senha Amanda
+          </Button>
+          <Button 
+            onClick={() => resetUserPassword('14a88df6-c8a3-4214-9fa1-e22827611f05', 'Christopher')}
+            variant="outline"  
+            className="gap-2 text-blue-600 border-blue-600 hover:bg-blue-50"
+          >
+            Reset Senha Christopher
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
