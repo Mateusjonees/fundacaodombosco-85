@@ -1858,55 +1858,76 @@ export type Database = {
       }
       stock_movements: {
         Row: {
+          attendance_id: string | null
           client_id: string | null
           created_at: string
           created_by: string | null
           date: string
+          from_location: string | null
           id: string
+          moved_by: string | null
+          new_quantity: number | null
           notes: string | null
+          previous_quantity: number | null
           quantity: number
           reason: string | null
           reference_document: string | null
           schedule_id: string | null
           session_number: number | null
           stock_item_id: string
+          to_location: string | null
           total_cost: number | null
           type: string
           unit_cost: number | null
+          updated_at: string | null
         }
         Insert: {
+          attendance_id?: string | null
           client_id?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
+          from_location?: string | null
           id?: string
+          moved_by?: string | null
+          new_quantity?: number | null
           notes?: string | null
+          previous_quantity?: number | null
           quantity: number
           reason?: string | null
           reference_document?: string | null
           schedule_id?: string | null
           session_number?: number | null
           stock_item_id: string
+          to_location?: string | null
           total_cost?: number | null
           type: string
           unit_cost?: number | null
+          updated_at?: string | null
         }
         Update: {
+          attendance_id?: string | null
           client_id?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
+          from_location?: string | null
           id?: string
+          moved_by?: string | null
+          new_quantity?: number | null
           notes?: string | null
+          previous_quantity?: number | null
           quantity?: number
           reason?: string | null
           reference_document?: string | null
           schedule_id?: string | null
           session_number?: number | null
           stock_item_id?: string
+          to_location?: string | null
           total_cost?: number | null
           type?: string
           unit_cost?: number | null
+          updated_at?: string | null
         }
         Relationships: [
           {
