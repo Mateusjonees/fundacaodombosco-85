@@ -5,20 +5,12 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Shield, Save } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { Database } from '@/integrations/supabase/types';
 
 type PermissionAction = Database['public']['Enums']['permission_action'];
-
-interface UserPermission {
-  id: string;
-  permission: PermissionAction;
-  granted: boolean;
-  granted_by?: string;
-}
 
 interface EmployeePermissionsProps {
   employeeId: string;
@@ -117,10 +109,9 @@ const PERMISSION_CATEGORIES = {
 
 export default function EmployeePermissions({ employeeId, employeeName }: EmployeePermissionsProps) {
   const { user } = useAuth();
-  const [permissions, setPermissions] = useState<UserPermission[]>([]);
+  const [grantedPermissions, setGrantedPermissions] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [isDirector, setIsDirector] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -150,12 +141,14 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
     try {
       const { data, error } = await supabase
         .from('user_specific_permissions')
-        .select('*')
-        .eq('user_id', employeeId);
+        .select('permission, granted')
+        .eq('user_id', employeeId)
+        .eq('granted', true);
 
       if (error) throw error;
-      setPermissions(data || []);
-      setHasChanges(false);
+      
+      const permissions = new Set(data?.map(p => p.permission) || []);
+      setGrantedPermissions(permissions);
     } catch (error) {
       console.error('Error loading permissions:', error);
       toast({
@@ -168,7 +161,7 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
     }
   };
 
-  const togglePermission = async (permissionKey: PermissionAction, granted: boolean) => {
+  const togglePermission = async (permissionKey: string, granted: boolean) => {
     if (!isDirector) {
       toast({
         variant: "destructive",
@@ -192,21 +185,29 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
           .from('user_specific_permissions')
           .upsert({
             user_id: employeeId,
-            permission: permissionKey,
+            permission: permissionKey as PermissionAction,
             granted: true,
             granted_by: currentUser.id,
           });
 
         if (error) throw error;
+        
+        setGrantedPermissions(prev => new Set(prev).add(permissionKey));
       } else {
         // Remover permissão
         const { error } = await supabase
           .from('user_specific_permissions')
           .delete()
           .eq('user_id', employeeId)
-          .eq('permission', permissionKey);
+          .eq('permission', permissionKey as PermissionAction);
 
         if (error) throw error;
+        
+        setGrantedPermissions(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(permissionKey);
+          return newSet;
+        });
       }
 
       toast({
@@ -214,7 +215,6 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
         description: `Permissão ${granted ? 'concedida' : 'removida'} com sucesso!`,
       });
 
-      loadPermissions();
     } catch (error: any) {
       console.error('Error updating permission:', error);
       toast({
@@ -225,10 +225,6 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
     } finally {
       setLoading(false);
     }
-  };
-
-  const hasPermission = (permissionKey: PermissionAction): boolean => {
-    return permissions.some(p => p.permission === permissionKey && p.granted);
   };
 
   if (!isDirector) {
@@ -263,8 +259,7 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
               {category.permissions.map((perm) => {
-                const permissionKey = perm.key as PermissionAction;
-                const isGranted = hasPermission(permissionKey);
+                const isGranted = grantedPermissions.has(perm.key);
                 
                 return (
                   <div 
@@ -288,7 +283,7 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
                       id={perm.key}
                       checked={isGranted}
                       onCheckedChange={(checked) => 
-                        togglePermission(permissionKey, checked)
+                        togglePermission(perm.key, checked)
                       }
                       disabled={loading}
                       className="ml-3"

@@ -448,10 +448,20 @@ export default function Employees() {
             <DialogTitle>Permissões do Funcionário</DialogTitle>
           </DialogHeader>
           {selectedEmployee && (
-            <EmployeePermissions 
-              employeeId={selectedEmployee.user_id}
-              employeeName={selectedEmployee.name || 'Funcionário'}
-            />
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Editando permissões para: <span className="font-medium">{selectedEmployee.name}</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  ID: {selectedEmployee.user_id}
+                </p>
+              </div>
+              <EmployeePermissions 
+                employeeId={selectedEmployee.user_id}
+                employeeName={selectedEmployee.name || 'Funcionário'}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>
