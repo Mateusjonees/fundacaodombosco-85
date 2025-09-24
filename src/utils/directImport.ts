@@ -13,7 +13,7 @@ interface ClientImportData {
   unit: string;
 }
 
-export async function importClientsFromFile(): Promise<{ success: number; errors: string[] }> {
+export async function executeDirectImport(): Promise<{ success: number; errors: string[] }> {
   try {
     // Fetch the Excel file
     const response = await fetch('/temp/clients_import.xlsx');
@@ -76,11 +76,14 @@ export async function importClientsFromFile(): Promise<{ success: number; errors
     // Filtrar apenas linhas com nome preenchido
     const validData = parsedData.filter(item => item.name.trim() !== '');
     
-    console.log(`${validData.length} clientes encontrados para importação.`);
+    console.log(`${validData.length} clientes encontrados para importação direta.`);
     
     const errors: string[] = [];
     let successCount = 0;
 
+    // Importar todos os clientes de uma vez usando batch insert
+    const clientsToInsert: any[] = [];
+    
     for (const client of validData) {
       try {
         // Verificar se cliente já existe pelo CPF ou nome
@@ -105,10 +108,10 @@ export async function importClientsFromFile(): Promise<{ success: number; errors
         }
 
         if (existingClient) {
-          errors.push(`Cliente "${client.name}" já existe no sistema (${existingClient.name})`);
+          errors.push(`Cliente "${client.name}" já existe no sistema`);
         } else {
-          // Preparar dados para inserção
-          const insertData: any = {
+          // Adicionar à lista para inserção em lote
+          clientsToInsert.push({
             name: client.name,
             phone: client.phone || null,
             email: client.email || null,
@@ -117,28 +120,32 @@ export async function importClientsFromFile(): Promise<{ success: number; errors
             responsible_name: client.responsible_name || null,
             is_active: client.is_active,
             unit: client.unit
-          };
-
-          const { error } = await supabase
-            .from('clients')
-            .insert(insertData);
-
-          if (error) {
-            errors.push(`Erro ao importar "${client.name}": ${error.message}`);
-          } else {
-            successCount++;
-            console.log(`Cliente "${client.name}" importado com sucesso`);
-          }
+          });
         }
       } catch (error) {
         errors.push(`Erro inesperado ao processar "${client.name}": ${error}`);
       }
     }
 
+    // Inserir todos os clientes de uma vez
+    if (clientsToInsert.length > 0) {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert(clientsToInsert)
+        .select('name');
+
+      if (error) {
+        errors.push(`Erro na inserção em lote: ${error.message}`);
+      } else {
+        successCount = data?.length || 0;
+        console.log(`${successCount} clientes importados com sucesso em lote`);
+      }
+    }
+
     return { success: successCount, errors };
     
   } catch (error) {
-    console.error('Erro ao importar clientes:', error);
+    console.error('Erro ao importar clientes diretamente:', error);
     return { success: 0, errors: [`Erro geral na importação: ${error}`] };
   }
 }

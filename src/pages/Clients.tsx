@@ -17,6 +17,7 @@ import ClientDetailsView from '@/components/ClientDetailsView';
 import { BulkImportClientsDialog } from '@/components/BulkImportClientsDialog';
 import { AutoImportClientsDialog } from '@/components/AutoImportClientsDialog';
 import { importClientsFromFile } from '@/utils/importClients';
+import { executeDirectImport } from '@/utils/directImport';
 
 interface Client {
   id: string;
@@ -313,7 +314,7 @@ export default function Clients() {
   const handleDirectImport = async () => {
     setIsImporting(true);
     try {
-      const result = await importClientsFromFile();
+      const result = await executeDirectImport();
       
       if (result.success > 0) {
         toast({
@@ -342,6 +343,19 @@ export default function Clients() {
       setIsImporting(false);
     }
   };
+
+  // Executar importação automática ao carregar a página
+  const executeAutoImport = async () => {
+    console.log('Iniciando importação automática...');
+    await handleDirectImport();
+  };
+
+  // Executar importação automática uma vez quando a página carrega
+  useEffect(() => {
+    if (userProfile && clients.length === 0) {
+      executeAutoImport();
+    }
+  }, [userProfile]);
 
   const openEditDialog = (client: Client) => {
     setEditingClient(client);
