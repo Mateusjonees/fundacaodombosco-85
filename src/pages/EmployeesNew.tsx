@@ -119,7 +119,7 @@ export default function EmployeesNew() {
             employee_role: newEmployee.employee_role,
             phone: newEmployee.phone || null,
             department: newEmployee.department || null,
-            unit: newEmployee.unit || null
+            unit: newEmployee.unit === 'none' ? null : (newEmployee.unit || null)
           }
         }
       });
@@ -185,7 +185,10 @@ export default function EmployeesNew() {
   };
 
   const handleEditEmployee = (employee: Employee) => {
-    setEditingEmployee(employee);
+    setEditingEmployee({
+      ...employee,
+      unit: employee.unit || 'none'
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -200,7 +203,7 @@ export default function EmployeesNew() {
           employee_role: editingEmployee.employee_role as any,
           phone: editingEmployee.phone,
           department: editingEmployee.department,
-          unit: editingEmployee.unit
+          unit: editingEmployee.unit === 'none' ? null : editingEmployee.unit
         })
         .eq('user_id', editingEmployee.user_id);
 
@@ -393,7 +396,6 @@ export default function EmployeesNew() {
                     <SelectValue placeholder="Selecione uma unidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Selecione uma unidade</SelectItem>
                     <SelectItem value="madre">Madre Mazzarello</SelectItem>
                     <SelectItem value="floresta">Floresta</SelectItem>
                   </SelectContent>
@@ -490,12 +492,12 @@ export default function EmployeesNew() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-unit">Unidade</Label>
-                  <Select value={editingEmployee.unit || ''} onValueChange={(value) => setEditingEmployee({ ...editingEmployee, unit: value })}>
+                  <Select value={editingEmployee.unit || 'none'} onValueChange={(value) => setEditingEmployee({ ...editingEmployee, unit: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma unidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma unidade</SelectItem>
+                      <SelectItem value="none">Nenhuma unidade</SelectItem>
                       <SelectItem value="madre">Madre Mazzarello</SelectItem>
                       <SelectItem value="floresta">Floresta</SelectItem>
                     </SelectContent>
