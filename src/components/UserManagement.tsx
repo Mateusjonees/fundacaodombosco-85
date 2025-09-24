@@ -40,6 +40,37 @@ export default function UserManagement() {
     department: ''
   });
 
+  // Função temporária para resetar senha da Amanda
+  const resetAmandaPassword = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('change-user-password', {
+        body: {
+          userId: 'd137ae9c-fb15-4a07-8a99-3016cd5da132',
+          newPassword: '123456'
+        }
+      });
+      
+      if (error) {
+        toast({
+          title: "Erro",
+          description: `Erro ao resetar senha: ${error.message}`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Sucesso",
+          description: "Senha da Amanda Paola foi resetada para: 123456",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: `Erro inesperado: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     if (isDirector) {
       loadEmployees();
@@ -192,16 +223,24 @@ export default function UserManagement() {
             Sistema de criação e gerenciamento de usuários
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus className="h-4 w-4" />
-              Criar Usuário
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            onClick={resetAmandaPassword}
+            variant="outline"
+            className="gap-2 text-orange-600 border-orange-600 hover:bg-orange-50"
+          >
+            Reset Senha Amanda
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Criar Usuário
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Criar Novo Usuário</DialogTitle>
@@ -278,6 +317,7 @@ export default function UserManagement() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Statistics */}
