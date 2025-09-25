@@ -1,19 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
 } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -38,7 +29,7 @@ interface PatientCommandAutocompleteProps {
 export function PatientCommandAutocomplete({ 
   value, 
   onValueChange, 
-  placeholder = "Selecione um paciente...",
+  placeholder = "Buscar paciente por nome, CPF, telefone ou email...",
   disabled = false,
   unitFilter
 }: PatientCommandAutocompleteProps) {
@@ -46,17 +37,33 @@ export function PatientCommandAutocomplete({
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [displayValue, setDisplayValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchTerm.length >= 2 || searchTerm === '') {
+      if (searchTerm.length >= 2) {
         loadClients(searchTerm);
+        setOpen(true);
+      } else if (searchTerm.length === 0) {
+        setClients([]);
+        setOpen(false);
       }
     }, 300);
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm, unitFilter]);
+
+  // Update display value when selection changes
+  useEffect(() => {
+    const selectedClient = clients.find(client => client.id === value);
+    if (selectedClient && value) {
+      setDisplayValue(selectedClient.name);
+    } else if (!value) {
+      setDisplayValue('');
+    }
+  }, [value, clients]);
 
   const loadClients = async (search: string) => {
     setLoading(true);
@@ -90,112 +97,116 @@ export function PatientCommandAutocomplete({
     }
   };
 
-  // Load initial data
-  useEffect(() => {
-    if (open && clients.length === 0) {
-      loadClients('');
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setDisplayValue(newValue);
+    setSearchTerm(newValue);
+    
+    if (!newValue) {
+      onValueChange('');
     }
-  }, [open]);
+  };
 
-  const selectedClient = clients.find(client => client.id === value);
+  const handleSelectClient = (client: Client) => {
+    onValueChange(client.id);
+    setDisplayValue(client.name);
+    setSearchTerm('');
+    setOpen(false);
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={inputRef}
+          type="text"
+          placeholder={placeholder}
+          value={displayValue}
+          onChange={handleInputChange}
+          onFocus={() => {
+            if (searchTerm.length >= 2) {
+              setOpen(true);
+            }
+          }}
           disabled={disabled}
-        >
-          {selectedClient ? selectedClient.name : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="start">
-        <Command>
-          <CommandInput 
-            placeholder="Buscar paciente por nome, CPF, telefone ou email..." 
-            onValueChange={setSearchTerm}
-          />
-          <CommandList>
-            {loading ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  Buscando...
-                </div>
-              </div>
-            ) : (
-              <>
-                <CommandEmpty>
-                  <div className="p-4 text-center">
-                    <p className="text-sm text-muted-foreground">Nenhum paciente encontrado.</p>
-                    {searchTerm && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Tente buscar por nome, CPF, telefone ou email
-                      </p>
-                    )}
+          className="pl-10"
+        />
+      </div>
+
+      {open && clients.length > 0 && (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverContent 
+            className="w-[400px] p-0" 
+            align="start"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 50
+            }}
+          >
+            <div className="max-h-[300px] overflow-y-auto">
+              {loading ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Buscando...
                   </div>
-                </CommandEmpty>
-                <CommandGroup>
+                </div>
+              ) : (
+                <div className="py-2">
                   {clients.map((client) => (
-                    <CommandItem
+                    <div
                       key={client.id}
-                      value={`${client.name} ${client.cpf || ''} ${client.phone || ''} ${client.email || ''}`}
-                      onSelect={() => {
-                        onValueChange(client.id);
-                        setOpen(false);
-                        setSearchTerm('');
-                      }}
-                      className="p-3 cursor-pointer"
+                      onClick={() => handleSelectClient(client)}
+                      className="flex items-start w-full gap-3 p-3 cursor-pointer hover:bg-muted/50"
                     >
-                      <div className="flex items-start w-full gap-3">
-                        <Check
-                          className={cn(
-                            "mt-1 h-4 w-4 shrink-0",
-                            value === client.id ? "opacity-100" : "opacity-0"
+                      <Check
+                        className={cn(
+                          "mt-1 h-4 w-4 shrink-0",
+                          value === client.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{client.name}</div>
+                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                          {client.cpf && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">CPF:</span>
+                              <span>{client.cpf}</span>
+                            </div>
                           )}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">{client.name}</div>
-                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                            {client.cpf && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">CPF:</span>
-                                <span>{client.cpf}</span>
-                              </div>
-                            )}
-                            {client.phone && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Tel:</span>
-                                <span>{client.phone}</span>
-                              </div>
-                            )}
-                            {client.email && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Email:</span>
-                                <span className="truncate">{client.email}</span>
-                              </div>
-                            )}
-                            {client.unit && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Unidade:</span>
-                                <span className="capitalize">{client.unit}</span>
-                              </div>
-                            )}
-                          </div>
+                          {client.phone && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Tel:</span>
+                              <span>{client.phone}</span>
+                            </div>
+                          )}
+                          {client.email && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Email:</span>
+                              <span className="truncate">{client.email}</span>
+                            </div>
+                          )}
+                          {client.unit && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Unidade:</span>
+                              <span className="capitalize">{client.unit}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </CommandItem>
+                    </div>
                   ))}
-                </CommandGroup>
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
   );
 }

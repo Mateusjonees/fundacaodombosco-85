@@ -1,19 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
 } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -41,7 +32,7 @@ interface ProfessionalCommandAutocompleteProps {
 export function ProfessionalCommandAutocomplete({ 
   value, 
   onValueChange, 
-  placeholder = "Selecione um profissional...",
+  placeholder = "Buscar profissional por nome, email ou telefone...",
   disabled = false,
   roleFilter,
   unitFilter
@@ -50,17 +41,33 @@ export function ProfessionalCommandAutocomplete({
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [displayValue, setDisplayValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchTerm.length >= 2 || searchTerm === '') {
+      if (searchTerm.length >= 2) {
         loadProfessionals(searchTerm);
+        setOpen(true);
+      } else if (searchTerm.length === 0) {
+        setProfessionals([]);
+        setOpen(false);
       }
     }, 300);
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm, roleFilter, unitFilter]);
+
+  // Update display value when selection changes
+  useEffect(() => {
+    const selectedProfessional = professionals.find(prof => prof.user_id === value);
+    if (selectedProfessional && value) {
+      setDisplayValue(selectedProfessional.name);
+    } else if (!value) {
+      setDisplayValue('');
+    }
+  }, [value, professionals]);
 
   const loadProfessionals = async (search: string) => {
     setLoading(true);
@@ -99,13 +106,6 @@ export function ProfessionalCommandAutocomplete({
     }
   };
 
-  // Load initial data
-  useEffect(() => {
-    if (open && professionals.length === 0) {
-      loadProfessionals('');
-    }
-  }, [open]);
-
   const getRoleLabel = (role: string) => {
     const roleLabels: Record<string, string> = {
       'director': 'Diretor',
@@ -119,111 +119,122 @@ export function ProfessionalCommandAutocomplete({
     return roleLabels[role] || role;
   };
 
-  const selectedProfessional = professionals.find(prof => prof.user_id === value);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setDisplayValue(newValue);
+    setSearchTerm(newValue);
+    
+    if (!newValue) {
+      onValueChange('');
+    }
+  };
+
+  const handleSelectProfessional = (professional: Professional) => {
+    onValueChange(professional.user_id);
+    setDisplayValue(professional.name);
+    setSearchTerm('');
+    setOpen(false);
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={inputRef}
+          type="text"
+          placeholder={placeholder}
+          value={displayValue}
+          onChange={handleInputChange}
+          onFocus={() => {
+            if (searchTerm.length >= 2) {
+              setOpen(true);
+            }
+          }}
           disabled={disabled}
-        >
-          {selectedProfessional ? selectedProfessional.name : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="start">
-        <Command>
-          <CommandInput 
-            placeholder="Buscar profissional por nome, email ou telefone..." 
-            onValueChange={setSearchTerm}
-          />
-          <CommandList>
-            {loading ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  Buscando...
-                </div>
-              </div>
-            ) : (
-              <>
-                <CommandEmpty>
-                  <div className="p-4 text-center">
-                    <p className="text-sm text-muted-foreground">Nenhum profissional encontrado.</p>
-                    {searchTerm && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Tente buscar por nome, email ou telefone
-                      </p>
-                    )}
+          className="pl-10"
+        />
+      </div>
+
+      {open && professionals.length > 0 && (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverContent 
+            className="w-[400px] p-0" 
+            align="start"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 50
+            }}
+          >
+            <div className="max-h-[300px] overflow-y-auto">
+              {loading ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Buscando...
                   </div>
-                </CommandEmpty>
-                <CommandGroup>
+                </div>
+              ) : (
+                <div className="py-2">
                   {professionals.map((professional) => (
-                    <CommandItem
+                    <div
                       key={professional.id}
-                      value={`${professional.name} ${professional.email || ''} ${professional.phone || ''}`}
-                      onSelect={() => {
-                        onValueChange(professional.user_id);
-                        setOpen(false);
-                        setSearchTerm('');
-                      }}
-                      className="p-3 cursor-pointer"
+                      onClick={() => handleSelectProfessional(professional)}
+                      className="flex items-start w-full gap-3 p-3 cursor-pointer hover:bg-muted/50"
                     >
-                      <div className="flex items-start w-full gap-3">
-                        <Check
-                          className={cn(
-                            "mt-1 h-4 w-4 shrink-0",
-                            value === professional.user_id ? "opacity-100" : "opacity-0"
+                      <Check
+                        className={cn(
+                          "mt-1 h-4 w-4 shrink-0",
+                          value === professional.user_id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{professional.name}</div>
+                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                          {professional.employee_role && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Cargo:</span>
+                              <span>{getRoleLabel(professional.employee_role)}</span>
+                            </div>
                           )}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">{professional.name}</div>
-                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                            {professional.employee_role && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Cargo:</span>
-                                <span>{getRoleLabel(professional.employee_role)}</span>
-                              </div>
-                            )}
-                            {professional.email && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Email:</span>
-                                <span className="truncate">{professional.email}</span>
-                              </div>
-                            )}
-                            {professional.phone && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Tel:</span>
-                                <span>{professional.phone}</span>
-                              </div>
-                            )}
-                            {professional.unit && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Unidade:</span>
-                                <span className="capitalize">{professional.unit}</span>
-                              </div>
-                            )}
-                            {professional.department && (
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">Depto:</span>
-                                <span>{professional.department}</span>
-                              </div>
-                            )}
-                          </div>
+                          {professional.email && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Email:</span>
+                              <span className="truncate">{professional.email}</span>
+                            </div>
+                          )}
+                          {professional.phone && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Tel:</span>
+                              <span>{professional.phone}</span>
+                            </div>
+                          )}
+                          {professional.unit && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Unidade:</span>
+                              <span className="capitalize">{professional.unit}</span>
+                            </div>
+                          )}
+                          {professional.department && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Depto:</span>
+                              <span>{professional.department}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </CommandItem>
+                    </div>
                   ))}
-                </CommandGroup>
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
   );
 }
