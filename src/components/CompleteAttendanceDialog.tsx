@@ -131,6 +131,15 @@ export default function CompleteAttendanceDialog({
     
     setLoading(true);
     try {
+      // Buscar informações do profissional designado para o atendimento
+      const { data: professionalProfile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('user_id', schedule.employee_id)
+        .single();
+
+      const professionalName = professionalProfile?.name || professionalProfile?.email || 'Profissional não encontrado';
+
       // 1. Upload de arquivos
       const uploadedAttachments = [];
       for (const attachedFile of attachedFiles) {
@@ -194,9 +203,9 @@ export default function CompleteAttendanceDialog({
       await supabase.from('attendance_reports').insert({
         schedule_id: schedule.id,
         client_id: schedule.client_id,
-        employee_id: user.id,
+        employee_id: schedule.employee_id,
         patient_name: schedule.clients?.name || '',
-        professional_name: user.email || '',
+        professional_name: professionalName,
         attendance_type: attendanceData.sessionType,
         start_time: attendanceData.actualStartTime || schedule.start_time,
         end_time: attendanceData.actualEndTime || schedule.end_time,
@@ -213,7 +222,7 @@ export default function CompleteAttendanceDialog({
       });
 
       await supabase.from('employee_reports').insert({
-        employee_id: user.id,
+        employee_id: schedule.employee_id,
         client_id: schedule.client_id,
         schedule_id: schedule.id,
         session_date: new Date().toISOString().split('T')[0],
@@ -284,7 +293,7 @@ export default function CompleteAttendanceDialog({
           date: new Date().toISOString().split('T')[0],
           payment_method: attendanceData.paymentMethod,
           client_id: schedule.client_id,
-          employee_id: user.id,
+          employee_id: schedule.employee_id,
           created_by: user.id,
           notes: attendanceData.paymentNotes
         });
@@ -300,7 +309,7 @@ export default function CompleteAttendanceDialog({
           date: new Date().toISOString().split('T')[0],
           payment_method: 'internal',
           client_id: schedule.client_id,
-          employee_id: user.id,
+          employee_id: schedule.employee_id,
           created_by: user.id,
           notes: `Custo de materiais para ${attendanceData.sessionType}`
         });
