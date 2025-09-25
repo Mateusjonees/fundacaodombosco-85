@@ -149,7 +149,10 @@ export function PatientCommandAutocomplete({
       </div>
 
       {open && clients.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 bg-popover border rounded-md shadow-md max-h-[300px] overflow-y-auto">
+        <div 
+          className="absolute top-full left-0 right-0 z-[999] bg-popover border rounded-md shadow-lg max-h-[300px] overflow-y-auto mt-1"
+          onMouseDown={(e) => e.preventDefault()}
+        >
           {loading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               <div className="flex items-center justify-center gap-2">
@@ -162,9 +165,13 @@ export function PatientCommandAutocomplete({
               {clients.map((client) => (
                 <div
                   key={client.id}
-                  onClick={(e) => handleSelectClient(client, e)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSelectClient(client, e);
+                  }}
                   onMouseDown={(e) => e.preventDefault()}
-                  className="flex items-start w-full gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                  className="flex items-start w-full gap-3 p-3 cursor-pointer hover:bg-muted/50 select-none"
                 >
                   <Check
                     className={cn(
