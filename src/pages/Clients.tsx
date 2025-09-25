@@ -877,28 +877,30 @@ export default function Clients() {
                           >
                             <Eye className="h-3 w-3" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openEditDialog(client)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setReportClient(client)}
-                          >
-                            <FileText className="h-3 w-3" />
-                          </Button>
-                          {(canViewAllClients() || canCreateClients()) && (
-                            <Button 
-                              variant={client.is_active ? "destructive" : "default"}
-                              size="sm"
-                              onClick={() => handleToggleClientStatus(client.id, client.is_active)}
-                            >
-                              <Power className="h-3 w-3" />
-                            </Button>
+                          {isCoordinatorOrDirector() && (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => openEditDialog(client)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setReportClient(client)}
+                              >
+                                <FileText className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                variant={client.is_active ? "destructive" : "default"}
+                                size="sm"
+                                onClick={() => handleToggleClientStatus(client.id, client.is_active)}
+                              >
+                                <Power className="h-3 w-3" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>

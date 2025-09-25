@@ -115,6 +115,13 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const [currentAssignments, setCurrentAssignments] = useState<any[]>([]);
   const { toast } = useToast();
 
+  // Helper function to check if user is coordinator or director
+  const isCoordinatorOrDirector = () => {
+    return userProfile?.employee_role === 'director' || 
+           userProfile?.employee_role === 'coordinator_madre' || 
+           userProfile?.employee_role === 'coordinator_floresta';
+  };
+
   useEffect(() => {
     loadClientData();
   }, [client.id]);
@@ -705,10 +712,12 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
           <p className="text-muted-foreground">ID: {client.id}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Editar Dados
-          </Button>
+          {isCoordinatorOrDirector() && (
+            <Button variant="outline" onClick={onEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar Dados
+            </Button>
+          )}
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
@@ -1192,35 +1201,39 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
               <Calendar className="h-4 w-4 mr-2" />
               Agendar Novo Atendimento
             </Button>
-            <Button variant="outline" onClick={onEdit}>
-              <Edit className="h-4 w-4 mr-2" />
-              Editar Dados
-            </Button>
-            <Button 
-              onClick={() => {
-                setIsAssignDialogOpen(true);
-                setSelectedEmployees(['']); // Reset
-                loadAvailableEmployees();
-                loadCurrentAssignments();
-              }}
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Vincular Profissional
-            </Button>
-            <Button variant="outline" onClick={() => handleGenerateReport()}>
-              <FileText className="h-4 w-4 mr-2" />
-              Gerar Relatório
-            </Button>
-            {client.is_active ? (
-              <Button variant="destructive" size="sm" onClick={() => handleDeactivateClient()}>
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Desativar Cliente
-              </Button>
-            ) : (
-              <Button variant="default" size="sm" onClick={() => handleDeactivateClient()}>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reativar Cliente
-              </Button>
+            {isCoordinatorOrDirector() && (
+              <>
+                <Button variant="outline" onClick={onEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar Dados
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setIsAssignDialogOpen(true);
+                    setSelectedEmployees(['']); // Reset
+                    loadAvailableEmployees();
+                    loadCurrentAssignments();
+                  }}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Vincular Profissional
+                </Button>
+                <Button variant="outline" onClick={() => handleGenerateReport()}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Gerar Relatório
+                </Button>
+                {client.is_active ? (
+                  <Button variant="destructive" size="sm" onClick={() => handleDeactivateClient()}>
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Desativar Cliente
+                  </Button>
+                ) : (
+                  <Button variant="default" size="sm" onClick={() => handleDeactivateClient()}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reativar Cliente
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </CardContent>

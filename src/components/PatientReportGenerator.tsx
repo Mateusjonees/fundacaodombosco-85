@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Download, Printer } from 'lucide-react';
+import { FileText, Download, Printer, Star, Calendar, Clock, User } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import logoImage from '@/assets/fundacao-dom-bosco-logo.png';
 
 interface Client {
@@ -37,9 +38,137 @@ interface PatientReportGeneratorProps {
   onClose: () => void;
 }
 
+interface AttendanceRecord {
+  id: string;
+  start_time: string;
+  end_time: string;
+  session_duration?: number;
+  attendance_type: string;
+  professional_name: string;
+  session_notes?: string;
+  observations?: string;
+  techniques_used?: string;
+  patient_response?: string;
+  next_session_plan?: string;
+  materials_used?: any[];
+  amount_charged?: number;
+  attachments?: any[];
+  quality_rating?: number;
+  cooperation_rating?: number;
+  goals_rating?: number;
+  effort_rating?: number;
+}
+
 export function PatientReportGenerator({ client, isOpen, onClose }: PatientReportGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [employeeReports, setEmployeeReports] = useState<any[]>([]);
+  const [medicalRecords, setMedicalRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isOpen && client?.id) {
+      loadAttendanceData();
+    }
+  }, [isOpen, client?.id]);
+
+  const loadAttendanceData = async () => {
+    setLoading(true);
+    try {
+      // Carregar attendance reports (atendimentos concluídos com todas as informações)
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance_reports')
+        .select(`
+          id,
+          start_time,
+          end_time,
+          session_duration,
+          attendance_type,
+          professional_name,
+          session_notes,
+          observations,
+          techniques_used,
+          patient_response,
+          next_session_plan,
+          materials_used,
+          amount_charged,
+          attachments,
+          created_at
+        `)
+        .eq('client_id', client.id)
+        .order('start_time', { ascending: false });
+
+      if (attendanceError) throw attendanceError;
+
+      // Carregar employee reports (relatórios detalhados com avaliações)
+      const { data: employeeData, error: employeeError } = await supabase
+        .from('employee_reports')
+        .select(`
+          id,
+          session_date,
+          session_type,
+          session_duration,
+          professional_notes,
+          techniques_used,
+          session_objectives,
+          patient_response,
+          next_session_plan,
+          materials_used,
+          quality_rating,
+          effort_rating,
+          patient_cooperation,
+          goal_achievement,
+          attachments,
+          materials_cost,
+          profiles:employee_id (name)
+        `)
+        .eq('client_id', client.id)
+        .order('session_date', { ascending: false });
+
+      if (employeeError) throw employeeError;
+
+      // Carregar medical records
+      const { data: medicalData, error: medicalError } = await supabase
+        .from('medical_records')
+        .select(`
+          id,
+          session_date,
+          session_type,
+          progress_notes,
+          treatment_plan,
+          symptoms,
+          session_duration,
+          profiles:employee_id (name)
+        `)
+        .eq('client_id', client.id)
+        .order('session_date', { ascending: false });
+
+      if (medicalError) throw medicalError;
+
+      setAttendanceRecords((attendanceData || []).map(record => ({
+        ...record,
+        materials_used: Array.isArray(record.materials_used) ? record.materials_used : [],
+        attachments: Array.isArray(record.attachments) ? record.attachments : []
+      })));
+      setEmployeeReports((employeeData || []).map(report => ({
+        ...report,
+        materials_used: Array.isArray(report.materials_used) ? report.materials_used : [],
+        attachments: Array.isArray(report.attachments) ? report.attachments : []
+      })));
+      setMedicalRecords(medicalData || []);
+
+    } catch (error) {
+      console.error('Error loading attendance data:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados de atendimento.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Não informado';
@@ -299,6 +428,275 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
               </div>
             </div>
           </div>
+
+          {/* Histórico de Atendimentos Detalhados */}
+          {(attendanceRecords.length > 0 || employeeReports.length > 0) && (
+            <div className="report-section">
+              <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
+                HISTÓRICO DE ATENDIMENTOS DETALHADOS
+              </h2>
+              {loading ? (
+                <div className="text-center py-4">Carregando atendimentos...</div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Atendimentos Concluídos (attendance_reports) */}
+                  {attendanceRecords.map((record, index) => (
+                    <div key={`attendance_${record.id}`} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-800">{record.attendance_type || 'Atendimento'}</h3>
+                        <Badge variant="outline">
+                          {formatDate(record.start_time)} - {record.professional_name}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-600">Início:</span> {new Date(record.start_time).toLocaleString('pt-BR')}
+                        </div>
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-600">Fim:</span> {new Date(record.end_time).toLocaleString('pt-BR')}
+                        </div>
+                        {record.session_duration && (
+                          <div className="text-sm">
+                            <span className="font-medium text-gray-600">Duração:</span> {record.session_duration} minutos
+                          </div>
+                        )}
+                        {record.amount_charged && record.amount_charged > 0 && (
+                          <div className="text-sm">
+                            <span className="font-medium text-gray-600">Valor:</span> R$ {record.amount_charged.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+
+                      {record.observations && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Observações:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{record.observations}</div>
+                        </div>
+                      )}
+
+                      {record.techniques_used && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Técnicas Utilizadas:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{record.techniques_used}</div>
+                        </div>
+                      )}
+
+                      {record.patient_response && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Resposta do Paciente:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{record.patient_response}</div>
+                        </div>
+                      )}
+
+                      {record.next_session_plan && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Plano para Próxima Sessão:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{record.next_session_plan}</div>
+                        </div>
+                      )}
+
+                      {record.materials_used && record.materials_used.length > 0 && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Materiais Utilizados:</div>
+                          <div className="space-y-1">
+                            {record.materials_used.map((material: any, idx: number) => (
+                              <div key={idx} className="text-sm bg-gray-50 p-2 rounded flex justify-between">
+                                <span>{material.name || material}</span>
+                                {material.quantity && material.unit && (
+                                  <span className="text-gray-600">{material.quantity} {material.unit}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {record.attachments && record.attachments.length > 0 && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Documentos Anexos:</div>
+                          <div className="space-y-1">
+                            {record.attachments.map((attachment: any, idx: number) => (
+                              <div key={idx} className="text-sm bg-gray-50 p-2 rounded">{attachment.name}</div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Relatórios de Sessão (employee_reports) */}
+                  {employeeReports.map((report, index) => (
+                    <div key={`report_${report.id}`} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-800">{report.session_type || 'Sessão Terapêutica'}</h3>
+                        <Badge variant="outline">
+                          {formatDate(report.session_date)} - {report.profiles?.name || 'Profissional'}
+                        </Badge>
+                      </div>
+
+                      {/* Avaliações da sessão */}
+                      {(report.quality_rating || report.patient_cooperation || report.goal_achievement || report.effort_rating) && (
+                        <div className="mb-4 p-3 bg-blue-50 rounded">
+                          <div className="font-medium text-gray-600 text-sm mb-2">Avaliação da Sessão:</div>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            {report.quality_rating && (
+                              <div className="flex items-center justify-between">
+                                <span>Qualidade Geral:</span>
+                                <div className="flex gap-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <span key={star} className={star <= report.quality_rating ? 'text-yellow-400' : 'text-gray-300'}>★</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {report.patient_cooperation && (
+                              <div className="flex items-center justify-between">
+                                <span>Cooperação:</span>
+                                <div className="flex gap-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <span key={star} className={star <= report.patient_cooperation ? 'text-yellow-400' : 'text-gray-300'}>★</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {report.goal_achievement && (
+                              <div className="flex items-center justify-between">
+                                <span>Objetivos:</span>
+                                <div className="flex gap-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <span key={star} className={star <= report.goal_achievement ? 'text-yellow-400' : 'text-gray-300'}>★</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {report.effort_rating && (
+                              <div className="flex items-center justify-between">
+                                <span>Esforço:</span>
+                                <div className="flex gap-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <span key={star} className={star <= report.effort_rating ? 'text-yellow-400' : 'text-gray-300'}>★</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {report.session_duration && (
+                        <div className="mb-3">
+                          <span className="font-medium text-gray-600 text-sm">Duração:</span> {report.session_duration} minutos
+                        </div>
+                      )}
+
+                      {report.session_objectives && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Objetivos da Sessão:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{report.session_objectives}</div>
+                        </div>
+                      )}
+
+                      {report.professional_notes && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Observações Profissionais:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{report.professional_notes}</div>
+                        </div>
+                      )}
+
+                      {report.techniques_used && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Técnicas Utilizadas:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{report.techniques_used}</div>
+                        </div>
+                      )}
+
+                      {report.patient_response && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Resposta do Paciente:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{report.patient_response}</div>
+                        </div>
+                      )}
+
+                      {report.next_session_plan && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Plano para Próxima Sessão:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{report.next_session_plan}</div>
+                        </div>
+                      )}
+
+                      {report.materials_used && report.materials_used.length > 0 && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Materiais Utilizados:</div>
+                          <div className="space-y-1">
+                            {report.materials_used.map((material: any, idx: number) => (
+                              <div key={idx} className="text-sm bg-gray-50 p-2 rounded flex justify-between">
+                                <span>{material.name || material}</span>
+                                {material.total_cost && (
+                                  <span className="text-gray-600">R$ {material.total_cost.toFixed(2)}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {report.materials_cost && report.materials_cost > 0 && (
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-600">Custo Total dos Materiais:</span> R$ {report.materials_cost.toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Registros Médicos (medical_records) */}
+                  {medicalRecords.map((record, index) => (
+                    <div key={`medical_${record.id}`} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-800">{record.session_type || 'Consulta Médica'}</h3>
+                        <Badge variant="secondary">
+                          {formatDate(record.session_date)} - {record.profiles?.name || 'Profissional'}
+                        </Badge>
+                      </div>
+
+                      {record.session_duration && (
+                        <div className="mb-3">
+                          <span className="font-medium text-gray-600 text-sm">Duração:</span> {record.session_duration} minutos
+                        </div>
+                      )}
+
+                      {record.symptoms && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Sintomas:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{record.symptoms}</div>
+                        </div>
+                      )}
+
+                      {record.progress_notes && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Notas de Progresso:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{record.progress_notes}</div>
+                        </div>
+                      )}
+
+                      {record.treatment_plan && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Plano de Tratamento:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded">{record.treatment_plan}</div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {attendanceRecords.length === 0 && employeeReports.length === 0 && medicalRecords.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      Nenhum atendimento registrado ainda.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Rodapé */}
           <div className="report-footer text-center pt-8 border-t border-gray-200">
