@@ -53,6 +53,13 @@ export default function Stock() {
     loadClients();
   }, []);
 
+  // Auto-import stock items if empty
+  useEffect(() => {
+    if (!loading && stockItems.length === 0) {
+      handleImportStock();
+    }
+  }, [loading, stockItems.length]);
+
   const loadStockItems = async () => {
     try {
       const { data, error } = await supabase
