@@ -14,6 +14,7 @@ import AddStockItemDialog from '@/components/AddStockItemDialog';
 import { StockMovementDialog } from '@/components/StockMovementDialog';
 import { StockMovementHistory } from '@/components/StockMovementHistory';
 import { ImportExcelStockDialog } from '@/components/ImportExcelStockDialog';
+import { importAllStockItems } from '@/utils/importStockData';
 
 interface StockItem {
   id: string;
@@ -43,6 +44,7 @@ export default function Stock() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
@@ -96,6 +98,32 @@ export default function Stock() {
     }
   };
 
+  const handleImportStock = async () => {
+    setIsImporting(true);
+    try {
+      const result = await importAllStockItems();
+      
+      toast({
+        title: "Importação concluída!",
+        description: `${result.imported} itens importados com sucesso. ${result.errors > 0 ? `${result.errors} erros encontrados.` : ''}`,
+        variant: result.errors > 0 ? "destructive" : "default"
+      });
+
+      if (result.imported > 0) {
+        loadStockItems();
+      }
+    } catch (error) {
+      console.error('Erro na importação:', error);
+      toast({
+        title: "Erro na importação",
+        description: "Ocorreu um erro durante a importação dos itens.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const getLowStockItems = () => {
     return stockItems.filter(item => item.current_quantity <= item.minimum_quantity);
   };
@@ -130,10 +158,11 @@ export default function Stock() {
           <Button 
             className="gap-2" 
             variant="outline"
-            onClick={() => setIsImportDialogOpen(true)}
+            onClick={handleImportStock}
+            disabled={isImporting}
           >
             <Package className="h-4 w-4" />
-            Importar Planilha
+            {isImporting ? "Importando..." : "Importar Itens da Planilha"}
           </Button>
           <Button 
             className="gap-2" 
