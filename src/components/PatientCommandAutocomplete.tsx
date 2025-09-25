@@ -2,10 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-} from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -107,11 +103,32 @@ export function PatientCommandAutocomplete({
     }
   };
 
-  const handleSelectClient = (client: Client) => {
+  const handleSelectClient = (client: Client, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     onValueChange(client.id);
     setDisplayValue(client.name);
     setSearchTerm('');
     setOpen(false);
+  };
+
+  const handleInputFocus = () => {
+    if (searchTerm.length >= 2 || clients.length > 0) {
+      setOpen(true);
+    }
+  };
+
+  const handleInputBlur = (e: React.FocusEvent) => {
+    // Delay closing to allow for click events
+    setTimeout(() => {
+      const activeElement = document.activeElement;
+      const container = inputRef.current?.closest('.relative');
+      if (!container?.contains(activeElement)) {
+        setOpen(false);
+      }
+    }, 150);
   };
 
   return (
@@ -124,88 +141,71 @@ export function PatientCommandAutocomplete({
           placeholder={placeholder}
           value={displayValue}
           onChange={handleInputChange}
-          onFocus={() => {
-            if (searchTerm.length >= 2) {
-              setOpen(true);
-            }
-          }}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           disabled={disabled}
           className="pl-10"
         />
       </div>
 
       {open && clients.length > 0 && (
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverContent 
-            className="w-[400px] p-0" 
-            align="start"
-            onOpenAutoFocus={(e) => e.preventDefault()}
-            style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0,
-              zIndex: 50
-            }}
-          >
-            <div className="max-h-[300px] overflow-y-auto">
-              {loading ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    Buscando...
+        <div className="absolute top-full left-0 right-0 z-50 bg-popover border rounded-md shadow-md max-h-[300px] overflow-y-auto">
+          {loading ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                Buscando...
+              </div>
+            </div>
+          ) : (
+            <div className="py-2">
+              {clients.map((client) => (
+                <div
+                  key={client.id}
+                  onClick={(e) => handleSelectClient(client, e)}
+                  onMouseDown={(e) => e.preventDefault()}
+                  className="flex items-start w-full gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                >
+                  <Check
+                    className={cn(
+                      "mt-1 h-4 w-4 shrink-0",
+                      value === client.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm">{client.name}</div>
+                    <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                      {client.cpf && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">CPF:</span>
+                          <span>{client.cpf}</span>
+                        </div>
+                      )}
+                      {client.phone && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Tel:</span>
+                          <span>{client.phone}</span>
+                        </div>
+                      )}
+                      {client.email && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Email:</span>
+                          <span className="truncate">{client.email}</span>
+                        </div>
+                      )}
+                      {client.unit && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Unidade:</span>
+                          <span className="capitalize">{client.unit}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <div className="py-2">
-                  {clients.map((client) => (
-                    <div
-                      key={client.id}
-                      onClick={() => handleSelectClient(client)}
-                      className="flex items-start w-full gap-3 p-3 cursor-pointer hover:bg-muted/50"
-                    >
-                      <Check
-                        className={cn(
-                          "mt-1 h-4 w-4 shrink-0",
-                          value === client.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{client.name}</div>
-                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                          {client.cpf && (
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">CPF:</span>
-                              <span>{client.cpf}</span>
-                            </div>
-                          )}
-                          {client.phone && (
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">Tel:</span>
-                              <span>{client.phone}</span>
-                            </div>
-                          )}
-                          {client.email && (
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">Email:</span>
-                              <span className="truncate">{client.email}</span>
-                            </div>
-                          )}
-                          {client.unit && (
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">Unidade:</span>
-                              <span className="capitalize">{client.unit}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
-          </PopoverContent>
-        </Popover>
+          )}
+        </div>
       )}
     </div>
   );
