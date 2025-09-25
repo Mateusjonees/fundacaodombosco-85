@@ -19,6 +19,8 @@ import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { ConfirmAppointmentDialog } from '@/components/ConfirmAppointmentDialog';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
+import { PatientAutocomplete } from '@/components/PatientAutocomplete';
+import { ProfessionalAutocomplete } from '@/components/ProfessionalAutocomplete';
 
 interface Schedule {
   id: string;
@@ -60,10 +62,6 @@ export default function Schedule() {
                   userProfile?.employee_role === 'coordinator_madre' || 
                   userProfile?.employee_role === 'coordinator_floresta' ||
                   userProfile?.employee_role === 'receptionist';
-
-  // Estado para pesquisa de cliente e profissional
-  const [clientSearchTerm, setClientSearchTerm] = useState('');
-  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
 
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
@@ -767,17 +765,6 @@ export default function Schedule() {
 
   const todaySchedules = schedules;
 
-  // Filtrar clientes baseado na pesquisa
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(clientSearchTerm.toLowerCase())
-  );
-
-  // Filtrar profissionais baseado na pesquisa
-  const filteredEmployees = employees.filter(employee =>
-    employee.name.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
-    employee.employee_role.toLowerCase().includes(employeeSearchTerm.toLowerCase())
-  );
-
   const uniqueRoles = [...new Set(employees.map(emp => emp.employee_role))];
   const departmentEmployees = employees.filter(emp => {
     if (filterUnit === 'madre') {
@@ -947,72 +934,20 @@ export default function Schedule() {
                       </p>
                     )}
                     
-                    {/* Campo de pesquisa de paciente */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                      <Input
-                        placeholder="🔍 Pesquisar paciente pelo nome..."
-                        value={clientSearchTerm}
-                        onChange={(e) => setClientSearchTerm(e.target.value)}
-                        className="pl-10 mb-2 bg-muted/20 border-primary/20 focus:border-primary focus:ring-primary"
-                      />
-                      {clientSearchTerm && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                          onClick={() => setClientSearchTerm('')}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <Select 
-                      value={newAppointment.client_id} 
-                      onValueChange={(value) => {
-                        setNewAppointment({ ...newAppointment, client_id: value });
-                        // Opcional: limpar pesquisa após seleção
-                        // setClientSearchTerm('');
+                    <PatientAutocomplete
+                      value={newAppointment.client_id}
+                      onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
+                      placeholder="Digite para buscar paciente por nome, CPF, telefone ou email..."
+                      unitFilter={
+                        userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
+                        userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                        'all'
+                      }
+                      onCreateNew={() => {
+                        // TODO: Implementar modal de novo cliente
+                        toast({ description: 'Funcionalidade em desenvolvimento' });
                       }}
-                    >
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder={
-                          filteredClients.length > 0 
-                            ? "Selecione um paciente" 
-                            : clientSearchTerm 
-                              ? "Nenhum paciente encontrado" 
-                              : "Digite acima para pesquisar"
-                        } />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {filteredClients.length > 0 ? (
-                          <>
-                            <div className="px-2 py-1 text-xs text-muted-foreground bg-muted/30 sticky top-0">
-                              {filteredClients.length} paciente{filteredClients.length !== 1 ? 's' : ''} encontrado{filteredClients.length !== 1 ? 's' : ''}
-                            </div>
-                            {filteredClients.map(client => (
-                              <SelectItem key={client.id} value={client.id} className="cursor-pointer">
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{client.name}</span>
-                                  {client.unit && (
-                                    <span className="text-xs text-muted-foreground">Unidade: {client.unit}</span>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </>
-                        ) : (
-                          <div className="p-4 text-center text-muted-foreground">
-                            {clientSearchTerm 
-                              ? `Nenhum paciente encontrado para "${clientSearchTerm}"` 
-                              : 'Digite no campo acima para pesquisar pacientes'
-                            }
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -1023,75 +958,16 @@ export default function Schedule() {
                       </p>
                     )}
                     
-                    {/* Campo de pesquisa de profissional */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                      <Input
-                        placeholder="🔍 Pesquisar profissional..."
-                        value={employeeSearchTerm}
-                        onChange={(e) => setEmployeeSearchTerm(e.target.value)}
-                        className="pl-10 mb-2 bg-muted/20 border-primary/20 focus:border-primary focus:ring-primary"
-                        disabled={!isAdmin && employees.length === 1}
-                      />
-                      {employeeSearchTerm && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                          onClick={() => setEmployeeSearchTerm('')}
-                          disabled={!isAdmin && employees.length === 1}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <Select 
-                      value={newAppointment.employee_id} 
-                      onValueChange={(value) => {
-                        setNewAppointment({ ...newAppointment, employee_id: value });
-                        // Opcional: limpar pesquisa após seleção
-                        // setEmployeeSearchTerm('');
-                      }}
+                    <ProfessionalAutocomplete
+                      value={newAppointment.employee_id}
+                      onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
+                      placeholder="Digite para buscar profissional por nome, email ou telefone..."
                       disabled={!isAdmin && employees.length === 1}
-                    >
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder={
-                          filteredEmployees.length > 0 
-                            ? "Selecione um profissional" 
-                            : employeeSearchTerm 
-                              ? "Nenhum profissional encontrado" 
-                              : "Digite acima para pesquisar"
-                        } />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {filteredEmployees.length > 0 ? (
-                          <>
-                            <div className="px-2 py-1 text-xs text-muted-foreground bg-muted/30 sticky top-0">
-                              {filteredEmployees.length} profissional{filteredEmployees.length !== 1 ? 's' : ''} encontrado{filteredEmployees.length !== 1 ? 's' : ''}
-                            </div>
-                            {filteredEmployees.map(employee => (
-                              <SelectItem key={employee.user_id} value={employee.id} className="cursor-pointer">
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{employee.name}</span>
-                                  <span className="text-xs text-muted-foreground capitalize">
-                                    {employee.employee_role.replace('_', ' ')}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </>
-                        ) : (
-                          <div className="p-4 text-center text-muted-foreground">
-                            {employeeSearchTerm 
-                              ? `Nenhum profissional encontrado para "${employeeSearchTerm}"` 
-                              : 'Digite no campo acima para pesquisar profissionais'
-                            }
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
+                      onCreateNew={() => {
+                        // TODO: Implementar modal de novo profissional  
+                        toast({ description: 'Funcionalidade em desenvolvimento' });
+                      }}
+                    />
                   </div>
 
                   <div className="space-y-2">
