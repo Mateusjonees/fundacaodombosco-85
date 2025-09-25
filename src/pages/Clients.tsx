@@ -352,12 +352,12 @@ export default function Clients() {
     await handleDirectImport();
   };
 
-  // Executar importação automática uma vez quando a página carrega
-  useEffect(() => {
-    if (userProfile && clients.length === 0) {
-      executeAutoImport();
-    }
-  }, [userProfile]);
+  // Importação automática removida para evitar notificações indesejadas
+  // useEffect(() => {
+  //   if (userProfile && clients.length === 0) {
+  //     executeAutoImport();
+  //   }
+  // }, [userProfile]);
 
   const openEditDialog = (client: Client) => {
     setEditingClient(client);

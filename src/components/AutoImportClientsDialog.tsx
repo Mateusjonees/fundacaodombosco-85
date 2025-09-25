@@ -536,12 +536,13 @@ export function AutoImportClientsDialog({ isOpen, onClose, onImportComplete }: A
     onClose();
   };
 
-  useEffect(() => {
-    if (isOpen && !isProcessing && !results) {
-      // Auto-start import when dialog opens
-      handleAutoImport();
-    }
-  }, [isOpen]);
+  // Auto-start import removed to prevent unwanted notifications
+  // useEffect(() => {
+  //   if (isOpen && !isProcessing && !results) {
+  //     // Auto-start import when dialog opens
+  //     handleAutoImport();
+  //   }
+  // }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -569,6 +570,14 @@ export function AutoImportClientsDialog({ isOpen, onClose, onImportComplete }: A
               Total: {allClients.length} clientes para importar
             </p>
           </div>
+
+          {!isProcessing && !results && (
+            <div className="text-center">
+              <Button onClick={handleAutoImport} className="w-full">
+                Iniciar Importação
+              </Button>
+            </div>
+          )}
 
           {isProcessing && (
             <div className="space-y-4">
