@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
@@ -940,32 +940,69 @@ export default function Schedule() {
                       </p>
                     )}
                     
-                    {/* Campo de pesquisa */}
-                    <Input
-                      placeholder="Digite o nome do paciente para pesquisar..."
-                      value={clientSearchTerm}
-                      onChange={(e) => setClientSearchTerm(e.target.value)}
-                      className="mb-2"
-                    />
+                    {/* Campo de pesquisa de paciente */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="🔍 Pesquisar paciente pelo nome..."
+                        value={clientSearchTerm}
+                        onChange={(e) => setClientSearchTerm(e.target.value)}
+                        className="pl-10 mb-2 bg-muted/20 border-primary/20 focus:border-primary focus:ring-primary"
+                      />
+                      {clientSearchTerm && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                          onClick={() => setClientSearchTerm('')}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                     
                     <Select 
                       value={newAppointment.client_id} 
-                      onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
+                      onValueChange={(value) => {
+                        setNewAppointment({ ...newAppointment, client_id: value });
+                        // Opcional: limpar pesquisa após seleção
+                        // setClientSearchTerm('');
+                      }}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um paciente" />
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder={
+                          filteredClients.length > 0 
+                            ? "Selecione um paciente" 
+                            : clientSearchTerm 
+                              ? "Nenhum paciente encontrado" 
+                              : "Digite acima para pesquisar"
+                        } />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-60">
                         {filteredClients.length > 0 ? (
-                          filteredClients.map(client => (
-                            <SelectItem key={client.id} value={client.id}>
-                              {client.name}
-                            </SelectItem>
-                          ))
+                          <>
+                            <div className="px-2 py-1 text-xs text-muted-foreground bg-muted/30 sticky top-0">
+                              {filteredClients.length} paciente{filteredClients.length !== 1 ? 's' : ''} encontrado{filteredClients.length !== 1 ? 's' : ''}
+                            </div>
+                            {filteredClients.map(client => (
+                              <SelectItem key={client.id} value={client.id} className="cursor-pointer">
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{client.name}</span>
+                                  {client.unit && (
+                                    <span className="text-xs text-muted-foreground">Unidade: {client.unit}</span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
                         ) : (
-                          <SelectItem value="" disabled>
-                            {clientSearchTerm ? 'Nenhum paciente encontrado' : 'Digite para pesquisar pacientes'}
-                          </SelectItem>
+                          <div className="p-4 text-center text-muted-foreground">
+                            {clientSearchTerm 
+                              ? `Nenhum paciente encontrado para "${clientSearchTerm}"` 
+                              : 'Digite no campo acima para pesquisar pacientes'
+                            }
+                          </div>
                         )}
                       </SelectContent>
                     </Select>
