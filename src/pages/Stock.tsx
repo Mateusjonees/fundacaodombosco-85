@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Package, Plus, AlertTriangle, TrendingUp, TrendingDown, ArrowLeftRight } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingUp, TrendingDown, ArrowLeftRight, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import StockItemActions from '@/components/StockItemActions';
@@ -40,6 +41,7 @@ export default function Stock() {
   const [activeTab, setActiveTab] = useState('items');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -100,6 +102,18 @@ export default function Stock() {
     if (item.current_quantity === 0) return { label: 'Esgotado', variant: 'destructive' as const };
     if (item.current_quantity <= item.minimum_quantity) return { label: 'Baixo', variant: 'secondary' as const };
     return { label: 'Normal', variant: 'default' as const };
+  };
+
+  const getFilteredItems = () => {
+    if (!searchTerm.trim()) return stockItems;
+    
+    return stockItems.filter(item => 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.location && item.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.supplier && item.supplier.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
   };
 
   if (loading) {
@@ -243,7 +257,18 @@ export default function Stock() {
       {activeTab === 'items' && (
         <Card>
           <CardHeader>
-            <CardTitle>Itens em Estoque</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Itens em Estoque</CardTitle>
+              <div className="relative w-72">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, categoria, localização..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -260,28 +285,36 @@ export default function Stock() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stockItems.map((item) => {
-                  const status = getStockStatus(item);
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.category || '-'}</TableCell>
-                      <TableCell>{item.current_quantity}</TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell>R$ {item.unit_cost.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </TableCell>
-                      <TableCell>{item.location || '-'}</TableCell>
-                       <TableCell>
-                         <StockItemActions 
-                           item={item} 
-                           onUpdate={loadStockItems}
-                         />
-                       </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {getFilteredItems().length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      {searchTerm ? 'Nenhum item encontrado com os termos de busca.' : 'Nenhum item cadastrado.'}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  getFilteredItems().map((item) => {
+                    const status = getStockStatus(item);
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>{item.category || '-'}</TableCell>
+                        <TableCell>{item.current_quantity}</TableCell>
+                        <TableCell>{item.unit}</TableCell>
+                        <TableCell>R$ {item.unit_cost.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                        </TableCell>
+                        <TableCell>{item.location || '-'}</TableCell>
+                         <TableCell>
+                           <StockItemActions 
+                             item={item} 
+                             onUpdate={loadStockItems}
+                           />
+                         </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </CardContent>
