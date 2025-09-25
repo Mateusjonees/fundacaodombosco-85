@@ -19,8 +19,8 @@ import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { ConfirmAppointmentDialog } from '@/components/ConfirmAppointmentDialog';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
-import { PatientAutocomplete } from '@/components/PatientAutocomplete';
-import { ProfessionalAutocomplete } from '@/components/ProfessionalAutocomplete';
+import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocomplete';
+import { ProfessionalCommandAutocomplete } from '@/components/ProfessionalCommandAutocomplete';
 
 interface Schedule {
   id: string;
@@ -934,19 +934,15 @@ export default function Schedule() {
                       </p>
                     )}
                     
-                    <PatientAutocomplete
+                    <PatientCommandAutocomplete
                       value={newAppointment.client_id}
                       onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
-                      placeholder="Digite para buscar paciente por nome, CPF, telefone ou email..."
+                      placeholder="Buscar paciente por nome, CPF, telefone ou email..."
                       unitFilter={
                         userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
                         userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
                         'all'
                       }
-                      onCreateNew={() => {
-                        // TODO: Implementar modal de novo cliente
-                        toast({ description: 'Funcionalidade em desenvolvimento' });
-                      }}
                     />
                   </div>
 
@@ -958,15 +954,11 @@ export default function Schedule() {
                       </p>
                     )}
                     
-                    <ProfessionalAutocomplete
+                    <ProfessionalCommandAutocomplete
                       value={newAppointment.employee_id}
                       onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
-                      placeholder="Digite para buscar profissional por nome, email ou telefone..."
+                      placeholder="Buscar profissional por nome, email ou telefone..."
                       disabled={!isAdmin && employees.length === 1}
-                      onCreateNew={() => {
-                        // TODO: Implementar modal de novo profissional  
-                        toast({ description: 'Funcionalidade em desenvolvimento' });
-                      }}
                     />
                   </div>
 
