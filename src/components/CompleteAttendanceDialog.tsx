@@ -139,6 +139,15 @@ export default function CompleteAttendanceDialog({
         .single();
 
       const professionalName = professionalProfile?.name || professionalProfile?.email || 'Profissional não encontrado';
+      
+      // Buscar informações de quem está concluindo o atendimento
+      const { data: completedByProfile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('user_id', user.id)
+        .single();
+
+      const completedByName = completedByProfile?.name || completedByProfile?.email || user.email || 'Usuário não encontrado';
 
       // 1. Upload de arquivos
       const uploadedAttachments = [];
@@ -218,7 +227,9 @@ export default function CompleteAttendanceDialog({
         next_session_plan: attendanceData.nextSessionPlan,
         amount_charged: attendanceData.sessionValue,
         attachments: uploadedAttachments,
-        created_by: user.id
+        created_by: user.id,
+        completed_by: user.id,
+        completed_by_name: completedByName
       });
 
       await supabase.from('employee_reports').insert({
@@ -242,7 +253,9 @@ export default function CompleteAttendanceDialog({
         attachments: uploadedAttachments,
         session_location: 'Clínica',
         supervision_required: attendanceData.supervisionNeeded,
-        follow_up_needed: !!attendanceData.nextSessionPlan
+        follow_up_needed: !!attendanceData.nextSessionPlan,
+        completed_by: user.id,
+        completed_by_name: completedByName
       });
 
       // 5. Processar movimentações de estoque

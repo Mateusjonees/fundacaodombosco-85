@@ -88,6 +88,8 @@ export type Database = {
           attachments: Json | null
           attendance_type: string
           client_id: string
+          completed_by: string | null
+          completed_by_name: string | null
           created_at: string
           created_by: string
           employee_id: string
@@ -112,6 +114,8 @@ export type Database = {
           attachments?: Json | null
           attendance_type?: string
           client_id: string
+          completed_by?: string | null
+          completed_by_name?: string | null
           created_at?: string
           created_by: string
           employee_id: string
@@ -136,6 +140,8 @@ export type Database = {
           attachments?: Json | null
           attendance_type?: string
           client_id?: string
+          completed_by?: string | null
+          completed_by_name?: string | null
           created_at?: string
           created_by?: string
           employee_id?: string
@@ -221,6 +227,8 @@ export type Database = {
         Row: {
           amount: number
           attendance_report_id: string | null
+          completed_by: string | null
+          completed_by_name: string | null
           created_at: string
           created_by: string
           created_by_name: string
@@ -241,6 +249,8 @@ export type Database = {
         Insert: {
           amount: number
           attendance_report_id?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
           created_at?: string
           created_by: string
           created_by_name: string
@@ -261,6 +271,8 @@ export type Database = {
         Update: {
           amount?: number
           attendance_report_id?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
           created_at?: string
           created_by?: string
           created_by_name?: string
@@ -734,6 +746,8 @@ export type Database = {
         Row: {
           attachments: Json | null
           client_id: string | null
+          completed_by: string | null
+          completed_by_name: string | null
           created_at: string
           effort_rating: number | null
           employee_id: string
@@ -760,6 +774,8 @@ export type Database = {
         Insert: {
           attachments?: Json | null
           client_id?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
           created_at?: string
           effort_rating?: number | null
           employee_id: string
@@ -786,6 +802,8 @@ export type Database = {
         Update: {
           attachments?: Json | null
           client_id?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
           created_at?: string
           effort_rating?: number | null
           employee_id?: string
