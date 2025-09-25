@@ -471,6 +471,18 @@ export default function Schedule() {
 
   const handleConfirmAppointment = async (scheduleId: string, sessionData: any, materials: any[]) => {
     try {
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          variant: "destructive",
+          title: "Sessão Expirada",
+          description: "Sua sessão expirou. Faça login novamente para continuar.",
+        });
+        return;
+      }
+
       // Get schedule details for client information
       const { data: scheduleData } = await supabase
         .from('schedules')
@@ -536,15 +548,15 @@ export default function Schedule() {
           session_date: new Date().toISOString().split('T')[0],
           session_type: sessionData.sessionType,
           session_duration: sessionData.actualDuration,
-          effort_rating: sessionData.effortRating,
-          quality_rating: sessionData.qualityRating,
-          patient_cooperation: sessionData.patientCooperationRating,
-          goal_achievement: sessionData.goalAchievementRating,
-          session_objectives: sessionData.sessionObjectives,
-          techniques_used: sessionData.techniquesUsed,
-          patient_response: sessionData.patientResponse,
-          professional_notes: sessionData.professionalNotes,
-          next_session_plan: sessionData.nextSessionPlan,
+          effort_rating: sessionData.professionalEffort,
+          quality_rating: sessionData.sessionQuality,
+          patient_cooperation: sessionData.clientSatisfaction,
+          goal_achievement: sessionData.clientSatisfaction,
+          session_objectives: sessionData.treatmentPlan,
+          techniques_used: sessionData.interventionTechniques,
+          patient_response: sessionData.clientResponse,
+          professional_notes: sessionData.professionalObservations,
+          next_session_plan: sessionData.nextSessionPreparation,
           materials_used: materials.map(m => ({
             stock_item_id: m.stock_item_id,
             name: m.name,
@@ -1175,25 +1187,6 @@ export default function Schedule() {
         </div>
         
         {/* Dialogs */}
-        <ConfirmAppointmentDialog
-          isOpen={confirmDialogOpen}
-          onClose={() => {
-            setConfirmDialogOpen(false);
-            setSelectedScheduleForAction(null);
-          }}
-          schedule={selectedScheduleForAction}
-          onConfirm={handleConfirmAppointment}
-        />
-
-        <CancelAppointmentDialog
-          isOpen={cancelDialogOpen}
-          onClose={() => {
-            setCancelDialogOpen(false);
-            setSelectedScheduleForAction(null);
-          }}
-          schedule={selectedScheduleForAction}
-          onCancel={handleCancelAppointment}
-        />
 
         {/* Create/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
