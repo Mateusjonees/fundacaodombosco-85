@@ -117,7 +117,6 @@ export function PatientCommandAutocomplete({
         <Command>
           <CommandInput 
             placeholder="Buscar paciente por nome, CPF, telefone ou email..." 
-            value={searchTerm}
             onValueChange={setSearchTerm}
           />
           <CommandList>

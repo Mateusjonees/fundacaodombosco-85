@@ -139,7 +139,6 @@ export function ProfessionalCommandAutocomplete({
         <Command>
           <CommandInput 
             placeholder="Buscar profissional por nome, email ou telefone..." 
-            value={searchTerm}
             onValueChange={setSearchTerm}
           />
           <CommandList>
