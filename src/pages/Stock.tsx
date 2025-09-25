@@ -13,6 +13,7 @@ import StockItemActions from '@/components/StockItemActions';
 import AddStockItemDialog from '@/components/AddStockItemDialog';
 import { StockMovementDialog } from '@/components/StockMovementDialog';
 import { StockMovementHistory } from '@/components/StockMovementHistory';
+import { ImportExcelStockDialog } from '@/components/ImportExcelStockDialog';
 
 interface StockItem {
   id: string;
@@ -41,6 +42,7 @@ export default function Stock() {
   const [activeTab, setActiveTab] = useState('items');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
@@ -128,6 +130,14 @@ export default function Stock() {
           <Button 
             className="gap-2" 
             variant="outline"
+            onClick={() => setIsImportDialogOpen(true)}
+          >
+            <Package className="h-4 w-4" />
+            Importar Planilha
+          </Button>
+          <Button 
+            className="gap-2" 
+            variant="outline"
             onClick={() => setIsMovementDialogOpen(true)}
           >
             <ArrowLeftRight className="h-4 w-4" />
@@ -151,6 +161,12 @@ export default function Stock() {
           stockItems={stockItems}
           clients={clients}
           onMovementCreated={loadStockItems}
+        />
+        
+        <ImportExcelStockDialog
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+          onImportComplete={loadStockItems}
         />
       </div>
 
