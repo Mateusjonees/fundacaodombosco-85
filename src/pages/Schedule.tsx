@@ -466,246 +466,23 @@ export default function Schedule() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível salvar o agendamento.",
+        description: "Erro ao salvar agendamento. Tente novamente.",
       });
     }
   };
 
-  const handleConfirmAppointment = async (scheduleId: string, sessionData: any, materials: any[]) => {
-    try {
-      // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        toast({
-          variant: "destructive",
-          title: "Sessão Expirada",
-          description: "Sua sessão expirou. Faça login novamente para continuar.",
-        });
-        return;
-      }
-
-      // Get schedule details for client information
-      const { data: scheduleData } = await supabase
-        .from('schedules')
-        .select('client_id')
-        .eq('id', scheduleId)
-        .single();
-
-      // Update schedule status
-      const { error: updateError } = await supabase
-        .from('schedules')
-        .update({ 
-          status: 'completed',
-          notes: sessionData.progressNotes || 'Atendimento confirmado'
-        })
-        .eq('id', scheduleId);
-
-      if (updateError) throw updateError;
-
-      // Update client data with session information
-      const { error: clientUpdateError } = await supabase
-        .from('clients')
-        .update({
-          last_session_notes: sessionData.progressNotes,
-          last_session_date: new Date().toISOString().split('T')[0],
-          last_session_type: sessionData.sessionType,
-          treatment_progress: sessionData.treatmentPlan,
-          current_symptoms: sessionData.symptoms,
-          current_medications: sessionData.medications ? [{ medication: sessionData.medications }] : [],
-          vital_signs_history: sessionData.vitalSigns,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', scheduleData?.client_id);
-
-      if (clientUpdateError) console.error('Client update error:', clientUpdateError);
-
-      // Create medical record with complete session data
-      const { error: medicalRecordError } = await supabase
-        .from('medical_records')
-        .insert({
-          client_id: scheduleData?.client_id,
-          employee_id: userProfile?.id,
-          session_date: new Date().toISOString().split('T')[0],
-          session_type: sessionData.sessionType || 'Atendimento',
-          session_duration: sessionData.actualDuration,
-          symptoms: sessionData.symptoms,
-          progress_notes: sessionData.progressNotes,
-          treatment_plan: sessionData.treatmentPlan,
-          next_appointment_notes: sessionData.nextAppointmentNotes,
-          medications: sessionData.medications ? [{ medication: sessionData.medications }] : [],
-          vital_signs: sessionData.vitalSigns,
-          attachments: []
-        });
-
-      if (medicalRecordError) console.error('Medical record error:', medicalRecordError);
-
-      // Create employee report
-      const { error: employeeReportError } = await supabase
-        .from('employee_reports')
-        .insert({
-          employee_id: userProfile?.id,
-          client_id: scheduleData?.client_id,
-          schedule_id: scheduleId,
-          session_date: new Date().toISOString().split('T')[0],
-          session_type: sessionData.sessionType,
-          session_duration: sessionData.actualDuration,
-          effort_rating: sessionData.professionalEffort,
-          quality_rating: sessionData.sessionQuality,
-          patient_cooperation: sessionData.clientSatisfaction,
-          goal_achievement: sessionData.clientSatisfaction,
-          session_objectives: sessionData.treatmentPlan,
-          techniques_used: sessionData.interventionTechniques,
-          patient_response: sessionData.clientResponse,
-          professional_notes: sessionData.professionalObservations,
-          next_session_plan: sessionData.nextSessionPreparation,
-          materials_used: materials.map(m => ({
-            stock_item_id: m.stock_item_id,
-            name: m.name,
-            quantity: m.quantity,
-            unit_cost: m.unit_cost,
-            observation: m.observation
-          })),
-          materials_cost: materials.reduce((sum, m) => sum + ((m.unit_cost || 0) * m.quantity), 0),
-          session_location: sessionData.sessionLocation,
-          supervision_required: sessionData.supervisionRequired,
-          follow_up_needed: sessionData.followUpNeeded
-        });
-
-      if (employeeReportError) console.error('Employee report error:', employeeReportError);
-
-      // Create financial record
-      if (sessionData.sessionValue > 0) {
-        const { error: financialError } = await supabase
-          .from('financial_records')
-          .insert({
-            type: 'revenue',
-            category: 'Consulta',
-            description: `Sessão ${sessionData.sessionType} - ${scheduleData?.client_id}`,
-            amount: sessionData.finalValue,
-            date: new Date().toISOString().split('T')[0],
-            payment_method: sessionData.paymentMethod,
-            client_id: scheduleData?.client_id,
-            employee_id: user?.id,
-            created_by: user?.id,
-            notes: sessionData.paymentNotes
-          });
-
-        if (financialError) console.error('Financial record error:', financialError);
-      }
-
-      // Create stock movements for used materials
-      if (materials.length > 0) {
-        const stockMovements = materials.map(material => ({
-          stock_item_id: material.stock_item_id,
-          type: 'out',
-          quantity: material.quantity,
-          reason: 'Utilizado em atendimento',
-          notes: material.observation || `Sessão - Paciente ID: ${scheduleData?.client_id}`,
-          date: new Date().toISOString().split('T')[0],
-          created_by: user?.id,
-          client_id: scheduleData?.client_id,
-          schedule_id: scheduleId,
-          session_number: 1,
-          unit_cost: material.unit_cost,
-          total_cost: (material.unit_cost || 0) * material.quantity
-        }));
-
-        const { error: movementError } = await supabase
-          .from('stock_movements')
-          .insert(stockMovements);
-
-        if (movementError) throw movementError;
-
-        // Update stock quantities
-        for (const material of materials) {
-          const { data: currentItem } = await supabase
-            .from('stock_items')
-            .select('current_quantity')
-            .eq('id', material.stock_item_id)
-            .single();
-
-          if (currentItem) {
-            const newQuantity = Math.max(0, currentItem.current_quantity - material.quantity);
-            await supabase
-              .from('stock_items')
-              .update({ current_quantity: newQuantity })
-              .eq('id', material.stock_item_id);
-          }
-        }
-      }
-
-      toast({
-        title: "Atendimento confirmado!",
-        description: "Dados clínicos, financeiros e de materiais foram registrados com sucesso.",
-      });
-
-      loadSchedules();
-    } catch (error) {
-      console.error('Error confirming appointment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível confirmar o atendimento.",
-      });
-    }
+  const formatDateTimeLocal = (isoString: string) => {
+    const date = new Date(isoString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  const handleCancelAppointment = async (scheduleId: string, reason: string, category: string) => {
-    try {
-      const { error } = await supabase
-        .from('schedules')
-        .update({ 
-          status: 'cancelled',
-          notes: `Cancelado - Categoria: ${category}. Motivo: ${reason}`
-        })
-        .eq('id', scheduleId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Agendamento cancelado",
-        description: "O agendamento foi cancelado e o motivo foi registrado.",
-      });
-
-      loadSchedules();
-    } catch (error) {
-      console.error('Error canceling appointment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível cancelar o agendamento.",
-      });
-    }
-  };
-
-  const openCompleteDialog = (schedule: Schedule) => {
-    setSelectedScheduleForAction(schedule);
-    setCompleteDialogOpen(true);
-  };
-
-  const openConfirmDialog = (schedule: Schedule) => {
-    setSelectedScheduleForAction(schedule);
-    setConfirmDialogOpen(true);
-  };
-
-  const openCancelDialog = (schedule: Schedule) => {
-    setSelectedScheduleForAction(schedule);
-    setCancelDialogOpen(true);
-  };
-
-  const handleEdit = (schedule: Schedule) => {
+  const handleEditSchedule = (schedule: Schedule) => {
     setEditingSchedule(schedule);
-    
-    // Convert ISO strings to local datetime format for datetime-local inputs
-    const formatDateTimeLocal = (isoString: string) => {
-      const date = new Date(isoString);
-      // Get local timezone offset and adjust
-      const offset = date.getTimezoneOffset();
-      const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-      return localDate.toISOString().slice(0, 16);
-    };
-    
     setNewAppointment({
       client_id: schedule.client_id,
       employee_id: schedule.employee_id,
@@ -731,320 +508,218 @@ export default function Schedule() {
         title: "Sucesso",
         description: "Agendamento redirecionado com sucesso!",
       });
-
+      
       loadSchedules();
     } catch (error) {
-      console.error('Error redirecting schedule:', error);
+      console.error('Error redirecting appointment:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível redirecionar o agendamento.",
+        description: "Erro ao redirecionar agendamento.",
       });
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'scheduled': return 'default';
-      case 'confirmed': return 'default';
-      case 'completed': return 'secondary';
-      case 'cancelled': return 'destructive';
-      default: return 'outline';
+  const handleConfirmAppointment = async (scheduleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ status: 'confirmed' })
+        .eq('id', scheduleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Agendamento confirmado!",
+      });
+      
+      loadSchedules();
+    } catch (error) {
+      console.error('Error confirming appointment:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao confirmar agendamento.",
+      });
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'scheduled': return 'Agendado';
-      case 'confirmed': return 'Confirmado';
-      case 'completed': return 'Concluído';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
+  const handleCancelAppointment = async (scheduleId: string, reason?: string) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ 
+          status: 'cancelled',
+          notes: reason ? `Cancelado: ${reason}` : 'Cancelado'
+        })
+        .eq('id', scheduleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Agendamento cancelado!",
+      });
+      
+      loadSchedules();
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao cancelar agendamento.",
+      });
     }
   };
 
-  const todaySchedules = schedules;
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      'scheduled': { text: 'Agendado', variant: 'default' as const },
+      'confirmed': { text: 'Confirmado', variant: 'secondary' as const },
+      'completed': { text: 'Concluído', variant: 'outline' as const },
+      'cancelled': { text: 'Cancelado', variant: 'destructive' as const }
+    };
+    
+    return statusMap[status as keyof typeof statusMap] || { text: 'Desconhecido', variant: 'outline' as const };
+  };
 
-  const uniqueRoles = [...new Set(employees.map(emp => emp.employee_role))];
-  const departmentEmployees = employees.filter(emp => {
-    if (filterUnit === 'madre') {
-      return emp.department?.toLowerCase().includes('madre') || emp.employee_role === 'coordinator_madre';
+  // Filtrar agendamentos
+  const todaySchedules = schedules.filter(schedule => {
+    if (filterRole !== 'all') {
+      const employee = employees.find(emp => emp.user_id === schedule.employee_id);
+      if (employee && employee.employee_role !== filterRole) {
+        return false;
+      }
     }
-    if (filterUnit === 'floresta') {
-      return emp.department?.toLowerCase().includes('floresta') || emp.employee_role === 'coordinator_floresta';
+
+    if (filterEmployee !== 'all' && schedule.employee_id !== filterEmployee) {
+      return false;
     }
+
+    if (filterUnit !== 'all' && schedule.unit !== filterUnit) {
+      return false;
+    }
+
     return true;
   });
 
   return (
-    <div className="space-y-6">
-      {/* Alertas de Agendamento */}
+    <div className="container mx-auto p-4 space-y-6">
       <ScheduleAlerts />
       
-      <div className="flex flex-col space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Agenda</h1>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Coluna da esquerda - Calendário */}
-          <Card className="lg:col-span-1 gradient-card shadow-professional">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm md:text-base">
-                <CalendarIcon className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                {format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-2 md:p-6">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                locale={ptBR}
-                className="rounded-md border w-full pointer-events-auto"
-              />
-            </CardContent>
-          </Card>
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar esquerda com calendário e controles */}
+        <div className="lg:w-80">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarIcon className="h-5 w-5" />
+                  Calendário
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  locale={ptBR}
+                  className="rounded-md border w-full"
+                />
+              </CardContent>
+            </Card>
 
-          {/* Coluna da direita - Filtros e Botão */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Data selecionada */}
-            <div className="flex items-center gap-2 text-lg font-medium">
-              <span>{format(selectedDate, "dd/MM/yyyy")}</span>
-            </div>
+            {/* Botão Novo Agendamento - Versão Desktop */}
+            <Button 
+              className="w-full py-4 md:py-6 text-base md:text-lg" 
+              onClick={() => {
+                setEditingSchedule(null);
+                // Para profissionais comuns, pré-selecionar eles mesmos
+                const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
+                setNewAppointment({
+                  client_id: '',
+                  employee_id: defaultEmployeeId,
+                  title: 'Consulta',
+                  start_time: '',
+                  end_time: '',
+                  notes: '',
+                  unit: 'madre'
+                });
+                setIsDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+              Novo Agendamento
+            </Button>
 
-            {/* Filtros - Para Diretores e Coordenadores */}
-            {(userProfile?.employee_role === 'director' || 
-              userProfile?.employee_role === 'coordinator_madre' || 
-              userProfile?.employee_role === 'coordinator_floresta') && (
-              <Card className="gradient-card shadow-professional border-primary/10">
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Filter className="h-4 w-4 text-primary" />
-                      <h3 className="font-semibold text-primary">
-                        Filtros Avançados
-                        {userProfile?.employee_role === 'coordinator_madre' && 
-                          <span className="text-xs text-muted-foreground ml-2">(Unidade Madre)</span>
-                        }
-                        {userProfile?.employee_role === 'coordinator_floresta' && 
-                          <span className="text-xs text-muted-foreground ml-2">(Unidade Floresta)</span>
-                        }
-                      </h3>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-foreground">Filtrar por Cargo:</Label>
-                      <Select value={filterRole} onValueChange={setFilterRole}>
-                        <SelectTrigger className="bg-background border-border">
-                          <SelectValue placeholder="Todos os Cargos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os Cargos</SelectItem>
-                          {uniqueRoles.map(role => (
-                            <SelectItem key={role} value={role}>
-                              {role === 'director' ? 'Diretor' :
-                               role === 'coordinator_madre' ? 'Coordenador Madre' :
-                               role === 'coordinator_floresta' ? 'Coordenador Floresta' :
-                               role === 'administrative' ? 'Administrativo' : 'Staff'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+            {/* Filtros para Administradores */}
+            {isAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Filter className="h-5 w-5" />
+                    Filtros
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="filterRole">Função</Label>
+                    <Select value={filterRole} onValueChange={setFilterRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas as funções" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as funções</SelectItem>
+                        <SelectItem value="psychologist">Psicólogos</SelectItem>
+                        <SelectItem value="speech_therapist">Fonoaudiólogos</SelectItem>
+                        <SelectItem value="psychopedagogue">Psicopedagogos</SelectItem>
+                        <SelectItem value="nutritionist">Nutricionistas</SelectItem>
+                        <SelectItem value="physiotherapist">Fisioterapeutas</SelectItem>
+                        <SelectItem value="musictherapist">Musicoterapeutas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    <div>
-                      <Label className="text-sm font-medium text-foreground">Ver agenda de:</Label>
-                      <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                        <SelectTrigger className="bg-background border-border">
-                          <SelectValue placeholder="Todos os Profissionais" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os Profissionais</SelectItem>
-                          {departmentEmployees.map(employee => (
-                            <SelectItem key={employee.id} value={employee.id}>
-                              {employee.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div>
+                    <Label htmlFor="filterEmployee">Profissional</Label>
+                    <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos os profissionais" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os profissionais</SelectItem>
+                        {employees.map((employee) => (
+                          <SelectItem key={employee.user_id} value={employee.user_id}>
+                            {employee.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    <div>
-                      <Label className="text-sm font-medium text-foreground">Filtrar por Unidade:</Label>
-                      <Select value={filterUnit} onValueChange={setFilterUnit}>
-                        <SelectTrigger className="bg-background border-border">
-                          <SelectValue placeholder="Todas as Unidades" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as Unidades</SelectItem>
-                          <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                          <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div>
+                    <Label htmlFor="filterUnit">Unidade</Label>
+                    <Select value={filterUnit} onValueChange={setFilterUnit}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas as unidades" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as unidades</SelectItem>
+                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>
             )}
+          </div>
+        </div>
 
-            {/* Botão Novo Agendamento */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                 <Button 
-                  className="w-full py-4 md:py-6 text-base md:text-lg" 
-                  onClick={() => {
-                    setEditingSchedule(null);
-                    // Para profissionais comuns, pré-selecionar eles mesmos
-                    const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
-                    setNewAppointment({
-                      client_id: '',
-                      employee_id: defaultEmployeeId,
-                      title: 'Consulta',
-                      start_time: '',
-                      end_time: '',
-                      notes: '',
-                      unit: 'madre'
-                    });
-                  }}
-                 >
-                  <Plus className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                  Novo Agendamento
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>{editingSchedule ? 'Editar' : 'Novo'} Agendamento</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="client_id">Paciente</Label>
-                    {userProfile?.employee_role === 'coordinator_madre' && (
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Você pode agendar apenas para pacientes da unidade MADRE.
-                      </p>
-                    )}
-                    {userProfile?.employee_role === 'coordinator_floresta' && (
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Você pode agendar apenas para pacientes da unidade Floresta.
-                      </p>
-                    )}
-                    {!isAdmin && !['coordinator_madre', 'coordinator_floresta'].includes(userProfile?.employee_role || '') && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Você só pode agendar para pacientes vinculados ao seu atendimento.
-                      </p>
-                    )}
-                    
-                    <PatientCommandAutocomplete
-                      value={newAppointment.client_id}
-                      onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
-                      placeholder="Buscar paciente por nome, CPF, telefone ou email..."
-                      unitFilter={
-                        userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
-                        userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
-                        'all'
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="employee_id">Profissional</Label>
-                    {!isAdmin && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Como profissional, você só pode agendar para si mesmo.
-                      </p>
-                    )}
-                    
-                    <ProfessionalCommandAutocomplete
-                      value={newAppointment.employee_id}
-                      onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
-                      placeholder="Buscar profissional por nome, email ou telefone..."
-                      disabled={!isAdmin && employees.length === 1}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="start_time">Data e Hora Início</Label>
-                    <Input
-                      id="start_time"
-                      type="datetime-local"
-                      value={newAppointment.start_time}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, start_time: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="end_time">Data e Hora Fim</Label>
-                    <Input
-                      id="end_time"
-                      type="datetime-local"
-                      value={newAppointment.end_time}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, end_time: e.target.value })}
-                    />
-                  </div>
-                  
-                   <div className="space-y-2">
-                     <Label htmlFor="title">Título</Label>
-                     <Input
-                       id="title"
-                       value={newAppointment.title}
-                       onChange={(e) => setNewAppointment({ ...newAppointment, title: e.target.value })}
-                       placeholder="Título do agendamento"
-                     />
-                   </div>
-                   
-                   <div className="space-y-2">
-                     <Label htmlFor="unit">Unidade</Label>
-                     <Select 
-                       value={newAppointment.unit} 
-                       onValueChange={(value) => setNewAppointment({ ...newAppointment, unit: value })}
-                       disabled={userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta'}
-                     >
-                       <SelectTrigger>
-                         <SelectValue placeholder="Selecione a unidade" />
-                       </SelectTrigger>
-                        <SelectContent>
-                          {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'receptionist') && (
-                            <>
-                              <SelectItem value="madre">MADRE</SelectItem>
-                              <SelectItem value="floresta">Floresta</SelectItem>
-                            </>
-                          )}
-                          {userProfile?.employee_role === 'coordinator_madre' && (
-                            <SelectItem value="madre">MADRE</SelectItem>
-                          )}
-                          {userProfile?.employee_role === 'coordinator_floresta' && (
-                            <SelectItem value="floresta">Floresta</SelectItem>
-                          )}
-                        </SelectContent>
-                     </Select>
-                     {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && (
-                       <p className="text-sm text-muted-foreground">
-                         Você só pode agendar para sua unidade.
-                       </p>
-                     )}
-                   </div>
-                   
-                   <div className="space-y-2">
-                     <Label htmlFor="notes">Observações</Label>
-                     <Textarea
-                       id="notes"
-                       value={newAppointment.notes}
-                       onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
-                       placeholder="Informações adicionais sobre o agendamento"
-                     />
-                   </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleCreateAppointment}>
-                    {editingSchedule ? 'Atualizar' : 'Agendar'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
+        {/* Conteúdo principal */}
+        <div className="flex-1">
+          <div className="space-y-6">
             {/* Lista de Agendamentos */}
             <Card>
               <CardHeader>
@@ -1083,88 +758,109 @@ export default function Schedule() {
                               </Badge>
                            </div>
                           {schedule.notes && (
-                            <p className="text-xs md:text-sm text-muted-foreground">{schedule.notes}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Obs: {schedule.notes}
+                            </p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-                          <Badge variant={getStatusColor(schedule.status)} className="text-xs">
-                            {getStatusLabel(schedule.status)}
-                          </Badge>
-                          
-                          {/* Botões de ação - permitir edição em qualquer status */}
-                          {(userProfile?.employee_role === 'director' || 
-                            userProfile?.employee_role === 'coordinator_madre' || 
-                            userProfile?.employee_role === 'coordinator_floresta') && (
-                            <div className="flex gap-1">
-                              {(schedule.status === 'scheduled' || schedule.status === 'confirmed') && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openCompleteDialog(schedule)}
-                                  title="Concluir Atendimento"
-                                  className="text-green-600 hover:text-green-700 shadow-professional"
-                                >
-                                  <CheckCircle className="h-3 w-3" />
-                                </Button>
-                              )}
-                              
-                              {/* Permitir edição em qualquer status */}
+
+                        <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
+                          <div className="flex items-center gap-2 mb-2 md:mb-0">
+                            <Badge {...getStatusBadge(schedule.status)}>
+                              {getStatusBadge(schedule.status).text}
+                            </Badge>
+                          </div>
+
+                          <div className="flex gap-1 flex-wrap justify-center md:justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditSchedule(schedule)}
+                              className="text-xs"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Editar
+                            </Button>
+
+                            {schedule.status === 'scheduled' && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleEdit(schedule)}
-                                title="Editar Agendamento"
+                                onClick={() => {
+                                  setSelectedScheduleForAction(schedule);
+                                  setConfirmDialogOpen(true);
+                                }}
+                                className="text-xs"
                               >
-                                <Edit className="h-3 w-3" />
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Confirmar
                               </Button>
+                            )}
 
-                              {schedule.status !== 'cancelled' && schedule.status !== 'completed' && (
+                            {['scheduled', 'confirmed'].includes(schedule.status) && (
+                              <>
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => openCancelDialog(schedule)}
-                                  title="Cancelar Agendamento"
-                                  className="text-destructive hover:text-destructive shadow-professional"
+                                  onClick={() => {
+                                    setSelectedScheduleForAction(schedule);
+                                    setCompleteDialogOpen(true);
+                                  }}
+                                  className="text-xs"
                                 >
-                                  <XCircle className="h-3 w-3" />
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Concluir
                                 </Button>
-                              )}
 
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    title="Redirecionar"
-                                  >
-                                    <ArrowRightLeft className="h-3 w-3" />
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedScheduleForAction(schedule);
+                                    setCancelDialogOpen(true);
+                                  }}
+                                  className="text-xs"
+                                >
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Cancelar
+                                </Button>
+                              </>
+                            )}
+
+                            {isAdmin && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" variant="outline" className="text-xs">
+                                    <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                    Redirecionar
                                   </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Redirecionar Agendamento</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    <Label>Selecione o novo profissional:</Label>
-                                    <Select onValueChange={(value) => handleRedirect(schedule.id, value)}>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Escolha um profissional" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {employees
-                                          .filter(emp => emp.id !== schedule.employee_id)
-                                          .map(employee => (
-                                          <SelectItem key={employee.id} value={employee.id}>
-                                            {employee.name} ({employee.employee_role})
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                          )}
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Redirecionar Agendamento</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Selecione o profissional para quem deseja redirecionar este agendamento.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <Select onValueChange={(value) => handleRedirect(schedule.id, value)}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione um profissional" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {employees.filter(emp => emp.user_id !== schedule.employee_id).map((employee) => (
+                                        <SelectItem key={employee.user_id} value={employee.user_id}>
+                                          {employee.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1180,7 +876,22 @@ export default function Schedule() {
         {/* Create/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90 animate-pulse-gentle">
+            <Button 
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90 animate-pulse-gentle"
+              onClick={() => {
+                setEditingSchedule(null);
+                const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
+                setNewAppointment({
+                  client_id: '',
+                  employee_id: defaultEmployeeId,
+                  title: 'Consulta',
+                  start_time: '',
+                  end_time: '',
+                  notes: '',
+                  unit: 'madre'
+                });
+              }}
+            >
               <Plus className="h-6 w-6" />
             </Button>
           </DialogTrigger>
@@ -1192,6 +903,37 @@ export default function Schedule() {
             </DialogHeader>
             
             <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="client_id">Paciente</Label>
+                
+                <PatientCommandAutocomplete
+                  value={newAppointment.client_id}
+                  onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
+                  placeholder="Buscar paciente por nome, CPF, telefone ou email..."
+                  unitFilter={
+                    userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
+                    userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                    'all'
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="employee_id">Profissional</Label>
+                
+                <ProfessionalCommandAutocomplete
+                  value={newAppointment.employee_id}
+                  onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
+                  placeholder="Buscar profissional por nome, email ou telefone..."
+                  unitFilter={
+                    userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
+                    userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                    'all'
+                  }
+                  disabled={!isAdmin}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="start_time">Data e Hora Início</Label>
@@ -1212,48 +954,16 @@ export default function Schedule() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="client">Paciente</Label>
-                <Select value={newAppointment.client_id} onValueChange={(value) => setNewAppointment({...newAppointment, client_id: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um paciente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="employee">Profissional</Label>
-                <Select value={newAppointment.employee_id} onValueChange={(value) => setNewAppointment({...newAppointment, employee_id: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um profissional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.user_id}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="title">Tipo de Atendimento</Label>
+                <Label htmlFor="title">Tipo de Consulta</Label>
                 <Select value={newAppointment.title} onValueChange={(value) => setNewAppointment({...newAppointment, title: value})}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Consulta">Consulta</SelectItem>
-                    <SelectItem value="Terapia">Terapia</SelectItem>
+                    <SelectItem value="Primeira Consulta">Primeira Consulta</SelectItem>
                     <SelectItem value="Avaliação">Avaliação</SelectItem>
                     <SelectItem value="Retorno">Retorno</SelectItem>
                   </SelectContent>
