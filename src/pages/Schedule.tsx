@@ -61,6 +61,9 @@ export default function Schedule() {
                   userProfile?.employee_role === 'coordinator_floresta' ||
                   userProfile?.employee_role === 'receptionist';
 
+  // Estado para pesquisa de cliente
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
     employee_id: '',
@@ -763,6 +766,11 @@ export default function Schedule() {
 
   const todaySchedules = schedules;
 
+  // Filtrar clientes baseado na pesquisa
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(clientSearchTerm.toLowerCase())
+  );
+
   const uniqueRoles = [...new Set(employees.map(emp => emp.employee_role))];
   const departmentEmployees = employees.filter(emp => {
     if (filterUnit === 'madre') {
@@ -918,7 +926,7 @@ export default function Schedule() {
                     <Label htmlFor="client_id">Paciente</Label>
                     {userProfile?.employee_role === 'coordinator_madre' && (
                       <p className="text-xs text-muted-foreground mb-2">
-                        Você pode agendar apenas para pacientes da unidade Madre.
+                        Você pode agendar apenas para pacientes da unidade MADRE.
                       </p>
                     )}
                     {userProfile?.employee_role === 'coordinator_floresta' && (
@@ -931,6 +939,15 @@ export default function Schedule() {
                         Você só pode agendar para pacientes vinculados ao seu atendimento.
                       </p>
                     )}
+                    
+                    {/* Campo de pesquisa */}
+                    <Input
+                      placeholder="Digite o nome do paciente para pesquisar..."
+                      value={clientSearchTerm}
+                      onChange={(e) => setClientSearchTerm(e.target.value)}
+                      className="mb-2"
+                    />
+                    
                     <Select 
                       value={newAppointment.client_id} 
                       onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
@@ -939,11 +956,17 @@ export default function Schedule() {
                         <SelectValue placeholder="Selecione um paciente" />
                       </SelectTrigger>
                       <SelectContent>
-                        {clients.map(client => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.name}
+                        {filteredClients.length > 0 ? (
+                          filteredClients.map(client => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            {clientSearchTerm ? 'Nenhum paciente encontrado' : 'Digite para pesquisar pacientes'}
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
