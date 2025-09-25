@@ -108,7 +108,8 @@ export default function Stock() {
   const handleImportStock = async () => {
     setIsImporting(true);
     try {
-      const result = await importAllStockItems();
+      const { importAllItemsFromList } = await import('@/utils/importStockFromList');
+      const result = await importAllItemsFromList();
       
       toast({
         title: "Importação concluída!",
