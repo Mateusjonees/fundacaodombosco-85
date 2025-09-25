@@ -16,7 +16,6 @@ import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
-import { ConfirmAppointmentDialog } from '@/components/ConfirmAppointmentDialog';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocomplete';
@@ -45,7 +44,6 @@ export default function Schedule() {
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [selectedScheduleForAction, setSelectedScheduleForAction] = useState<Schedule | null>(null);
@@ -442,31 +440,6 @@ export default function Schedule() {
     }
   };
 
-  const handleConfirmAppointment = async (scheduleId: string) => {
-    try {
-      const { error } = await supabase
-        .from('schedules')
-        .update({ status: 'confirmed' })
-        .eq('id', scheduleId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Agendamento confirmado!",
-      });
-      
-      loadSchedules();
-    } catch (error) {
-      console.error('Error confirming appointment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao confirmar agendamento.",
-      });
-    }
-  };
-
   const handleCancelAppointment = async (scheduleId: string, reason?: string) => {
     try {
       const { error } = await supabase
@@ -704,21 +677,6 @@ export default function Schedule() {
                               Editar
                             </Button>
 
-                            {schedule.status === 'scheduled' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedScheduleForAction(schedule);
-                                  setConfirmDialogOpen(true);
-                                }}
-                                className="text-xs"
-                              >
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Confirmar
-                              </Button>
-                            )}
-
                             {['scheduled', 'confirmed'].includes(schedule.status) && (
                               <>
                                 <Button
@@ -932,13 +890,6 @@ export default function Schedule() {
           isOpen={completeDialogOpen}
           onClose={() => setCompleteDialogOpen(false)}
           onComplete={loadSchedules}
-        />
-
-        <ConfirmAppointmentDialog
-          schedule={selectedScheduleForAction}
-          isOpen={confirmDialogOpen}
-          onClose={() => setConfirmDialogOpen(false)}
-          onConfirm={handleConfirmAppointment}
         />
 
         <CancelAppointmentDialog
