@@ -442,7 +442,7 @@ export default function Reports() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as unidades</SelectItem>
-                  <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                  <SelectItem value="madre">MADRE</SelectItem>
                   <SelectItem value="floresta">Floresta</SelectItem>
                 </SelectContent>
               </Select>
@@ -513,7 +513,7 @@ export default function Reports() {
                 )}
                 {selectedUnit !== 'all' && (
                   <Badge variant="outline">
-                    Unidade: {selectedUnit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                    Unidade: {selectedUnit === 'madre' ? 'MADRE' : 'Floresta'}
                   </Badge>
                 )}
                 {sessionType !== 'all' && (

@@ -1016,12 +1016,12 @@ export default function Schedule() {
                         <SelectContent>
                           {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'receptionist') && (
                             <>
-                              <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                              <SelectItem value="madre">MADRE</SelectItem>
                               <SelectItem value="floresta">Floresta</SelectItem>
                             </>
                           )}
                           {userProfile?.employee_role === 'coordinator_madre' && (
-                            <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                            <SelectItem value="madre">MADRE</SelectItem>
                           )}
                           {userProfile?.employee_role === 'coordinator_floresta' && (
                             <SelectItem value="floresta">Floresta</SelectItem>
@@ -1090,7 +1090,7 @@ export default function Schedule() {
                              <span>Profissional: {employees.find(emp => emp.id === schedule.employee_id)?.name || 'N/A'}</span>
                              <span className="hidden md:inline">•</span>
                               <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-xs">
-                                {schedule.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                                {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
                               </Badge>
                            </div>
                           {schedule.notes && (
@@ -1278,7 +1278,7 @@ export default function Schedule() {
                     <SelectValue placeholder="Selecione a unidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                    <SelectItem value="madre">MADRE</SelectItem>
                     <SelectItem value="floresta">Floresta</SelectItem>
                   </SelectContent>
                 </Select>

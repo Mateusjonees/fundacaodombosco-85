@@ -1062,7 +1062,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">Unidade:</span>
                     <Badge variant={client.unit === 'madre' ? 'default' : 'secondary'}>
-                      {client.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                      {client.unit === 'madre' ? 'MADRE' : 'Floresta'}
                     </Badge>
                   </div>
                 </div>

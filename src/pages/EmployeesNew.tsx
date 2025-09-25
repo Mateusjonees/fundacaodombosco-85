@@ -396,7 +396,7 @@ export default function EmployeesNew() {
                     <SelectValue placeholder="Selecione uma unidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                     <SelectItem value="madre">MADRE</SelectItem>
                     <SelectItem value="floresta">Floresta</SelectItem>
                   </SelectContent>
                 </Select>
@@ -498,7 +498,7 @@ export default function EmployeesNew() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Nenhuma unidade</SelectItem>
-                      <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                      <SelectItem value="madre">MADRE</SelectItem>
                       <SelectItem value="floresta">Floresta</SelectItem>
                     </SelectContent>
                   </Select>

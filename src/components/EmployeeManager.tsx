@@ -348,7 +348,7 @@ export const EmployeeManager = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {employee.unit === 'madre' ? 'Madre Mazzarello' : 
+                       {employee.unit === 'madre' ? 'MADRE' : 
                        employee.unit === 'floresta' ? 'Floresta' : 
                        employee.unit || '-'}
                     </TableCell>
@@ -453,7 +453,7 @@ export const EmployeeManager = () => {
                 <div>
                   <Label>Unidade</Label>
                   <p className="text-sm text-muted-foreground">
-                    {selectedEmployee.unit === 'madre' ? 'Madre Mazzarello' : 
+                     {selectedEmployee.unit === 'madre' ? 'MADRE' : 
                      selectedEmployee.unit === 'floresta' ? 'Floresta' : 
                      selectedEmployee.unit || '-'}
                   </p>
@@ -577,7 +577,7 @@ export const EmployeeManager = () => {
                    </SelectTrigger>
                    <SelectContent>
                      <SelectItem value="">Nenhuma unidade</SelectItem>
-                     <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                     <SelectItem value="madre">MADRE</SelectItem>
                      <SelectItem value="floresta">Floresta</SelectItem>
                    </SelectContent>
                  </Select>

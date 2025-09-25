@@ -283,7 +283,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Selecione uma unidade</SelectItem>
-                <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                <SelectItem value="madre">MADRE</SelectItem>
                 <SelectItem value="floresta">Floresta</SelectItem>
               </SelectContent>
             </Select>

@@ -203,7 +203,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
                 <div className="field-label font-medium text-gray-700">Unidade:</div>
                 <div className="field-value p-2 border border-gray-200 rounded">
                   <Badge variant={client.unit === 'madre' ? 'default' : 'secondary'}>
-                    {client.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                    {client.unit === 'madre' ? 'MADRE' : 'Floresta'}
                   </Badge>
                 </div>
               </div>
