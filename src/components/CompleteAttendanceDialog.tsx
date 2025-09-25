@@ -131,6 +131,205 @@ export default function CompleteAttendanceDialog({
     
     setLoading(true);
     try {
+      // 1. Upload de arquivos
+      const uploadedAttachments = [];
+      for (const attachedFile of attachedFiles) {
+        const fileName = `${user.id}/${schedule.id}/${Date.now()}_${attachedFile.file.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('attendance-documents')
+          .upload(fileName, attachedFile.file);
+
+        if (!uploadError) {
+          uploadedAttachments.push({
+            name: attachedFile.file.name,
+            path: uploadData.path,
+            size: attachedFile.file.size,
+            type: attachedFile.file.type
+          });
+        }
+      }
+
+      // 2. Processar materiais e calcular custos
+      let totalMaterialsCost = 0;
+      const processedMaterials = [];
+      
+      for (const material of attendanceData.materialsUsed) {
+        const { data: stockItem } = await supabase
+          .from('stock_items')
+          .select('current_quantity, unit_cost, name, unit')
+          .eq('id', material.stock_item_id)
+          .single();
+
+        if (stockItem && stockItem.current_quantity >= material.quantity) {
+          const unitCost = stockItem.unit_cost || 0;
+          const materialCost = unitCost * material.quantity;
+          totalMaterialsCost += materialCost;
+
+          processedMaterials.push({
+            stock_item_id: material.stock_item_id,
+            name: stockItem.name,
+            quantity: material.quantity,
+            unit: stockItem.unit,
+            unit_cost: unitCost,
+            total_cost: materialCost,
+            observation: material.observation || ''
+          });
+        }
+      }
+
+      // 3. Atualizar agendamento
+      await supabase
+        .from('schedules')
+        .update({ 
+          status: 'completed',
+          session_notes: attendanceData.clinicalObservations,
+          session_amount: attendanceData.sessionValue,
+          payment_method: attendanceData.paymentMethod,
+          completed_at: new Date().toISOString(),
+          completed_by: user.id
+        })
+        .eq('id', schedule.id);
+
+      // 4. Criar relatórios com dados corretos
+      await supabase.from('attendance_reports').insert({
+        schedule_id: schedule.id,
+        client_id: schedule.client_id,
+        employee_id: user.id,
+        patient_name: schedule.clients?.name || '',
+        professional_name: user.email || '',
+        attendance_type: attendanceData.sessionType,
+        start_time: attendanceData.actualStartTime || schedule.start_time,
+        end_time: attendanceData.actualEndTime || schedule.end_time,
+        session_duration: attendanceData.actualDuration,
+        observations: attendanceData.clinicalObservations,
+        session_notes: attendanceData.nextSessionPlan,
+        materials_used: processedMaterials,
+        techniques_used: attendanceData.sessionObjectives,
+        patient_response: attendanceData.patientResponse,
+        next_session_plan: attendanceData.nextSessionPlan,
+        amount_charged: attendanceData.sessionValue,
+        attachments: uploadedAttachments,
+        created_by: user.id
+      });
+
+      await supabase.from('employee_reports').insert({
+        employee_id: user.id,
+        client_id: schedule.client_id,
+        schedule_id: schedule.id,
+        session_date: new Date().toISOString().split('T')[0],
+        session_type: attendanceData.sessionType,
+        session_duration: attendanceData.actualDuration,
+        effort_rating: attendanceData.effortRating,
+        quality_rating: attendanceData.overallQuality,
+        patient_cooperation: attendanceData.patientCooperation,
+        goal_achievement: attendanceData.goalAchievement,
+        session_objectives: attendanceData.sessionObjectives,
+        techniques_used: attendanceData.objectivesAchieved,
+        patient_response: attendanceData.patientResponse,
+        professional_notes: attendanceData.clinicalObservations,
+        next_session_plan: attendanceData.nextSessionPlan,
+        materials_used: processedMaterials,
+        materials_cost: totalMaterialsCost,
+        attachments: uploadedAttachments,
+        session_location: 'Clínica',
+        supervision_required: attendanceData.supervisionNeeded,
+        follow_up_needed: !!attendanceData.nextSessionPlan
+      });
+
+      // 5. Processar movimentações de estoque
+      for (const material of processedMaterials) {
+        const { data: currentStock } = await supabase
+          .from('stock_items')
+          .select('current_quantity')
+          .eq('id', material.stock_item_id)
+          .single();
+
+        if (currentStock) {
+          // Criar movimentação
+          await supabase.from('stock_movements').insert({
+            stock_item_id: material.stock_item_id,
+            type: 'saida',
+            quantity: material.quantity,
+            previous_quantity: currentStock.current_quantity,
+            new_quantity: currentStock.current_quantity - material.quantity,
+            unit_cost: material.unit_cost,
+            total_cost: material.total_cost,
+            reason: 'atendimento',
+            notes: `${attendanceData.sessionType} - ${schedule.clients?.name}`,
+            moved_by: user.id,
+            created_by: user.id,
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            date: new Date().toISOString().split('T')[0]
+          });
+
+          // Atualizar estoque
+          await supabase
+            .from('stock_items')
+            .update({ 
+              current_quantity: Math.max(0, currentStock.current_quantity - material.quantity),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', material.stock_item_id);
+        }
+      }
+
+      // 6. Registros financeiros
+      if (attendanceData.sessionValue > 0) {
+        await supabase.from('financial_records').insert({
+          type: 'income',
+          category: 'consultation',
+          description: `${attendanceData.sessionType} - ${schedule.clients?.name}`,
+          amount: attendanceData.sessionValue,
+          date: new Date().toISOString().split('T')[0],
+          payment_method: attendanceData.paymentMethod,
+          client_id: schedule.client_id,
+          employee_id: user.id,
+          created_by: user.id,
+          notes: attendanceData.paymentNotes
+        });
+      }
+
+      if (totalMaterialsCost > 0) {
+        const materialsList = processedMaterials.map(m => `${m.name} (${m.quantity} ${m.unit})`).join(', ');
+        await supabase.from('financial_records').insert({
+          type: 'expense',
+          category: 'supplies',
+          description: `Materiais - ${schedule.clients?.name}: ${materialsList}`,
+          amount: totalMaterialsCost,
+          date: new Date().toISOString().split('T')[0],
+          payment_method: 'internal',
+          client_id: schedule.client_id,
+          employee_id: user.id,
+          created_by: user.id,
+          notes: `Custo de materiais para ${attendanceData.sessionType}`
+        });
+      }
+
+      toast({
+        title: "Atendimento Concluído!",
+        description: "Todas as informações foram registradas com sucesso.",
+      });
+
+      onComplete();
+      onClose();
+      setAttachedFiles([]);
+      
+    } catch (error) {
+      console.error('Error completing attendance:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível concluir o atendimento. Tente novamente."
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+    if (!schedule || !user) return;
+    
+    setLoading(true);
+    try {
       // 1. Upload de arquivos primeiro
       const uploadedAttachments = [];
       
@@ -185,7 +384,7 @@ export default function CompleteAttendanceDialog({
           session_duration: attendanceData.actualDuration,
           observations: attendanceData.clinicalObservations,
           session_notes: attendanceData.nextSessionPlan,
-          materials_used: attendanceData.materialsUsed,
+          materials_used: [],
           techniques_used: attendanceData.sessionObjectives,
           patient_response: attendanceData.patientResponse,
           next_session_plan: attendanceData.nextSessionPlan,
@@ -199,7 +398,49 @@ export default function CompleteAttendanceDialog({
         // Continue o processo mesmo se o relatório de atendimento falhar
       }
 
-      // 4. Criar relatório do funcionário (mais detalhado)
+      // 4. Processar materiais utilizados primeiro para calcular custo total
+      let totalMaterialsCost = 0;
+      const processedMaterials = [];
+      
+      if (attendanceData.materialsUsed.length > 0) {
+        for (const material of attendanceData.materialsUsed) {
+          // Buscar custo unitário do item
+          const { data: stockItem, error: stockItemError } = await supabase
+            .from('stock_items')
+            .select('current_quantity, unit_cost, name, unit')
+            .eq('id', material.stock_item_id)
+            .single();
+
+          if (stockItemError || !stockItem) {
+            console.error('Error fetching stock item:', stockItemError);
+            continue;
+          }
+
+          // Verificar se há quantidade suficiente
+          if (stockItem.current_quantity < material.quantity) {
+            console.warn(`Quantidade insuficiente para ${stockItem.name}. Disponível: ${stockItem.current_quantity}, Solicitado: ${material.quantity}`);
+            continue;
+          }
+
+          const unitCost = stockItem.unit_cost || 0;
+          const materialCost = unitCost * material.quantity;
+          totalMaterialsCost += materialCost;
+
+          // Preparar dados do material processado
+          const processedMaterial = {
+            stock_item_id: material.stock_item_id,
+            name: stockItem.name,
+            quantity: material.quantity,
+            unit: stockItem.unit,
+            unit_cost: unitCost,
+            total_cost: materialCost,
+            observation: material.observation || ''
+          };
+          processedMaterials.push(processedMaterial);
+        }
+      }
+
+      // 5. Criar relatório do funcionário (com dados corretos dos materiais)
       const { error: employeeReportError } = await supabase
         .from('employee_reports')
         .insert({
@@ -218,8 +459,8 @@ export default function CompleteAttendanceDialog({
           patient_response: attendanceData.patientResponse,
           professional_notes: attendanceData.clinicalObservations,
           next_session_plan: attendanceData.nextSessionPlan,
-          materials_used: attendanceData.materialsUsed,
-          materials_cost: 0, // Será calculado se necessário
+          materials_used: processedMaterials,
+          materials_cost: totalMaterialsCost,
           attachments: uploadedAttachments,
           session_location: 'Clínica',
           supervision_required: attendanceData.supervisionNeeded,
@@ -231,7 +472,7 @@ export default function CompleteAttendanceDialog({
         // Continue o processo mesmo se o relatório do funcionário falhar
       }
 
-      // 4. Criar registro financeiro se houver valor
+      // 6. Criar registro financeiro se houver valor
       if (attendanceData.sessionValue > 0) {
         const { error: financialError } = await supabase
           .from('financial_records')
@@ -307,9 +548,63 @@ export default function CompleteAttendanceDialog({
           }
         }
 
-        // 6. Criar registro financeiro para custo dos materiais utilizados
-        if (totalMaterialsCost > 0) {
-          const materialsList = attendanceData.materialsUsed.map(m => `${m.name} (${m.quantity} ${m.unit})`).join(', ');
+      // 6. Processar movimentações de estoque e atualizar quantidades
+      if (processedMaterials.length > 0) {
+        for (const material of processedMaterials) {
+          // Buscar quantidade atual do item
+          const { data: currentStock } = await supabase
+            .from('stock_items')
+            .select('current_quantity')
+            .eq('id', material.stock_item_id)
+            .single();
+
+          if (!currentStock) continue;
+
+          // Criar movimentação de estoque
+          const { error: movementError } = await supabase
+            .from('stock_movements')
+            .insert({
+              stock_item_id: material.stock_item_id,
+              type: 'saida',
+              quantity: material.quantity,
+              previous_quantity: currentStock.current_quantity,
+              new_quantity: currentStock.current_quantity - material.quantity,
+              unit_cost: material.unit_cost,
+              total_cost: material.total_cost,
+              reason: 'atendimento',
+              notes: `${attendanceData.sessionType} - ${schedule.clients?.name}${material.observation ? ` - ${material.observation}` : ''}`,
+              moved_by: user.id,
+              created_by: user.id,
+              client_id: schedule.client_id,
+              schedule_id: schedule.id,
+              date: new Date().toISOString().split('T')[0]
+            });
+
+          if (movementError) {
+            console.error('Error creating stock movement:', movementError);
+            continue;
+          }
+
+          // Atualizar quantidade no estoque
+          const newQuantity = Math.max(0, currentStock.current_quantity - material.quantity);
+          
+          const { error: updateStockError } = await supabase
+            .from('stock_items')
+            .update({ 
+              current_quantity: newQuantity,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', material.stock_item_id);
+
+          if (updateStockError) {
+            console.error('Error updating stock quantity:', updateStockError);
+          }
+        }
+      }
+
+      // 7. Criar registro financeiro para custo dos materiais utilizados
+      if (totalMaterialsCost > 0) {
+        const materialsList = processedMaterials.map(m => `${m.name} (${m.quantity} ${m.unit})`).join(', ');
           
           const { error: materialCostError } = await supabase
             .from('financial_records')
