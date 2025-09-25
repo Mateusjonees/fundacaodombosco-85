@@ -18,7 +18,8 @@ import {
   FileText,
   Calendar,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Star
 } from 'lucide-react';
 
 interface ServiceRecord {
@@ -36,7 +37,17 @@ interface ServiceRecord {
   patient_response?: string;
   next_session_plan?: string;
   created_at: string;
-  source: 'schedule' | 'medical_record' | 'session_report';
+  source: 'schedule' | 'medical_record' | 'session_report' | 'attendance_report';
+  // Campos adicionais para attendance_reports
+  quality_rating?: number;
+  cooperation_rating?: number;
+  goals_rating?: number;
+  effort_rating?: number;
+  attachments?: any[];
+  objectives_achieved?: string;
+  clinical_observations?: string;
+  amount_charged?: number;
+  payment_method?: string;
 }
 
 interface ServiceHistoryProps {
@@ -170,6 +181,59 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         });
       }
 
+      // Carregar attendance reports (relatórios de atendimento completos)
+      const { data: attendanceReports, error: attendanceError } = await supabase
+        .from('attendance_reports')
+        .select(`
+          id,
+          start_time,
+          end_time,
+          session_duration,
+          attendance_type,
+          professional_name,
+          patient_name,
+          session_notes,
+          observations,
+          techniques_used,
+          patient_response,
+          next_session_plan,
+          materials_used,
+          amount_charged,
+          attachments,
+          status,
+          employee_id,
+          created_at
+        `)
+        .eq('client_id', clientId)
+        .order('start_time', { ascending: false });
+
+      if (attendanceError) throw attendanceError;
+
+      if (attendanceReports) {
+        attendanceReports.forEach(report => {
+          records.push({
+            id: `attendance_${report.id}`,
+            date: report.start_time,
+            service_type: report.attendance_type || 'Atendimento Concluído',
+            professional_name: report.professional_name || 'Profissional',
+            professional_role: 'Staff', // Pode ser melhorado buscando da tabela profiles
+            duration: report.session_duration,
+            status: 'completed',
+            detailed_notes: report.observations || '',
+            techniques_used: report.techniques_used || '',
+            session_objectives: '', // Pode ser adicionado se necessário
+            patient_response: report.patient_response || '',
+            next_session_plan: report.next_session_plan || '',
+            materials_used: Array.isArray(report.materials_used) ? report.materials_used : [],
+            clinical_observations: report.observations || '',
+            attachments: Array.isArray(report.attachments) ? report.attachments : [],
+            amount_charged: report.amount_charged || 0,
+            created_at: report.created_at,
+            source: 'attendance_report'
+          });
+        });
+      }
+
       // Carregar employee reports (relatórios detalhados)
       const { data: reports, error: reportsError } = await supabase
         .from('employee_reports')
@@ -184,6 +248,12 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           next_session_plan,
           session_duration,
           materials_used,
+          quality_rating,
+          effort_rating,
+          patient_cooperation,
+          goal_achievement,
+          attachments,
+          materials_cost,
           employee_id,
           profiles:employee_id (name, employee_role)
         `)
@@ -208,6 +278,12 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             patient_response: report.patient_response || '',
             next_session_plan: report.next_session_plan || '',
             materials_used: Array.isArray(report.materials_used) ? report.materials_used : [],
+            quality_rating: report.quality_rating,
+            cooperation_rating: report.patient_cooperation,
+            goals_rating: report.goal_achievement,
+            effort_rating: report.effort_rating,
+            attachments: Array.isArray(report.attachments) ? report.attachments : [],
+            amount_charged: report.materials_cost || 0,
             created_at: report.session_date,
             source: 'session_report'
           });
@@ -566,14 +642,141 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                           </div>
                         )}
                         
+                        {/* Avaliações da sessão (somente para attendance_report e session_report) */}
+                        {(record.source === 'attendance_report' || record.source === 'session_report') && 
+                         (record.quality_rating || record.cooperation_rating || record.goals_rating || record.effort_rating) && (
+                          <div>
+                            <h5 className="font-medium text-sm mb-2">Avaliação da Sessão:</h5>
+                            <div className="grid grid-cols-2 gap-4 p-3 bg-muted/30 rounded">
+                              {record.quality_rating && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-muted-foreground">Qualidade Geral:</span>
+                                  <div className="flex gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`h-3 w-3 ${
+                                          star <= record.quality_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {record.cooperation_rating && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-muted-foreground">Cooperação:</span>
+                                  <div className="flex gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`h-3 w-3 ${
+                                          star <= record.cooperation_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {record.goals_rating && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-muted-foreground">Objetivos:</span>
+                                  <div className="flex gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`h-3 w-3 ${
+                                          star <= record.goals_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {record.effort_rating && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-muted-foreground">Esforço:</span>
+                                  <div className="flex gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`h-3 w-3 ${
+                                          star <= record.effort_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {record.objectives_achieved && (
+                          <div>
+                            <h5 className="font-medium text-sm mb-1">Objetivos Alcançados:</h5>
+                            <p className="text-sm text-muted-foreground">{record.objectives_achieved}</p>
+                          </div>
+                        )}
+                        
+                        {record.clinical_observations && record.clinical_observations !== record.detailed_notes && (
+                          <div>
+                            <h5 className="font-medium text-sm mb-1">Observações Clínicas:</h5>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{record.clinical_observations}</p>
+                          </div>
+                        )}
+
                         {record.materials_used && record.materials_used.length > 0 && (
                           <div>
-                            <h5 className="font-medium text-sm mb-1">Materiais Utilizados:</h5>
-                            <p className="text-sm text-muted-foreground">
-                              {Array.isArray(record.materials_used) 
-                                ? record.materials_used.join(', ') 
-                                : record.materials_used}
-                            </p>
+                            <h5 className="font-medium text-sm mb-2">Materiais Utilizados:</h5>
+                            <div className="space-y-2">
+                              {record.materials_used.map((material: any, idx: number) => (
+                                <div key={idx} className="flex justify-between items-center p-2 bg-muted/30 rounded text-sm">
+                                  <div>
+                                    <span className="font-medium">{material.name || material}</span>
+                                    {material.quantity && material.unit && (
+                                      <span className="text-muted-foreground ml-2">
+                                        {material.quantity} {material.unit}
+                                      </span>
+                                    )}
+                                    {material.observation && (
+                                      <div className="text-xs text-muted-foreground mt-1">{material.observation}</div>
+                                    )}
+                                  </div>
+                                  {material.total_cost && (
+                                    <div className="text-xs text-muted-foreground">
+                                      R$ {material.total_cost.toFixed(2)}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {record.attachments && record.attachments.length > 0 && (
+                          <div>
+                            <h5 className="font-medium text-sm mb-2">Documentos Anexos:</h5>
+                            <div className="space-y-2">
+                              {record.attachments.map((attachment: any, idx: number) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 bg-muted/30 rounded text-sm">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <span>{attachment.name}</span>
+                                  {attachment.size && (
+                                    <span className="text-xs text-muted-foreground">
+                                      ({(attachment.size / 1024).toFixed(1)}KB)
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {record.amount_charged && record.amount_charged > 0 && (
+                          <div>
+                            <h5 className="font-medium text-sm mb-1">Valor Cobrado:</h5>
+                            <p className="text-sm text-muted-foreground">R$ {record.amount_charged.toFixed(2)}</p>
                           </div>
                         )}
                       </div>
@@ -586,6 +789,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                             {record.source === 'schedule' && 'Agendamento'}
                             {record.source === 'medical_record' && 'Registro Médico'}
                             {record.source === 'session_report' && 'Relatório de Sessão'}
+                            {record.source === 'attendance_report' && 'Atendimento Concluído'}
                           </span>
                         </div>
                       </div>
