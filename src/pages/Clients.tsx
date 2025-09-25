@@ -172,6 +172,7 @@ export default function Clients() {
         .eq('is_active', true);
 
       if (error) throw error;
+      console.log('Client assignments loaded:', data);
       setClientAssignments(data || []);
     } catch (error) {
       console.error('Error loading client assignments:', error);
@@ -433,19 +434,30 @@ export default function Clients() {
 
     // Professional filter - only show if coordinator/director
     const matchesProfessional = !isCoordinatorOrDirector() || professionalFilter === 'all' || (() => {
+      console.log('Filtering client:', client.name, 'by professional:', professionalFilter);
+      
       // Find assignments for this client
       const clientAssignment = clientAssignments.find(assignment => 
         assignment.client_id === client.id && 
         assignment.is_active
       );
       
+      console.log('Client assignment found:', clientAssignment);
+      
       // If professional filter is selected, check if client is assigned to that professional
       if (professionalFilter !== 'all') {
-        // Find the employee by their profile id
+        // The professionalFilter contains the employee.id (profile id), 
+        // but we need to compare with user_id in assignments
         const selectedEmployee = employees.find(emp => emp.id === professionalFilter);
-        if (selectedEmployee) {
-          return clientAssignment?.employee_id === selectedEmployee.user_id;
+        console.log('Selected employee:', selectedEmployee);
+        
+        if (selectedEmployee && clientAssignment) {
+          const matches = clientAssignment.employee_id === selectedEmployee.user_id;
+          console.log('Assignment match:', matches, 'assignment employee_id:', clientAssignment.employee_id, 'selected user_id:', selectedEmployee.user_id);
+          return matches;
         }
+        // If no assignment found and filtering by professional, don't show this client
+        return false;
       }
       
       return true;
