@@ -51,6 +51,7 @@ export default function Clients() {
   const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [clientAssignments, setClientAssignments] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -115,6 +116,7 @@ export default function Clients() {
   useEffect(() => {
     loadUserProfile();
     loadEmployees();
+    loadClientAssignments();
   }, [user]);
 
   // Separate useEffect to load clients after userProfile is available
@@ -153,6 +155,26 @@ export default function Clients() {
       setEmployees(data || []);
     } catch (error) {
       console.error('Error loading employees:', error);
+    }
+  };
+
+  const loadClientAssignments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('client_assignments')
+        .select(`
+          client_id,
+          employee_id,
+          is_active,
+          clients (id, name),
+          profiles (id, name, user_id)
+        `)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      setClientAssignments(data || []);
+    } catch (error) {
+      console.error('Error loading client assignments:', error);
     }
   };
 
@@ -225,6 +247,7 @@ export default function Clients() {
       setIsDialogOpen(false);
       resetForm();
       loadClients();
+      loadClientAssignments(); // Reload assignments after creating client
     } catch (error) {
       console.error('Error creating client:', error);
       toast({
@@ -255,6 +278,7 @@ export default function Clients() {
       setEditingClient(null);
       resetForm();
       loadClients();
+      loadClientAssignments(); // Reload assignments after updating client
     } catch (error) {
       console.error('Error updating client:', error);
       toast({
@@ -409,7 +433,21 @@ export default function Clients() {
 
     // Professional filter - only show if coordinator/director
     const matchesProfessional = !isCoordinatorOrDirector() || professionalFilter === 'all' || (() => {
-      // This would need to be implemented based on client assignments
+      // Find assignments for this client
+      const clientAssignment = clientAssignments.find(assignment => 
+        assignment.client_id === client.id && 
+        assignment.is_active
+      );
+      
+      // If professional filter is selected, check if client is assigned to that professional
+      if (professionalFilter !== 'all') {
+        // Find the employee by their profile id
+        const selectedEmployee = employees.find(emp => emp.id === professionalFilter);
+        if (selectedEmployee) {
+          return clientAssignment?.employee_id === selectedEmployee.user_id;
+        }
+      }
+      
       return true;
     })();
 
@@ -707,11 +745,18 @@ export default function Clients() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os Profissionais</SelectItem>
-                    {employees.map(employee => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
+                    {employees.map(employee => {
+                      // Count how many clients this professional has assigned
+                      const assignedCount = clientAssignments.filter(assignment => 
+                        assignment.employee_id === employee.user_id && assignment.is_active
+                      ).length;
+                      
+                      return (
+                        <SelectItem key={employee.id} value={employee.id}>
+                          {employee.name} ({assignedCount} pacientes)
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
