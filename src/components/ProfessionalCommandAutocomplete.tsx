@@ -143,14 +143,17 @@ export function ProfessionalCommandAutocomplete({
   };
 
   const handleInputBlur = (e: React.FocusEvent) => {
-    // Delay closing to allow for click events
+    // Delay closing to allow for click events and prevent premature closing
     setTimeout(() => {
       const activeElement = document.activeElement;
       const container = inputRef.current?.closest('.relative');
-      if (!container?.contains(activeElement)) {
+      const dropdown = container?.querySelector('[data-dropdown]');
+      
+      // Don't close if focus is still within the container or dropdown
+      if (!container?.contains(activeElement) && !dropdown?.contains(activeElement)) {
         setOpen(false);
       }
-    }, 150);
+    }, 300);
   };
 
   return (
@@ -172,8 +175,10 @@ export function ProfessionalCommandAutocomplete({
 
       {open && professionals.length > 0 && (
         <div 
+          data-dropdown
           className="absolute top-full left-0 right-0 z-[999] bg-popover border rounded-md shadow-lg max-h-[300px] overflow-y-auto mt-1"
           onMouseDown={(e) => e.preventDefault()}
+          onMouseEnter={() => setOpen(true)}
         >
           {loading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
