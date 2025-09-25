@@ -135,7 +135,7 @@ export function ProfessionalCommandAutocomplete({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent className="w-[400px] p-0" align="start">
         <Command>
           <CommandInput 
             placeholder="Buscar profissional por nome, email ou telefone..." 
@@ -144,12 +144,24 @@ export function ProfessionalCommandAutocomplete({
           />
           <CommandList>
             {loading ? (
-              <div className="p-2 text-center text-sm text-muted-foreground">
-                Buscando...
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  Buscando...
+                </div>
               </div>
             ) : (
               <>
-                <CommandEmpty>Nenhum profissional encontrado.</CommandEmpty>
+                <CommandEmpty>
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Nenhum profissional encontrado.</p>
+                    {searchTerm && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tente buscar por nome, email ou telefone
+                      </p>
+                    )}
+                  </div>
+                </CommandEmpty>
                 <CommandGroup>
                   {professionals.map((professional) => (
                     <CommandItem
@@ -158,24 +170,51 @@ export function ProfessionalCommandAutocomplete({
                       onSelect={() => {
                         onValueChange(professional.user_id);
                         setOpen(false);
+                        setSearchTerm('');
                       }}
+                      className="p-3 cursor-pointer"
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === professional.user_id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{professional.name}</span>
-                        <div className="text-xs text-muted-foreground space-y-0.5">
-                          {professional.employee_role && (
-                            <div>Cargo: {getRoleLabel(professional.employee_role)}</div>
+                      <div className="flex items-start w-full gap-3">
+                        <Check
+                          className={cn(
+                            "mt-1 h-4 w-4 shrink-0",
+                            value === professional.user_id ? "opacity-100" : "opacity-0"
                           )}
-                          {professional.email && <div>Email: {professional.email}</div>}
-                          {professional.phone && <div>Tel: {professional.phone}</div>}
-                          {professional.unit && <div>Unidade: {professional.unit}</div>}
-                          {professional.department && <div>Depto: {professional.department}</div>}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{professional.name}</div>
+                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                            {professional.employee_role && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Cargo:</span>
+                                <span>{getRoleLabel(professional.employee_role)}</span>
+                              </div>
+                            )}
+                            {professional.email && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Email:</span>
+                                <span className="truncate">{professional.email}</span>
+                              </div>
+                            )}
+                            {professional.phone && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Tel:</span>
+                                <span>{professional.phone}</span>
+                              </div>
+                            )}
+                            {professional.unit && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Unidade:</span>
+                                <span className="capitalize">{professional.unit}</span>
+                              </div>
+                            )}
+                            {professional.department && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Depto:</span>
+                                <span>{professional.department}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </CommandItem>

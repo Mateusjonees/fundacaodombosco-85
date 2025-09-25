@@ -113,7 +113,7 @@ export function PatientCommandAutocomplete({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent className="w-[400px] p-0" align="start">
         <Command>
           <CommandInput 
             placeholder="Buscar paciente por nome, CPF, telefone ou email..." 
@@ -122,12 +122,24 @@ export function PatientCommandAutocomplete({
           />
           <CommandList>
             {loading ? (
-              <div className="p-2 text-center text-sm text-muted-foreground">
-                Buscando...
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  Buscando...
+                </div>
               </div>
             ) : (
               <>
-                <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                <CommandEmpty>
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Nenhum paciente encontrado.</p>
+                    {searchTerm && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tente buscar por nome, CPF, telefone ou email
+                      </p>
+                    )}
+                  </div>
+                </CommandEmpty>
                 <CommandGroup>
                   {clients.map((client) => (
                     <CommandItem
@@ -136,21 +148,45 @@ export function PatientCommandAutocomplete({
                       onSelect={() => {
                         onValueChange(client.id);
                         setOpen(false);
+                        setSearchTerm('');
                       }}
+                      className="p-3 cursor-pointer"
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === client.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{client.name}</span>
-                        <div className="text-xs text-muted-foreground space-y-0.5">
-                          {client.cpf && <div>CPF: {client.cpf}</div>}
-                          {client.phone && <div>Tel: {client.phone}</div>}
-                          {client.email && <div>Email: {client.email}</div>}
-                          {client.unit && <div>Unidade: {client.unit}</div>}
+                      <div className="flex items-start w-full gap-3">
+                        <Check
+                          className={cn(
+                            "mt-1 h-4 w-4 shrink-0",
+                            value === client.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{client.name}</div>
+                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                            {client.cpf && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">CPF:</span>
+                                <span>{client.cpf}</span>
+                              </div>
+                            )}
+                            {client.phone && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Tel:</span>
+                                <span>{client.phone}</span>
+                              </div>
+                            )}
+                            {client.email && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Email:</span>
+                                <span className="truncate">{client.email}</span>
+                              </div>
+                            )}
+                            {client.unit && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Unidade:</span>
+                                <span className="capitalize">{client.unit}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </CommandItem>
