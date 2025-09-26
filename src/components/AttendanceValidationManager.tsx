@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Eye, Clock, User, Calendar, Package, Filter } from 'lucide-react';
+import { Check, X, Eye, Clock, User, Calendar, Package, Filter, DollarSign } from 'lucide-react';
 
 interface PendingAttendance {
   id: string;
@@ -53,6 +54,8 @@ export default function AttendanceValidationManager() {
   const [processing, setProcessing] = useState(false);
   const [unitFilter, setUnitFilter] = useState<string>('all');
   const [employeeFilter, setEmployeeFilter] = useState<string>('all');
+  const [professionalAmount, setProfessionalAmount] = useState<string>('');
+  const [foundationAmount, setFoundationAmount] = useState<string>('');
 
   useEffect(() => {
     if (user) {
@@ -145,7 +148,9 @@ export default function AttendanceValidationManager() {
       const { error } = await supabase.rpc('validate_attendance_report', {
         p_attendance_report_id: selectedAttendance.id,
         p_action: validationAction,
-        p_rejection_reason: validationAction === 'reject' ? rejectionReason : null
+        p_rejection_reason: validationAction === 'reject' ? rejectionReason : null,
+        p_professional_amount: validationAction === 'validate' && professionalAmount ? parseFloat(professionalAmount) : 0,
+        p_foundation_amount: validationAction === 'validate' && foundationAmount ? parseFloat(foundationAmount) : 0
       });
 
       if (error) throw error;
@@ -160,10 +165,12 @@ export default function AttendanceValidationManager() {
       // Recarregar lista
       loadPendingAttendances();
       
-      // Fechar dialog
+      // Fechar dialog e limpar campos
       setSelectedAttendance(null);
       setValidationAction(null);
       setRejectionReason('');
+      setProfessionalAmount('');
+      setFoundationAmount('');
       
     } catch (error) {
       console.error('Error processing validation:', error);
@@ -536,8 +543,10 @@ export default function AttendanceValidationManager() {
       <Dialog open={!!validationAction} onOpenChange={() => {
         setValidationAction(null);
         setRejectionReason('');
+        setProfessionalAmount('');
+        setFoundationAmount('');
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {validationAction === 'validate' ? 'Validar Atendimento' : 'Rejeitar Atendimento'}
@@ -547,10 +556,50 @@ export default function AttendanceValidationManager() {
           <div className="space-y-4">
             <p>
               {validationAction === 'validate' 
-                ? 'Tem certeza que deseja validar este atendimento? Os dados serão processados no sistema (estoque, financeiro, histórico).'
+                ? 'Confirme os valores e valide este atendimento. Os dados serão processados no sistema (estoque, financeiro, histórico).'
                 : 'Tem certeza que deseja rejeitar este atendimento? O profissional precisará revisar e reenviar.'
               }
             </p>
+
+            {validationAction === 'validate' && (
+              <>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="professional-amount" className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Valor para o Profissional (R$)
+                    </Label>
+                    <Input
+                      id="professional-amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={professionalAmount}
+                      onChange={(e) => setProfessionalAmount(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="foundation-amount" className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Valor para a Fundação (R$)
+                    </Label>
+                    <Input
+                      id="foundation-amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={foundationAmount}
+                      onChange={(e) => setFoundationAmount(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                  <p><strong>Informação:</strong> Os valores informados serão registrados no sistema financeiro e nos relatórios profissionais. Se não informar valores, apenas os custos dos materiais e valor total da sessão serão processados.</p>
+                </div>
+              </>
+            )}
 
             {validationAction === 'reject' && (
               <div>
@@ -572,6 +621,8 @@ export default function AttendanceValidationManager() {
               onClick={() => {
                 setValidationAction(null);
                 setRejectionReason('');
+                setProfessionalAmount('');
+                setFoundationAmount('');
               }}
               disabled={processing}
             >
@@ -580,10 +631,21 @@ export default function AttendanceValidationManager() {
             <Button 
               onClick={handleValidationAction}
               disabled={processing}
-              variant={validationAction === 'reject' ? 'destructive' : 'default'}
+              variant={validationAction === 'validate' ? 'default' : 'destructive'}
             >
-              {processing ? 'Processando...' : (
-                validationAction === 'validate' ? 'Confirmar Validação' : 'Confirmar Rejeição'
+              {processing ? (
+                <>
+                  <Clock className="h-4 w-4 mr-1 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  {validationAction === 'validate' ? (
+                    <><Check className="h-4 w-4 mr-1" />Validar</>
+                  ) : (
+                    <><X className="h-4 w-4 mr-1" />Rejeitar</>
+                  )}
+                </>
               )}
             </Button>
           </DialogFooter>

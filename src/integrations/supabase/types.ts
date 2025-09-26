@@ -2471,11 +2471,19 @@ export type Database = {
         Returns: boolean
       }
       validate_attendance_report: {
-        Args: {
-          p_action: string
-          p_attendance_report_id: string
-          p_rejection_reason?: string
-        }
+        Args:
+          | {
+              p_action: string
+              p_attendance_report_id: string
+              p_foundation_amount?: number
+              p_professional_amount?: number
+              p_rejection_reason?: string
+            }
+          | {
+              p_action: string
+              p_attendance_report_id: string
+              p_rejection_reason?: string
+            }
         Returns: boolean
       }
     }
