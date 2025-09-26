@@ -274,8 +274,15 @@ Contratante
     return contractContent;
   };
 
+  const parseContractValue = (value: string): number => {
+    // Converte valores como "1.600,00" para 1600.00
+    return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 1600.00;
+  };
+
   const createFinancialRecord = async () => {
     try {
+      const contractValueNumber = parseContractValue(contractData.value);
+      
       // Criar registro financeiro de avaliação neuropsicológica
       const { error } = await supabase
         .from('financial_records')
@@ -283,7 +290,7 @@ Contratante
           type: 'income',
           category: 'evaluation',
           description: `Avaliação Neuropsicológica - ${contractData.clientName}`,
-          amount: 1600.00, // R$ 1.600,00 fixo para avaliação
+          amount: contractValueNumber,
           date: contractData.contractDate,
           payment_method: 'contract',
           client_id: contractData.clientId,
@@ -315,6 +322,7 @@ Contratante
       }
 
       const userName = currentUser?.name || 'Usuário não identificado';
+      const contractValueNumber = parseContractValue(contractData.value);
       
       // Criar registro no attendance_reports
       const { data: attendanceReport, error: attendanceError } = await supabase
@@ -328,9 +336,9 @@ Contratante
           start_time: new Date().toISOString(),
           end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hora depois
           session_duration: 60,
-          amount_charged: 1600.00,
+          amount_charged: contractValueNumber,
           professional_amount: 0, // Pode ser definido depois
-          institution_amount: 1600.00,
+          institution_amount: contractValueNumber,
           status: 'completed',
           validation_status: 'validated',
           session_notes: `Contrato de Avaliação Neuropsicológica gerado e impresso por ${userName}`,
@@ -354,8 +362,8 @@ Contratante
         .insert([{
           client_id: contractData.clientId,
           payment_type: 'Avaliação Neuropsicológica',
-          total_amount: 1600.00,
-          amount_paid: 1600.00,
+          total_amount: contractValueNumber,
+          amount_paid: contractValueNumber,
           amount_remaining: 0,
           status: 'completed',
           payment_method: 'Contrato',
@@ -378,7 +386,7 @@ Contratante
           patient_name: contractData.clientName,
           professional_id: user?.id,
           professional_name: userName,
-          amount: 1600.00,
+          amount: contractValueNumber,
           transaction_type: 'income',
           payment_method: 'Contrato',
           description: `Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
@@ -693,7 +701,7 @@ Contratante
                     disabled={!contractData.clientId || isGenerating}
                   >
                     <Printer className="h-4 w-4" />
-                    {isGenerating ? 'Processando...' : 'Imprimir + Registrar R$ 1.600,00'}
+                    {isGenerating ? 'Processando...' : `Imprimir + Registrar R$ ${contractData.value}`}
                   </Button>
               </div>
             </div>

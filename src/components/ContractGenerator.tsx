@@ -78,8 +78,15 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     }));
   };
 
+  const parseContractValue = (value: string): number => {
+    // Converte valores como "1.600,00" para 1600.00
+    return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 1600.00;
+  };
+
   const createFinancialRecord = async () => {
     try {
+      const contractValueNumber = parseContractValue(contractData.valorTotal);
+      
       // Criar registro financeiro de avaliação neuropsicológica
       const { error } = await supabase
         .from('financial_records')
@@ -87,7 +94,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           type: 'income',
           category: 'evaluation',
           description: `Avaliação Neuropsicológica - ${contractData.beneficiario}`,
-          amount: 1600.00, // R$ 1.600,00 fixo para avaliação
+          amount: contractValueNumber,
           date: new Date().toISOString().split('T')[0],
           payment_method: 'contract',
           client_id: client.id,
@@ -141,7 +148,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
       
       toast({
         title: "Contrato gerado!",
-        description: "PDF baixado e registro financeiro de R$ 1.600,00 criado automaticamente.",
+        description: `PDF baixado e registro financeiro de R$ ${contractData.valorTotal} criado automaticamente.`,
       });
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
@@ -169,6 +176,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
       }
 
       const userName = currentUser?.name || 'Usuário não identificado';
+      const contractValueNumber = parseContractValue(contractData.valorTotal);
       
       // Criar registro no attendance_reports
       const { data: attendanceReport, error: attendanceError } = await supabase
@@ -182,9 +190,9 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           start_time: new Date().toISOString(),
           end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hora depois
           session_duration: 60,
-          amount_charged: 1600.00,
+          amount_charged: contractValueNumber,
           professional_amount: 0, // Pode ser definido depois
-          institution_amount: 1600.00,
+          institution_amount: contractValueNumber,
           status: 'completed',
           validation_status: 'validated',
           session_notes: `Contrato de Avaliação Neuropsicológica gerado e impresso por ${userName}`,
@@ -208,8 +216,8 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
         .insert([{
           client_id: client.id,
           payment_type: 'Avaliação Neuropsicológica',
-          total_amount: 1600.00,
-          amount_paid: 1600.00,
+          total_amount: contractValueNumber,
+          amount_paid: contractValueNumber,
           amount_remaining: 0,
           status: 'completed',
           payment_method: 'Contrato',
@@ -232,7 +240,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           patient_name: contractData.beneficiario || client.name,
           professional_id: user?.id,
           professional_name: userName,
-          amount: 1600.00,
+          amount: contractValueNumber,
           transaction_type: 'income',
           payment_method: 'Contrato',
           description: `Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
@@ -370,7 +378,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Gerar Contrato - Floresta (R$ 1.600,00)
+          Gerar Contrato - Floresta (R$ {contractData.valorTotal})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -474,7 +482,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
                 </Button>
                 <Button onClick={printContract} className="gap-2">
                   <Printer className="h-4 w-4" />
-                  Imprimir + Registrar R$ 1.600,00
+                  Imprimir + Registrar R$ {contractData.valorTotal}
                 </Button>
               </div>
 
