@@ -2569,6 +2569,14 @@ export type Database = {
           | {
               p_action: string
               p_attendance_report_id: string
+              p_foundation_amount?: number
+              p_professional_amount?: number
+              p_rejection_reason?: string
+              p_total_amount?: number
+            }
+          | {
+              p_action: string
+              p_attendance_report_id: string
               p_rejection_reason?: string
             }
         Returns: boolean
