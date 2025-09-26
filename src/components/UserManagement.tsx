@@ -116,52 +116,66 @@ export default function UserManagement() {
   };
 
   const handleCreateEmployee = async () => {
+    if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Campos obrigatórios",
+        description: "Nome, email e senha são obrigatórios.",
+      });
+      return;
+    }
+
+    if (newEmployee.password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Senha inválida",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+      });
+      return;
+    }
+
     try {
-      // Create user in auth.users
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Usar supabase.auth.signUp para criação segura
+      const { data, error } = await supabase.auth.signUp({
         email: newEmployee.email,
         password: newEmployee.password,
-        user_metadata: {
-          name: newEmployee.name,
-          employee_role: newEmployee.employee_role
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: newEmployee.name,
+            employee_role: newEmployee.employee_role,
+            department: newEmployee.department || null
+          }
         }
       });
 
-      if (authError) throw authError;
-
-      // The profile will be created automatically by the trigger
-      // We just need to update it with additional info
-      if (authData.user) {
-        setTimeout(async () => {
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              name: newEmployee.name,
-              employee_role: newEmployee.employee_role,
-              department: newEmployee.department
-            })
-            .eq('user_id', authData.user.id);
-
-          if (updateError) {
-            console.error('Error updating profile:', updateError);
-          }
-        }, 1000);
+      if (error) {
+        console.error('Signup error:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar funcionário",
+          description: error.message || "Erro ao criar funcionário.",
+        });
+        return;
       }
 
-      toast({
-        title: "Sucesso",
-        description: "Funcionário criado com sucesso!",
-      });
+      // Verificar se o usuário foi criado
+      if (data?.user) {
+        toast({
+          title: "Funcionário criado com sucesso",
+          description: `Login criado para ${newEmployee.name}. O funcionário já pode fazer login no sistema.`,
+        });
 
-      setIsDialogOpen(false);
-      resetForm();
-      loadEmployees();
-    } catch (error) {
+        setIsDialogOpen(false);
+        resetForm();
+        loadEmployees();
+      }
+    } catch (error: any) {
       console.error('Error creating employee:', error);
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível criar o funcionário.",
+        title: "Erro ao criar funcionário",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
       });
     }
   };
