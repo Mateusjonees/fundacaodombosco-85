@@ -280,18 +280,19 @@ export default function UserManagement() {
                 <Select value={newEmployee.employee_role} onValueChange={(value) => setNewEmployee({ ...newEmployee, employee_role: value })}>
                   <SelectTrigger>
                     <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="director">Diretor</SelectItem>
-                    <SelectItem value="coordinator_madre">Coordenador Madre</SelectItem>
-                    <SelectItem value="coordinator_floresta">Coordenador Floresta</SelectItem>
-                    <SelectItem value="administrative">Administrativo</SelectItem>
-                    <SelectItem value="health_professional">Profissional de Saúde</SelectItem>
-                    <SelectItem value="finance">Financeiro</SelectItem>
-                    <SelectItem value="receptionist">Recepcionista</SelectItem>
-                    <SelectItem value="intern">Estagiário</SelectItem>
-                    <SelectItem value="staff">Funcionário</SelectItem>
-                  </SelectContent>
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="director">Diretor</SelectItem>
+                     <SelectItem value="coordinator_madre">Coordenador Madre</SelectItem>
+                     <SelectItem value="coordinator_floresta">Coordenador Floresta</SelectItem>
+                     <SelectItem value="administrative">Administrativo</SelectItem>
+                     <SelectItem value="health_professional">Profissional de Saúde</SelectItem>
+                     <SelectItem value="finance">Financeiro</SelectItem>
+                     <SelectItem value="receptionist">Recepcionista</SelectItem>
+                     <SelectItem value="intern">Estagiário</SelectItem>
+                     <SelectItem value="terapeuta_ocupacional">Terapeuta Ocupacional</SelectItem>
+                     <SelectItem value="staff">Funcionário</SelectItem>
+                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">

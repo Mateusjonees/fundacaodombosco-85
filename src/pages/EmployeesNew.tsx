@@ -355,19 +355,20 @@ export default function EmployeesNew() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="staff">Funcionário(a) Geral</SelectItem>
-                    <SelectItem value="receptionist">Recepcionista</SelectItem>
-                    <SelectItem value="psychologist">Psicólogo(a)</SelectItem>
-                    <SelectItem value="psychopedagogue">Psicopedagogo(a)</SelectItem>
-                    <SelectItem value="musictherapist">Musicoterapeuta</SelectItem>
-                    <SelectItem value="speech_therapist">Fonoaudiólogo(a)</SelectItem>
-                    <SelectItem value="nutritionist">Nutricionista</SelectItem>
-                    <SelectItem value="physiotherapist">Fisioterapeuta</SelectItem>
-                    <SelectItem value="financeiro">Financeiro</SelectItem>
-                    <SelectItem value="intern">Estagiário(a)</SelectItem>
-                    <SelectItem value="coordinator_madre">Coordenador(a) Madre</SelectItem>
-                    <SelectItem value="coordinator_floresta">Coordenador(a) Floresta</SelectItem>
-                    <SelectItem value="director">Diretoria</SelectItem>
+                     <SelectItem value="staff">Funcionário(a) Geral</SelectItem>
+                     <SelectItem value="receptionist">Recepcionista</SelectItem>
+                     <SelectItem value="psychologist">Psicólogo(a)</SelectItem>
+                     <SelectItem value="psychopedagogue">Psicopedagogo(a)</SelectItem>
+                     <SelectItem value="musictherapist">Musicoterapeuta</SelectItem>
+                     <SelectItem value="speech_therapist">Fonoaudiólogo(a)</SelectItem>
+                     <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                     <SelectItem value="physiotherapist">Fisioterapeuta</SelectItem>
+                     <SelectItem value="financeiro">Financeiro</SelectItem>
+                     <SelectItem value="intern">Estagiário(a)</SelectItem>
+                     <SelectItem value="terapeuta_ocupacional">Terapeuta Ocupacional</SelectItem>
+                     <SelectItem value="coordinator_madre">Coordenador(a) Madre</SelectItem>
+                     <SelectItem value="coordinator_floresta">Coordenador(a) Floresta</SelectItem>
+                     <SelectItem value="director">Diretoria</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -456,19 +457,20 @@ export default function EmployeesNew() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="staff">Funcionário(a) Geral</SelectItem>
-                      <SelectItem value="receptionist">Recepcionista</SelectItem>
-                      <SelectItem value="psychologist">Psicólogo(a)</SelectItem>
-                      <SelectItem value="psychopedagogue">Psicopedagogo(a)</SelectItem>
-                      <SelectItem value="musictherapist">Musicoterapeuta</SelectItem>
-                      <SelectItem value="speech_therapist">Fonoaudiólogo(a)</SelectItem>
-                      <SelectItem value="nutritionist">Nutricionista</SelectItem>
-                      <SelectItem value="physiotherapist">Fisioterapeuta</SelectItem>
-                      <SelectItem value="financeiro">Financeiro</SelectItem>
-                      <SelectItem value="intern">Estagiário(a)</SelectItem>
-                      <SelectItem value="coordinator_madre">Coordenador(a) Madre</SelectItem>
-                      <SelectItem value="coordinator_floresta">Coordenador(a) Floresta</SelectItem>
-                      <SelectItem value="director">Diretoria</SelectItem>
+                       <SelectItem value="staff">Funcionário(a) Geral</SelectItem>
+                       <SelectItem value="receptionist">Recepcionista</SelectItem>
+                       <SelectItem value="psychologist">Psicólogo(a)</SelectItem>
+                       <SelectItem value="psychopedagogue">Psicopedagogo(a)</SelectItem>
+                       <SelectItem value="musictherapist">Musicoterapeuta</SelectItem>
+                       <SelectItem value="speech_therapist">Fonoaudiólogo(a)</SelectItem>
+                       <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                       <SelectItem value="physiotherapist">Fisioterapeuta</SelectItem>
+                       <SelectItem value="financeiro">Financeiro</SelectItem>
+                       <SelectItem value="intern">Estagiário(a)</SelectItem>
+                       <SelectItem value="terapeuta_ocupacional">Terapeuta Ocupacional</SelectItem>
+                       <SelectItem value="coordinator_madre">Coordenador(a) Madre</SelectItem>
+                       <SelectItem value="coordinator_floresta">Coordenador(a) Floresta</SelectItem>
+                       <SelectItem value="director">Diretoria</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

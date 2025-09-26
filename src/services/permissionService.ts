@@ -7,6 +7,7 @@ type EmployeeRole =
   | 'coordinator_floresta' 
   | 'staff' 
   | 'intern' 
+  | 'terapeuta_ocupacional'
   | 'musictherapist' 
   | 'financeiro' 
   | 'receptionist' 
@@ -129,6 +130,7 @@ export class PermissionService {
       { value: 'coordinator_floresta', label: 'Coordenador(a) Floresta' },
       { value: 'staff', label: 'Funcionário(a) Geral' },
       { value: 'intern', label: 'Estagiário(a)' },
+      { value: 'terapeuta_ocupacional', label: 'Terapeuta Ocupacional' },
       { value: 'musictherapist', label: 'Musicoterapeuta' },
       { value: 'financeiro', label: 'Financeiro' },
       { value: 'receptionist', label: 'Recepcionista' },

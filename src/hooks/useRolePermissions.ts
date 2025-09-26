@@ -15,7 +15,8 @@ export type EmployeeRole =
   | 'nutritionist'
   | 'physiotherapist'
   | 'financeiro'
-  | 'intern';
+  | 'intern'
+  | 'terapeuta_ocupacional';
 
 // Grupos de permissões definidos
 export const ROLE_GROUPS = {
@@ -24,8 +25,8 @@ export const ROLE_GROUPS = {
   DIRECTOR_OR_FINANCE: ['director', 'financeiro'] as EmployeeRole[],
   STOCK_MANAGERS: ['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta'] as EmployeeRole[],
   COORDINATOR_AND_HIGHER: ['director', 'coordinator_madre', 'coordinator_floresta'] as EmployeeRole[],
-  NON_FINANCE_ACCESS: ['director', 'coordinator_madre', 'coordinator_floresta', 'staff', 'intern', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
-  PROFESSIONAL_ROLES: ['staff', 'intern', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
+  NON_FINANCE_ACCESS: ['director', 'coordinator_madre', 'coordinator_floresta', 'staff', 'intern', 'terapeuta_ocupacional', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
+  PROFESSIONAL_ROLES: ['staff', 'intern', 'terapeuta_ocupacional', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
   ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES: ['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'] as EmployeeRole[]
 };
 
@@ -43,7 +44,8 @@ export const ROLE_LABELS: Record<EmployeeRole, string> = {
   nutritionist: 'Nutricionista',
   physiotherapist: 'Fisioterapeuta',
   financeiro: 'Financeiro',
-  intern: 'Estagiário(a)'
+  intern: 'Estagiário(a)',
+  terapeuta_ocupacional: 'Terapeuta Ocupacional'
 };
 
 export const useRolePermissions = () => {

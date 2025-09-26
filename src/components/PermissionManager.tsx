@@ -19,6 +19,7 @@ type EmployeeRole =
   | 'coordinator_floresta' 
   | 'staff' 
   | 'intern' 
+  | 'terapeuta_ocupacional'
   | 'musictherapist' 
   | 'financeiro' 
   | 'receptionist' 
