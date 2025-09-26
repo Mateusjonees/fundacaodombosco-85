@@ -2522,6 +2522,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_receptionist: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       log_sensitive_access: {
         Args: {
           p_action: string

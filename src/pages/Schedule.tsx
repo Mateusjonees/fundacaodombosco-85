@@ -685,9 +685,9 @@ export default function Schedule() {
                             <div className="flex items-center gap-2 text-foreground">
                               <Stethoscope className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
-                              <span className="font-semibold">
-                                {schedule.profiles?.name || employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
-                              </span>
+                               <span className="font-semibold">
+                                 {schedule.profiles?.name || employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
+                               </span>
                             </div>
                           </div>
                         </div>
