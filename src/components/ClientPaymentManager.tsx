@@ -145,11 +145,12 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
   };
 
   const handleCreatePayment = async () => {
+    // Validação básica de campos obrigatórios
     if (!newPayment.total_amount || !newPayment.payment_method) {
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
+        title: "Validação de Pagamento",
+        description: "Preencha todos os campos obrigatórios: Valor Total e Forma de Pagamento.",
       });
       return;
     }
@@ -158,19 +159,53 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
     if (isNaN(totalAmount) || totalAmount <= 0) {
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Valor inválido.",
+        title: "Valor Inválido",
+        description: "O valor total deve ser maior que zero. Exemplo: 150.50",
       });
       return;
     }
 
-    if (newPayment.payment_type === 'aprazo' && newPayment.installments_total < 2) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Pagamento a prazo deve ter pelo menos 2 parcelas.",
-      });
-      return;
+    // Validação específica para pagamento À Vista
+    if (newPayment.payment_type === 'avista') {
+      if (totalAmount < 10) {
+        toast({
+          variant: "destructive",
+          title: "Valor Mínimo",
+          description: "Pagamento à vista deve ser de pelo menos R$ 10,00.",
+        });
+        return;
+      }
+    }
+
+    // Validação específica para pagamento A Prazo
+    if (newPayment.payment_type === 'aprazo') {
+      if (newPayment.installments_total < 2 || newPayment.installments_total > 60) {
+        toast({
+          variant: "destructive",
+          title: "Número de Parcelas Inválido",
+          description: "Pagamento a prazo deve ter entre 2 e 60 parcelas.",
+        });
+        return;
+      }
+
+      const minParcelValue = totalAmount / newPayment.installments_total;
+      if (minParcelValue < 5) {
+        toast({
+          variant: "destructive",
+          title: "Valor da Parcela Muito Baixo",
+          description: `Cada parcela ficaria com R$ ${minParcelValue.toFixed(2)}. Valor mínimo por parcela é R$ 5,00.`,
+        });
+        return;
+      }
+
+      if (totalAmount < 20) {
+        toast({
+          variant: "destructive",
+          title: "Valor Mínimo A Prazo",
+          description: "Pagamento a prazo deve ser de pelo menos R$ 20,00.",
+        });
+        return;
+      }
     }
 
     setLoading(true);
@@ -220,9 +255,12 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
         if (installmentError) throw installmentError;
       }
 
+      const paymentTypeText = newPayment.payment_type === 'avista' ? 'à vista' : 'a prazo';
+      const installmentText = newPayment.payment_type === 'aprazo' ? ` em ${newPayment.installments_total} parcelas` : '';
+      
       toast({
-        title: "Sucesso",
-        description: `Pagamento ${newPayment.payment_type === 'avista' ? 'à vista' : 'a prazo'} criado com sucesso!`,
+        title: "Pagamento Criado",
+        description: `Pagamento ${paymentTypeText} de ${formatCurrency(totalAmount)}${installmentText} registrado com sucesso!`,
       });
 
       setAddPaymentDialogOpen(false);
@@ -248,11 +286,11 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
   };
 
   const handlePayInstallment = async () => {
-    if (!selectedInstallment || !paymentData.paid_amount) {
+    if (!selectedInstallment || !paymentData.paid_amount || !paymentData.payment_method) {
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Preencha o valor pago.",
+        title: "Validação de Pagamento",
+        description: "Preencha o valor pago e a forma de pagamento da parcela.",
       });
       return;
     }
@@ -261,18 +299,40 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
     if (isNaN(paidAmount) || paidAmount <= 0) {
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Valor inválido.",
+        title: "Valor Inválido",
+        description: "O valor pago deve ser maior que zero. Exemplo: 25.50",
       });
       return;
     }
 
-    const maxAmount = selectedInstallment.amount - selectedInstallment.paid_amount;
-    if (paidAmount > maxAmount) {
+    const remainingAmount = selectedInstallment.amount - selectedInstallment.paid_amount;
+    
+    // Verificar se já está paga
+    if (selectedInstallment.status === 'paid') {
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: `Valor pago não pode ser maior que o valor restante da parcela (R$ ${maxAmount.toFixed(2)}).`,
+        title: "Parcela Já Paga",
+        description: "Esta parcela já foi quitada completamente.",
+      });
+      return;
+    }
+
+    // Validar valor máximo
+    if (paidAmount > remainingAmount) {
+      toast({
+        variant: "destructive",
+        title: "Valor Excedente",
+        description: `Valor pago (R$ ${paidAmount.toFixed(2)}) não pode ser maior que o saldo da parcela (R$ ${remainingAmount.toFixed(2)}).`,
+      });
+      return;
+    }
+
+    // Validar valor mínimo
+    if (paidAmount < 1) {
+      toast({
+        variant: "destructive",
+        title: "Valor Mínimo",
+        description: "O valor mínimo para pagamento de parcela é R$ 1,00.",
       });
       return;
     }
@@ -296,9 +356,11 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
 
       if (error) throw error;
 
+      const statusMessage = newStatus === 'paid' ? ' - Parcela quitada!' : ' - Pagamento parcial registrado';
+      
       toast({
-        title: "Sucesso",
-        description: `Pagamento de R$ ${paidAmount.toFixed(2)} registrado com sucesso!`,
+        title: "Pagamento Registrado",
+        description: `${formatCurrency(paidAmount)} recebido na parcela ${selectedInstallment.installment_number}${statusMessage}`,
       });
 
       setPayInstallmentDialogOpen(false);
@@ -485,19 +547,19 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
                 </div>
               )}
 
-              <div>
-                <Label>Forma de Pagamento *</Label>
-                <Select 
-                  value={newPayment.payment_method} 
-                  onValueChange={(value) => setNewPayment({ ...newPayment, payment_method: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                    <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                    <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                <div>
+                  <Label>Forma de Pagamento *</Label>
+                  <Select 
+                    value={newPayment.payment_method} 
+                    onValueChange={(value) => setNewPayment({ ...newPayment, payment_method: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione forma de pagamento..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
+                      <SelectItem value="cartao_credito">💳 Cartão de Crédito</SelectItem>
+                      <SelectItem value="cartao_debito">💳 Cartão de Débito</SelectItem>
                     <SelectItem value="pix">PIX</SelectItem>
                     <SelectItem value="transferencia">Transferência</SelectItem>
                     <SelectItem value="boleto">Boleto</SelectItem>
