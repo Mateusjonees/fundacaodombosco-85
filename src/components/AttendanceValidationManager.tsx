@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Eye, Clock, User, Calendar, Package } from 'lucide-react';
+import { Check, X, Eye, Clock, User, Calendar, Package, Filter } from 'lucide-react';
 
 interface PendingAttendance {
   id: string;
@@ -31,35 +32,60 @@ interface PendingAttendance {
   techniques_used: string;
   patient_response: string;
   next_session_plan: string;
+  unit?: string;
+}
+
+interface Employee {
+  user_id: string;
+  name: string;
 }
 
 export default function AttendanceValidationManager() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [pendingAttendances, setPendingAttendances] = useState<PendingAttendance[]>([]);
+  const [allAttendances, setAllAttendances] = useState<PendingAttendance[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAttendance, setSelectedAttendance] = useState<PendingAttendance | null>(null);
   const [validationAction, setValidationAction] = useState<'validate' | 'reject' | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [unitFilter, setUnitFilter] = useState<string>('all');
+  const [employeeFilter, setEmployeeFilter] = useState<string>('all');
 
   useEffect(() => {
     if (user) {
       loadPendingAttendances();
+      loadEmployees();
     }
   }, [user]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [unitFilter, employeeFilter, allAttendances]);
 
   const loadPendingAttendances = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('attendance_reports')
-        .select('*')
+        .select(`
+          *,
+          clients!inner(unit)
+        `)
         .eq('validation_status', 'pending_validation')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPendingAttendances(data || []);
+      
+      const attendancesWithUnit = data?.map(attendance => ({
+        ...attendance,
+        unit: attendance.clients?.unit || 'madre'
+      })) || [];
+      
+      setAllAttendances(attendancesWithUnit);
+      setPendingAttendances(attendancesWithUnit);
     } catch (error) {
       console.error('Error loading pending attendances:', error);
       toast({
@@ -70,6 +96,36 @@ export default function AttendanceValidationManager() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .not('employee_role', 'is', null)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...allAttendances];
+
+    if (unitFilter !== 'all') {
+      filtered = filtered.filter(attendance => attendance.unit === unitFilter);
+    }
+
+    if (employeeFilter !== 'all') {
+      filtered = filtered.filter(attendance => attendance.employee_id === employeeFilter);
+    }
+
+    setPendingAttendances(filtered);
   };
 
   const handleValidationAction = async () => {
@@ -170,6 +226,49 @@ export default function AttendanceValidationManager() {
         </Badge>
       </div>
 
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="unit-filter">Unidade</Label>
+              <Select value={unitFilter} onValueChange={setUnitFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma unidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as unidades</SelectItem>
+                  <SelectItem value="madre">Unidade Madre</SelectItem>
+                  <SelectItem value="floresta">Unidade Floresta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="employee-filter">Funcionário</Label>
+              <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um funcionário" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os funcionários</SelectItem>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.user_id} value={employee.user_id}>
+                      {employee.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {pendingAttendances.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
@@ -197,10 +296,16 @@ export default function AttendanceValidationManager() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                   <div>
                     <Label className="font-medium">Profissional</Label>
                     <p className="text-muted-foreground">{attendance.professional_name}</p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Unidade</Label>
+                    <p className="text-muted-foreground">
+                      {attendance.unit === 'madre' ? 'Madre' : 'Floresta'}
+                    </p>
                   </div>
                   <div>
                     <Label className="font-medium">Tipo</Label>
