@@ -37,6 +37,7 @@ interface Schedule {
   arrived_at?: string;
   arrived_confirmed_by?: string;
   clients?: { name: string };
+  profiles?: { name: string };
 }
 
 export default function Schedule() {
@@ -649,47 +650,78 @@ export default function Schedule() {
                      {todaySchedules.map((schedule) => (
                        <div 
                          key={schedule.id} 
-                         className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg gap-4 transition-all duration-300 ${
+                         className={`p-6 border rounded-xl gap-6 transition-all duration-300 hover:shadow-lg ${
                            schedule.patient_arrived 
-                             ? 'border-green-200 bg-green-50/50 shadow-md' 
-                             : 'border-gray-200 hover:border-gray-300'
+                             ? 'border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-green-50/60 shadow-md border-2' 
+                             : 'border-border hover:border-primary/30 bg-card'
                          }`}
                        >
-                        <div className="flex-1 w-full md:w-auto">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-sm md:text-base">
+                        {/* Header com horário e tipo */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                              <Clock className="h-5 w-5 text-primary" />
                               {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
-                            </span>
-                            <Badge variant="outline" className="text-xs">{schedule.title}</Badge>
+                            </div>
+                            <Badge variant="secondary" className="text-sm font-medium">
+                              {schedule.title}
+                            </Badge>
                           </div>
-                           <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2 flex-wrap">
-                             <User className="h-3 w-3" />
-                             <span>Paciente: {schedule.clients?.name || 'N/A'}</span>
-                             <span className="hidden md:inline">•</span>
-                             <span>Profissional: {employees.find(emp => emp.id === schedule.employee_id)?.name || 'N/A'}</span>
-                             <span className="hidden md:inline">•</span>
-                              <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-xs">
-                                {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
-                              </Badge>
-                           </div>
+                          <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-sm font-medium">
+                            {schedule.unit === 'madre' ? 'MADRE' : 'FLORESTA'}
+                          </Badge>
+                        </div>
+
+                        {/* Informações principais */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-foreground">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-muted-foreground">Paciente:</span>
+                              <span className="font-semibold">{schedule.clients?.name || 'N/A'}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-foreground">
+                              <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
+                              <span className="font-semibold">
+                                {schedule.profiles?.name || employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status e observações */}
+                        <div className="flex flex-col gap-3">
                           {schedule.notes && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Obs: {schedule.notes}
-                            </p>
+                            <div className="p-3 bg-muted/50 rounded-lg border border-muted">
+                              <p className="text-sm text-muted-foreground">
+                                <span className="font-medium">Observações:</span> {schedule.notes}
+                              </p>
+                            </div>
                           )}
                         </div>
 
-                        <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
-                          <div className="flex items-center gap-2 mb-2 md:mb-0">
-                            <Badge {...getStatusBadge(schedule.status)} className={schedule.patient_arrived ? 'border-green-500 bg-green-100 text-green-800' : ''}>
+                        {/* Actions footer */}
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-4 border-t border-muted">
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              {...getStatusBadge(schedule.status)} 
+                              className={`${schedule.patient_arrived ? 'border-emerald-500 bg-emerald-100 text-emerald-800 font-semibold' : ''} text-sm`}
+                            >
                               {schedule.patient_arrived ? '✓ Paciente Presente' : getStatusBadge(schedule.status).text}
                             </Badge>
+                            {schedule.patient_arrived && schedule.arrived_at && (
+                              <span className="text-xs text-muted-foreground">
+                                Chegou às {format(new Date(schedule.arrived_at), 'HH:mm', { locale: ptBR })}
+                              </span>
+                            )}
                           </div>
 
-          {/* Botão de presença do paciente para recepcionistas */}
-          {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
-            <div className="mb-2 md:mb-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+            {/* Botão de presença do paciente para recepcionistas */}
+            {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
               <PatientPresenceButton
                 scheduleId={schedule.id}
                 clientName={schedule.clients?.name || 'Cliente'}
@@ -698,26 +730,21 @@ export default function Schedule() {
                 arrivedAt={schedule.arrived_at}
                 onPresenceUpdate={loadSchedules}
               />
-            </div>
-          )}
-          
-          {/* Debug: Mostrar sempre o botão para teste */}
-          {!['scheduled', 'confirmed'].includes(schedule.status) && userProfile?.employee_role === 'receptionist' && (
-            <div className="mb-2 md:mb-0">
+            )}
+            
+            {/* Debug: Mostrar sempre o botão para teste */}
+            {!['scheduled', 'confirmed'].includes(schedule.status) && userProfile?.employee_role === 'receptionist' && (
               <Button variant="outline" size="sm" disabled className="text-gray-400">
                 Presença (Status: {schedule.status})
               </Button>
-            </div>
-          )}
-
-                          <div className="flex gap-1 flex-wrap justify-center md:justify-end">
+            )}
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleEditSchedule(schedule)}
-                              className="text-xs"
+                              className="h-9 gap-2 font-medium"
                             >
-                              <Edit className="h-3 w-3 mr-1" />
+                              <Edit className="h-4 w-4" />
                               Editar
                             </Button>
 
@@ -725,27 +752,27 @@ export default function Schedule() {
                               <>
                                 <Button
                                   size="sm"
-                                  variant="outline"
+                                  variant="default"
                                   onClick={() => {
                                     setSelectedScheduleForAction(schedule);
                                     setCompleteDialogOpen(true);
                                   }}
-                                  className="text-xs"
+                                  className="h-9 gap-2 font-medium"
                                 >
-                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  <CheckCircle className="h-4 w-4" />
                                   Concluir
                                 </Button>
 
                                 <Button
                                   size="sm"
-                                  variant="outline"
+                                  variant="destructive"
                                   onClick={() => {
                                     setSelectedScheduleForAction(schedule);
                                     setCancelDialogOpen(true);
                                   }}
-                                  className="text-xs"
+                                  className="h-9 gap-2 font-medium"
                                 >
-                                  <XCircle className="h-3 w-3 mr-1" />
+                                  <XCircle className="h-4 w-4" />
                                   Cancelar
                                 </Button>
                               </>
@@ -754,8 +781,8 @@ export default function Schedule() {
                             {isAdmin && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button size="sm" variant="outline" className="text-xs">
-                                    <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                  <Button size="sm" variant="secondary" className="h-9 gap-2 font-medium">
+                                    <ArrowRightLeft className="h-4 w-4" />
                                     Redirecionar
                                   </Button>
                                 </AlertDialogTrigger>
@@ -781,16 +808,16 @@ export default function Schedule() {
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                   </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                             )}
+                           </div>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </CardContent>
             </Card>
           </div>
         </div>
