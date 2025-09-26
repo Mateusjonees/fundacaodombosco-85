@@ -156,47 +156,159 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
   const printContract = async () => {
     if (!contractRef.current) return;
     
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Contrato de Avaliação Neuropsicológica</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 14px; line-height: 1.6; }
-            .contract { max-width: 800px; margin: 0 auto; }
-            h1 { text-align: center; margin-bottom: 30px; }
-            h2 { margin-top: 25px; margin-bottom: 10px; }
-            h3 { margin-top: 20px; margin-bottom: 8px; }
-            p { margin-bottom: 12px; text-align: justify; }
-            .underline { border-bottom: 1px solid black; display: inline-block; min-width: 200px; }
-            .signatures { margin-top: 50px; display: flex; justify-content: space-between; }
-            .signature { text-align: center; }
-            .signature-line { border-bottom: 1px solid black; width: 300px; padding-top: 50px; margin-bottom: 5px; }
-            @media print { 
-              body { margin: 0; padding: 15px; font-size: 12px; }
-            }
-          </style>
-        </head>
-        <body>
-          ${contractRef.current.innerHTML}
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    try {
+      // Buscar dados do usuário atual para registrar quem imprimiu
+      const { data: currentUser, error: userError } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user?.id)
+        .single();
 
-    // Criar registro financeiro automaticamente após imprimir
-    await createFinancialRecord();
+      if (userError) {
+        console.error('Erro ao buscar usuário:', userError);
+      }
 
-    toast({
-      title: "Contrato impresso!",
-      description: "Registro financeiro de R$ 1.600,00 criado automaticamente.",
-    });
+      const userName = currentUser?.name || 'Usuário não identificado';
+      
+      // Criar registro no attendance_reports
+      const { data: attendanceReport, error: attendanceError } = await supabase
+        .from('attendance_reports')
+        .insert([{
+          client_id: client.id,
+          employee_id: user?.id,
+          patient_name: contractData.beneficiario || client.name,
+          professional_name: userName,
+          attendance_type: 'Avaliação Neuropsicológica',
+          start_time: new Date().toISOString(),
+          end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hora depois
+          session_duration: 60,
+          amount_charged: 1600.00,
+          professional_amount: 0, // Pode ser definido depois
+          institution_amount: 1600.00,
+          status: 'completed',
+          validation_status: 'validated',
+          session_notes: `Contrato de Avaliação Neuropsicológica gerado e impresso por ${userName}`,
+          created_by: user?.id,
+          completed_by: user?.id,
+          completed_by_name: userName,
+          validated_by: user?.id,
+          validated_by_name: userName,
+          validated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (attendanceError) {
+        console.error('Erro ao criar relatório de atendimento:', attendanceError);
+      }
+
+      // Criar registro de pagamento do cliente
+      const { error: paymentError } = await supabase
+        .from('client_payments')
+        .insert([{
+          client_id: client.id,
+          payment_type: 'Avaliação Neuropsicológica',
+          total_amount: 1600.00,
+          amount_paid: 1600.00,
+          amount_remaining: 0,
+          status: 'completed',
+          payment_method: 'Contrato',
+          description: `Pagamento de Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
+          unit: 'floresta',
+          created_by: user?.id,
+          installments_total: 1,
+          installments_paid: 1
+        }]);
+
+      if (paymentError) {
+        console.error('Erro ao criar registro de pagamento:', paymentError);
+      }
+
+      // Criar registro financeiro automático
+      const { error: autoFinancialError } = await supabase
+        .from('automatic_financial_records')
+        .insert([{
+          patient_id: client.id,
+          patient_name: contractData.beneficiario || client.name,
+          professional_id: user?.id,
+          professional_name: userName,
+          amount: 1600.00,
+          transaction_type: 'income',
+          payment_method: 'Contrato',
+          description: `Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
+          origin_type: 'contract',
+          origin_id: attendanceReport?.id,
+          attendance_report_id: attendanceReport?.id,
+          created_by: user?.id,
+          created_by_name: userName,
+          metadata: {
+            contract_data: JSON.parse(JSON.stringify(contractData)),
+            printed_by: userName,
+            printed_at: new Date().toISOString(),
+            contract_type: 'Avaliação Neuropsicológica'
+          } as any
+        }]);
+
+      if (autoFinancialError) {
+        console.error('Erro ao criar registro financeiro automático:', autoFinancialError);
+      }
+
+      // Criar registro financeiro tradicional
+      await createFinancialRecord();
+
+      // Abrir janela de impressão
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
+      
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Contrato de Avaliação Neuropsicológica</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 14px; line-height: 1.6; }
+              .contract { max-width: 800px; margin: 0 auto; }
+              h1 { text-align: center; margin-bottom: 30px; }
+              h2 { margin-top: 25px; margin-bottom: 10px; }
+              h3 { margin-top: 20px; margin-bottom: 8px; }
+              p { margin-bottom: 12px; text-align: justify; }
+              .underline { border-bottom: 1px solid black; display: inline-block; min-width: 200px; }
+              .signatures { margin-top: 50px; display: flex; justify-content: space-between; }
+              .signature { text-align: center; }
+              .signature-line { border-bottom: 1px solid black; width: 300px; padding-top: 50px; margin-bottom: 5px; }
+              .print-info { margin-bottom: 20px; text-align: right; font-size: 10px; color: #666; }
+              @media print { 
+                body { margin: 0; padding: 15px; font-size: 12px; }
+                .print-info { font-size: 8px; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="print-info">
+              Impresso por: ${userName} em ${new Date().toLocaleString('pt-BR')}
+            </div>
+            ${contractRef.current.innerHTML}
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+
+      toast({
+        title: "Contrato processado com sucesso!",
+        description: `Contrato impresso por ${userName}. Registros financeiros, de atendimento e de pagamento criados automaticamente.`,
+      });
+
+    } catch (error) {
+      console.error('Erro ao processar contrato:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao processar o contrato. Tente novamente.",
+      });
+    }
   };
 
   const handlePreviewContract = () => {
