@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
-import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock } from 'lucide-react';
+import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -83,26 +83,22 @@ export default function Reports() {
       return;
     }
 
-    // Para diretores e coordenadores, sempre permitir acesso
-    if (userRole === 'director' || userRole === 'coordinator_madre' || userRole === 'coordinator_floresta') {
-      console.log('Director/Coordinator detected, allowing access');
-      loadEmployees();
-      loadClients();
-      loadAttendanceReports();
-      loadEmployeeReports();
-      return;
-    }
+  // Apenas diretores podem acessar relatórios
+  if (userRole !== 'director') {
+    console.log('No permission to view reports - directors only');
+    toast({
+      variant: "destructive",
+      title: "Acesso Restrito",
+      description: "Apenas diretores têm acesso aos relatórios do sistema."
+    });
+    return;
+  }
 
-    // Verificação de permissão para outros roles
-    if (!canViewReports()) {
-      console.log('No permission to view reports');
-      toast({
-        variant: "destructive",
-        title: "Acesso Negado",
-        description: `Você não tem permissão para acessar os relatórios. Role atual: ${userRole || 'não definido'}`
-      });
-      return;
-    }
+  console.log('Director detected, loading reports...');
+  loadEmployees();
+  loadClients();
+  loadAttendanceReports();
+  loadEmployeeReports();
     
     console.log('Loading reports data...');
     loadEmployees();
@@ -341,20 +337,14 @@ export default function Reports() {
     return <div className="p-6">Carregando relatórios...</div>;
   }
 
-  // Para diretores e coordenadores, sempre mostrar a página
-  const hasManagerAccess = userRole === 'director' || userRole === 'coordinator_madre' || userRole === 'coordinator_floresta';
-
-  if (!hasManagerAccess && !canViewReports()) {
+  // Apenas diretores podem acessar relatórios
+  if (userRole !== 'director') {
     return (
-      <div className="p-6 text-center">
-        <h2 className="text-xl font-semibold text-red-600 mb-2">Acesso Restrito</h2>
-        <p className="text-muted-foreground">
-          Você não tem permissão para acessar os relatórios.
-          <br />
-          Role atual: {userRole || 'não definido'}
-          <br />
-          User ID: {user?.id || 'não logado'}
-        </p>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Acesso restrito a diretores</p>
+        </div>
       </div>
     );
   }

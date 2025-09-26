@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 
 type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
@@ -36,6 +37,7 @@ const ROLE_LABELS: Record<string, string> = {
 export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmployeeFormProps) => {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
+  const { userRole } = useRolePermissions();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -241,11 +243,19 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
+                {Object.entries(ROLE_LABELS).map(([value, label]) => {
+                  // Coordenadores não podem criar diretores ou outros coordenadores
+                  if (userRole === 'coordinator_madre' || userRole === 'coordinator_floresta') {
+                    if (value === 'director' || value === 'coordinator_madre' || value === 'coordinator_floresta') {
+                      return null;
+                    }
+                  }
+                  return (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote } from 'lucide-react';
+import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, Shield } from 'lucide-react';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 
 interface FinancialRecord {
   id: string;
@@ -49,6 +50,7 @@ export default function Financial() {
   const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
   const { toast } = useToast();
   const { user } = useAuth();
+  const { userRole, loading: roleLoading } = useRolePermissions();
 
   const [newRecord, setNewRecord] = useState({
     type: 'income',
@@ -67,9 +69,21 @@ export default function Financial() {
   });
 
   useEffect(() => {
+    if (roleLoading) return;
+    
+    // Apenas diretores podem acessar financeiro
+    if (userRole !== 'director') {
+      toast({
+        variant: "destructive",
+        title: "Acesso Restrito",
+        description: "Apenas diretores têm acesso ao sistema financeiro."
+      });
+      return;
+    }
+    
     loadFinancialRecords();
     loadFinancialNotes();
-  }, []);
+  }, [roleLoading, userRole]);
 
   const loadFinancialRecords = async () => {
     setLoading(true);
@@ -261,6 +275,21 @@ export default function Financial() {
     const currentYear = new Date().getFullYear();
     return noteDate.getMonth() === currentMonth && noteDate.getFullYear() === currentYear;
   });
+
+  if (roleLoading) {
+    return <div className="p-6">Carregando...</div>;
+  }
+
+  if (userRole !== 'director') {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Acesso restrito a diretores</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
