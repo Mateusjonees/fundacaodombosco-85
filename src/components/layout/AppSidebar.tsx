@@ -124,11 +124,11 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
-  // Contratos - coordenadores e diretores
-  if (permissions.isDirector() || permissions.isCoordinator()) {
+  // Contratos - apenas diretores e coordenadores do Floresta
+  if (permissions.userRole === 'director' || permissions.userRole === 'coordinator_floresta') {
     items.push({ 
       id: 'contracts', 
-      title: 'Contratos', 
+      title: 'Contratos - Floresta', 
       url: '/contracts', 
       icon: 'FolderOpen', 
       order_index: 6 

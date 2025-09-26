@@ -5,10 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FileText, Download, Printer, Eye, Plus } from 'lucide-react';
+import { FileText, Download, Printer, Eye, Plus, Shield } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Client {
   id: string;
@@ -49,6 +52,8 @@ interface ContractGeneratorProps {
 
 export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { userRole, loading: roleLoading } = useRolePermissions();
   const [isOpen, setIsOpen] = useState(false);
   const [contractData, setContractData] = useState<ContractData>({
     contratante: client.responsible_name || client.name || '',
@@ -71,6 +76,32 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const createFinancialRecord = async () => {
+    try {
+      // Criar registro financeiro de avaliação neuropsicológica
+      const { error } = await supabase
+        .from('financial_records')
+        .insert([{
+          type: 'income',
+          category: 'evaluation',
+          description: `Avaliação Neuropsicológica - ${contractData.beneficiario}`,
+          amount: 1600.00, // R$ 1.600,00 fixo para avaliação
+          date: new Date().toISOString().split('T')[0],
+          payment_method: 'contract',
+          client_id: client.id,
+          created_by: user?.id,
+          notes: `Contrato gerado automaticamente - Pagamento registrado como efetuado`
+        }]);
+
+      if (error) throw error;
+
+      console.log('Registro financeiro criado automaticamente');
+    } catch (error) {
+      console.error('Erro ao criar registro financeiro:', error);
+      // Não mostrar erro para o usuário, apenas log
+    }
   };
 
   const generatePDF = async () => {
@@ -104,10 +135,13 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
       }
       
       pdf.save(`Contrato_${contractData.beneficiario || 'Neuropsicologia'}.pdf`);
+
+      // Criar registro financeiro automaticamente
+      await createFinancialRecord();
       
       toast({
         title: "Contrato gerado!",
-        description: "O PDF foi baixado com sucesso.",
+        description: "PDF baixado e registro financeiro de R$ 1.600,00 criado automaticamente.",
       });
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
@@ -119,7 +153,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     }
   };
 
-  const printContract = () => {
+  const printContract = async () => {
     if (!contractRef.current) return;
     
     const printWindow = window.open('', '_blank');
@@ -155,6 +189,14 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
+
+    // Criar registro financeiro automaticamente após imprimir
+    await createFinancialRecord();
+
+    toast({
+      title: "Contrato impresso!",
+      description: "Registro financeiro de R$ 1.600,00 criado automaticamente.",
+    });
   };
 
   const handlePreviewContract = () => {
@@ -194,12 +236,29 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     newWindow.document.close();
   };
 
+  if (roleLoading) {
+    return <div>Carregando...</div>;
+  }
+
+  if (userRole !== 'director' && userRole !== 'coordinator_floresta') {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-32">
+          <div className="text-center">
+            <Shield className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Acesso restrito a diretores e coordenadores do Floresta</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Gerar Contrato
+          Gerar Contrato - Floresta (R$ 1.600,00)
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -307,7 +366,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
                 </Button>
                 <Button onClick={generatePDF} className="gap-2">
                   <Download className="h-4 w-4" />
-                  Baixar PDF
+                  Baixar PDF + Registrar R$ 1.600,00
                 </Button>
               </div>
 

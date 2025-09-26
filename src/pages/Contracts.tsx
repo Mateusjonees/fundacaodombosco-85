@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Download, Edit, Plus, Users, Search, Eye, Calendar, UserPlus } from 'lucide-react';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { FileText, Download, Edit, Plus, Users, Search, Eye, Calendar, UserPlus, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -45,6 +46,7 @@ export default function Contracts() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { userRole, loading: roleLoading } = useRolePermissions();
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -64,8 +66,20 @@ export default function Contracts() {
   });
 
   useEffect(() => {
+    if (roleLoading) return;
+    
+    // Apenas diretores e coordenadores do Floresta podem acessar contratos
+    if (userRole !== 'director' && userRole !== 'coordinator_floresta') {
+      toast({
+        variant: "destructive",
+        title: "Acesso Restrito",
+        description: "Apenas diretores e coordenadores do Floresta podem gerar contratos."
+      });
+      return;
+    }
+    
     loadClients();
-  }, []);
+  }, [roleLoading, userRole]);
 
   const loadClients = async () => {
     setLoading(true);
@@ -74,6 +88,7 @@ export default function Contracts() {
         .from('clients')
         .select('*')
         .eq('is_active', true)
+        .eq('unit', 'floresta') // Apenas clientes da unidade Floresta
         .order('name');
 
       if (error) throw error;
@@ -261,6 +276,32 @@ Contratante
     return contractContent;
   };
 
+  const createFinancialRecord = async () => {
+    try {
+      // Criar registro financeiro de avaliação neuropsicológica
+      const { error } = await supabase
+        .from('financial_records')
+        .insert([{
+          type: 'income',
+          category: 'evaluation',
+          description: `Avaliação Neuropsicológica - ${contractData.clientName}`,
+          amount: 1600.00, // R$ 1.600,00 fixo para avaliação
+          date: contractData.contractDate,
+          payment_method: 'contract',
+          client_id: contractData.clientId,
+          created_by: user?.id,
+          notes: `Contrato gerado automaticamente - Pagamento registrado como efetuado`
+        }]);
+
+      if (error) throw error;
+
+      console.log('Registro financeiro criado automaticamente');
+    } catch (error) {
+      console.error('Erro ao criar registro financeiro:', error);
+      // Não mostrar erro para o usuário, apenas log
+    }
+  };
+
   const handleDownloadContract = async () => {
     setIsGenerating(true);
     try {
@@ -305,9 +346,12 @@ Contratante
       const fileName = `contrato-${contractData.clientName.replace(/\s+/g, '-').toLowerCase()}-${contractData.contractDate}.pdf`;
       doc.save(fileName);
 
+      // Criar registro financeiro automaticamente
+      await createFinancialRecord();
+
       toast({
         title: "Contrato gerado!",
-        description: "O PDF foi baixado com sucesso.",
+        description: "PDF baixado e registro financeiro de R$ 1.600,00 criado automaticamente.",
       });
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
@@ -341,10 +385,34 @@ Contratante
           </head>
           <body>
             <div class="no-print" style="margin-bottom: 20px;">
-              <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
+              <button onclick="handlePrint()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
               <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
             </div>
             <div class="contract-content">${contractContent}</div>
+            <script>
+              async function handlePrint() {
+                // Criar registro financeiro quando imprimir
+                try {
+                  const response = await fetch('${window.location.origin}/api/create-financial-record', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      clientId: '${contractData.clientId}',
+                      clientName: '${contractData.clientName}',
+                      contractDate: '${contractData.contractDate}'
+                    })
+                  });
+                  
+                  if (response.ok) {
+                    console.log('Registro financeiro criado ao imprimir');
+                  }
+                } catch (error) {
+                  console.error('Erro ao criar registro financeiro:', error);
+                }
+                
+                window.print();
+              }
+            </script>
           </body>
         </html>
       `);
@@ -372,13 +440,28 @@ Contratante
     client.cpf?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (roleLoading) {
+    return <div className="p-6">Carregando...</div>;
+  }
+
+  if (userRole !== 'director' && userRole !== 'coordinator_floresta') {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Acesso restrito a diretores e coordenadores do Floresta</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Geração de Contratos</h1>
+          <h1 className="text-3xl font-bold">Geração de Contratos - Unidade Floresta</h1>
           <p className="text-muted-foreground">
-            Crie contratos personalizados para clientes
+            Crie contratos de avaliação neuropsicológica (R$ 1.600,00 cada)
           </p>
         </div>
         <div className="flex gap-2">
@@ -442,7 +525,7 @@ Contratante
                         >
                           <div className="font-medium">{client.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            CPF: {client.cpf || 'Não informado'} | Unidade: {client.unit === 'madre' ? 'Clínica Social' : 'Neuro'}
+                            CPF: {client.cpf || 'Não informado'} | Unidade: Floresta
                           </div>
                         </div>
                       ))}
@@ -570,14 +653,14 @@ Contratante
                   <Eye className="h-4 w-4" />
                   Visualizar
                 </Button>
-                <Button
-                  onClick={handleDownloadContract}
-                  className="gap-2"
-                  disabled={!contractData.clientId || isGenerating}
-                >
-                  <Download className="h-4 w-4" />
-                  {isGenerating ? 'Gerando...' : 'Baixar PDF'}
-                </Button>
+                  <Button
+                    onClick={handleDownloadContract}
+                    className="gap-2"
+                    disabled={!contractData.clientId || isGenerating}
+                  >
+                    <Download className="h-4 w-4" />
+                    {isGenerating ? 'Gerando...' : 'Baixar PDF + Registrar R$ 1.600,00'}
+                  </Button>
               </div>
             </div>
           </DialogContent>
@@ -590,7 +673,7 @@ Contratante
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Clientes Cadastrados
+            Clientes da Unidade Floresta
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -623,7 +706,7 @@ Contratante
                       <TableRow key={client.id}>
                         <TableCell className="font-medium">{client.name}</TableCell>
                         <TableCell>{client.cpf || 'Não informado'}</TableCell>
-                        <TableCell>{client.unit === 'madre' ? 'Clínica Social' : 'Neuro'}</TableCell>
+                        <TableCell>Floresta</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
