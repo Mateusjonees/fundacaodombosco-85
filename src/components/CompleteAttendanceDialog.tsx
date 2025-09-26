@@ -57,6 +57,7 @@ export default function CompleteAttendanceDialog({
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [isValidationMode, setIsValidationMode] = useState(false);
+  const [canEditFinancials, setCanEditFinancials] = useState(false);
   
   const [attendanceData, setAttendanceData] = useState({
     // Informações básicas
@@ -105,9 +106,34 @@ export default function CompleteAttendanceDialog({
   useEffect(() => {
     if (isOpen) {
       loadStockItems();
+      checkUserPermissions();
       setIsValidationMode(false); // Reset to form mode when dialog opens
     }
   }, [isOpen]);
+
+  const checkUserPermissions = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('employee_role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      
+      // Only coordinators and directors can edit financial values
+      const isCoordinatorOrDirector = data?.employee_role === 'director' || 
+                                     data?.employee_role === 'coordinator_madre' || 
+                                     data?.employee_role === 'coordinator_floresta';
+      
+      setCanEditFinancials(isCoordinatorOrDirector);
+    } catch (error) {
+      console.error('Error checking user permissions:', error);
+      setCanEditFinancials(false);
+    }
+  };
 
   const loadStockItems = async () => {
     try {
@@ -532,39 +558,41 @@ export default function CompleteAttendanceDialog({
       )}
 
       {/* Informações Financeiras */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            Informações Financeiras
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm font-medium">Valor da Sessão</Label>
-            <p className="text-sm text-muted-foreground">R$ {attendanceData.sessionValue.toFixed(2)}</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium">Forma de Pagamento</Label>
-            <p className="text-sm text-muted-foreground">
-              {attendanceData.paymentMethod === 'cash' && 'Dinheiro'}
-              {attendanceData.paymentMethod === 'pix' && 'PIX'}
-              {attendanceData.paymentMethod === 'credit_card' && 'Cartão de Crédito'}
-              {attendanceData.paymentMethod === 'debit_card' && 'Cartão de Débito'}
-              {attendanceData.paymentMethod === 'bank_transfer' && 'Transferência'}
-              {attendanceData.paymentMethod === 'insurance' && 'Convênio'}
-            </p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium">Valor do Profissional</Label>
-            <p className="text-sm text-muted-foreground">R$ {attendanceData.professionalValue.toFixed(2)}</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium">Valor da Instituição</Label>
-            <p className="text-sm text-muted-foreground">R$ {attendanceData.institutionValue.toFixed(2)}</p>
-          </div>
-        </CardContent>
-      </Card>
+      {canEditFinancials && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Informações Financeiras
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium">Valor da Sessão</Label>
+              <p className="text-sm text-muted-foreground">R$ {attendanceData.sessionValue.toFixed(2)}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Forma de Pagamento</Label>
+              <p className="text-sm text-muted-foreground">
+                {attendanceData.paymentMethod === 'cash' && 'Dinheiro'}
+                {attendanceData.paymentMethod === 'pix' && 'PIX'}
+                {attendanceData.paymentMethod === 'credit_card' && 'Cartão de Crédito'}
+                {attendanceData.paymentMethod === 'debit_card' && 'Cartão de Débito'}
+                {attendanceData.paymentMethod === 'bank_transfer' && 'Transferência'}
+                {attendanceData.paymentMethod === 'insurance' && 'Convênio'}
+              </p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Valor do Profissional</Label>
+              <p className="text-sm text-muted-foreground">R$ {attendanceData.professionalValue.toFixed(2)}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Valor da Instituição</Label>
+              <p className="text-sm text-muted-foreground">R$ {attendanceData.institutionValue.toFixed(2)}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 
@@ -1002,74 +1030,104 @@ export default function CompleteAttendanceDialog({
           </Card>
 
           {/* Informações Financeiras */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Informações Financeiras
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Valor da Sessão (R$)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={attendanceData.sessionValue}
-                    onChange={(e) => setAttendanceData(prev => ({...prev, sessionValue: parseFloat(e.target.value) || 0}))}
-                  />
+          {canEditFinancials && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Informações Financeiras
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Valor da Sessão (R$)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={attendanceData.sessionValue}
+                      onChange={(e) => setAttendanceData(prev => ({...prev, sessionValue: parseFloat(e.target.value) || 0}))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label>Forma de Pagamento</Label>
+                    <Select 
+                      value={attendanceData.paymentMethod} 
+                      onValueChange={(value) => setAttendanceData(prev => ({...prev, paymentMethod: value}))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">Dinheiro</SelectItem>
+                        <SelectItem value="pix">PIX</SelectItem>
+                        <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                        <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                        <SelectItem value="bank_transfer">Transferência</SelectItem>
+                        <SelectItem value="insurance">Convênio</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                
-                <div>
-                  <Label>Forma de Pagamento</Label>
-                  <Select 
-                    value={attendanceData.paymentMethod} 
-                    onValueChange={(value) => setAttendanceData(prev => ({...prev, paymentMethod: value}))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Dinheiro</SelectItem>
-                      <SelectItem value="pix">PIX</SelectItem>
-                      <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                      <SelectItem value="debit_card">Cartão de Débito</SelectItem>
-                      <SelectItem value="bank_transfer">Transferência</SelectItem>
-                      <SelectItem value="insurance">Convênio</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Valor do Profissional (R$)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={attendanceData.professionalValue}
-                    onChange={(e) => setAttendanceData(prev => ({...prev, professionalValue: parseFloat(e.target.value) || 0}))}
-                    placeholder="0.00"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Valor do Profissional (R$)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={attendanceData.professionalValue}
+                      onChange={(e) => setAttendanceData(prev => ({...prev, professionalValue: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label>Valor da Instituição (R$)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={attendanceData.institutionValue}
+                      onChange={(e) => setAttendanceData(prev => ({...prev, institutionValue: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <Label>Valor da Instituição (R$)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={attendanceData.institutionValue}
-                    onChange={(e) => setAttendanceData(prev => ({...prev, institutionValue: parseFloat(e.target.value) || 0}))}
-                    placeholder="0.00"
-                  />
+                <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                  <p><strong>Informação:</strong> Os valores informados serão registrados no sistema financeiro e nos relatórios profissionais. Se não informar valores, apenas os custos dos materiais e valor total da sessão serão processados.</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
+          
+          {!canEditFinancials && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Informações Financeiras
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center p-6 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20">
+                  <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-sm text-muted-foreground font-medium mb-2">
+                    Valores Financeiros Restritos
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Apenas coordenadores e diretores podem definir valores financeiros dos atendimentos.
+                    <br />
+                    Os valores serão definidos durante a validação do atendimento.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
         )}
 
