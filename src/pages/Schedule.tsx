@@ -943,124 +943,135 @@ export default function Schedule() {
               <Plus className="h-6 w-6" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>
                 {editingSchedule ? 'Editar Agendamento' : 'Novo Agendamento'}
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="client_id">Paciente</Label>
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto px-1">
+              <div className="space-y-6 py-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="client_id">Paciente</Label>
+                    <PatientCommandAutocomplete
+                      value={newAppointment.client_id}
+                      onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
+                      placeholder="Buscar paciente por nome, CPF, telefone ou email..."
+                      unitFilter={
+                        userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
+                        userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                        'all'
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="employee_id">Profissional</Label>
+                    <ProfessionalCommandAutocomplete
+                      value={newAppointment.employee_id}
+                      onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
+                      placeholder="Buscar profissional por nome, email ou telefone..."
+                      unitFilter={
+                        userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
+                        userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                        'all'
+                      }
+                      disabled={!isAdmin}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start_time">Data e Hora Início</Label>
+                    <Input
+                      id="start_time"
+                      type="datetime-local"
+                      value={newAppointment.start_time}
+                      onChange={(e) => setNewAppointment({...newAppointment, start_time: e.target.value})}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end_time">Data e Hora Fim</Label>
+                    <Input
+                      id="end_time"
+                      type="datetime-local"
+                      value={newAppointment.end_time}
+                      onChange={(e) => setNewAppointment({...newAppointment, end_time: e.target.value})}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Tipo de Consulta</Label>
+                    <Select value={newAppointment.title} onValueChange={(value) => setNewAppointment({...newAppointment, title: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-md z-50">
+                        <SelectItem value="Consulta">Consulta</SelectItem>
+                        <SelectItem value="Primeira Consulta">Primeira Consulta</SelectItem>
+                        <SelectItem value="Avaliação">Avaliação</SelectItem>
+                        <SelectItem value="Retorno">Retorno</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">Unidade</Label>
+                    <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a unidade" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-md z-50">
+                        <SelectItem value="madre">MADRE</SelectItem>
+                        <SelectItem value="floresta">Floresta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 
-                <PatientCommandAutocomplete
-                  value={newAppointment.client_id}
-                  onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
-                  placeholder="Buscar paciente por nome, CPF, telefone ou email..."
-                  unitFilter={
-                    userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
-                    userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
-                    'all'
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="employee_id">Profissional</Label>
+                {!editingSchedule && (
+                  <div className="space-y-2">
+                    <Label htmlFor="sessionCount">Quantidade de Sessões</Label>
+                    <Input
+                      id="sessionCount"
+                      type="number"
+                      min="1"
+                      max="52"
+                      value={newAppointment.sessionCount}
+                      onChange={(e) => setNewAppointment({...newAppointment, sessionCount: Math.max(1, parseInt(e.target.value) || 1)})}
+                      placeholder="1"
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Defina quantas sessões sequenciais semanais deseja criar. O sistema verificará automaticamente conflitos de horário.
+                    </p>
+                  </div>
+                )}
                 
-                <ProfessionalCommandAutocomplete
-                  value={newAppointment.employee_id}
-                  onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
-                  placeholder="Buscar profissional por nome, email ou telefone..."
-                  unitFilter={
-                    userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
-                    userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
-                    'all'
-                  }
-                  disabled={!isAdmin}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_time">Data e Hora Início</Label>
-                  <Input
-                    id="start_time"
-                    type="datetime-local"
-                    value={newAppointment.start_time}
-                    onChange={(e) => setNewAppointment({...newAppointment, start_time: e.target.value})}
+                  <Label htmlFor="notes">Observações</Label>
+                  <Textarea
+                    id="notes"
+                    value={newAppointment.notes}
+                    onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
+                    placeholder="Observações opcionais..."
+                    rows={4}
+                    className="resize-none w-full"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end_time">Data e Hora Fim</Label>
-                  <Input
-                    id="end_time"
-                    type="datetime-local"
-                    value={newAppointment.end_time}
-                    onChange={(e) => setNewAppointment({...newAppointment, end_time: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="title">Tipo de Consulta</Label>
-                <Select value={newAppointment.title} onValueChange={(value) => setNewAppointment({...newAppointment, title: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Consulta">Consulta</SelectItem>
-                    <SelectItem value="Primeira Consulta">Primeira Consulta</SelectItem>
-                    <SelectItem value="Avaliação">Avaliação</SelectItem>
-                    <SelectItem value="Retorno">Retorno</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unidade</Label>
-                <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a unidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="madre">MADRE</SelectItem>
-                    <SelectItem value="floresta">Floresta</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {!editingSchedule && (
-                <div className="space-y-2">
-                  <Label htmlFor="sessionCount">Quantidade de Sessões</Label>
-                  <Input
-                    id="sessionCount"
-                    type="number"
-                    min="1"
-                    max="52"
-                    value={newAppointment.sessionCount}
-                    onChange={(e) => setNewAppointment({...newAppointment, sessionCount: Math.max(1, parseInt(e.target.value) || 1)})}
-                    placeholder="1"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Defina quantas sessões sequenciais semanais deseja criar. O sistema verificará automaticamente conflitos de horário.
-                  </p>
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  value={newAppointment.notes}
-                  onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
-                  placeholder="Observações opcionais..."
-                />
               </div>
             </div>
             
-            <div className="flex justify-end gap-2">
+            {/* Fixed footer with action buttons */}
+            <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t bg-background">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
