@@ -230,6 +230,8 @@ export default function CompleteAttendanceDialog({
         patient_response: attendanceData.patientResponse,
         next_session_plan: attendanceData.nextSessionPlan,
         amount_charged: attendanceData.sessionValue,
+        professional_amount: attendanceData.professionalValue,
+        institution_amount: attendanceData.institutionValue,
         attachments: uploadedAttachments,
         created_by: user.id,
         completed_by: user.id,
@@ -552,6 +554,14 @@ export default function CompleteAttendanceDialog({
               {attendanceData.paymentMethod === 'bank_transfer' && 'Transferência'}
               {attendanceData.paymentMethod === 'insurance' && 'Convênio'}
             </p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Valor do Profissional</Label>
+            <p className="text-sm text-muted-foreground">R$ {attendanceData.professionalValue.toFixed(2)}</p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Valor da Instituição</Label>
+            <p className="text-sm text-muted-foreground">R$ {attendanceData.institutionValue.toFixed(2)}</p>
           </div>
         </CardContent>
       </Card>

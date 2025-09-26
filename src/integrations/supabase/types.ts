@@ -161,11 +161,13 @@ export type Database = {
           employee_id: string
           end_time: string
           id: string
+          institution_amount: number | null
           materials_used: Json | null
           next_session_plan: string | null
           observations: string | null
           patient_name: string
           patient_response: string | null
+          professional_amount: number | null
           professional_name: string
           rejection_reason: string | null
           schedule_id: string | null
@@ -192,11 +194,13 @@ export type Database = {
           employee_id: string
           end_time: string
           id?: string
+          institution_amount?: number | null
           materials_used?: Json | null
           next_session_plan?: string | null
           observations?: string | null
           patient_name: string
           patient_response?: string | null
+          professional_amount?: number | null
           professional_name: string
           rejection_reason?: string | null
           schedule_id?: string | null
@@ -223,11 +227,13 @@ export type Database = {
           employee_id?: string
           end_time?: string
           id?: string
+          institution_amount?: number | null
           materials_used?: Json | null
           next_session_plan?: string | null
           observations?: string | null
           patient_name?: string
           patient_response?: string | null
+          professional_amount?: number | null
           professional_name?: string
           rejection_reason?: string | null
           schedule_id?: string | null
