@@ -14,6 +14,7 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Combobox } from '@/components/ui/combobox';
 
 interface EmployeeReport {
   id: string;
@@ -392,36 +393,38 @@ export default function Reports() {
           <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             <div>
               <Label>Funcionário</Label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os funcionários</SelectItem>
-                  {employees.map(employee => (
-                    <SelectItem key={employee.user_id} value={employee.user_id}>
-                      {employee.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={[
+                  { value: "all", label: "Todos os funcionários" },
+                  ...employees.map(employee => ({
+                    value: employee.user_id,
+                    label: employee.name
+                  }))
+                ]}
+                value={selectedEmployee}
+                onValueChange={setSelectedEmployee}
+                placeholder="Buscar funcionário..."
+                searchPlaceholder="Digite o nome do funcionário..."
+                emptyMessage="Nenhum funcionário encontrado."
+              />
             </div>
 
             <div>
               <Label>Cliente</Label>
-              <Select value={selectedClient} onValueChange={setSelectedClient}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os clientes</SelectItem>
-                  {clients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={[
+                  { value: "all", label: "Todos os clientes" },
+                  ...clients.map(client => ({
+                    value: client.id,
+                    label: client.name
+                  }))
+                ]}
+                value={selectedClient}
+                onValueChange={setSelectedClient}
+                placeholder="Buscar cliente..."
+                searchPlaceholder="Digite o nome do cliente..."
+                emptyMessage="Nenhum cliente encontrado."
+              />
             </div>
 
             <div>
