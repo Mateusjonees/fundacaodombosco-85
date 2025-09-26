@@ -846,16 +846,16 @@ export default function Schedule() {
               <Plus className="h-6 w-6" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
+          <DialogContent className="max-w-lg sm:max-w-xl">
+            <DialogHeader className="pb-4">
+              <DialogTitle className="text-xl">
                 {editingSchedule ? 'Editar Agendamento' : 'Novo Agendamento'}
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="client_id">Paciente</Label>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="client_id" className="text-sm font-medium">Paciente</Label>
                 
                 <PatientCommandAutocomplete
                   value={newAppointment.client_id}
@@ -869,8 +869,8 @@ export default function Schedule() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="employee_id">Profissional</Label>
+              <div className="space-y-3">
+                <Label htmlFor="employee_id" className="text-sm font-medium">Profissional</Label>
                 
                 <ProfessionalCommandAutocomplete
                   value={newAppointment.employee_id}
@@ -885,29 +885,31 @@ export default function Schedule() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start_time">Data e Hora Início</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <Label htmlFor="start_time" className="text-sm font-medium">Data e Hora Início</Label>
                   <Input
                     id="start_time"
                     type="datetime-local"
                     value={newAppointment.start_time}
                     onChange={(e) => setNewAppointment({...newAppointment, start_time: e.target.value})}
+                    className="w-full"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end_time">Data e Hora Fim</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="end_time" className="text-sm font-medium">Data e Hora Fim</Label>
                   <Input
                     id="end_time"
                     type="datetime-local"
                     value={newAppointment.end_time}
                     onChange={(e) => setNewAppointment({...newAppointment, end_time: e.target.value})}
+                    className="w-full"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="title">Tipo de Consulta</Label>
+              <div className="space-y-3">
+                <Label htmlFor="title" className="text-sm font-medium">Tipo de Consulta</Label>
                 <Select value={newAppointment.title} onValueChange={(value) => setNewAppointment({...newAppointment, title: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o tipo" />
@@ -921,8 +923,8 @@ export default function Schedule() {
                 </Select>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unidade</Label>
+              <div className="space-y-3">
+                <Label htmlFor="unit" className="text-sm font-medium">Unidade</Label>
                 <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a unidade" />
@@ -934,13 +936,14 @@ export default function Schedule() {
                 </Select>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
+              <div className="space-y-3">
+                <Label htmlFor="notes" className="text-sm font-medium">Observações</Label>
                 <Textarea
                   id="notes"
                   value={newAppointment.notes}
                   onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
                   placeholder="Observações opcionais..."
+                  className="min-h-20"
                 />
               </div>
             </div>
