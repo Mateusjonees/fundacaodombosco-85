@@ -38,6 +38,72 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_notifications: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          notification_type: string
+          read_at: string | null
+          schedule_id: string
+          title: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          notification_type?: string
+          read_at?: string | null
+          schedule_id: string
+          title: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          read_at?: string | null
+          schedule_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_notifications_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_sessions: {
         Row: {
           created_at: string
@@ -2272,6 +2338,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      create_appointment_notification: {
+        Args: {
+          p_appointment_date: string
+          p_appointment_time: string
+          p_client_id: string
+          p_employee_id: string
+          p_schedule_id: string
+          p_service_type?: string
+        }
+        Returns: string
+      }
       create_test_employee: {
         Args: {
           p_department?: string
@@ -2446,6 +2523,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      mark_notification_as_read: {
+        Args: { p_notification_id: string }
+        Returns: boolean
       }
       process_attendance_validation: {
         Args: { p_attendance_record: Record<string, unknown> }

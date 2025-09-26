@@ -27,6 +27,7 @@ import MyPatients from '@/pages/MyPatients';
 import AttendanceValidation from '@/pages/AttendanceValidation';
 import EmployeesNew from '@/pages/EmployeesNew';
 import PendingAttendancesNotification from '@/components/PendingAttendancesNotification';
+import AppointmentNotifications from '@/components/AppointmentNotifications';
 
 interface Profile {
   id: string;
@@ -128,6 +129,7 @@ export const MainApp = () => {
                 </div>
                 
                 <div className="flex items-center gap-4">
+                  <AppointmentNotifications />
                   <PendingAttendancesNotification />
                   <div className="text-right hidden sm:block">
                     <Badge variant="secondary" className="mb-1">
