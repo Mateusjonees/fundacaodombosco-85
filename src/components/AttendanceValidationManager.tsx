@@ -56,6 +56,7 @@ export default function AttendanceValidationManager() {
   const [employeeFilter, setEmployeeFilter] = useState<string>('all');
   const [professionalAmount, setProfessionalAmount] = useState<string>('');
   const [foundationAmount, setFoundationAmount] = useState<string>('');
+  const [totalAmount, setTotalAmount] = useState<string>('');
 
   useEffect(() => {
     if (user) {
@@ -150,7 +151,8 @@ export default function AttendanceValidationManager() {
         p_action: validationAction,
         p_rejection_reason: validationAction === 'reject' ? rejectionReason : null,
         p_professional_amount: validationAction === 'validate' && professionalAmount ? parseFloat(professionalAmount) : 0,
-        p_foundation_amount: validationAction === 'validate' && foundationAmount ? parseFloat(foundationAmount) : 0
+        p_foundation_amount: validationAction === 'validate' && foundationAmount ? parseFloat(foundationAmount) : 0,
+        p_total_amount: validationAction === 'validate' && totalAmount ? parseFloat(totalAmount) : selectedAttendance?.amount_charged || 0
       });
 
       if (error) throw error;
