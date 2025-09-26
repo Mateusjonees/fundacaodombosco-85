@@ -10,15 +10,6 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 
-import contractLogo1 from '@/assets/contract-logo-1.png';
-import contractLogo2 from '@/assets/contract-logo-2.png';
-import contractLogo3 from '@/assets/contract-logo-3.png';
-import contractLogo4 from '@/assets/contract-logo-4.png';
-import contractPage2Logo from '@/assets/contract-page2-logo.png';
-import contractPage3Logo from '@/assets/contract-page3-logo.png';
-import contractPage4Logo from '@/assets/contract-page4-logo.png';
-import contractPage5Logo from '@/assets/contract-page5-logo.png';
-
 interface Client {
   id: string;
   name: string;
@@ -86,24 +77,30 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     if (!contractRef.current) return;
 
     try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const elements = contractRef.current.children;
+      const canvas = await html2canvas(contractRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff'
+      });
       
-      for (let i = 0; i < elements.length; i++) {
-        if (i > 0) pdf.addPage();
-        
-        const element = elements[i] as HTMLElement;
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: false
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = 210;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
       }
       
       pdf.save(`Contrato_${contractData.beneficiario || 'Neuropsicologia'}.pdf`);
@@ -134,12 +131,18 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
         <head>
           <title>Contrato de Avaliação Neuropsicológica</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-            .page { page-break-after: always; margin-bottom: 20px; }
-            .page:last-child { page-break-after: avoid; }
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 14px; line-height: 1.6; }
+            .contract { max-width: 800px; margin: 0 auto; }
+            h1 { text-align: center; margin-bottom: 30px; }
+            h2 { margin-top: 25px; margin-bottom: 10px; }
+            h3 { margin-top: 20px; margin-bottom: 8px; }
+            p { margin-bottom: 12px; text-align: justify; }
+            .underline { border-bottom: 1px solid black; display: inline-block; min-width: 200px; }
+            .signatures { margin-top: 50px; display: flex; justify-content: space-between; }
+            .signature { text-align: center; }
+            .signature-line { border-bottom: 1px solid black; width: 300px; padding-top: 50px; margin-bottom: 5px; }
             @media print { 
-              .page { page-break-after: always; margin: 0; }
-              body { margin: 0; padding: 0; }
+              body { margin: 0; padding: 15px; font-size: 12px; }
             }
           </style>
         </head>
@@ -164,8 +167,17 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
         <head>
           <title>Contrato - ${contractData.beneficiario}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 14px; line-height: 1.6; }
             .no-print { margin-bottom: 20px; }
+            .contract { max-width: 800px; margin: 0 auto; }
+            h1 { text-align: center; margin-bottom: 30px; }
+            h2 { margin-top: 25px; margin-bottom: 10px; }
+            h3 { margin-top: 20px; margin-bottom: 8px; }
+            p { margin-bottom: 12px; text-align: justify; }
+            .underline { border-bottom: 1px solid black; display: inline-block; min-width: 200px; }
+            .signatures { margin-top: 50px; display: flex; justify-content: space-between; }
+            .signature { text-align: center; }
+            .signature-line { border-bottom: 1px solid black; width: 300px; padding-top: 50px; margin-bottom: 5px; }
             @media print { .no-print { display: none; } }
           </style>
         </head>
@@ -300,351 +312,223 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
               </div>
 
               {/* Contrato gerado */}
-              <div ref={contractRef} className="space-y-8">
-                {/* Página 1 */}
-                <div className="page bg-white p-8 shadow-lg border" style={{ minHeight: '297mm', width: '210mm' }}>
-                  <div className="flex justify-between items-start mb-8">
-                    <img src={contractLogo1} alt="Logo 1" className="h-20" />
-                    <img src={contractLogo2} alt="Logo 2" className="h-20" />
-                    <img src={contractLogo3} alt="Logo 3" className="h-20" />
-                    <img src={contractLogo4} alt="Logo 4" className="h-20" />
-                  </div>
+              <div ref={contractRef} className="contract bg-white p-8 shadow-lg border font-serif">
+                <h1 className="text-center text-xl font-bold mb-6">Contrato de Prestação de Serviços<br/>Avaliação Neuropsicológica</h1>
+                
+                <h2 className="text-lg font-bold mb-4">1. Das partes</h2>
+                <p className="text-justify mb-4">
+                  A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001 86, com endereço 
+                  comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como 
+                  CONTRATADA e a pessoa física <span className="underline">{contractData.contratante || '__________________________________________________________________'}</span>, registrada no CPF 
+                  sob o nº <span className="underline">{contractData.contratanteCpf || '____________________________________'}</span>, denominada neste como CONTRATANTE, 
+                  responsável legal ou financeiro por <span className="underline">{contractData.beneficiario || '________________________________________________________________'}</span>, inscrito no CPF sob o 
+                  nº<span className="underline">{contractData.beneficiarioCpf || '_________________________________________'}</span>, denominado neste como beneficiário do serviço, 
+                  residente à <span className="underline">{contractData.endereco || '__________________________________________________________________'}</span> 
+                  firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as 
+                  cláusulas abaixo.
+                </p>
 
-                  <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold mb-2">Contrato de Prestação de Serviços</h1>
-                    <h2 className="text-xl font-semibold">Avaliação Neuropsicológica</h2>
-                  </div>
+                <h2 className="text-lg font-bold mb-4">2. Cláusulas</h2>
 
-                  <div className="space-y-6 text-sm leading-relaxed">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">1. Das partes</h3>
-                      <p className="text-justify">
-                        A pessoa jurídica <strong>Fundação Dom Bosco</strong>, registrada no CNPJ sob o nº <strong>17.278.904/0001-86</strong>, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como <strong>CONTRATADA</strong> e a pessoa física <span className="border-b border-black inline-block min-w-[300px]">{contractData.contratante || '____________________________________'}</span>, registrada no CPF sob o nº <span className="border-b border-black inline-block min-w-[150px]">{contractData.contratanteCpf || '____________________'}</span>, denominada neste como <strong>CONTRATANTE</strong>, responsável legal ou financeiro por <span className="border-b border-black inline-block min-w-[300px]">{contractData.beneficiario || '____________________________________'}</span>, inscrito no CPF sob o nº <span className="border-b border-black inline-block min-w-[200px]">{contractData.beneficiarioCpf || '________________________'}</span>, denominado neste como beneficiário do serviço, residente à <span className="border-b border-black inline-block min-w-[300px]">{contractData.endereco || '____________________________________'}</span> firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.
-                      </p>
-                    </div>
+                <h3 className="font-bold mb-2">2.1.1.</h3>
+                <p className="text-justify mb-4">
+                  A avaliação neuropsicológica é um exame complementar realizado por profissional 
+                  especializado em neuropsicologia e que neste contrato é denominada como CONTRATADA, e 
+                  compreende três etapas, sendo: anamnese ou entrevista inicial, aplicação dos instrumentos de avaliação 
+                  neuropsicológica e entrevista devolutiva para entrega do laudo.
+                </p>
 
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">2. Cláusulas</h3>
-                      
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">2.1.1.</h4>
-                        <p className="text-justify">
-                          A avaliação neuropsicológica é um exame complementar realizado por profissional especializado em neuropsicologia e que neste contrato é denominada como CONTRATADA, e compreende três etapas, sendo: anamnese ou entrevista inicial, aplicação dos instrumentos de avaliação neuropsicológica e entrevista devolutiva para entrega do laudo.
-                        </p>
-                      </div>
+                <h3 className="font-bold mb-2">2.1.2.</h3>
+                <p className="text-justify mb-4">
+                  Serão realizadas sessões para a coleta de dados, entrevistas, aplicações de escalas e testes e 
+                  possíveis reuniões com outros informantes, sendo que ao final do processo o CONTRATANTE terá 
+                  direito ao LAUDO NEUROPSICOLÓGICO, com a finalidade de atestar, aconselhar e encaminhar o 
+                  paciente para o melhor tratamento adequado com suas necessidades.
+                </p>
 
-                      <div>
-                        <h4 className="font-semibold mb-2">2.1.2.</h4>
-                        <p className="text-justify">
-                          Serão realizadas sessões para a coleta de dados, entrevistas, aplicações de escalas e testes e possíveis reuniões com outros informantes, sendo que ao final do processo o CONTRATANTE terá direito ao LAUDO NEUROPSICOLÓGICO, com a finalidade de atestar, aconselhar e encaminhar o paciente para o melhor tratamento adequado com suas necessidades.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                <h3 className="font-bold mb-2">2.1.3.</h3>
+                <p className="text-justify mb-4">
+                  O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em acordo 
+                  com o contratante durante a Sessão de Devolutiva com duração de 1 (uma) hora, podendo ser no 
+                  formato online ou presencial, a ser definido pelo neuropsicólogo.
+                </p>
 
-                  <div className="absolute bottom-8 left-8 right-8">
-                    <div className="text-center text-xs mb-2">
-                      <strong>FUNDAÇÃO DOM BOSCO</strong>
-                    </div>
-                    <div className="text-xs text-center space-y-1">
-                      <p>Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: 31 3226-2616</p>
-                      <p>Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: 31 3386-1600</p>
-                      <p>Belo Horizonte - MG - www.fundacaodombosco.org</p>
-                    </div>
-                    <p className="text-xs mt-4 text-justify">
-                      Em cumprimento à Lei Geral de Proteção de dados nº13.709/2020, o destinatário deste documento proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante, conforme artigo 48 da Lei e assumindo as sanções cabíveis.
-                    </p>
-                  </div>
+                <h3 className="font-bold mb-2">2.1.4.</h3>
+                <p className="text-justify mb-4">
+                  Os instrumentos de avaliação neuropsicológicos serão compostos de questionários, escalas, 
+                  inventários, tarefas e testes neuropsicológicos aprovados e validados para aplicação na população 
+                  brasileira obedecendo aos critérios de aprovação para uso do Conselho Federal de Psicologia.
+                </p>
+
+                <h3 className="font-bold mb-2">2.1.5.</h3>
+                <p className="text-justify mb-4">
+                  As sessões de avaliação serão realizadas em horário combinado, estando a neuropsicóloga à 
+                  disposição do beneficiário do serviço naquele período.
+                </p>
+
+                <h2 className="text-lg font-bold mb-4">2.2. Sigilo</h2>
+
+                <h3 className="font-bold mb-2">2.2.1.</h3>
+                <p className="text-justify mb-4">
+                  A neuropsicóloga respeitará o sigilo profissional a fim de proteger, por meio da 
+                  confiabilidade, a intimidade das pessoas, grupos ou organizações, a que tenha acesso no exercício 
+                  profissional (Código de Ética do Psicólogo, artigo 9º).
+                </p>
+
+                <h2 className="text-lg font-bold mb-4">2.3. Etapas da Avaliação Neuropsicológica e Vigência do Contrato</h2>
+
+                <h3 className="font-bold mb-2">2.3.1.</h3>
+                <p className="text-justify mb-4">
+                  O processo de aplicação dos instrumentos ocorre com a utilização de, no mínimo 4 sessões 
+                  e no máximo 14 sessões, com duração 1 (uma) hora, a serem definidas pelo profissional a realizá-
+                  las, agendadas previamente com o contratante.
+                </p>
+
+                <h3 className="font-bold mb-2">2.3.2.</h3>
+                <p className="text-justify mb-4">
+                  O número de sessões, bem como a duração delas, será definido pela neuropsicóloga, de 
+                  acordo com a direcionamento e conhecimento da profissional, de maneira a obter-se sempre a 
+                  melhor qualidade de resultados.
+                </p>
+
+                <h3 className="font-bold mb-2">2.3.3.</h3>
+                <p className="text-justify mb-4">
+                  Caso o paciente a ser avaliado ser estudante e/ou estar em acompanhamento terapêutico será 
+                  realizada entrevista com a equipe escolar e multidisciplinar como parte integrante da avaliação, 
+                  conforme for possível e necessário, através de questionários e/ou vídeo conferência.
+                </p>
+
+                <h3 className="font-bold mb-2">2.3.4.</h3>
+                <p className="text-justify mb-4">
+                  A vigência deste contrato encerrar-se-á imediatamente após a entrega do laudo 
+                  neuropsicológico e à quitação do valor correspondente à prestação de serviço acordada.
+                </p>
+
+                <h3 className="font-bold mb-2">2.3.5.</h3>
+                <p className="text-justify mb-4">
+                  As datas das sessões de avaliação serão definidas em comum acordo entre as partes e 
+                  registradas neste contrato.
+                </p>
+
+                <h2 className="text-lg font-bold mb-4">2.4. Cancelamento e reagendamento de sessões</h2>
+
+                <h3 className="font-bold mb-2">2.4.1.</h3>
+                <p className="text-justify mb-4">
+                  O Contratante concorda em notificar o Contratado com antecedência de 12 horas em caso 
+                  de cancelamento ou reagendamento de sessões.
+                </p>
+
+                <h2 className="text-lg font-bold mb-4">2.5. Avaliação de menores de 18 anos</h2>
+
+                <h3 className="font-bold mb-2">2.5.1.</h3>
+                <p className="text-justify mb-4">
+                  A avaliação neuropsicológica de menores de 18 anos será realizada somente com a ciência e 
+                  concordância de um responsável pela criança ou adolescente.
+                </p>
+
+                <h3 className="font-bold mb-2">2.5.2.</h3>
+                <p className="text-justify mb-4">
+                  A criança/adolescente deverá comparecer ao consultório para avaliação acompanhado de um 
+                  responsável, o qual deverá estar presente no consultório ao final de cada sessão a fim de 
+                  acompanhar o menor até sua casa.
+                </p>
+
+                <h2 className="text-lg font-bold mb-4">2.6. Honorários e formas de pagamento</h2>
+
+                <h3 className="font-bold mb-2">2.6.1.</h3>
+                <p className="text-justify mb-4">
+                  A forma de pagamento deverá ser definida e devidamente registrada neste contrato durante 
+                  a primeira sessão de avaliação (anamnese).
+                </p>
+
+                <h3 className="font-bold mb-2">2.6.2.</h3>
+                <p className="text-justify mb-4">
+                  O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado 
+                  será no total de R$ <span className="underline">{contractData.valorTotal || '______________________'}</span> 
+                  (<span className="underline">{contractData.valorExtenso || '______________________________________________'}</span>) O pagamento dos honorários 
+                  referentes ao serviço de Avaliação Neuropsicológica será efetuado:
+                </p>
+
+                <div className="ml-4 mb-4">
+                  <p>(  ) R$ _________________ à vista pagos na data da anamnese.</p>
+                  <p>(  ) R$ _________________ parcelado no Boleto</p>
+                  <p>Uma parcela no dia da anamnese no valor de R$ _____________ e outra(s) _________ parcela(s)</p>
+                  <p>no valor R$ _________________ nas datas: ___________________________________.</p>
+                  <p>( ) R$ _________________ no Cartão de crédito, parcelado de ___________ vezes.</p>
                 </div>
 
-                {/* Página 2 */}
-                <div className="page bg-white p-8 shadow-lg border" style={{ minHeight: '297mm', width: '210mm' }}>
-                  <div className="space-y-6 text-sm leading-relaxed">
-                    <div>
-                      <h4 className="text-lg font-semibold mb-2">2.1.3.</h4>
-                      <p className="text-justify">
-                        O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em acordo com o contratante durante a Sessão de Devolutiva com duração de 1 (uma) hora, podendo ser no formato online ou presencial, a ser definido pelo neuropsicólogo.
-                      </p>
-                    </div>
+                <h3 className="font-bold mb-2">2.6.3.</h3>
+                <p className="text-justify mb-4">
+                  O laudo será entregue SOMENTE após a quitação do valor total da avaliação.
+                </p>
 
-                    <div>
-                      <h4 className="text-lg font-semibold mb-2">2.1.4.</h4>
-                      <p className="text-justify">
-                        Os instrumentos de avaliação neuropsicológicos serão compostos de questionários, escalas, inventários, tarefas e testes neuropsicológicos aprovados e validados para aplicação na população brasileira obedecendo aos critérios de aprovação para uso do Conselho Federal de Psicologia.
-                      </p>
-                    </div>
+                <h3 className="font-bold mb-2">2.6.4.</h3>
+                <p className="text-justify mb-4">
+                  As sessões de avaliação SOMENTE terão início após o pagamento da primeira parcela.
+                </p>
 
-                    <div>
-                      <h4 className="text-lg font-semibold mb-2">2.1.5.</h4>
-                      <p className="text-justify">
-                        As sessões de avaliação serão realizadas em horário combinado, estando a neuropsicóloga à disposição do beneficiário do serviço naquele período.
-                      </p>
-                    </div>
+                <h3 className="font-bold mb-2">2.6.5.</h3>
+                <p className="text-justify mb-4">
+                  Os pagamentos por transferência, deposito bancário ou pix deverão ser realizados conforme 
+                  os dados informados e posteriormente com o envio do respectivo comprovante para o e-mail: 
+                  financeiro@fundacaodombosco.org com os dados referentes ao paciente e o responsável financeiro 
+                  descriminados no corpo do e-mail.
+                </p>
 
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">2.2. Sigilo</h3>
-                      <div>
-                        <h4 className="font-semibold mb-2">2.2.1.</h4>
-                        <p className="text-justify">
-                          A neuropsicóloga respeitará o sigilo profissional a fim de proteger, por meio da confiabilidade, a intimidade das pessoas, grupos ou organizações, a que tenha acesso no exercício profissional (Código de Ética do Psicólogo, artigo 9º).
-                        </p>
-                      </div>
-                    </div>
+                <h3 className="font-bold mb-2">2.6.6.</h3>
+                <p className="text-justify mb-4">
+                  Caso o contratante opte pelo parcelamento do pagamento em 2 (duas) ou mais parcelas, fica 
+                  vedada a condição de vincular o pagamento do serviço à entrega do Laudo Neuropsicológico. O 
+                  contratante deve, de forma imperativa, cumprir rigorosamente as datas estipuladas nas cláusulas 
+                  anteriores. sob pena de rescisão contratual, nos termos contantes no item 2.7 deste contrato.
+                </p>
 
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">2.3. Etapas da Avaliação Neuropsicológica e Vigência do Contrato</h3>
-                      
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">2.3.1.</h4>
-                        <p className="text-justify">
-                          O processo de aplicação dos instrumentos ocorre com a utilização de, no mínimo 4 sessões e no máximo 14 sessões, com duração 1 (uma) hora, a serem definidas pelo profissional a realizá-las, agendadas previamente com o contratante.
-                        </p>
-                      </div>
+                <h2 className="text-lg font-bold mb-4">2.7. Da Rescisão</h2>
 
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">2.3.2.</h4>
-                        <p className="text-justify">
-                          O número de sessões, bem como a duração delas, será definido pela neuropsicóloga, de acordo com a direcionamento e conhecimento da profissional, de maneira a obter-se sempre a melhor qualidade de resultados.
-                        </p>
-                      </div>
+                <h3 className="font-bold mb-2">2.7.1.</h3>
+                <p className="text-justify mb-4">
+                  O presente instrumento poderá ser rescindido caso qualquer das partes descumpra o disposto 
+                  neste contrato.
+                </p>
 
-                      <div>
-                        <h4 className="font-semibold mb-2">2.3.3.</h4>
-                        <p className="text-justify">
-                          Caso o paciente a ser avaliado ser estudante e/ou estar em acompanhamento terapêutico será realizada entrevista com a equipe escolar e multidisciplinar como parte integrante da avaliação, conforme for possível e necessário, através de questionários e/ou vídeo conferência.
-                        </p>
-                      </div>
-                    </div>
+                <h3 className="font-bold mb-2">2.7.2.</h3>
+                <p className="text-justify mb-4">
+                  Na hipótese de a CONTRANTE solicitar a rescisão antecipada deste contrato sem justa 
+                  causa, será obrigada a pagar a CONTRATADA por inteiro qualquer retribuição vencida e não paga 
+                  e 50% (cinquenta por cento) do que ela receberia até o final do contrato.
+                </p>
+
+                <h3 className="font-bold mb-2">2.7.3.</h3>
+                <p className="text-justify mb-4">
+                  Na hipótese de a CONTRATADA solicitar a rescisão antecipada deste contrato sem justa 
+                  causa terá direito a retribuição vencida.
+                </p>
+
+                <h3 className="font-bold mb-2">2.7.4.</h3>
+                <p className="text-justify mb-4">
+                  Caso a CONTRATANTE não compareça a 4 sessões seguidas sem informar a 
+                  CONTRATADA e não houver possibilidade de contato após esse período, este contrato fica 
+                  rescindido automaticamente e fica obrigada a pagar 100% do valor do contrato.
+                </p>
+
+                <h3 className="font-bold mb-2">2.7.5.</h3>
+                <p className="text-justify mb-4">
+                  Com a assinatura, ambas as partes atestam que tiveram oportunidade de ler, discutir, definir 
+                  e concordar com todas as cláusulas deste contrato.
+                </p>
+
+                <p className="text-center mt-8 mb-8">
+                  Belo Horizonte, ________ de _______________ de ______________.
+                </p>
+
+                <div className="signatures">
+                  <div className="signature">
+                    <div className="signature-line"></div>
+                    <p>Contratada</p>
                   </div>
-
-                  <div className="absolute bottom-8 left-8 right-8">
-                    <img src={contractPage2Logo} alt="Logo Página 2" className="h-16 mx-auto mb-2" />
-                    <div className="text-center text-xs mb-2">
-                      <strong>FUNDAÇÃO DOM BOSCO</strong>
-                    </div>
-                    <div className="text-xs text-center space-y-1">
-                      <p>Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: 31 3226-2616</p>
-                      <p>Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: 31 3386-1600</p>
-                      <p>Belo Horizonte - MG - www.fundacaodombosco.org</p>
-                    </div>
-                    <p className="text-xs mt-4 text-justify">
-                      Em cumprimento à Lei Geral de Proteção de dados nº13.709/2020, o destinatário deste documento proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante, conforme artigo 48 da Lei e assumindo as sanções cabíveis.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Página 3 */}
-                <div className="page bg-white p-8 shadow-lg border" style={{ minHeight: '297mm', width: '210mm' }}>
-                  <div className="space-y-6 text-sm leading-relaxed">
-                    <div>
-                      <h4 className="font-semibold mb-2">2.3.4.</h4>
-                      <p className="text-justify">
-                        A vigência deste contrato encerrar-se-á imediatamente após a entrega do laudo neuropsicológico e à quitação do valor correspondente à prestação de serviço acordada.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">2.3.5.</h4>
-                      <p className="text-justify">
-                        As datas das sessões de avaliação serão definidas em comum acordo entre as partes e registradas neste contrato.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">2.4. Cancelamento e reagendamento de sessões</h3>
-                      <div>
-                        <h4 className="font-semibold mb-2">2.4.1.</h4>
-                        <p className="text-justify">
-                          O Contratante concorda em notificar o Contratado com antecedência de 12 horas em caso de cancelamento ou reagendamento de sessões.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">2.5. Avaliação de menores de 18 anos</h3>
-                      
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">2.5.1.</h4>
-                        <p className="text-justify">
-                          A avaliação neuropsicológica de menores de 18 anos será realizada somente com a ciência e concordância de um responsável pela criança ou adolescente.
-                        </p>
-                      </div>
-
-                      <div>
-                        <h4 className="font-semibold mb-2">2.5.2.</h4>
-                        <p className="text-justify">
-                          A criança/adolescente deverá comparecer ao consultório para avaliação acompanhado de um responsável, o qual deverá estar presente no consultório ao final de cada sessão a fim de acompanhar o menor até sua casa.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">2.6. Honorários e formas de pagamento</h3>
-                      <div>
-                        <h4 className="font-semibold mb-2">2.6.1.</h4>
-                        <p className="text-justify">
-                          A forma de pagamento deverá ser definida e devidamente registrada neste contrato durante a primeira sessão de avaliação (anamnese).
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-8 left-8 right-8">
-                    <img src={contractPage3Logo} alt="Logo Página 3" className="h-16 mx-auto mb-2" />
-                    <div className="text-center text-xs mb-2">
-                      <strong>FUNDAÇÃO DOM BOSCO</strong>
-                    </div>
-                    <div className="text-xs text-center space-y-1">
-                      <p>Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: 31 3226-2616</p>
-                      <p>Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: 31 3386-1600</p>
-                      <p>Belo Horizonte - MG - www.fundacaodombosco.org</p>
-                    </div>
-                    <p className="text-xs mt-4 text-justify">
-                      Em cumprimento à Lei Geral de Proteção de dados nº13.709/2020, o destinatário deste documento proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante, conforme artigo 48 da Lei e assumindo as sanções cabíveis.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Página 4 */}
-                <div className="page bg-white p-8 shadow-lg border" style={{ minHeight: '297mm', width: '210mm' }}>
-                  <div className="space-y-6 text-sm leading-relaxed">
-                    <div>
-                      <h4 className="font-semibold mb-2">2.6.2.</h4>
-                      <p className="text-justify mb-4">
-                        O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado será no total de R$ <span className="border-b border-black inline-block min-w-[120px]">{contractData.valorTotal || '_____________'}</span> (<span className="border-b border-black inline-block min-w-[300px]">{contractData.valorExtenso || '_____________________________'}</span>)
-                      </p>
-                      
-                      <p className="mb-4">O pagamento dos honorários referentes ao serviço de Avaliação Neuropsicológica será efetuado:</p>
-                      
-                      <div className="space-y-2 ml-4">
-                        <p>• ( ) R$ <span className="border-b border-black inline-block min-w-[100px]">___________</span> à vista pagos na data da anamnese.</p>
-                        <p>• ( ) R$ <span className="border-b border-black inline-block min-w-[100px]">___________</span> parcelado no Boleto</p>
-                        <p className="ml-4">
-                          Uma parcela no dia da anamnese no valor de R$ <span className="border-b border-black inline-block min-w-[80px]">________</span> e outra(s) <span className="border-b border-black inline-block min-w-[40px]">____</span> parcela(s) no valor R$ <span className="border-b border-black inline-block min-w-[100px]">___________</span> nas datas: <span className="border-b border-black inline-block min-w-[200px]">______________________</span>.
-                        </p>
-                        <p>( ) R$ <span className="border-b border-black inline-block min-w-[100px]">___________</span> no Cartão de crédito, parcelado de <span className="border-b border-black inline-block min-w-[60px]">_______</span> vezes.</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">2.6.3.</h4>
-                      <p className="text-justify">
-                        O laudo será entregue SOMENTE após a quitação do valor total da avaliação.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">2.6.4.</h4>
-                      <p className="text-justify">
-                        As sessões de avaliação SOMENTE terão início após o pagamento da primeira parcela.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">2.6.5.</h4>
-                      <p className="text-justify">
-                        Os pagamentos por transferência, deposito bancário ou pix deverão ser realizados conforme os dados informados e posteriormente com o envio do respectivo comprovante para o e-mail: <strong>financeiro@fundacaodombosco.org</strong> com os dados referentes ao paciente e o responsável financeiro descriminados no corpo do e-mail.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">2.6.6.</h4>
-                      <p className="text-justify">
-                        Caso o contratante opte pelo parcelamento do pagamento em 2 (duas) ou mais parcelas, fica vedada a condição de vincular o pagamento do serviço à entrega do Laudo Neuropsicológico. O contratante deve, de forma imperativa, cumprir rigorosamente as datas estipuladas nas cláusulas anteriores, sob pena de rescisão contratual, nos termos contantes no item 2.7 deste contrato.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-8 left-8 right-8">
-                    <img src={contractPage4Logo} alt="Logo Página 4" className="h-16 mx-auto mb-2" />
-                    <div className="text-center text-xs mb-2">
-                      <strong>FUNDAÇÃO DOM BOSCO</strong>
-                    </div>
-                    <div className="text-xs text-center space-y-1">
-                      <p>Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: 31 3226-2616</p>
-                      <p>Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: 31 3386-1600</p>
-                      <p>Belo Horizonte - MG - www.fundacaodombosco.org</p>
-                    </div>
-                    <p className="text-xs mt-4 text-justify">
-                      Em cumprimento à Lei Geral de Proteção de dados nº13.709/2020, o destinatário deste documento proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante, conforme artigo 48 da Lei e assumindo as sanções cabíveis.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Página 5 */}
-                <div className="page bg-white p-8 shadow-lg border" style={{ minHeight: '297mm', width: '210mm' }}>
-                  <div className="space-y-6 text-sm leading-relaxed">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">2.7. Da Rescisão</h3>
-                      
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">2.7.1.</h4>
-                        <p className="text-justify">
-                          O presente instrumento poderá ser rescindido caso qualquer das partes descumpra o disposto neste contrato.
-                        </p>
-                      </div>
-
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">2.7.2.</h4>
-                        <p className="text-justify">
-                          Na hipótese de a CONTRATANTE solicitar a rescisão antecipada deste contrato sem justa causa, será obrigada a pagar a CONTRATADA por inteiro qualquer retribuição vencida e não paga e 50% (cinquenta por cento) do que ela receberia até o final do contrato.
-                        </p>
-                      </div>
-
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">2.7.3.</h4>
-                        <p className="text-justify">
-                          Na hipótese de a CONTRATADA solicitar a rescisão antecipada deste contrato sem justa causa terá direito a retribuição vencida.
-                        </p>
-                      </div>
-
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">2.7.4.</h4>
-                        <p className="text-justify">
-                          Caso a CONTRATANTE não compareça a 4 sessões seguidas sem informar a CONTRATADA e não houver possibilidade de contato após esse período, este contrato fica rescindido automaticamente e fica obrigada a pagar 100% do valor do contrato.
-                        </p>
-                      </div>
-
-                      <div className="mb-8">
-                        <h4 className="font-semibold mb-2">2.7.5.</h4>
-                        <p className="text-justify">
-                          Com a assinatura, ambas as partes atestam que tiveram oportunidade de ler, discutir, definir e concordar com todas as cláusulas deste contrato.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-8 mt-16">
-                      <p className="text-center">
-                        Belo Horizonte, <span className="border-b border-black inline-block min-w-[40px]">{contractData.data}</span> de <span className="border-b border-black inline-w-[100px]">{contractData.mes}</span> de <span className="border-b border-black inline-block min-w-[60px]">{contractData.ano}</span>.
-                      </p>
-
-                      <div className="grid grid-cols-1 gap-8 mt-16">
-                        <div className="text-center">
-                          <div className="border-b border-black w-80 mx-auto mb-2"></div>
-                          <p><strong>Contratada</strong></p>
-                        </div>
-
-                        <div className="text-center">
-                          <div className="border-b border-black w-80 mx-auto mb-2"></div>
-                          <p><strong>Contratante</strong></p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-8 left-8 right-8">
-                    <img src={contractPage5Logo} alt="Logo Página 5" className="h-16 mx-auto mb-2" />
-                    <div className="text-center text-xs mb-2">
-                      <strong>FUNDAÇÃO DOM BOSCO</strong>
-                    </div>
-                    <div className="text-xs text-center space-y-1">
-                      <p>Unid. 1: Rua Urucuia, 18 - Floresta - 30.150-060 - Tel.: 31 3226-2616</p>
-                      <p>Unid. 2: Rua Jayme Sales, 280 - Md. Gertrudes - 30.518-320 - Tel.: 31 3386-1600</p>
-                      <p>Belo Horizonte - MG - www.fundacaodombosco.org</p>
-                    </div>
-                    <p className="text-xs mt-4 text-justify">
-                      Em cumprimento à Lei Geral de Proteção de dados nº13.709/2020, o destinatário deste documento proteger os dados pessoais do Titular de acessos não autorizados e de situações acidentais ou inadequadas, comunicando ao Titular, caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante, conforme artigo 48 da Lei e assumindo as sanções cabíveis.
-                    </p>
+                  <div className="signature">
+                    <div className="signature-line"></div>
+                    <p>Contratante</p>
                   </div>
                 </div>
               </div>
