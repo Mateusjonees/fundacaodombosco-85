@@ -56,6 +56,7 @@ export default function CompleteAttendanceDialog({
   const [loading, setLoading] = useState(false);
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [isValidationMode, setIsValidationMode] = useState(false);
   
   const [attendanceData, setAttendanceData] = useState({
     // Informações básicas
@@ -102,6 +103,7 @@ export default function CompleteAttendanceDialog({
   useEffect(() => {
     if (isOpen) {
       loadStockItems();
+      setIsValidationMode(false); // Reset to form mode when dialog opens
     }
   }, [isOpen]);
 
@@ -344,10 +346,281 @@ export default function CompleteAttendanceDialog({
         title: "Erro",
         description: "Não foi possível concluir o atendimento. Tente novamente."
       });
-    } finally {
-      setLoading(false);
     }
   };
+
+  const goToValidation = () => {
+    // Validar campos obrigatórios antes de ir para validação
+    if (!attendanceData.sessionObjectives.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Campo obrigatório",
+        description: "Por favor, preencha os objetivos da sessão.",
+      });
+      return;
+    }
+    
+    if (!attendanceData.clinicalObservations.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Campo obrigatório", 
+        description: "Por favor, preencha as observações clínicas.",
+      });
+      return;
+    }
+    
+    setIsValidationMode(true);
+  };
+
+  const backToForm = () => {
+    setIsValidationMode(false);
+  };
+
+  const getTotalMaterialsCost = () => {
+    return attendanceData.materialsUsed.reduce((total, material) => {
+      const stockItem = stockItems.find(item => item.id === material.stock_item_id);
+      const unitCost = stockItem?.unit_cost || 0;
+      return total + (unitCost * material.quantity);
+    }, 0);
+  };
+
+  const renderValidationScreen = () => (
+    <div className="space-y-6">
+      <div className="text-center p-4 bg-muted/50 rounded-lg">
+        <h3 className="text-lg font-semibold mb-2">Revisar Informações do Atendimento</h3>
+        <p className="text-sm text-muted-foreground">
+          Confira todas as informações antes de finalizar o atendimento
+        </p>
+      </div>
+
+      {/* Resumo das Informações */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Informações da Sessão
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm font-medium">Tipo de Atendimento</Label>
+            <p className="text-sm text-muted-foreground">{attendanceData.sessionType}</p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Duração</Label>
+            <p className="text-sm text-muted-foreground">{attendanceData.actualDuration} minutos</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Avaliações */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            Avaliações da Sessão
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm font-medium">Qualidade Geral</Label>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-4 w-4 ${
+                    star <= attendanceData.overallQuality ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                  }`}
+                />
+              ))}
+              <span className="ml-2 text-sm text-muted-foreground">{attendanceData.overallQuality}/5</span>
+            </div>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Cooperação do Paciente</Label>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-4 w-4 ${
+                    star <= attendanceData.patientCooperation ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                  }`}
+                />
+              ))}
+              <span className="ml-2 text-sm text-muted-foreground">{attendanceData.patientCooperation}/5</span>
+            </div>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Alcance dos Objetivos</Label>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-4 w-4 ${
+                    star <= attendanceData.goalAchievement ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                  }`}
+                />
+              ))}
+              <span className="ml-2 text-sm text-muted-foreground">{attendanceData.goalAchievement}/5</span>
+            </div>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Avaliação do Esforço</Label>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-4 w-4 ${
+                    star <= attendanceData.effortRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                  }`}
+                />
+              ))}
+              <span className="ml-2 text-sm text-muted-foreground">{attendanceData.effortRating}/5</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Objetivos e Resultados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Objetivos e Resultados
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium">Objetivos da Sessão</Label>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {attendanceData.sessionObjectives || 'Não informado'}
+            </p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Objetivos Alcançados</Label>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {attendanceData.objectivesAchieved || 'Não informado'}
+            </p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Resposta do Paciente</Label>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {attendanceData.patientResponse || 'Não informado'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Materiais Utilizados */}
+      {attendanceData.materialsUsed.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Materiais Utilizados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {attendanceData.materialsUsed.map((material, index) => (
+                <div key={index} className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                  <div>
+                    <span className="font-medium">{material.name}</span>
+                    {material.observation && (
+                      <p className="text-xs text-muted-foreground">{material.observation}</p>
+                    )}
+                  </div>
+                  <Badge variant="outline">
+                    {material.quantity} {material.unit}
+                  </Badge>
+                </div>
+              ))}
+              <div className="text-right text-sm font-medium pt-2 border-t">
+                Custo Total: R$ {getTotalMaterialsCost().toFixed(2)}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Observações */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Observações Clínicas</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium">Observações da Sessão</Label>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {attendanceData.clinicalObservations || 'Não informado'}
+            </p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Plano para Próxima Sessão</Label>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {attendanceData.nextSessionPlan || 'Não informado'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Anexos */}
+      {attachedFiles.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Documentos Anexos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {attachedFiles.map((file, index) => (
+                <div key={index} className="flex items-center gap-3 p-2 bg-muted/50 rounded">
+                  <div className="text-lg">
+                    {getFileIcon(file.file.type)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Informações Financeiras */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Informações Financeiras
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm font-medium">Valor da Sessão</Label>
+            <p className="text-sm text-muted-foreground">R$ {attendanceData.sessionValue.toFixed(2)}</p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Forma de Pagamento</Label>
+            <p className="text-sm text-muted-foreground">
+              {attendanceData.paymentMethod === 'cash' && 'Dinheiro'}
+              {attendanceData.paymentMethod === 'pix' && 'PIX'}
+              {attendanceData.paymentMethod === 'credit_card' && 'Cartão de Crédito'}
+              {attendanceData.paymentMethod === 'debit_card' && 'Cartão de Débito'}
+              {attendanceData.paymentMethod === 'bank_transfer' && 'Transferência'}
+              {attendanceData.paymentMethod === 'insurance' && 'Convênio'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   const addMaterial = (stockItemId: string) => {
     const stockItem = stockItems.find(item => item.id === stockItemId);
@@ -504,10 +777,11 @@ export default function CompleteAttendanceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Concluir Atendimento - {schedule.clients?.name}
+            {isValidationMode ? 'Validar Atendimento' : 'Concluir Atendimento'} - {schedule.clients?.name}
           </DialogTitle>
         </DialogHeader>
 
+        {isValidationMode ? renderValidationScreen() : (
         <div className="space-y-6">
           {/* Informações Básicas */}
           <Card>
@@ -823,14 +1097,26 @@ export default function CompleteAttendanceDialog({
             </CardContent>
           </Card>
         </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button onClick={handleComplete} disabled={loading}>
-            {loading ? 'Salvando...' : 'Concluir Atendimento'}
-          </Button>
+          {isValidationMode ? (
+            <>
+              <Button variant="outline" onClick={backToForm} disabled={loading}>
+                Voltar e Editar
+              </Button>
+              <Button onClick={handleComplete} disabled={loading}>
+                {loading ? 'Salvando...' : 'Confirmar e Finalizar'}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={goToValidation} disabled={loading}>
+              Revisar e Validar
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
