@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
+import ClientPaymentManager from './ClientPaymentManager';
 
 interface Client {
   id: string;
@@ -993,9 +994,10 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
       <Card>
         <CardContent className="pt-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="details">Detalhes</TabsTrigger>
               <TabsTrigger value="professionals">Profissionais Vinculados</TabsTrigger>
+              <TabsTrigger value="payments">Pagamentos</TabsTrigger>
               <TabsTrigger value="history">Histórico</TabsTrigger>
               <TabsTrigger value="contracts">Contratos</TabsTrigger>
             </TabsList>
@@ -1180,6 +1182,14 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                   </p>
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="payments" className="mt-6">
+              <ClientPaymentManager 
+                clientId={client.id} 
+                clientName={client.name}
+                userProfile={userProfile}
+              />
             </TabsContent>
 
             <TabsContent value="history" className="mt-6">
