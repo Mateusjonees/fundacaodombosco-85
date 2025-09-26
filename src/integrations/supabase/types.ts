@@ -2447,6 +2447,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      process_attendance_validation: {
+        Args: { p_attendance_record: Record<string, unknown> }
+        Returns: boolean
+      }
       user_has_any_role: {
         Args: { allowed_roles: Database["public"]["Enums"]["employee_role"][] }
         Returns: boolean

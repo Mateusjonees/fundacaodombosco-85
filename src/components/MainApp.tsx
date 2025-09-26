@@ -24,7 +24,9 @@ import StockManager from '@/pages/StockManager';
 import Reports from '@/pages/Reports';
 import Dashboard from '@/pages/Dashboard';
 import MyPatients from '@/pages/MyPatients';
+import AttendanceValidation from '@/pages/AttendanceValidation';
 import EmployeesNew from '@/pages/EmployeesNew';
+import PendingAttendancesNotification from '@/components/PendingAttendancesNotification';
 
 interface Profile {
   id: string;
@@ -126,6 +128,7 @@ export const MainApp = () => {
                 </div>
                 
                 <div className="flex items-center gap-4">
+                  <PendingAttendancesNotification />
                   <div className="text-right hidden sm:block">
                     <Badge variant="secondary" className="mb-1">
                       {currentUserProfile?.name || user?.email}
@@ -153,6 +156,7 @@ export const MainApp = () => {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/schedule" element={<Schedule />} />
+                <Route path="/attendance-validation" element={<AttendanceValidation />} />
                 <Route path="/financial" element={<Financial />} />
                 <Route path="/contracts" element={<Contracts />} />
                 <Route path="/stock" element={<StockManager />} />

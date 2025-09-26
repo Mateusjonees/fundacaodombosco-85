@@ -14,6 +14,7 @@ import {
   LogOut,
   Settings,
   Archive,
+  CheckSquare,
   Shield,
   Heart,
   LucideIcon
@@ -48,6 +49,7 @@ const iconMapping: Record<string, LucideIcon> = {
   Package,
   Settings,
   Archive,
+  CheckSquare,
   Shield,
   Heart,
 };
@@ -87,6 +89,17 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
+  // Validação de Atendimentos - coordenadores e diretores
+  if (permissions.isDirector() || permissions.isCoordinator()) {
+    items.push({ 
+      id: 'attendance-validation', 
+      title: 'Validar Atendimentos', 
+      url: '/attendance-validation', 
+      icon: 'CheckSquare', 
+      order_index: 3.5
+    });
+  }
+
   // Agenda - baseado em permissões
   if (permissions.canViewAllSchedules() || permissions.isProfessional()) {
     items.push({ 
@@ -94,7 +107,7 @@ const getMenuItemsForRole = (permissions: any) => {
       title: 'Agenda', 
       url: '/schedule', 
       icon: 'Calendar', 
-      order_index: 3 
+      order_index: 4 
     });
   }
 
@@ -105,7 +118,7 @@ const getMenuItemsForRole = (permissions: any) => {
       title: 'Financeiro', 
       url: '/financial', 
       icon: 'DollarSign', 
-      order_index: 4 
+      order_index: 5 
     });
   }
 
@@ -116,7 +129,7 @@ const getMenuItemsForRole = (permissions: any) => {
       title: 'Contratos', 
       url: '/contracts', 
       icon: 'FolderOpen', 
-      order_index: 5 
+      order_index: 6 
     });
   }
 
@@ -127,7 +140,7 @@ const getMenuItemsForRole = (permissions: any) => {
       title: 'Estoque', 
       url: '/stock', 
       icon: 'Package', 
-      order_index: 6 
+      order_index: 7 
     });
   }
 
@@ -138,7 +151,7 @@ const getMenuItemsForRole = (permissions: any) => {
       title: 'Relatórios', 
       url: '/reports', 
       icon: 'BarChart3', 
-      order_index: 7 
+      order_index: 8 
     });
   }
 
@@ -149,7 +162,7 @@ const getMenuItemsForRole = (permissions: any) => {
       title: 'Funcionários', 
       url: '/employees-new', 
       icon: 'UserPlus', 
-      order_index: 8
+      order_index: 9
     });
   }
 
@@ -160,7 +173,7 @@ const getMenuItemsForRole = (permissions: any) => {
       title: 'Usuários', 
       url: '/users', 
       icon: 'Shield', 
-      order_index: 9 
+      order_index: 10 
     });
   }
 

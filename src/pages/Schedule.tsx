@@ -473,6 +473,7 @@ export default function Schedule() {
       'scheduled': { text: 'Agendado', variant: 'default' as const },
       'confirmed': { text: 'Confirmado', variant: 'secondary' as const },
       'completed': { text: 'Concluído', variant: 'outline' as const },
+      'pending_validation': { text: 'Aguardando Validação', variant: 'secondary' as const },
       'cancelled': { text: 'Cancelado', variant: 'destructive' as const }
     };
     

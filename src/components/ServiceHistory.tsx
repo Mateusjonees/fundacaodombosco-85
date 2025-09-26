@@ -181,7 +181,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         });
       }
 
-      // Carregar attendance reports (relatórios de atendimento completos)
+      // Carregar attendance reports (relatórios de atendimento completos) - apenas validados
       const { data: attendanceReports, error: attendanceError } = await supabase
         .from('attendance_reports')
         .select(`
@@ -202,9 +202,13 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           attachments,
           status,
           employee_id,
-          created_at
+          created_at,
+          validation_status,
+          validated_at,
+          validated_by_name
         `)
         .eq('client_id', clientId)
+        .eq('validation_status', 'validated') // Só mostrar atendimentos validados
         .order('start_time', { ascending: false });
 
       if (attendanceError) throw attendanceError;
@@ -234,7 +238,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         });
       }
 
-      // Carregar employee reports (relatórios detalhados)
+      // Carregar employee reports (relatórios detalhados) - apenas validados
       const { data: reports, error: reportsError } = await supabase
         .from('employee_reports')
         .select(`
@@ -255,9 +259,13 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           attachments,
           materials_cost,
           employee_id,
-          profiles:employee_id (name, employee_role)
+          profiles:employee_id (name, employee_role),
+          validation_status,
+          validated_at,
+          validated_by_name
         `)
         .eq('client_id', clientId)
+        .eq('validation_status', 'validated') // Só mostrar relatórios validados
         .order('session_date', { ascending: false });
 
       if (reportsError) throw reportsError;
