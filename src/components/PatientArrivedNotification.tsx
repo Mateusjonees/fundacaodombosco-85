@@ -10,6 +10,7 @@ export default function PatientArrivedNotification() {
   useEffect(() => {
     if (!user) return;
 
+    // Set up realtime listener for patient arrivals
     const channel = supabase
       .channel('patient-arrivals')
       .on(
@@ -25,7 +26,7 @@ export default function PatientArrivedNotification() {
           const oldRecord = payload.old as any;
           
           // Check if patient_arrived changed from false to true
-          if (!oldRecord.patient_arrived && newRecord.patient_arrived) {            
+          if (!oldRecord?.patient_arrived && newRecord?.patient_arrived) {            
             toast({
               title: "🔔 Paciente Chegou!",
               description: `Seu próximo paciente chegou e está aguardando.`,
@@ -37,12 +38,14 @@ export default function PatientArrivedNotification() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, toast]);
+  }, [user?.id, toast]);
 
   const playNotificationSound = () => {
     try {
