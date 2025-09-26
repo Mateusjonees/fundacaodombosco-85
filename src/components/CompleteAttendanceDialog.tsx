@@ -197,11 +197,11 @@ export default function CompleteAttendanceDialog({
         }
       }
 
-      // 3. Atualizar agendamento
+      // 3. Atualizar agendamento para status "pending_validation"
       await supabase
         .from('schedules')
         .update({ 
-          status: 'completed',
+          status: 'pending_validation', // Mudança: não marca como completed ainda
           session_notes: attendanceData.clinicalObservations,
           session_amount: attendanceData.sessionValue,
           payment_method: attendanceData.paymentMethod,
@@ -210,7 +210,7 @@ export default function CompleteAttendanceDialog({
         })
         .eq('id', schedule.id);
 
-      // 4. Criar relatórios com dados corretos
+      // 4. Criar relatórios com status "pending_validation" (sem processar estoque/financeiro ainda)
       await supabase.from('attendance_reports').insert({
         schedule_id: schedule.id,
         client_id: schedule.client_id,
@@ -231,7 +231,8 @@ export default function CompleteAttendanceDialog({
         attachments: uploadedAttachments,
         created_by: user.id,
         completed_by: user.id,
-        completed_by_name: completedByName
+        completed_by_name: completedByName,
+        validation_status: 'pending_validation' // Status inicial
       });
 
       await supabase.from('employee_reports').insert({
@@ -257,82 +258,15 @@ export default function CompleteAttendanceDialog({
         supervision_required: attendanceData.supervisionNeeded,
         follow_up_needed: !!attendanceData.nextSessionPlan,
         completed_by: user.id,
-        completed_by_name: completedByName
+        completed_by_name: completedByName,
+        validation_status: 'pending_validation' // Status inicial
       });
 
-      // 5. Processar movimentações de estoque
-      for (const material of processedMaterials) {
-        const { data: currentStock } = await supabase
-          .from('stock_items')
-          .select('current_quantity')
-          .eq('id', material.stock_item_id)
-          .single();
-
-        if (currentStock) {
-          // Criar movimentação
-          await supabase.from('stock_movements').insert({
-            stock_item_id: material.stock_item_id,
-            type: 'saida',
-            quantity: material.quantity,
-            previous_quantity: currentStock.current_quantity,
-            new_quantity: currentStock.current_quantity - material.quantity,
-            unit_cost: material.unit_cost,
-            total_cost: material.total_cost,
-            reason: 'atendimento',
-            notes: `${attendanceData.sessionType} - ${schedule.clients?.name}`,
-            moved_by: user.id,
-            created_by: user.id,
-            client_id: schedule.client_id,
-            schedule_id: schedule.id,
-            date: new Date().toISOString().split('T')[0]
-          });
-
-          // Atualizar estoque
-          await supabase
-            .from('stock_items')
-            .update({ 
-              current_quantity: Math.max(0, currentStock.current_quantity - material.quantity),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', material.stock_item_id);
-        }
-      }
-
-      // 6. Registros financeiros
-      if (attendanceData.sessionValue > 0) {
-        await supabase.from('financial_records').insert({
-          type: 'income',
-          category: 'consultation',
-          description: `${attendanceData.sessionType} - ${schedule.clients?.name}`,
-          amount: attendanceData.sessionValue,
-          date: new Date().toISOString().split('T')[0],
-          payment_method: attendanceData.paymentMethod,
-          client_id: schedule.client_id,
-          employee_id: schedule.employee_id,
-          created_by: user.id,
-          notes: attendanceData.paymentNotes
-        });
-      }
-
-      if (totalMaterialsCost > 0) {
-        const materialsList = processedMaterials.map(m => `${m.name} (${m.quantity} ${m.unit})`).join(', ');
-        await supabase.from('financial_records').insert({
-          type: 'expense',
-          category: 'supplies',
-          description: `Materiais - ${schedule.clients?.name}: ${materialsList}`,
-          amount: totalMaterialsCost,
-          date: new Date().toISOString().split('T')[0],
-          payment_method: 'internal',
-          client_id: schedule.client_id,
-          employee_id: schedule.employee_id,
-          created_by: user.id,
-          notes: `Custo de materiais para ${attendanceData.sessionType}`
-        });
-      }
+      // REMOVIDO: Processamento de estoque e financeiro (será feito apenas após validação)
 
       toast({
-        title: "Atendimento Concluído!",
-        description: "Todas as informações foram registradas com sucesso.",
+        title: "Atendimento Registrado!",
+        description: "Atendimento concluído e enviado para validação do coordenador.",
       });
 
       onComplete();

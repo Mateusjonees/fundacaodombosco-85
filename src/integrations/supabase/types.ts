@@ -101,6 +101,7 @@ export type Database = {
           patient_name: string
           patient_response: string | null
           professional_name: string
+          rejection_reason: string | null
           schedule_id: string | null
           session_duration: number | null
           session_notes: string | null
@@ -108,6 +109,10 @@ export type Database = {
           status: string
           techniques_used: string | null
           updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+          validated_by_name: string | null
+          validation_status: string | null
         }
         Insert: {
           amount_charged?: number | null
@@ -127,6 +132,7 @@ export type Database = {
           patient_name: string
           patient_response?: string | null
           professional_name: string
+          rejection_reason?: string | null
           schedule_id?: string | null
           session_duration?: number | null
           session_notes?: string | null
@@ -134,6 +140,10 @@ export type Database = {
           status?: string
           techniques_used?: string | null
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validated_by_name?: string | null
+          validation_status?: string | null
         }
         Update: {
           amount_charged?: number | null
@@ -153,6 +163,7 @@ export type Database = {
           patient_name?: string
           patient_response?: string | null
           professional_name?: string
+          rejection_reason?: string | null
           schedule_id?: string | null
           session_duration?: number | null
           session_notes?: string | null
@@ -160,6 +171,10 @@ export type Database = {
           status?: string
           techniques_used?: string | null
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validated_by_name?: string | null
+          validation_status?: string | null
         }
         Relationships: [
           {
@@ -761,6 +776,7 @@ export type Database = {
           patient_response: string | null
           professional_notes: string | null
           quality_rating: number | null
+          rejection_reason: string | null
           schedule_id: string | null
           session_date: string
           session_duration: number | null
@@ -770,6 +786,10 @@ export type Database = {
           supervision_required: boolean | null
           techniques_used: string | null
           updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+          validated_by_name: string | null
+          validation_status: string | null
         }
         Insert: {
           attachments?: Json | null
@@ -789,6 +809,7 @@ export type Database = {
           patient_response?: string | null
           professional_notes?: string | null
           quality_rating?: number | null
+          rejection_reason?: string | null
           schedule_id?: string | null
           session_date?: string
           session_duration?: number | null
@@ -798,6 +819,10 @@ export type Database = {
           supervision_required?: boolean | null
           techniques_used?: string | null
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validated_by_name?: string | null
+          validation_status?: string | null
         }
         Update: {
           attachments?: Json | null
@@ -817,6 +842,7 @@ export type Database = {
           patient_response?: string | null
           professional_notes?: string | null
           quality_rating?: number | null
+          rejection_reason?: string | null
           schedule_id?: string | null
           session_date?: string
           session_duration?: number | null
@@ -826,6 +852,10 @@ export type Database = {
           supervision_required?: boolean | null
           techniques_used?: string | null
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validated_by_name?: string | null
+          validation_status?: string | null
         }
         Relationships: [
           {
@@ -2434,6 +2464,14 @@ export type Database = {
       }
       user_has_role: {
         Args: { required_roles: Database["public"]["Enums"]["employee_role"][] }
+        Returns: boolean
+      }
+      validate_attendance_report: {
+        Args: {
+          p_action: string
+          p_attendance_report_id: string
+          p_rejection_reason?: string
+        }
         Returns: boolean
       }
     }
