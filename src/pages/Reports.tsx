@@ -844,23 +844,23 @@ export default function Reports() {
                     />
                   </div>
 
-                    <div>
-                      <Label>Paciente</Label>
-                      <Combobox
-                        options={[
-                          { value: "all", label: "Todos os pacientes" },
-                          ...clients.map(client => ({
-                            value: client.id,
-                            label: client.name
-                          }))
-                        ]}
-                        value={selectedClient}
-                        onValueChange={setSelectedClient}
-                        placeholder="Buscar paciente..."
-                        searchPlaceholder="Digite o nome do paciente..."
-                        emptyMessage="Nenhum paciente encontrado."
-                      />
-                    </div>
+                  <div>
+                    <Label>Paciente</Label>
+                    <Combobox
+                      options={[
+                        { value: "all", label: "Todos os pacientes" },
+                        ...clients.map(client => ({
+                          value: client.id,
+                          label: client.name
+                        }))
+                      ]}
+                      value={selectedClient}
+                      onValueChange={setSelectedClient}
+                      placeholder="Buscar paciente..."
+                      searchPlaceholder="Digite o nome do paciente..."
+                      emptyMessage="Nenhum paciente encontrado."
+                    />
+                  </div>
 
                   <div>
                     <Label>Período</Label>
@@ -932,11 +932,247 @@ export default function Reports() {
                   </Card>
                 </div>
 
-                <div className="text-center py-8 text-muted-foreground">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Analytics detalhados com gráficos em desenvolvimento</p>
-                  <p className="text-sm">Em breve: gráficos de performance, tendências e insights avançados</p>
-                </div>
+                {/* Relatório Detalhado do Funcionário */}
+                {selectedEmployee !== 'all' && (
+                  <div className="grid gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>
+                          Relatório Detalhado - {employees.find(e => e.user_id === selectedEmployee)?.name}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="text-center">
+                                <p className="text-sm text-muted-foreground">Total de Atendimentos</p>
+                                <p className="text-3xl font-bold text-blue-600">
+                                  {attendanceReports.length}
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="text-center">
+                                <p className="text-sm text-muted-foreground">Horas Trabalhadas</p>
+                                <p className="text-3xl font-bold text-green-600">
+                                  {Math.round(attendanceReports.reduce((sum, r) => sum + (r.session_duration || 0), 0) / 60)}h
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="text-center">
+                                <p className="text-sm text-muted-foreground">Receita Gerada</p>
+                                <p className="text-3xl font-bold text-green-600">
+                                  R$ {getTotalRevenue().toFixed(2)}
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Tabela de Atendimentos */}
+                        <div className="border rounded-lg">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Data</TableHead>
+                                <TableHead>Paciente</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Duração</TableHead>
+                                <TableHead>Valor</TableHead>
+                                <TableHead>Status</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {attendanceReports.map((report) => (
+                                <TableRow key={report.id}>
+                                  <TableCell>
+                                    {format(new Date(report.start_time), 'dd/MM/yyyy', { locale: ptBR })}
+                                  </TableCell>
+                                  <TableCell>{report.patient_name || report.clients?.name}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{report.attendance_type}</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {report.session_duration ? `${report.session_duration} min` : '-'}
+                                  </TableCell>
+                                  <TableCell>
+                                    {report.amount_charged ? `R$ ${report.amount_charged.toFixed(2)}` : '-'}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge 
+                                      variant={
+                                        report.validation_status === 'validated' ? 'default' :
+                                        report.validation_status === 'rejected' ? 'destructive' :
+                                        'secondary'
+                                      }
+                                    >
+                                      {report.validation_status === 'validated' ? 'Validado' :
+                                       report.validation_status === 'rejected' ? 'Rejeitado' :
+                                       'Pendente'}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+
+                        {attendanceReports.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>Nenhum atendimento encontrado para os filtros selecionados</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Análise de Performance */}
+                    {employeeReports.filter(r => r.employee_id === selectedEmployee).length > 0 && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Análise de Performance</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                              <h4 className="font-semibold">Avaliações Médias</h4>
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <span>Qualidade</span>
+                                  <div className="flex items-center gap-2">
+                                    {renderStars(getAverageRating(employeeReports.filter(r => r.employee_id === selectedEmployee), 'quality_rating'))}
+                                    <span className="text-sm text-muted-foreground">
+                                      ({getAverageRating(employeeReports.filter(r => r.employee_id === selectedEmployee), 'quality_rating').toFixed(1)})
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span>Esforço</span>
+                                  <div className="flex items-center gap-2">
+                                    {renderStars(getAverageRating(employeeReports.filter(r => r.employee_id === selectedEmployee), 'effort_rating'))}
+                                    <span className="text-sm text-muted-foreground">
+                                      ({getAverageRating(employeeReports.filter(r => r.employee_id === selectedEmployee), 'effort_rating').toFixed(1)})
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span>Cooperação do Paciente</span>
+                                  <div className="flex items-center gap-2">
+                                    {renderStars(getAverageRating(employeeReports.filter(r => r.employee_id === selectedEmployee), 'patient_cooperation'))}
+                                    <span className="text-sm text-muted-foreground">
+                                      ({getAverageRating(employeeReports.filter(r => r.employee_id === selectedEmployee), 'patient_cooperation').toFixed(1)})
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span>Alcance de Objetivos</span>
+                                  <div className="flex items-center gap-2">
+                                    {renderStars(getAverageRating(employeeReports.filter(r => r.employee_id === selectedEmployee), 'goal_achievement'))}
+                                    <span className="text-sm text-muted-foreground">
+                                      ({getAverageRating(employeeReports.filter(r => r.employee_id === selectedEmployee), 'goal_achievement').toFixed(1)})
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <h4 className="font-semibold">Estatísticas do Período</h4>
+                              <div className="space-y-3">
+                                <div className="flex justify-between">
+                                  <span>Pacientes Atendidos</span>
+                                  <span className="font-semibold">
+                                    {new Set(attendanceReports.map(r => r.client_id)).size}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Tempo Total</span>
+                                  <span className="font-semibold">
+                                    {Math.round(attendanceReports.reduce((sum, r) => sum + (r.session_duration || 0), 0) / 60)} horas
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Custo de Materiais</span>
+                                  <span className="font-semibold">
+                                    R$ {employeeReports
+                                      .filter(r => r.employee_id === selectedEmployee)
+                                      .reduce((sum, r) => sum + (r.materials_cost || 0), 0)
+                                      .toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Sessões Validadas</span>
+                                  <span className="font-semibold">
+                                    {attendanceReports.filter(r => r.validation_status === 'validated').length}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+
+                {/* Visão Geral quando nenhum funcionário específico está selecionado */}
+                {selectedEmployee === 'all' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Resumo Geral dos Funcionários</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Funcionário</TableHead>
+                            <TableHead>Atendimentos</TableHead>
+                            <TableHead>Pacientes</TableHead>
+                            <TableHead>Horas</TableHead>
+                            <TableHead>Receita</TableHead>
+                            <TableHead>Qualidade Média</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {employees.map((employee) => {
+                            const employeeAttendances = attendanceReports.filter(r => r.employee_id === employee.user_id);
+                            const employeeEmployeeReports = employeeReports.filter(r => r.employee_id === employee.user_id);
+                            const totalHours = Math.round(employeeAttendances.reduce((sum, r) => sum + (r.session_duration || 0), 0) / 60);
+                            const totalRevenue = employeeAttendances.reduce((sum, r) => sum + (r.amount_charged || 0), 0);
+                            const uniquePatients = new Set(employeeAttendances.map(r => r.client_id)).size;
+                            const avgQuality = getAverageRating(employeeEmployeeReports, 'quality_rating');
+
+                            return (
+                              <TableRow key={employee.user_id}>
+                                <TableCell className="font-medium">{employee.name}</TableCell>
+                                <TableCell>{employeeAttendances.length}</TableCell>
+                                <TableCell>{uniquePatients}</TableCell>
+                                <TableCell>{totalHours}h</TableCell>
+                                <TableCell>R$ {totalRevenue.toFixed(2)}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    {renderStars(avgQuality)}
+                                    <span className="text-sm text-muted-foreground">
+                                      ({avgQuality.toFixed(1)})
+                                    </span>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
               </CardContent>
             </Card>
           </div>
