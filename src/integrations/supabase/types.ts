@@ -601,6 +601,63 @@ export type Database = {
           },
         ]
       }
+      client_payments: {
+        Row: {
+          amount_paid: number | null
+          amount_remaining: number
+          client_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          installments_paid: number | null
+          installments_total: number | null
+          payment_method: string | null
+          payment_type: string
+          status: string
+          total_amount: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          amount_remaining: number
+          client_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          installments_paid?: number | null
+          installments_total?: number | null
+          payment_method?: string | null
+          payment_type: string
+          status?: string
+          total_amount: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number | null
+          amount_remaining?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          installments_paid?: number | null
+          installments_total?: number | null
+          payment_method?: string | null
+          payment_type?: string
+          status?: string
+          total_amount?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -1558,6 +1615,62 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_installments: {
+        Row: {
+          amount: number
+          client_payment_id: string
+          created_at: string
+          due_date: string
+          id: string
+          installment_number: number
+          notes: string | null
+          paid_amount: number | null
+          paid_by: string | null
+          paid_date: string | null
+          payment_method: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_payment_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_number: number
+          notes?: string | null
+          paid_amount?: number | null
+          paid_by?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_payment_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          notes?: string | null
+          paid_amount?: number | null
+          paid_by?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_installments_client_payment_id_fkey"
+            columns: ["client_payment_id"]
+            isOneToOne: false
+            referencedRelation: "client_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_audit_log: {
         Row: {
           action: string
@@ -2363,6 +2476,15 @@ export type Database = {
           p_service_type?: string
         }
         Returns: string
+      }
+      create_payment_installments: {
+        Args: {
+          p_client_payment_id: string
+          p_first_due_date: string
+          p_installments_total: number
+          p_total_amount: number
+        }
+        Returns: boolean
       }
       create_test_employee: {
         Args: {
