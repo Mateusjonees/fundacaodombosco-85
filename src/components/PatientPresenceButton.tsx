@@ -32,6 +32,8 @@ export default function PatientPresenceButton({
 
     setLoading(true);
     try {
+      console.log('Attempting to confirm presence for schedule:', scheduleId);
+      
       // Update schedule to mark patient as arrived
       const { error: updateError } = await supabase
         .from('schedules')
@@ -42,7 +44,12 @@ export default function PatientPresenceButton({
         })
         .eq('id', scheduleId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating schedule:', updateError);
+        throw updateError;
+      }
+
+      console.log('Schedule updated successfully');
 
       // Create notification for the assigned employee
       const { error: notificationError } = await supabase
@@ -56,7 +63,12 @@ export default function PatientPresenceButton({
           message_type: 'patient_arrival'
         });
 
-      if (notificationError) throw notificationError;
+      if (notificationError) {
+        console.error('Error creating notification:', notificationError);
+        // Don't throw here - the main update worked
+      } else {
+        console.log('Notification created successfully');
+      }
 
       // Play notification sound
       playNotificationSound();
@@ -72,7 +84,7 @@ export default function PatientPresenceButton({
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível confirmar a presença do paciente.",
+        description: `Erro ao confirmar presença: ${error.message || 'Erro desconhecido'}`,
       });
     } finally {
       setLoading(false);

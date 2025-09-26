@@ -2,15 +2,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Bell } from 'lucide-react';
 
 export default function PatientArrivedNotification() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isListening, setIsListening] = useState(false);
 
   useEffect(() => {
-    if (!user || isListening) return;
+    if (!user) return;
 
     const channel = supabase
       .channel('patient-arrivals')
@@ -27,26 +25,24 @@ export default function PatientArrivedNotification() {
           const oldRecord = payload.old as any;
           
           // Check if patient_arrived changed from false to true
-          if (!oldRecord.patient_arrived && newRecord.patient_arrived) {
-            playNotificationSound();
-            
+          if (!oldRecord.patient_arrived && newRecord.patient_arrived) {            
             toast({
               title: "🔔 Paciente Chegou!",
               description: `Seu próximo paciente chegou e está aguardando.`,
               duration: 10000,
             });
+
+            // Play notification sound
+            playNotificationSound();
           }
         }
       )
       .subscribe();
 
-    setIsListening(true);
-
     return () => {
       supabase.removeChannel(channel);
-      setIsListening(false);
     };
-  }, [user, toast, isListening]);
+  }, [user, toast]);
 
   const playNotificationSound = () => {
     try {
