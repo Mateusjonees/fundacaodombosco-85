@@ -594,7 +594,7 @@ export default function Financial() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
+            <CardTitle className="text-sm font-medium">Pacientes Ativos</CardTitle>
             <Calendar className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -759,7 +759,7 @@ export default function Financial() {
                   <TableRow>
                     <TableHead>Data</TableHead>
                     <TableHead>Categoria</TableHead>
-                    <TableHead>Cliente</TableHead>
+                    <TableHead>Paciente</TableHead>
                     <TableHead>Descrição</TableHead>
                     <TableHead>Valor</TableHead>
                   </TableRow>
@@ -847,7 +847,7 @@ export default function Financial() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Cliente</TableHead>
+                      <TableHead>Paciente</TableHead>
                       <TableHead>Descrição</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Vencimento</TableHead>
@@ -867,7 +867,7 @@ export default function Financial() {
                         <TableRow key={`${payment.type}-${payment.id}`} className={isOverdue ? 'bg-red-50' : ''}>
                           <TableCell className="font-medium">
                             <div>
-                              <p>{payment.client_name || 'Cliente não identificado'}</p>
+                              <p>{payment.client_name || 'Paciente não identificado'}</p>
                               {payment.client_phone && (
                                 <p className="text-xs text-muted-foreground">
                                   {payment.client_phone}
@@ -1071,7 +1071,7 @@ export default function Financial() {
         <CardContent>
           {filteredRecords.length === 0 ? (
             <p className="text-muted-foreground">
-              Nenhum detalhe financeiro de clientes para o período selecionado.
+              Nenhum detalhe financeiro de pacientes para o período selecionado.
             </p>
           ) : (
             <div className="space-y-4">

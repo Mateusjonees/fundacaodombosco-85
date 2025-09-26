@@ -204,7 +204,7 @@ export default function ClientForm() {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <UserPlus className="h-8 w-8" />
-        <h1 className="text-3xl font-bold">Cadastrar Novo Cliente</h1>
+        <h1 className="text-3xl font-bold">Cadastrar Novo Paciente</h1>
       </div>
 
       {/* Age Selection */}
@@ -721,7 +721,7 @@ export default function ClientForm() {
                 id="queixa_neuropsicologica"
                 value={formData.queixa_neuropsicologica}
                 onChange={(e) => handleInputChange('queixa_neuropsicologica', e.target.value)}
-                placeholder="Relato do cliente/responsável sobre as dificuldades"
+                placeholder="Relato do paciente/responsável sobre as dificuldades"
                 rows={3}
               />
             </div>
@@ -732,7 +732,7 @@ export default function ClientForm() {
                 id="expectativas_tratamento"
                 value={formData.expectativas_tratamento}
                 onChange={(e) => handleInputChange('expectativas_tratamento', e.target.value)}
-                placeholder="O que o cliente/família espera do acompanhamento"
+                placeholder="O que o paciente/família espera do acompanhamento"
                 rows={3}
               />
             </div>
@@ -740,7 +740,7 @@ export default function ClientForm() {
         </Card>
 
         <Button type="submit" disabled={loading} className="w-full">
-          {loading ? 'Salvando...' : 'Salvar Cliente'}
+          {loading ? 'Salvando...' : 'Salvar Paciente'}
         </Button>
       </form>
     </div>

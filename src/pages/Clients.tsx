@@ -46,7 +46,7 @@ interface UserProfile {
   employee_role: string;
 }
 
-export default function Clients() {
+export default function Patients() {
   const { user } = useAuth();
   const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
   const [clients, setClients] = useState<Client[]>([]);

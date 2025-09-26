@@ -86,7 +86,7 @@ export default function Contracts() {
         .from('clients')
         .select('*')
         .eq('is_active', true)
-        .eq('unit', 'floresta') // Apenas clientes da unidade Floresta
+        .eq('unit', 'floresta') // Apenas pacientes da unidade Floresta
         .order('name');
 
       if (error) throw error;
@@ -96,7 +96,7 @@ export default function Contracts() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível carregar os clientes.",
+        description: "Não foi possível carregar os pacientes.",
       });
     } finally {
       setLoading(false);
@@ -348,7 +348,7 @@ Contratante
         console.error('Erro ao criar relatório de atendimento:', attendanceError);
       }
 
-      // Criar registro de pagamento do cliente
+      // Criar registro de pagamento do paciente
       const { error: paymentError } = await supabase
         .from('client_payments')
         .insert([{
@@ -514,7 +514,7 @@ Contratante
             onClick={() => navigate('/client-form')}
           >
             <UserPlus className="h-4 w-4" />
-            Novo Cliente
+            Novo Paciente
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
@@ -545,7 +545,7 @@ Contratante
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="clientSearch"
-                        placeholder="Digite o nome ou CPF do cliente..."
+                        placeholder="Digite o nome ou CPF do paciente..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10"
@@ -579,7 +579,7 @@ Contratante
                     <div className="p-3 bg-green-50 border border-green-200 rounded">
                       <div className="flex items-center gap-2 text-green-700">
                         <Users className="h-4 w-4" />
-                        <span className="font-medium">Cliente Selecionado:</span>
+                        <span className="font-medium">Paciente Selecionado:</span>
                       </div>
                       <div className="mt-1 text-sm text-green-600">
                         {contractData.clientName} - {contractData.clientCpf || 'CPF não informado'}
@@ -702,12 +702,12 @@ Contratante
       </div>
       </div>
 
-      {/* Lista de Clientes */}
+      {/* Lista de Pacientes */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Clientes da Unidade Floresta
+            Pacientes da Unidade Floresta
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -715,7 +715,7 @@ Contratante
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar cliente..."
+                placeholder="Buscar paciente..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -723,7 +723,7 @@ Contratante
             </div>
 
             {loading ? (
-              <div className="text-center py-8">Carregando clientes...</div>
+              <div className="text-center py-8">Carregando pacientes...</div>
             ) : (
               <Table>
                 <TableHeader>
@@ -762,7 +762,7 @@ Contratante
                   ) : (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                        {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+                        {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
                       </TableCell>
                     </TableRow>
                   )}

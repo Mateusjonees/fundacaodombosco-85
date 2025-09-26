@@ -110,11 +110,18 @@ export default function Reports() {
 
   const loadClients = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('clients')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
+        .select('id, name, unit')
+        .eq('is_active', true);
+
+      // Para diretores: mostrar todos os pacientes (madre e floresta)
+      // Para outros: manter filtros existentes se houver
+      if (userRole !== 'director' && selectedUnit !== 'all') {
+        query = query.eq('unit', selectedUnit);
+      }
+
+      const { data, error } = await query.order('name');
 
       if (error) throw error;
       setClients(data || []);
@@ -410,10 +417,10 @@ export default function Reports() {
             </div>
 
             <div>
-              <Label>Cliente</Label>
+              <Label>Paciente</Label>
               <Combobox
                 options={[
-                  { value: "all", label: "Todos os clientes" },
+                  { value: "all", label: "Todos os pacientes" },
                   ...clients.map(client => ({
                     value: client.id,
                     label: client.name
@@ -421,9 +428,9 @@ export default function Reports() {
                 ]}
                 value={selectedClient}
                 onValueChange={setSelectedClient}
-                placeholder="Buscar cliente..."
-                searchPlaceholder="Digite o nome do cliente..."
-                emptyMessage="Nenhum cliente encontrado."
+                placeholder="Buscar paciente..."
+                searchPlaceholder="Digite o nome do paciente..."
+                emptyMessage="Nenhum paciente encontrado."
               />
             </div>
 
@@ -501,7 +508,7 @@ export default function Reports() {
                 )}
                 {selectedClient !== 'all' && (
                   <Badge variant="outline">
-                    Cliente: {clients.find(c => c.id === selectedClient)?.name}
+                    Paciente: {clients.find(c => c.id === selectedClient)?.name}
                   </Badge>
                 )}
                 {selectedUnit !== 'all' && (
@@ -608,7 +615,7 @@ export default function Reports() {
                     <TableRow>
                       <TableHead>Data/Hora</TableHead>
                       <TableHead>Funcionário</TableHead>
-                      <TableHead>Cliente</TableHead>
+                      <TableHead>Paciente</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Duração</TableHead>
                       <TableHead>Objetivos</TableHead>
@@ -837,23 +844,23 @@ export default function Reports() {
                     />
                   </div>
 
-                  <div>
-                    <Label>Cliente</Label>
-                    <Combobox
-                      options={[
-                        { value: "all", label: "Todos os clientes" },
-                        ...clients.map(client => ({
-                          value: client.id,
-                          label: client.name
-                        }))
-                      ]}
-                      value={selectedClient}
-                      onValueChange={setSelectedClient}
-                      placeholder="Buscar cliente..."
-                      searchPlaceholder="Digite o nome do cliente..."
-                      emptyMessage="Nenhum cliente encontrado."
-                    />
-                  </div>
+                    <div>
+                      <Label>Paciente</Label>
+                      <Combobox
+                        options={[
+                          { value: "all", label: "Todos os pacientes" },
+                          ...clients.map(client => ({
+                            value: client.id,
+                            label: client.name
+                          }))
+                        ]}
+                        value={selectedClient}
+                        onValueChange={setSelectedClient}
+                        placeholder="Buscar paciente..."
+                        searchPlaceholder="Digite o nome do paciente..."
+                        emptyMessage="Nenhum paciente encontrado."
+                      />
+                    </div>
 
                   <div>
                     <Label>Período</Label>
@@ -900,7 +907,7 @@ export default function Reports() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Clientes Únicos</p>
+                          <p className="text-sm text-muted-foreground">Pacientes Únicos</p>
                           <p className="text-2xl font-bold text-purple-600">
                             {getUniqueClients()}
                           </p>
