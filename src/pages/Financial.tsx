@@ -40,6 +40,7 @@ interface FinancialNote {
 export default function Financial() {
   const [records, setRecords] = useState<FinancialRecord[]>([]);
   const [notes, setNotes] = useState<FinancialNote[]>([]);
+  const [pendingPayments, setPendingPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -83,6 +84,7 @@ export default function Financial() {
     
     loadFinancialRecords();
     loadFinancialNotes();
+    loadPendingPayments();
   }, [roleLoading, userRole]);
 
   const loadFinancialRecords = async () => {
@@ -121,6 +123,109 @@ export default function Financial() {
       setNotes(data || []);
     } catch (error) {
       console.error('Error loading financial notes:', error);
+    }
+  };
+
+  const loadPendingPayments = async () => {
+    try {
+      // Buscar pagamentos pendentes
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('client_payments')
+        .select(`
+          id,
+          client_id,
+          total_amount,
+          amount_paid,
+          amount_remaining,
+          payment_type,
+          installments_total,
+          installments_paid,
+          status,
+          due_date,
+          description,
+          created_at
+        `)
+        .eq('unit', 'madre')
+        .in('status', ['pending', 'partial', 'overdue'])
+        .order('due_date', { ascending: true });
+
+      if (paymentsError) throw paymentsError;
+
+      // Buscar parcelas pendentes
+      const { data: installmentsData, error: installmentsError } = await supabase
+        .from('payment_installments')
+        .select(`
+          id,
+          client_payment_id,
+          installment_number,
+          amount,
+          paid_amount,
+          due_date,
+          status,
+          payment_method,
+          notes
+        `)
+        .in('status', ['pending', 'partial', 'overdue'])
+        .order('due_date', { ascending: true });
+
+      if (installmentsError) throw installmentsError;
+
+      // Buscar informações dos clientes para os pagamentos
+      const paymentClientIds = (paymentsData || []).map(p => p.client_id).filter(Boolean);
+      
+      // Buscar informações dos clientes para as parcelas
+      const installmentPaymentIds = (installmentsData || []).map(i => i.client_payment_id).filter(Boolean);
+      const { data: installmentPayments } = await supabase
+        .from('client_payments')
+        .select('id, client_id, description, payment_type')
+        .in('id', installmentPaymentIds);
+
+      const allClientIds = [
+        ...paymentClientIds,
+        ...(installmentPayments || []).map(p => p.client_id)
+      ].filter(Boolean);
+
+      const { data: clientsData } = await supabase
+        .from('clients')
+        .select('id, name, phone')
+        .in('id', allClientIds);
+
+      const clientsMap = (clientsData || []).reduce((acc, client) => {
+        acc[client.id] = client;
+        return acc;
+      }, {} as Record<string, any>);
+
+      const paymentsMap = (installmentPayments || []).reduce((acc, payment) => {
+        acc[payment.id] = payment;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Combinar e processar dados
+      const combinedData = [
+        ...(paymentsData || []).map(payment => ({
+          ...payment,
+          type: 'payment',
+          amount_due: payment.amount_remaining,
+          client_name: clientsMap[payment.client_id]?.name,
+          client_phone: clientsMap[payment.client_id]?.phone
+        })),
+        ...(installmentsData || []).map(installment => {
+          const paymentInfo = paymentsMap[installment.client_payment_id];
+          return {
+            ...installment,
+            type: 'installment',
+            amount_due: installment.amount - installment.paid_amount,
+            client_name: clientsMap[paymentInfo?.client_id]?.name,
+            client_phone: clientsMap[paymentInfo?.client_id]?.phone,
+            description: paymentInfo?.description,
+            payment_type: paymentInfo?.payment_type
+          };
+        })
+      ];
+
+      setPendingPayments(combinedData);
+    } catch (error) {
+      console.error('Error loading pending payments:', error);
     }
   };
 
@@ -230,6 +335,15 @@ export default function Financial() {
   });
   const currentMonthIncome = currentMonthRecords.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
   const currentMonthExpenses = currentMonthRecords.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
+
+  // Calcular totais de contas a receber
+  const totalPendingAmount = pendingPayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
+  const overduePayments = pendingPayments.filter(payment => {
+    const dueDate = new Date(payment.due_date);
+    const today = new Date();
+    return dueDate < today;
+  });
+  const totalOverdueAmount = overduePayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
 
   const exportToCSV = () => {
     const headers = ['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Forma de Pagamento'];
@@ -411,7 +525,7 @@ export default function Financial() {
       </div>
 
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
@@ -440,14 +554,30 @@ export default function Financial() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Custo de Materiais Usados</CardTitle>
-            <DollarSign className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              R$ {(currentMonthExpenses * 0.3).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            <div className="text-2xl font-bold text-blue-600">
+              R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">Materiais utilizados</p>
+            <p className="text-xs text-muted-foreground">
+              {pendingPayments.length} pagamentos pendentes
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Em Atraso</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {overduePayments.length} em atraso
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -545,10 +675,11 @@ export default function Financial() {
       </Card>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">Todas</TabsTrigger>
           <TabsTrigger value="income">Receitas</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
+          <TabsTrigger value="pending">A Receber</TabsTrigger>
           <TabsTrigger value="notes">Notas Diárias</TabsTrigger>
         </TabsList>
 
@@ -683,6 +814,149 @@ export default function Financial() {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pending">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-blue-600" />
+                  Contas a Receber
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="text-blue-600">
+                    Total: R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </Badge>
+                  {totalOverdueAmount > 0 && (
+                    <Badge variant="destructive">
+                      Em Atraso: R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {pendingPayments.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhum pagamento pendente encontrado.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Valor Devido</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Parcela</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingPayments.map((payment) => {
+                      const dueDate = new Date(payment.due_date);
+                      const today = new Date();
+                      const isOverdue = dueDate < today;
+                      const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                      
+                      return (
+                        <TableRow key={`${payment.type}-${payment.id}`} className={isOverdue ? 'bg-red-50' : ''}>
+                          <TableCell className="font-medium">
+                            <div>
+                              <p>{payment.client_name || 'Cliente não identificado'}</p>
+                              {payment.client_phone && (
+                                <p className="text-xs text-muted-foreground">
+                                  {payment.client_phone}
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-xs">
+                              <p className="truncate">{payment.description || '-'}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={payment.payment_type === 'avista' ? 'default' : 'secondary'}>
+                              {payment.payment_type === 'avista' ? 'À Vista' : 'A Prazo'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                              {dueDate.toLocaleDateString('pt-BR')}
+                              <p className="text-xs text-muted-foreground">
+                                {isOverdue 
+                                  ? `${Math.abs(daysDiff)} dias em atraso` 
+                                  : daysDiff === 0 
+                                    ? 'Vence hoje' 
+                                    : `${daysDiff} dias restantes`
+                                }
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium text-blue-600">
+                            R$ {(payment.amount_due || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                isOverdue ? 'destructive' : 
+                                payment.status === 'partial' ? 'default' : 
+                                'secondary'
+                              }
+                            >
+                              {isOverdue ? 'Vencido' : 
+                               payment.status === 'partial' ? 'Parcial' : 
+                               'Pendente'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {payment.type === 'installment' ? (
+                              <span className="text-sm">
+                                {payment.installment_number}ª parcela
+                              </span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                Pagamento único
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+
+              {pendingPayments.length > 0 && (
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium mb-2">Resumo de Cobranças</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Total Pendente</p>
+                      <p className="font-medium text-blue-600">
+                        R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Em Atraso</p>
+                      <p className="font-medium text-red-600">
+                        R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">No Prazo</p>
+                      <p className="font-medium text-green-600">
+                        R$ {(totalPendingAmount - totalOverdueAmount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
