@@ -360,13 +360,9 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
                   <Eye className="h-4 w-4" />
                   Visualizar
                 </Button>
-                <Button onClick={printContract} variant="outline" className="gap-2">
+                <Button onClick={printContract} className="gap-2">
                   <Printer className="h-4 w-4" />
-                  Imprimir
-                </Button>
-                <Button onClick={generatePDF} className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Baixar PDF + Registrar R$ 1.600,00
+                  Imprimir + Registrar R$ 1.600,00
                 </Button>
               </div>
 
