@@ -75,7 +75,8 @@ export default function Schedule() {
     start_time: '',
     end_time: '',
     notes: '',
-    unit: 'madre'
+    unit: 'madre',
+    sessionCount: 1
   });
 
   // Auto-definir a unidade baseada no coordenador logado
@@ -330,6 +331,36 @@ export default function Schedule() {
     }
   };
 
+  // Função para verificar sobreposição de horários
+  const checkScheduleConflict = async (employeeId: string, startTime: string, endTime: string, excludeId?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('id, start_time, end_time')
+        .eq('employee_id', employeeId)
+        .in('status', ['scheduled', 'confirmed'])
+        .gte('start_time', startTime.split('T')[0]) // Same day
+        .lt('start_time', new Date(new Date(startTime).getTime() + 24*60*60*1000).toISOString().split('T')[0] + 'T23:59:59');
+      
+      if (error) throw error;
+      
+      return data?.some(schedule => {
+        if (excludeId && schedule.id === excludeId) return false;
+        
+        const existingStart = new Date(schedule.start_time).getTime();
+        const existingEnd = new Date(schedule.end_time).getTime();
+        const newStart = new Date(startTime).getTime();
+        const newEnd = new Date(endTime).getTime();
+        
+        // Verificar sobreposição
+        return (newStart < existingEnd && newEnd > existingStart);
+      }) || false;
+    } catch (error) {
+      console.error('Error checking schedule conflict:', error);
+      return false;
+    }
+  };
+
   const handleCreateAppointment = async () => {
     try {
       // Convert datetime-local format to ISO string maintaining local time
@@ -340,7 +371,7 @@ export default function Schedule() {
         return date.toISOString();
       };
 
-        const appointmentData = {
+      const appointmentData = {
         client_id: newAppointment.client_id,
         employee_id: newAppointment.employee_id,
         title: newAppointment.title,
@@ -352,6 +383,23 @@ export default function Schedule() {
       };
 
       if (editingSchedule) {
+        // Para edição, verificar conflito excluindo o próprio agendamento
+        const hasConflict = await checkScheduleConflict(
+          appointmentData.employee_id,
+          appointmentData.start_time,
+          appointmentData.end_time,
+          editingSchedule.id
+        );
+        
+        if (hasConflict) {
+          toast({
+            variant: "destructive",
+            title: "Conflito de Horário",
+            description: "O profissional já possui um agendamento neste horário.",
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from('schedules')
           .update(appointmentData)
@@ -364,18 +412,63 @@ export default function Schedule() {
           description: "Agendamento atualizado com sucesso!",
         });
       } else {
+        // Para criação de múltiplas sessões
+        const sessionCount = newAppointment.sessionCount || 1;
+        const appointmentsToCreate = [];
+        let conflictFound = false;
+        
+        for (let i = 0; i < sessionCount; i++) {
+          const sessionDate = new Date(appointmentData.start_time);
+          const sessionEndDate = new Date(appointmentData.end_time);
+          
+          // Adicionar i semanas à data (recorrência semanal)
+          sessionDate.setDate(sessionDate.getDate() + (i * 7));
+          sessionEndDate.setDate(sessionEndDate.getDate() + (i * 7));
+          
+          const sessionStartTime = sessionDate.toISOString();
+          const sessionEndTime = sessionEndDate.toISOString();
+          
+          // Verificar conflito para cada sessão
+          const hasConflict = await checkScheduleConflict(
+            appointmentData.employee_id,
+            sessionStartTime,
+            sessionEndTime
+          );
+          
+          if (hasConflict) {
+            toast({
+              variant: "destructive",
+              title: "Conflito de Horário",
+              description: `Conflito encontrado na sessão ${i + 1} (${format(sessionDate, 'dd/MM/yyyy HH:mm', { locale: ptBR })}). O profissional já possui um agendamento neste horário.`,
+            });
+            conflictFound = true;
+            break;
+          }
+          
+          appointmentsToCreate.push({
+            ...appointmentData,
+            start_time: sessionStartTime,
+            end_time: sessionEndTime,
+            status: 'scheduled',
+            notes: sessionCount > 1 
+              ? `${appointmentData.notes} (Sessão ${i + 1} de ${sessionCount})` 
+              : appointmentData.notes
+          });
+        }
+        
+        if (conflictFound) return;
+
         const { error } = await supabase
           .from('schedules')
-          .insert([{
-            ...appointmentData,
-            status: 'scheduled'
-          }]);
+          .insert(appointmentsToCreate);
 
         if (error) throw error;
 
         toast({
           title: "Sucesso",
-          description: "Agendamento criado com sucesso!",
+          description: sessionCount > 1 
+            ? `${sessionCount} sessões criadas com sucesso!`
+            : "Agendamento criado com sucesso!",
         });
       }
       
@@ -388,7 +481,8 @@ export default function Schedule() {
         start_time: '',
         end_time: '',
         notes: '',
-        unit: 'madre'
+        unit: 'madre',
+        sessionCount: 1
       });
       loadSchedules();
     } catch (error) {
@@ -420,7 +514,8 @@ export default function Schedule() {
       start_time: formatDateTimeLocal(schedule.start_time),
       end_time: formatDateTimeLocal(schedule.end_time),
       notes: schedule.notes || '',
-      unit: schedule.unit || 'madre'
+      unit: schedule.unit || 'madre',
+      sessionCount: 1
     });
     setIsDialogOpen(true);
   };
@@ -554,7 +649,8 @@ export default function Schedule() {
                   start_time: '',
                   end_time: '',
                   notes: '',
-                  unit: 'madre'
+                  unit: 'madre',
+                  sessionCount: 1
                 });
                 setIsDialogOpen(true);
               }}
@@ -839,7 +935,8 @@ export default function Schedule() {
                   start_time: '',
                   end_time: '',
                   notes: '',
-                  unit: 'madre'
+                  unit: 'madre',
+                  sessionCount: 1
                 });
               }}
             >
@@ -933,6 +1030,24 @@ export default function Schedule() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {!editingSchedule && (
+                <div className="space-y-2">
+                  <Label htmlFor="sessionCount">Quantidade de Sessões</Label>
+                  <Input
+                    id="sessionCount"
+                    type="number"
+                    min="1"
+                    max="52"
+                    value={newAppointment.sessionCount}
+                    onChange={(e) => setNewAppointment({...newAppointment, sessionCount: Math.max(1, parseInt(e.target.value) || 1)})}
+                    placeholder="1"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Defina quantas sessões sequenciais semanais deseja criar. O sistema verificará automaticamente conflitos de horário.
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="notes">Observações</Label>
