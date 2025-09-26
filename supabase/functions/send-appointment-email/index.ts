@@ -36,8 +36,9 @@ const handler = async (req: Request): Promise<Response> => {
       notes 
     }: AppointmentEmailRequest = await req.json();
 
-    console.log("Sending appointment email to:", clientEmail);
+    console.log("Email sending disabled - resend package not available");
 
+    /*
     const emailResponse = await resend.emails.send({
       from: "Fundação Dom Bosco <noreply@fundacaodombosco.org>",
       to: [clientEmail],
@@ -236,10 +237,11 @@ const handler = async (req: Request): Promise<Response> => {
         </html>
       `,
     });
+    */
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email sending disabled:", { clientEmail, clientName, appointmentDate });
 
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ success: true, disabled: true }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
