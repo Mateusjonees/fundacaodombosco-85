@@ -34,8 +34,7 @@ serve(async (req) => {
     const { data, error } = await supabaseClient.auth.admin.updateUserById(
       userId,
       { 
-        email_confirm: true,
-        email_confirmed_at: new Date().toISOString()
+        email_confirm: true
       }
     )
 

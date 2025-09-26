@@ -65,6 +65,8 @@ export default function Schedule() {
                   userProfile?.employee_role === 'coordinator_floresta' ||
                   userProfile?.employee_role === 'receptionist';
 
+  console.log('User profile:', userProfile); // Debug log
+
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
     employee_id: '',
@@ -507,6 +509,9 @@ export default function Schedule() {
     return true;
   });
 
+  console.log('Today schedules:', todaySchedules); // Debug log
+  console.log('User can see patient presence buttons:', userProfile?.employee_role === 'receptionist'); // Debug log
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <PatientArrivedNotification />
@@ -682,19 +687,28 @@ export default function Schedule() {
                             </Badge>
                           </div>
 
-                          {/* Botão de presença do paciente para recepcionistas */}
-                          {userProfile?.employee_role === 'receptionist' && ['scheduled', 'confirmed'].includes(schedule.status) && (
-                            <div className="mb-2 md:mb-0">
-                              <PatientPresenceButton
-                                scheduleId={schedule.id}
-                                clientName={schedule.clients?.name || 'Cliente'}
-                                employeeId={schedule.employee_id}
-                                patientArrived={schedule.patient_arrived || false}
-                                arrivedAt={schedule.arrived_at}
-                                onPresenceUpdate={loadSchedules}
-                              />
-                            </div>
-                          )}
+          {/* Botão de presença do paciente para recepcionistas */}
+          {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
+            <div className="mb-2 md:mb-0">
+              <PatientPresenceButton
+                scheduleId={schedule.id}
+                clientName={schedule.clients?.name || 'Cliente'}
+                employeeId={schedule.employee_id}
+                patientArrived={schedule.patient_arrived || false}
+                arrivedAt={schedule.arrived_at}
+                onPresenceUpdate={loadSchedules}
+              />
+            </div>
+          )}
+          
+          {/* Debug: Mostrar sempre o botão para teste */}
+          {!['scheduled', 'confirmed'].includes(schedule.status) && userProfile?.employee_role === 'receptionist' && (
+            <div className="mb-2 md:mb-0">
+              <Button variant="outline" size="sm" disabled className="text-gray-400">
+                Presença (Status: {schedule.status})
+              </Button>
+            </div>
+          )}
 
                           <div className="flex gap-1 flex-wrap justify-center md:justify-end">
                             <Button
