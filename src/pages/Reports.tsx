@@ -807,6 +807,133 @@ export default function Reports() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="analytics">
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Analytics Avançados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div>
+                    <Label>Funcionário</Label>
+                    <Combobox
+                      options={[
+                        { value: "all", label: "Todos os funcionários" },
+                        ...employees.map(employee => ({
+                          value: employee.user_id,
+                          label: employee.name
+                        }))
+                      ]}
+                      value={selectedEmployee}
+                      onValueChange={setSelectedEmployee}
+                      placeholder="Buscar funcionário..."
+                      searchPlaceholder="Digite o nome do funcionário..."
+                      emptyMessage="Nenhum funcionário encontrado."
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Cliente</Label>
+                    <Combobox
+                      options={[
+                        { value: "all", label: "Todos os clientes" },
+                        ...clients.map(client => ({
+                          value: client.id,
+                          label: client.name
+                        }))
+                      ]}
+                      value={selectedClient}
+                      onValueChange={setSelectedClient}
+                      placeholder="Buscar cliente..."
+                      searchPlaceholder="Digite o nome do cliente..."
+                      emptyMessage="Nenhum cliente encontrado."
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Período</Label>
+                    <Input
+                      type="month"
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Taxa de Conclusão</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {attendanceReports.length > 0 
+                              ? Math.round((attendanceReports.filter(r => r.validation_status === 'validated').length / attendanceReports.length) * 100)
+                              : 0}%
+                          </p>
+                        </div>
+                        <TrendingUp className="h-8 w-8 text-green-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Receita Total</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            R$ {getTotalRevenue().toFixed(2)}
+                          </p>
+                        </div>
+                        <TrendingUp className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Clientes Únicos</p>
+                          <p className="text-2xl font-bold text-purple-600">
+                            {getUniqueClients()}
+                          </p>
+                        </div>
+                        <Users className="h-8 w-8 text-purple-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Tempo Médio</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {Math.round(getAverageDuration())} min
+                          </p>
+                        </div>
+                        <Clock className="h-8 w-8 text-orange-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="text-center py-8 text-muted-foreground">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Analytics detalhados com gráficos em desenvolvimento</p>
+                  <p className="text-sm">Em breve: gráficos de performance, tendências e insights avançados</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

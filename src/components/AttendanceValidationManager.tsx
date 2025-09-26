@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Combobox } from '@/components/ui/combobox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -261,19 +263,20 @@ export default function AttendanceValidationManager() {
             </div>
             <div>
               <Label htmlFor="employee-filter">Funcionário</Label>
-              <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um funcionário" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os funcionários</SelectItem>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee.user_id} value={employee.user_id}>
-                      {employee.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={[
+                  { value: "all", label: "Todos os funcionários" },
+                  ...employees.map((employee) => ({
+                    value: employee.user_id,
+                    label: employee.name
+                  }))
+                ]}
+                value={employeeFilter}
+                onValueChange={setEmployeeFilter}
+                placeholder="Buscar funcionário..."
+                searchPlaceholder="Digite o nome do funcionário..."
+                emptyMessage="Nenhum funcionário encontrado."
+              />
             </div>
           </div>
         </CardContent>

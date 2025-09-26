@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Combobox } from '@/components/ui/combobox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -253,34 +254,32 @@ export function ClientAssignmentManager() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Paciente:</label>
-                <Select value={selectedClient} onValueChange={setSelectedClient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um paciente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableClients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={availableClients.map((client) => ({
+                    value: client.id,
+                    label: client.name
+                  }))}
+                  value={selectedClient}
+                  onValueChange={setSelectedClient}
+                  placeholder="Buscar paciente..."
+                  searchPlaceholder="Digite o nome do paciente..."
+                  emptyMessage="Nenhum paciente encontrado."
+                />
               </div>
               
               <div>
                 <label className="text-sm font-medium mb-2 block">Funcionário:</label>
-                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um funcionário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableEmployees.map((employee) => (
-                      <SelectItem key={employee.user_id} value={employee.user_id}>
-                        {employee.name} - {getRoleLabel(employee.employee_role)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={availableEmployees.map((employee) => ({
+                    value: employee.user_id,
+                    label: `${employee.name} - ${getRoleLabel(employee.employee_role)}`
+                  }))}
+                  value={selectedEmployee}
+                  onValueChange={setSelectedEmployee}
+                  placeholder="Buscar funcionário..."
+                  searchPlaceholder="Digite o nome do funcionário..."
+                  emptyMessage="Nenhum funcionário encontrado."
+                />
               </div>
               
               <div className="flex justify-end gap-2 pt-4">
