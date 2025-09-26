@@ -16,7 +16,7 @@ import { CreateEmployeeForm } from './CreateEmployeeForm';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { UserPlus, Edit, Trash2, Eye, Calendar, MapPin, Building2, CreditCard, Key } from 'lucide-react';
 
-type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
+type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
 
 interface Profile {
   id: string;

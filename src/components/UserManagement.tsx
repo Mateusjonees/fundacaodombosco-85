@@ -291,6 +291,7 @@ export default function UserManagement() {
                      <SelectItem value="receptionist">Recepcionista</SelectItem>
                      <SelectItem value="intern">Estagiário</SelectItem>
                      <SelectItem value="terapeuta_ocupacional">Terapeuta Ocupacional</SelectItem>
+                     <SelectItem value="advogada">Advogada</SelectItem>
                      <SelectItem value="staff">Funcionário</SelectItem>
                    </SelectContent>
                 </Select>

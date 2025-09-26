@@ -366,6 +366,7 @@ export default function EmployeesNew() {
                      <SelectItem value="financeiro">Financeiro</SelectItem>
                      <SelectItem value="intern">Estagiário(a)</SelectItem>
                      <SelectItem value="terapeuta_ocupacional">Terapeuta Ocupacional</SelectItem>
+                     <SelectItem value="advogada">Advogada</SelectItem>
                      <SelectItem value="coordinator_madre">Coordenador(a) Madre</SelectItem>
                      <SelectItem value="coordinator_floresta">Coordenador(a) Floresta</SelectItem>
                      <SelectItem value="director">Diretoria</SelectItem>
@@ -468,6 +469,7 @@ export default function EmployeesNew() {
                        <SelectItem value="financeiro">Financeiro</SelectItem>
                        <SelectItem value="intern">Estagiário(a)</SelectItem>
                        <SelectItem value="terapeuta_ocupacional">Terapeuta Ocupacional</SelectItem>
+                       <SelectItem value="advogada">Advogada</SelectItem>
                        <SelectItem value="coordinator_madre">Coordenador(a) Madre</SelectItem>
                        <SelectItem value="coordinator_floresta">Coordenador(a) Floresta</SelectItem>
                        <SelectItem value="director">Diretoria</SelectItem>

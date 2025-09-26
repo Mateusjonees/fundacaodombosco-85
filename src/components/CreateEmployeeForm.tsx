@@ -10,7 +10,7 @@ import { useAuditLog } from '@/hooks/useAuditLog';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 
-type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
+type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
 
 interface CreateEmployeeFormProps {
   isOpen: boolean;

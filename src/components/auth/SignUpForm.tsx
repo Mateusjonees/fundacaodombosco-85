@@ -20,6 +20,7 @@ const EMPLOYEE_ROLES = [
   { value: 'staff', label: 'Funcionário(a) Geral' },
   { value: 'intern', label: 'Estagiário(a)' },
   { value: 'terapeuta_ocupacional', label: 'Terapeuta Ocupacional' },
+  { value: 'advogada', label: 'Advogada' },
   { value: 'musictherapist', label: 'Musicoterapeuta' },
   { value: 'financeiro', label: 'Financeiro' },
   { value: 'receptionist', label: 'Recepcionista' },

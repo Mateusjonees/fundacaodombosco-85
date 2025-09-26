@@ -2733,6 +2733,7 @@ export type Database = {
         | "nutritionist"
         | "physiotherapist"
         | "terapeuta_ocupacional"
+        | "advogada"
       permission_action:
         | "view_dashboard"
         | "view_clients"
@@ -2974,6 +2975,7 @@ export const Constants = {
         "nutritionist",
         "physiotherapist",
         "terapeuta_ocupacional",
+        "advogada",
       ],
       permission_action: [
         "view_dashboard",

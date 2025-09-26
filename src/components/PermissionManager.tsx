@@ -20,6 +20,7 @@ type EmployeeRole =
   | 'staff' 
   | 'intern' 
   | 'terapeuta_ocupacional'
+  | 'advogada'
   | 'musictherapist' 
   | 'financeiro' 
   | 'receptionist' 
