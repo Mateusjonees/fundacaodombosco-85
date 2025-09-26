@@ -17,6 +17,7 @@ import {
   CheckSquare,
   Shield,
   Heart,
+  ChevronLeft,
   LucideIcon
 } from 'lucide-react';
 
@@ -29,6 +30,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -252,9 +254,14 @@ export function AppSidebar() {
               )}
             </div>
           
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            MENU PRINCIPAL
-          </SidebarGroupLabel>
+          <div className="flex items-center justify-between px-3 py-2">
+            <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+              MENU PRINCIPAL
+            </SidebarGroupLabel>
+            <SidebarTrigger className="h-6 w-6 text-muted-foreground hover:text-foreground">
+              <ChevronLeft className="h-4 w-4" />
+            </SidebarTrigger>
+          </div>
           
           <SidebarGroupContent>
             <SidebarMenu>
