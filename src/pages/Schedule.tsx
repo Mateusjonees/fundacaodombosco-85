@@ -100,22 +100,44 @@ export default function Schedule() {
     loadUserProfile();
     loadEmployees();
     loadClients();
-  }, []);
-
-  useEffect(() => {
     loadSchedules();
-  }, [selectedDate]);
+    
+    // Verificar se há parâmetros na URL para pré-preencher o formulário
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientId = urlParams.get('client_id') || urlParams.get('client');
+    const clientName = urlParams.get('client_name');
+    
+    if (clientId) {
+      setNewAppointment(prev => ({
+        ...prev,
+        client_id: clientId
+      }));
+      
+      // Se tem ID do paciente, abrir o diálogo de agendamento
+      setIsDialogOpen(true);
+    }
+  }, [selectedDate, filterRole, filterEmployee, filterUnit]);
+
+  // Auto-selecionar o profissional para usuários não-administrativos
+  useEffect(() => {
+    if (userProfile && !isAdmin) {
+      setNewAppointment(prev => ({
+        ...prev,
+        employee_id: userProfile.id
+      }));
+    }
+  }, [userProfile, isAdmin]);
 
   const loadUserProfile = async () => {
     if (!user) return;
-
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
-
+      
       if (error) throw error;
       setUserProfile(data);
     } catch (error) {
@@ -123,51 +145,30 @@ export default function Schedule() {
     }
   };
 
-  const loadSchedules = async () => {
-    setLoading(true);
-    try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      
-      let query = supabase
-        .from('schedules')
-        .select(`
-          *,
-          clients:client_id(name),
-          profiles:employee_id(name)
-        `)
-        .gte('start_time', `${dateStr} 00:00:00`)
-        .lt('start_time', `${dateStr} 23:59:59`)
-        .order('start_time');
-
-      // Se não for admin, só mostrar agendamentos do usuário atual
-      if (!isAdmin && userProfile) {
-        query = query.eq('employee_id', user?.id);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setSchedules(data || []);
-    } catch (error) {
-      console.error('Error loading schedules:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao carregar agendamentos.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loadEmployees = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
-        .select('user_id, name, employee_role, unit')
+        .select('user_id, id, name, employee_role, department')
         .eq('is_active', true)
-        .not('employee_role', 'is', null);
+        .order('name');
 
+      // Aplicar filtros baseados no role do usuário para funcionários
+      if (userProfile) {
+        if (userProfile.employee_role === 'coordinator_madre') {
+          // Coordenador Madre pode ver profissionais da unidade madre
+          query = query.or(`employee_role.eq.coordinator_madre,employee_role.eq.staff,employee_role.eq.psychologist,employee_role.eq.psychopedagogue,employee_role.eq.speech_therapist,employee_role.eq.nutritionist,employee_role.eq.physiotherapist,employee_role.eq.musictherapist,user_id.eq.${user?.id}`);
+        } else if (userProfile.employee_role === 'coordinator_floresta') {
+          // Coordenador Floresta pode ver profissionais da unidade floresta
+          query = query.or(`employee_role.eq.coordinator_floresta,employee_role.eq.staff,employee_role.eq.psychologist,employee_role.eq.psychopedagogue,employee_role.eq.speech_therapist,employee_role.eq.nutritionist,employee_role.eq.physiotherapist,employee_role.eq.musictherapist,user_id.eq.${user?.id}`);
+        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
+          // Para outros profissionais, só mostrar eles mesmos
+          query = query.eq('user_id', user?.id);
+        }
+        // Diretores e recepcionistas veem todos os funcionários (sem filtro adicional)
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       setEmployees(data || []);
     } catch (error) {
@@ -177,11 +178,41 @@ export default function Schedule() {
 
   const loadClients = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('clients')
-        .select('id, name, phone, email, cpf')
-        .eq('is_active', true);
+        .select('id, name, unit')
+        .eq('is_active', true)
+        .order('name');
 
+      // Aplicar filtros baseados no role do usuário
+      if (userProfile) {
+        if (userProfile.employee_role === 'coordinator_madre') {
+          // Coordenador Madre vê apenas clientes da unidade madre ou sem unidade definida
+          query = query.or('unit.eq.madre,unit.is.null');
+        } else if (userProfile.employee_role === 'coordinator_floresta') {
+          // Coordenador Floresta vê apenas clientes da unidade floresta
+          query = query.eq('unit', 'floresta');
+        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
+          // Para outros profissionais, mostrar apenas pacientes vinculados
+          const { data: assignments } = await supabase
+            .from('client_assignments')
+            .select('client_id')
+            .eq('employee_id', userProfile.id)
+            .eq('is_active', true);
+          
+          const clientIds = [...new Set(assignments?.map(a => a.client_id) || [])];
+          if (clientIds.length > 0) {
+            query = query.in('id', clientIds);
+          } else {
+            // Se não há pacientes vinculados, não mostrar nenhum
+            setClients([]);
+            return;
+          }
+        }
+        // Diretores e recepcionistas veem todos os clientes (sem filtro adicional)
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       setClients(data || []);
     } catch (error) {
@@ -189,57 +220,162 @@ export default function Schedule() {
     }
   };
 
-  const handleCreateAppointment = async () => {
-    if (!newAppointment.client_id || !newAppointment.employee_id || 
-        !newAppointment.start_time || !newAppointment.end_time) {
+  const loadSchedules = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('schedules')
+        .select(`
+          *,
+          patient_arrived,
+          arrived_at,
+          arrived_confirmed_by,
+          clients (name),
+          profiles!schedules_employee_id_fkey (name)
+        `)
+        .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
+        .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
+        .order('start_time');
+
+      // Aplicar filtros baseados no role do usuário para agendamentos
+      if (userProfile) {
+        if (userProfile.employee_role === 'coordinator_madre') {
+          // Coordenador Madre vê agendamentos de clientes da unidade madre
+          const { data: clientsInUnit } = await supabase
+            .from('clients')
+            .select('id')
+            .or('unit.eq.madre,unit.is.null')
+            .eq('is_active', true);
+          
+          const clientIds = clientsInUnit?.map(c => c.id) || [];
+          if (clientIds.length > 0) {
+            query = query.in('client_id', clientIds);
+          }
+        } else if (userProfile.employee_role === 'coordinator_floresta') {
+          // Coordenador Floresta vê agendamentos de clientes da unidade floresta
+          const { data: clientsInUnit } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('unit', 'floresta')
+            .eq('is_active', true);
+          
+          const clientIds = clientsInUnit?.map(c => c.id) || [];
+          if (clientIds.length > 0) {
+            query = query.in('client_id', clientIds);
+          }
+        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
+          // Para outros profissionais, mostrar apenas seus próprios agendamentos
+          query = query.eq('employee_id', userProfile.id);
+        }
+        // Diretores e recepcionistas veem todos os agendamentos (sem filtro adicional)
+      }
+
+            // Filtros adicionais para administradores
+            if (filterEmployee !== 'all') {
+              query = query.eq('employee_id', filterEmployee);
+            }
+            
+            if (filterUnit !== 'all') {
+              query = query.eq('unit', filterUnit);
+            }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Schedule query error:', error);
+        // Fallback query sem o join de profiles se houver erro
+        const fallbackQuery = supabase
+          .from('schedules')
+          .select(`*, clients (name)`)
+          .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
+          .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
+          .order('start_time');
+
+        const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+        if (fallbackError) throw fallbackError;
+        
+        // Buscar nomes dos profissionais manualmente
+        const schedulesWithProfiles = await Promise.all((fallbackData || []).map(async (schedule) => {
+          if (schedule.employee_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('user_id', schedule.employee_id)
+              .single();
+            
+            return {
+              ...schedule,
+              profiles: { name: profileData?.name || 'Nome não encontrado' }
+            };
+          }
+          return {
+            ...schedule,
+            profiles: { name: 'Não atribuído' }
+          };
+        }));
+        
+        setSchedules(schedulesWithProfiles);
+        return;
+      }
+      
+      setSchedules(data || []);
+    } catch (error) {
+      console.error('Error loading schedules:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
+        description: "Não foi possível carregar os agendamentos.",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
+  };
 
+  const handleCreateAppointment = async () => {
     try {
+      // Convert datetime-local format to ISO string maintaining local time
+      const convertToISOString = (dateTimeLocal: string) => {
+        if (!dateTimeLocal) return '';
+        // Create date object from local datetime input and convert to ISO
+        const date = new Date(dateTimeLocal);
+        return date.toISOString();
+      };
+
+        const appointmentData = {
+        client_id: newAppointment.client_id,
+        employee_id: newAppointment.employee_id,
+        title: newAppointment.title,
+        start_time: convertToISOString(newAppointment.start_time),
+        end_time: convertToISOString(newAppointment.end_time),
+        notes: newAppointment.notes,
+        unit: newAppointment.unit,
+        created_by: user?.id
+      };
+
       if (editingSchedule) {
         const { error } = await supabase
           .from('schedules')
-          .update({
-            client_id: newAppointment.client_id,
-            employee_id: newAppointment.employee_id,
-            start_time: newAppointment.start_time,
-            end_time: newAppointment.end_time,
-            title: newAppointment.title,
-            notes: newAppointment.notes,
-            unit: newAppointment.unit
-          })
+          .update(appointmentData)
           .eq('id', editingSchedule.id);
-
+        
         if (error) throw error;
-
+        
         toast({
           title: "Sucesso",
-          description: "Agendamento atualizado!",
+          description: "Agendamento atualizado com sucesso!",
         });
       } else {
         const { error } = await supabase
           .from('schedules')
-          .insert({
-            client_id: newAppointment.client_id,
-            employee_id: newAppointment.employee_id,
-            start_time: newAppointment.start_time,
-            end_time: newAppointment.end_time,
-            title: newAppointment.title,
-            status: 'scheduled',
-            notes: newAppointment.notes,
-            unit: newAppointment.unit
-          });
+          .insert([{
+            ...appointmentData,
+            status: 'scheduled'
+          }]);
 
         if (error) throw error;
 
         toast({
           title: "Sucesso",
-          description: "Agendamento criado!",
+          description: "Agendamento criado com sucesso!",
         });
       }
       
@@ -260,7 +396,56 @@ export default function Schedule() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao salvar agendamento.",
+        description: "Erro ao salvar agendamento. Tente novamente.",
+      });
+    }
+  };
+
+  const formatDateTimeLocal = (isoString: string) => {
+    const date = new Date(isoString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const handleEditSchedule = (schedule: Schedule) => {
+    setEditingSchedule(schedule);
+    setNewAppointment({
+      client_id: schedule.client_id,
+      employee_id: schedule.employee_id,
+      title: schedule.title,
+      start_time: formatDateTimeLocal(schedule.start_time),
+      end_time: formatDateTimeLocal(schedule.end_time),
+      notes: schedule.notes || '',
+      unit: schedule.unit || 'madre'
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleRedirect = async (scheduleId: string, newEmployeeId: string) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ employee_id: newEmployeeId })
+        .eq('id', scheduleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Agendamento redirecionado com sucesso!",
+      });
+      
+      loadSchedules();
+    } catch (error) {
+      console.error('Error redirecting appointment:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao redirecionar agendamento.",
       });
     }
   };
@@ -329,374 +514,321 @@ export default function Schedule() {
   console.log('User can see patient presence buttons:', userProfile?.employee_role === 'receptionist'); // Debug log
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-4">
-        <PatientArrivedNotification />
-        <ScheduleAlerts />
-        
-        {/* Header da Página */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
-          <p className="text-muted-foreground mt-2">
-            Gerencie seus agendamentos e compromissos
-          </p>
-        </div>
-        
-        {/* Layout Principal */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          {/* Sidebar Esquerda - Calendário e Controles */}
-          <div className="xl:col-span-1">
-            <div className="space-y-6 sticky top-6">
+    <div className="container mx-auto p-4 space-y-6">
+      <PatientArrivedNotification />
+      <ScheduleAlerts />
+      
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar esquerda com calendário e controles */}
+        <div className="lg:w-80">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarIcon className="h-5 w-5" />
+                  Calendário
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  locale={ptBR}
+                  className="rounded-md border w-full"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Botão Novo Agendamento - Versão Desktop */}
+            <Button 
+              className="w-full py-4 md:py-6 text-base md:text-lg" 
+              onClick={() => {
+                setEditingSchedule(null);
+                // Para profissionais comuns, pré-selecionar eles mesmos
+                const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
+                setNewAppointment({
+                  client_id: '',
+                  employee_id: defaultEmployeeId,
+                  title: 'Consulta',
+                  start_time: '',
+                  end_time: '',
+                  notes: '',
+                  unit: 'madre'
+                });
+                setIsDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+              Novo Agendamento
+            </Button>
+
+            {/* Filtros para Administradores */}
+            {isAdmin && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CalendarIcon className="h-5 w-5" />
-                    Calendário
+                    <Filter className="h-5 w-5" />
+                    Filtros
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => date && setSelectedDate(date)}
-                    locale={ptBR}
-                    className="rounded-md border w-full"
-                  />
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="filterRole">Função</Label>
+                    <Select value={filterRole} onValueChange={setFilterRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas as funções" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as funções</SelectItem>
+                        <SelectItem value="psychologist">Psicólogos</SelectItem>
+                        <SelectItem value="speech_therapist">Fonoaudiólogos</SelectItem>
+                        <SelectItem value="psychopedagogue">Psicopedagogos</SelectItem>
+                        <SelectItem value="nutritionist">Nutricionistas</SelectItem>
+                        <SelectItem value="physiotherapist">Fisioterapeutas</SelectItem>
+                        <SelectItem value="musictherapist">Musicoterapeutas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="filterEmployee">Profissional</Label>
+                    <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos os profissionais" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os profissionais</SelectItem>
+                        {employees.map((employee) => (
+                          <SelectItem key={employee.user_id} value={employee.user_id}>
+                            {employee.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="filterUnit">Unidade</Label>
+                    <Select value={filterUnit} onValueChange={setFilterUnit}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas as unidades" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as unidades</SelectItem>
+                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardContent>
               </Card>
-
-              {/* Botão Novo Agendamento - Desktop */}
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="w-full py-4 text-base font-medium hidden xl:flex" 
-                    size="lg"
-                    onClick={() => {
-                      setEditingSchedule(null);
-                      const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
-                      setNewAppointment({
-                        client_id: '',
-                        employee_id: defaultEmployeeId,
-                        title: 'Consulta',
-                        start_time: '',
-                        end_time: '',
-                        notes: '',
-                        unit: 'madre'
-                      });
-                    }}
-                  >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Novo Agendamento
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader className="pb-6">
-                    <DialogTitle className="text-2xl font-semibold">
-                      {editingSchedule ? 'Editar Agendamento' : 'Novo Agendamento'}
-                    </DialogTitle>
-                  </DialogHeader>
-                  
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="client_id" className="text-sm font-medium">Paciente</Label>
-                        <PatientCommandAutocomplete
-                          value={newAppointment.client_id}
-                          onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
-                          placeholder="Buscar paciente por nome, CPF, telefone ou email..."
-                          unitFilter={
-                            userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
-                            userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
-                            'all'
-                          }
-                        />
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label htmlFor="employee_id" className="text-sm font-medium">Profissional</Label>
-                        <ProfessionalCommandAutocomplete
-                          value={newAppointment.employee_id}
-                          onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
-                          placeholder="Buscar profissional por nome, email ou telefone..."
-                          unitFilter={
-                            userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
-                            userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
-                            'all'
-                          }
-                          disabled={!isAdmin}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="start_time" className="text-sm font-medium">Data e Hora Início</Label>
-                        <Input
-                          id="start_time"
-                          type="datetime-local"
-                          value={newAppointment.start_time}
-                          onChange={(e) => setNewAppointment({...newAppointment, start_time: e.target.value})}
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label htmlFor="end_time" className="text-sm font-medium">Data e Hora Fim</Label>
-                        <Input
-                          id="end_time"
-                          type="datetime-local"
-                          value={newAppointment.end_time}
-                          onChange={(e) => setNewAppointment({...newAppointment, end_time: e.target.value})}
-                          className="w-full"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="title" className="text-sm font-medium">Tipo de Consulta</Label>
-                        <Select value={newAppointment.title} onValueChange={(value) => setNewAppointment({...newAppointment, title: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Consulta">Consulta</SelectItem>
-                            <SelectItem value="Primeira Consulta">Primeira Consulta</SelectItem>
-                            <SelectItem value="Avaliação">Avaliação</SelectItem>
-                            <SelectItem value="Retorno">Retorno</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <Label htmlFor="unit" className="text-sm font-medium">Unidade</Label>
-                        <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a unidade" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="madre">MADRE</SelectItem>
-                            <SelectItem value="floresta">Floresta</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <Label htmlFor="notes" className="text-sm font-medium">Observações</Label>
-                      <Textarea
-                        id="notes"
-                        value={newAppointment.notes}
-                        onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
-                        placeholder="Observações opcionais..."
-                        className="min-h-20"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end gap-3 pt-6 border-t">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleCreateAppointment}>
-                      {editingSchedule ? 'Salvar' : 'Criar'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              {/* Filtros para Administradores */}
-              {isAdmin && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Filter className="h-5 w-5" />
-                      Filtros
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Função</Label>
-                      <Select value={filterRole} onValueChange={setFilterRole}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as funções</SelectItem>
-                          <SelectItem value="psychologist">Psicólogo</SelectItem>
-                          <SelectItem value="neuropsychologist">Neuropsicólogo</SelectItem>
-                          <SelectItem value="speech_therapist">Fonoaudiólogo</SelectItem>
-                          <SelectItem value="occupational_therapist">Terapeuta Ocupacional</SelectItem>
-                          <SelectItem value="physiotherapist">Fisioterapeuta</SelectItem>
-                          <SelectItem value="pedagogist">Pedagogo</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Profissional</Label>
-                      <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos</SelectItem>
-                          {employees.map((employee) => (
-                            <SelectItem key={employee.user_id} value={employee.user_id}>
-                              {employee.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Unidade</Label>
-                      <Select value={filterUnit} onValueChange={setFilterUnit}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as unidades</SelectItem>
-                          <SelectItem value="madre">MADRE</SelectItem>
-                          <SelectItem value="floresta">Floresta</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            )}
           </div>
+        </div>
 
-          {/* Área Principal - Agendamentos */}
-          <div className="xl:col-span-3">
+        {/* Conteúdo principal */}
+        <div className="flex-1">
+          <div className="space-y-6">
+            {/* Lista de Agendamentos */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
-                  Agendamentos - {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  Agenda do Dia - {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
+                  <p className="text-muted-foreground text-center py-8">Carregando agendamentos...</p>
                 ) : todaySchedules.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Nenhum agendamento para esta data.</p>
-                  </div>
+                  <p className="text-muted-foreground text-center py-8">
+                    Nenhum agendamento para esta data.
+                  </p>
                 ) : (
                   <div className="space-y-4">
-                    {todaySchedules.map((schedule) => (
-                      <Card key={schedule.id} className="border-l-4 border-l-primary/30">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-4">
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2 text-foreground">
-                                  <Clock className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm font-medium text-muted-foreground">Horário:</span>
-                                  <span className="font-semibold">
-                                    {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
-                                  </span>
-                                </div>
-                                <Badge variant={getStatusBadge(schedule.status).variant}>
-                                  {getStatusBadge(schedule.status).text}
-                                </Badge>
-                              </div>
-                              
-                              <div className="flex items-center gap-2 text-foreground">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium text-muted-foreground">Paciente:</span>
-                                <span className="font-semibold">{schedule.clients?.name || 'Não encontrado'}</span>
-                              </div>
-                              
-                              <div className="flex items-center gap-2 text-foreground">
-                                <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
-                                 <span className="font-semibold">
-                                   {schedule.profiles?.name || employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
-                                 </span>
-                              </div>
+                     {todaySchedules.map((schedule) => (
+                       <div 
+                         key={schedule.id} 
+                         className={`p-6 border rounded-xl gap-6 transition-all duration-300 hover:shadow-lg ${
+                           schedule.patient_arrived 
+                             ? 'border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-green-50/60 shadow-md border-2' 
+                             : 'border-border hover:border-primary/30 bg-card'
+                         }`}
+                       >
+                        {/* Header com horário e tipo */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                              <Clock className="h-5 w-5 text-primary" />
+                              {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
                             </div>
+                            <Badge variant="secondary" className="text-sm font-medium">
+                              {schedule.title}
+                            </Badge>
+                          </div>
+                          <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-sm font-medium">
+                            {schedule.unit === 'madre' ? 'MADRE' : 'FLORESTA'}
+                          </Badge>
+                        </div>
 
-                            {/* Ações */}
-                            <div className="flex items-center gap-2 ml-4">
-                              {userProfile?.employee_role === 'receptionist' && (
-                                <PatientPresenceButton 
-                                  scheduleId={schedule.id}
-                                  clientName={schedule.clients?.name || 'Não encontrado'}
-                                  employeeId={schedule.employee_id}
-                                  patientArrived={schedule.patient_arrived || false}
-                                  arrivedAt={schedule.arrived_at}
-                                  onPresenceUpdate={loadSchedules}
-                                />
-                              )}
-
-                              {isAdmin && schedule.status === 'scheduled' && (
-                                <Button
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingSchedule(schedule);
-                                    setNewAppointment({
-                                      client_id: schedule.client_id,
-                                      employee_id: schedule.employee_id,
-                                      title: schedule.title,
-                                      start_time: format(new Date(schedule.start_time), "yyyy-MM-dd'T'HH:mm"),
-                                      end_time: format(new Date(schedule.end_time), "yyyy-MM-dd'T'HH:mm"),
-                                      notes: schedule.notes || '',
-                                      unit: schedule.unit || 'madre'
-                                    });
-                                    setIsDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              )}
-
-                              {isAdmin && schedule.status !== 'cancelled' && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                      <XCircle className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Cancelar Agendamento</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleCancelAppointment(schedule.id)}>
-                                        Confirmar
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              )}
+                        {/* Informações principais */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-foreground">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-muted-foreground">Paciente:</span>
+                              <span className="font-semibold">{schedule.clients?.name || 'N/A'}</span>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-foreground">
+                              <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
+                               <span className="font-semibold">
+                                 {schedule.profiles?.name || employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
+                               </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status e observações */}
+                        <div className="flex flex-col gap-3">
+                          {schedule.notes && (
+                            <div className="p-3 bg-muted/50 rounded-lg border border-muted">
+                              <p className="text-sm text-muted-foreground">
+                                <span className="font-medium">Observações:</span> {schedule.notes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions footer */}
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-4 border-t border-muted">
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              {...getStatusBadge(schedule.status)} 
+                              className={`${schedule.patient_arrived ? 'border-emerald-500 bg-emerald-100 text-emerald-800 font-semibold' : ''} text-sm`}
+                            >
+                              {schedule.patient_arrived ? '✓ Paciente Presente' : getStatusBadge(schedule.status).text}
+                            </Badge>
+                            {schedule.patient_arrived && schedule.arrived_at && (
+                              <span className="text-xs text-muted-foreground">
+                                Chegou às {format(new Date(schedule.arrived_at), 'HH:mm', { locale: ptBR })}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+            {/* Botão de presença do paciente para recepcionistas */}
+            {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
+              <PatientPresenceButton
+                scheduleId={schedule.id}
+                clientName={schedule.clients?.name || 'Cliente'}
+                employeeId={schedule.employee_id}
+                patientArrived={schedule.patient_arrived || false}
+                arrivedAt={schedule.arrived_at}
+                onPresenceUpdate={loadSchedules}
+              />
+            )}
+            
+            {/* Debug: Mostrar sempre o botão para teste */}
+            {!['scheduled', 'confirmed'].includes(schedule.status) && userProfile?.employee_role === 'receptionist' && (
+              <Button variant="outline" size="sm" disabled className="text-gray-400">
+                Presença (Status: {schedule.status})
+              </Button>
+            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditSchedule(schedule)}
+                              className="h-9 gap-2 font-medium"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Editar
+                            </Button>
+
+                            {['scheduled', 'confirmed'].includes(schedule.status) && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => {
+                                    setSelectedScheduleForAction(schedule);
+                                    setCompleteDialogOpen(true);
+                                  }}
+                                  className="h-9 gap-2 font-medium"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                  Concluir
+                                </Button>
+
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setSelectedScheduleForAction(schedule);
+                                    setCancelDialogOpen(true);
+                                  }}
+                                  className="h-9 gap-2 font-medium"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  Cancelar
+                                </Button>
+                              </>
+                            )}
+
+                            {isAdmin && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" variant="secondary" className="h-9 gap-2 font-medium">
+                                    <ArrowRightLeft className="h-4 w-4" />
+                                    Redirecionar
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Redirecionar Agendamento</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Selecione o profissional para quem deseja redirecionar este agendamento.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <Select onValueChange={(value) => handleRedirect(schedule.id, value)}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione um profissional" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {employees.filter(emp => emp.user_id !== schedule.employee_id).map((employee) => (
+                                        <SelectItem key={employee.user_id} value={employee.user_id}>
+                                          {employee.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                             )}
+                           </div>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </CardContent>
             </Card>
           </div>
         </div>
+        
+        {/* Dialogs */}
 
-        {/* Botão Flutuante para Móvel */}
+        {/* Create/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90 xl:hidden"
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90 animate-pulse-gentle"
               onClick={() => {
                 setEditingSchedule(null);
                 const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
@@ -714,6 +846,114 @@ export default function Schedule() {
               <Plus className="h-6 w-6" />
             </Button>
           </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {editingSchedule ? 'Editar Agendamento' : 'Novo Agendamento'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="client_id">Paciente</Label>
+                
+                <PatientCommandAutocomplete
+                  value={newAppointment.client_id}
+                  onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
+                  placeholder="Buscar paciente por nome, CPF, telefone ou email..."
+                  unitFilter={
+                    userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
+                    userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                    'all'
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="employee_id">Profissional</Label>
+                
+                <ProfessionalCommandAutocomplete
+                  value={newAppointment.employee_id}
+                  onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
+                  placeholder="Buscar profissional por nome, email ou telefone..."
+                  unitFilter={
+                    userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
+                    userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                    'all'
+                  }
+                  disabled={!isAdmin}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_time">Data e Hora Início</Label>
+                  <Input
+                    id="start_time"
+                    type="datetime-local"
+                    value={newAppointment.start_time}
+                    onChange={(e) => setNewAppointment({...newAppointment, start_time: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_time">Data e Hora Fim</Label>
+                  <Input
+                    id="end_time"
+                    type="datetime-local"
+                    value={newAppointment.end_time}
+                    onChange={(e) => setNewAppointment({...newAppointment, end_time: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="title">Tipo de Consulta</Label>
+                <Select value={newAppointment.title} onValueChange={(value) => setNewAppointment({...newAppointment, title: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Consulta">Consulta</SelectItem>
+                    <SelectItem value="Primeira Consulta">Primeira Consulta</SelectItem>
+                    <SelectItem value="Avaliação">Avaliação</SelectItem>
+                    <SelectItem value="Retorno">Retorno</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="unit">Unidade</Label>
+                <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a unidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="madre">MADRE</SelectItem>
+                    <SelectItem value="floresta">Floresta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="notes">Observações</Label>
+                <Textarea
+                  id="notes"
+                  value={newAppointment.notes}
+                  onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
+                  placeholder="Observações opcionais..."
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateAppointment}>
+                {editingSchedule ? 'Salvar' : 'Criar'}
+              </Button>
+            </div>
+          </DialogContent>
         </Dialog>
 
         <CompleteAttendanceDialog
