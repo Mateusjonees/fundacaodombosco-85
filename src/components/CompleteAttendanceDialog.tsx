@@ -95,6 +95,8 @@ export default function CompleteAttendanceDialog({
     
     // Dados financeiros
     sessionValue: 0,
+    professionalValue: 0,
+    institutionValue: 0,
     paymentMethod: 'cash',
     paymentReceived: true,
     paymentNotes: ''
@@ -997,36 +999,64 @@ export default function CompleteAttendanceDialog({
                 Informações Financeiras
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Valor da Sessão (R$)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={attendanceData.sessionValue}
-                  onChange={(e) => setAttendanceData(prev => ({...prev, sessionValue: parseFloat(e.target.value) || 0}))}
-                />
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Valor da Sessão (R$)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={attendanceData.sessionValue}
+                    onChange={(e) => setAttendanceData(prev => ({...prev, sessionValue: parseFloat(e.target.value) || 0}))}
+                  />
+                </div>
+                
+                <div>
+                  <Label>Forma de Pagamento</Label>
+                  <Select 
+                    value={attendanceData.paymentMethod} 
+                    onValueChange={(value) => setAttendanceData(prev => ({...prev, paymentMethod: value}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Dinheiro</SelectItem>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                      <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                      <SelectItem value="bank_transfer">Transferência</SelectItem>
+                      <SelectItem value="insurance">Convênio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              
-              <div>
-                <Label>Forma de Pagamento</Label>
-                <Select 
-                  value={attendanceData.paymentMethod} 
-                  onValueChange={(value) => setAttendanceData(prev => ({...prev, paymentMethod: value}))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Dinheiro</SelectItem>
-                    <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                    <SelectItem value="debit_card">Cartão de Débito</SelectItem>
-                    <SelectItem value="bank_transfer">Transferência</SelectItem>
-                    <SelectItem value="insurance">Convênio</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Valor do Profissional (R$)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={attendanceData.professionalValue}
+                    onChange={(e) => setAttendanceData(prev => ({...prev, professionalValue: parseFloat(e.target.value) || 0}))}
+                    placeholder="0.00"
+                  />
+                </div>
+                
+                <div>
+                  <Label>Valor da Instituição (R$)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={attendanceData.institutionValue}
+                    onChange={(e) => setAttendanceData(prev => ({...prev, institutionValue: parseFloat(e.target.value) || 0}))}
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
