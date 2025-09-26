@@ -167,7 +167,7 @@ export default function Clients() {
           employee_id,
           is_active,
           clients (id, name),
-          profiles (id, name, user_id)
+          profiles!client_assignments_employee_id_fkey (id, name, user_id)
         `)
         .eq('is_active', true);
 

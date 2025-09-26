@@ -20,6 +20,8 @@ import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocomplete';
 import { ProfessionalCommandAutocomplete } from '@/components/ProfessionalCommandAutocomplete';
+import PatientPresenceButton from '@/components/PatientPresenceButton';
+import PatientArrivedNotification from '@/components/PatientArrivedNotification';
 
 interface Schedule {
   id: string;
@@ -31,8 +33,10 @@ interface Schedule {
   status: string;
   notes?: string;
   unit?: string;
+  patient_arrived?: boolean;
+  arrived_at?: string;
+  arrived_confirmed_by?: string;
   clients?: { name: string };
-  
 }
 
 export default function Schedule() {
@@ -220,6 +224,9 @@ export default function Schedule() {
         .from('schedules')
         .select(`
           *,
+          patient_arrived,
+          arrived_at,
+          arrived_confirmed_by,
           clients (name),
           profiles!schedules_employee_id_fkey (name)
         `)
@@ -502,6 +509,7 @@ export default function Schedule() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
+      <PatientArrivedNotification />
       <ScheduleAlerts />
       
       <div className="flex flex-col lg:flex-row gap-6">
@@ -633,8 +641,15 @@ export default function Schedule() {
                   </p>
                 ) : (
                   <div className="space-y-4">
-                    {todaySchedules.map((schedule) => (
-                      <div key={schedule.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg gap-4">
+                     {todaySchedules.map((schedule) => (
+                       <div 
+                         key={schedule.id} 
+                         className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg gap-4 transition-all duration-300 ${
+                           schedule.patient_arrived 
+                             ? 'border-green-200 bg-green-50/50 shadow-md' 
+                             : 'border-gray-200 hover:border-gray-300'
+                         }`}
+                       >
                         <div className="flex-1 w-full md:w-auto">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -662,10 +677,24 @@ export default function Schedule() {
 
                         <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
                           <div className="flex items-center gap-2 mb-2 md:mb-0">
-                            <Badge {...getStatusBadge(schedule.status)}>
-                              {getStatusBadge(schedule.status).text}
+                            <Badge {...getStatusBadge(schedule.status)} className={schedule.patient_arrived ? 'border-green-500 bg-green-100 text-green-800' : ''}>
+                              {schedule.patient_arrived ? '✓ Paciente Presente' : getStatusBadge(schedule.status).text}
                             </Badge>
                           </div>
+
+                          {/* Botão de presença do paciente para recepcionistas */}
+                          {userProfile?.employee_role === 'receptionist' && ['scheduled', 'confirmed'].includes(schedule.status) && (
+                            <div className="mb-2 md:mb-0">
+                              <PatientPresenceButton
+                                scheduleId={schedule.id}
+                                clientName={schedule.clients?.name || 'Cliente'}
+                                employeeId={schedule.employee_id}
+                                patientArrived={schedule.patient_arrived || false}
+                                arrivedAt={schedule.arrived_at}
+                                onPresenceUpdate={loadSchedules}
+                              />
+                            </div>
+                          )}
 
                           <div className="flex gap-1 flex-wrap justify-center md:justify-end">
                             <Button

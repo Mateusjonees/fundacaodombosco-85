@@ -1828,6 +1828,8 @@ export type Database = {
       schedules: {
         Row: {
           anamnesis_type_id: string | null
+          arrived_at: string | null
+          arrived_confirmed_by: string | null
           client_id: string
           completed_at: string | null
           completed_by: string | null
@@ -1840,6 +1842,7 @@ export type Database = {
           location: string | null
           materials_used: Json | null
           notes: string | null
+          patient_arrived: boolean | null
           payment_method: string | null
           session_amount: number | null
           session_notes: string | null
@@ -1851,6 +1854,8 @@ export type Database = {
         }
         Insert: {
           anamnesis_type_id?: string | null
+          arrived_at?: string | null
+          arrived_confirmed_by?: string | null
           client_id: string
           completed_at?: string | null
           completed_by?: string | null
@@ -1863,6 +1868,7 @@ export type Database = {
           location?: string | null
           materials_used?: Json | null
           notes?: string | null
+          patient_arrived?: boolean | null
           payment_method?: string | null
           session_amount?: number | null
           session_notes?: string | null
@@ -1874,6 +1880,8 @@ export type Database = {
         }
         Update: {
           anamnesis_type_id?: string | null
+          arrived_at?: string | null
+          arrived_confirmed_by?: string | null
           client_id?: string
           completed_at?: string | null
           completed_by?: string | null
@@ -1886,6 +1894,7 @@ export type Database = {
           location?: string | null
           materials_used?: Json | null
           notes?: string | null
+          patient_arrived?: boolean | null
           payment_method?: string | null
           session_amount?: number | null
           session_notes?: string | null
