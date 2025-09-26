@@ -258,9 +258,6 @@ export function AppSidebar() {
             <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
               MENU PRINCIPAL
             </SidebarGroupLabel>
-            <SidebarTrigger className="h-6 w-6 text-muted-foreground hover:text-foreground">
-              <ChevronLeft className="h-4 w-4" />
-            </SidebarTrigger>
           </div>
           
           <SidebarGroupContent>
