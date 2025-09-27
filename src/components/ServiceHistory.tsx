@@ -19,7 +19,8 @@ import {
   Calendar,
   CheckCircle,
   AlertCircle,
-  Star
+  Star,
+  Eye
 } from 'lucide-react';
 
 interface ServiceRecord {
@@ -60,6 +61,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [addServiceDialogOpen, setAddServiceDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [newService, setNewService] = useState({
     service_type: '',
     date: '',
@@ -413,6 +416,11 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
     return typeColors[type as keyof typeof typeColors] || typeColors.default;
   };
 
+  const openDetailsDialog = (record: ServiceRecord) => {
+    setSelectedRecord(record);
+    setDetailsDialogOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -611,6 +619,15 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                             )}
                           </div>
                         </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openDetailsDialog(record)}
+                          className="ml-4"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Detalhes
+                        </Button>
                       </div>
                       
                       {/* Detalhes do serviço */}
@@ -817,6 +834,307 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           </div>
         )}
       </CardContent>
+      
+      {/* Modal de Detalhes Completos */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Detalhes Completos do Atendimento
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedRecord && (
+            <div className="space-y-6 pt-4">
+              {/* Informações Básicas */}
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Informações Básicas
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-medium">Tipo de Serviço:</span>
+                    <p className="text-muted-foreground">{selectedRecord.service_type}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Data:</span>
+                    <p className="text-muted-foreground">{formatDateTime(selectedRecord.date)}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Profissional:</span>
+                    <p className="text-muted-foreground">{selectedRecord.professional_name} ({selectedRecord.professional_role})</p>
+                  </div>
+                  {selectedRecord.duration && (
+                    <div>
+                      <span className="font-medium">Duração:</span>
+                      <p className="text-muted-foreground">{selectedRecord.duration} minutos</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium">Status:</span>
+                    <p className="text-muted-foreground">{getStatusLabel(selectedRecord.status)}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Fonte do Registro:</span>
+                    <p className="text-muted-foreground">
+                      {selectedRecord.source === 'schedule' && 'Agendamento'}
+                      {selectedRecord.source === 'medical_record' && 'Registro Médico'}
+                      {selectedRecord.source === 'session_report' && 'Relatório de Sessão'}
+                      {selectedRecord.source === 'attendance_report' && 'Atendimento Concluído'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Objetivos da Sessão */}
+              {selectedRecord.session_objectives && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Star className="h-5 w-5" />
+                    Objetivos da Sessão
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.session_objectives}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Observações Detalhadas */}
+              {selectedRecord.detailed_notes && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Observações Detalhadas
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.detailed_notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Técnicas Utilizadas */}
+              {selectedRecord.techniques_used && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Técnicas Utilizadas
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.techniques_used}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Resposta do Paciente */}
+              {selectedRecord.patient_response && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Resposta do Paciente
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.patient_response}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Plano para Próxima Sessão */}
+              {selectedRecord.next_session_plan && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Plano para Próxima Sessão
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.next_session_plan}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Observações Clínicas */}
+              {selectedRecord.clinical_observations && selectedRecord.clinical_observations !== selectedRecord.detailed_notes && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Observações Clínicas
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.clinical_observations}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Avaliações da Sessão */}
+              {(selectedRecord.source === 'attendance_report' || selectedRecord.source === 'session_report') && 
+               (selectedRecord.quality_rating || selectedRecord.cooperation_rating || selectedRecord.goals_rating || selectedRecord.effort_rating) && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Star className="h-5 w-5" />
+                    Avaliação da Sessão
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <div className="grid grid-cols-2 gap-6">
+                      {selectedRecord.quality_rating && (
+                        <div>
+                          <span className="font-medium mb-2 block">Qualidade Geral:</span>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-6 w-6 ${
+                                  star <= selectedRecord.quality_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-2 text-muted-foreground">({selectedRecord.quality_rating}/5)</span>
+                          </div>
+                        </div>
+                      )}
+                      {selectedRecord.cooperation_rating && (
+                        <div>
+                          <span className="font-medium mb-2 block">Cooperação do Paciente:</span>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-6 w-6 ${
+                                  star <= selectedRecord.cooperation_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-2 text-muted-foreground">({selectedRecord.cooperation_rating}/5)</span>
+                          </div>
+                        </div>
+                      )}
+                      {selectedRecord.goals_rating && (
+                        <div>
+                          <span className="font-medium mb-2 block">Alcance dos Objetivos:</span>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-6 w-6 ${
+                                  star <= selectedRecord.goals_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-2 text-muted-foreground">({selectedRecord.goals_rating}/5)</span>
+                          </div>
+                        </div>
+                      )}
+                      {selectedRecord.effort_rating && (
+                        <div>
+                          <span className="font-medium mb-2 block">Esforço do Paciente:</span>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-6 w-6 ${
+                                  star <= selectedRecord.effort_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-2 text-muted-foreground">({selectedRecord.effort_rating}/5)</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Materiais Utilizados */}
+              {selectedRecord.materials_used && selectedRecord.materials_used.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Materiais Utilizados
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <div className="space-y-3">
+                      {selectedRecord.materials_used.map((material: any, idx: number) => (
+                        <div key={idx} className="flex justify-between items-start p-3 bg-muted/30 rounded">
+                          <div className="flex-1">
+                            <div className="font-medium">{material.name || material}</div>
+                            {material.quantity && material.unit && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                Quantidade: {material.quantity} {material.unit}
+                              </div>
+                            )}
+                            {material.observation && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                Observação: {material.observation}
+                              </div>
+                            )}
+                          </div>
+                          {material.total_cost && (
+                            <div className="text-sm font-medium">
+                              R$ {material.total_cost.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Documentos Anexos */}
+              {selectedRecord.attachments && selectedRecord.attachments.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Documentos Anexos
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <div className="space-y-2">
+                      {selectedRecord.attachments.map((attachment: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-3 p-3 bg-muted/30 rounded">
+                          <FileText className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex-1">
+                            <div className="font-medium">{attachment.name}</div>
+                            {attachment.size && (
+                              <div className="text-sm text-muted-foreground">
+                                Tamanho: {(attachment.size / 1024).toFixed(1)}KB
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Informações Financeiras */}
+              {selectedRecord.amount_charged && selectedRecord.amount_charged > 0 && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Informações Financeiras
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Valor Cobrado:</span>
+                      <span className="text-lg font-semibold text-green-600">
+                        R$ {selectedRecord.amount_charged.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
