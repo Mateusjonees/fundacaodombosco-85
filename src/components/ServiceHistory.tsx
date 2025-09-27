@@ -39,7 +39,7 @@ interface ServiceRecord {
   next_session_plan?: string;
   created_at: string;
   source: 'schedule' | 'medical_record' | 'session_report' | 'attendance_report';
-  // Campos adicionais para attendance_reports
+  // Campos adicionais para avaliações completas
   quality_rating?: number;
   cooperation_rating?: number;
   goals_rating?: number;
@@ -49,6 +49,11 @@ interface ServiceRecord {
   clinical_observations?: string;
   amount_charged?: number;
   payment_method?: string;
+  // Novos campos de avaliação
+  session_quality_notes?: string;
+  cooperation_notes?: string;
+  goals_achievement_notes?: string;
+  effort_assessment_notes?: string;
 }
 
 interface ServiceHistoryProps {
@@ -906,7 +911,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 <div>
                   <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                     <FileText className="h-5 w-5" />
-                    Observações Detalhadas
+                    Observações da Sessão
                   </h3>
                   <div className="bg-card border rounded-lg p-4">
                     <p className="whitespace-pre-wrap">{selectedRecord.detailed_notes}</p>
@@ -927,19 +932,6 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 </div>
               )}
 
-              {/* Resposta do Paciente */}
-              {selectedRecord.patient_response && (
-                <div>
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Resposta do Paciente
-                  </h3>
-                  <div className="bg-card border rounded-lg p-4">
-                    <p className="whitespace-pre-wrap">{selectedRecord.patient_response}</p>
-                  </div>
-                </div>
-              )}
-
               {/* Plano para Próxima Sessão */}
               {selectedRecord.next_session_plan && (
                 <div>
@@ -949,6 +941,19 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                   </h3>
                   <div className="bg-card border rounded-lg p-4">
                     <p className="whitespace-pre-wrap">{selectedRecord.next_session_plan}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Objetivos Alcançados */}
+              {selectedRecord.objectives_achieved && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Objetivos Alcançados
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.objectives_achieved}</p>
                   </div>
                 </div>
               )}
@@ -974,76 +979,115 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                     <Star className="h-5 w-5" />
                     Avaliação da Sessão
                   </h3>
-                  <div className="bg-card border rounded-lg p-4">
-                    <div className="grid grid-cols-2 gap-6">
+                  <div className="bg-card border rounded-lg p-6 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {selectedRecord.quality_rating && (
-                        <div>
-                          <span className="font-medium mb-2 block">Qualidade Geral:</span>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`h-6 w-6 ${
-                                  star <= selectedRecord.quality_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                            <span className="ml-2 text-muted-foreground">({selectedRecord.quality_rating}/5)</span>
+                        <div className="space-y-2">
+                          <span className="font-medium text-base">Qualidade Geral:</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-6 w-6 ${
+                                    star <= selectedRecord.quality_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-lg font-semibold text-muted-foreground">
+                              {selectedRecord.quality_rating}/5
+                            </span>
                           </div>
+                          {selectedRecord.session_quality_notes && (
+                            <p className="text-sm text-muted-foreground mt-2 p-2 bg-muted/20 rounded">
+                              {selectedRecord.session_quality_notes}
+                            </p>
+                          )}
                         </div>
                       )}
+                      
                       {selectedRecord.cooperation_rating && (
-                        <div>
-                          <span className="font-medium mb-2 block">Cooperação do Paciente:</span>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`h-6 w-6 ${
-                                  star <= selectedRecord.cooperation_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                            <span className="ml-2 text-muted-foreground">({selectedRecord.cooperation_rating}/5)</span>
+                        <div className="space-y-2">
+                          <span className="font-medium text-base">Cooperação do Paciente:</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-6 w-6 ${
+                                    star <= selectedRecord.cooperation_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-lg font-semibold text-muted-foreground">
+                              {selectedRecord.cooperation_rating}/5
+                            </span>
                           </div>
+                          {selectedRecord.cooperation_notes && (
+                            <p className="text-sm text-muted-foreground mt-2 p-2 bg-muted/20 rounded">
+                              {selectedRecord.cooperation_notes}
+                            </p>
+                          )}
                         </div>
                       )}
+                      
                       {selectedRecord.goals_rating && (
-                        <div>
-                          <span className="font-medium mb-2 block">Alcance dos Objetivos:</span>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`h-6 w-6 ${
-                                  star <= selectedRecord.goals_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                            <span className="ml-2 text-muted-foreground">({selectedRecord.goals_rating}/5)</span>
+                        <div className="space-y-2">
+                          <span className="font-medium text-base">Alcance dos Objetivos:</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-6 w-6 ${
+                                    star <= selectedRecord.goals_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-lg font-semibold text-muted-foreground">
+                              {selectedRecord.goals_rating}/5
+                            </span>
                           </div>
+                          {selectedRecord.goals_achievement_notes && (
+                            <p className="text-sm text-muted-foreground mt-2 p-2 bg-muted/20 rounded">
+                              {selectedRecord.goals_achievement_notes}
+                            </p>
+                          )}
                         </div>
                       )}
+                      
                       {selectedRecord.effort_rating && (
-                        <div>
-                          <span className="font-medium mb-2 block">Esforço do Paciente:</span>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`h-6 w-6 ${
-                                  star <= selectedRecord.effort_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                            <span className="ml-2 text-muted-foreground">({selectedRecord.effort_rating}/5)</span>
+                        <div className="space-y-2">
+                          <span className="font-medium text-base">Avaliação do Esforço:</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-6 w-6 ${
+                                    star <= selectedRecord.effort_rating! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-lg font-semibold text-muted-foreground">
+                              {selectedRecord.effort_rating}/5
+                            </span>
                           </div>
+                          {selectedRecord.effort_assessment_notes && (
+                            <p className="text-sm text-muted-foreground mt-2 p-2 bg-muted/20 rounded">
+                              {selectedRecord.effort_assessment_notes}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              )}
+               )}
 
               {/* Materiais Utilizados */}
               {selectedRecord.materials_used && selectedRecord.materials_used.length > 0 && (
