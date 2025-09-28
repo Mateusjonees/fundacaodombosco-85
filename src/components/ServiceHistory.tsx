@@ -54,6 +54,18 @@ interface ServiceRecord {
   cooperation_notes?: string;
   goals_achievement_notes?: string;
   effort_assessment_notes?: string;
+  // Campos completos dos attendance_reports
+  patient_name?: string;
+  start_time?: string;
+  end_time?: string;
+  professional_amount?: number;
+  institution_amount?: number;
+  completed_by_name?: string;
+  validation_status?: string;
+  validated_at?: string;
+  validated_by_name?: string;
+  rejection_reason?: string;
+  schedule_id?: string;
 }
 
 interface ServiceHistoryProps {
@@ -194,6 +206,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         .from('attendance_reports')
         .select(`
           id,
+          schedule_id,
           start_time,
           end_time,
           session_duration,
@@ -207,13 +220,17 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           next_session_plan,
           materials_used,
           amount_charged,
+          professional_amount,
+          institution_amount,
           attachments,
           status,
           employee_id,
           created_at,
+          completed_by_name,
           validation_status,
           validated_at,
-          validated_by_name
+          validated_by_name,
+          rejection_reason
         `)
         .eq('client_id', clientId)
         .eq('validation_status', 'validated') // Só mostrar atendimentos validados
@@ -231,7 +248,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             professional_role: 'Staff', // Pode ser melhorado buscando da tabela profiles
             duration: report.session_duration,
             status: 'completed',
-            detailed_notes: report.observations || '',
+            detailed_notes: report.session_notes || '',
             techniques_used: report.techniques_used || '',
             session_objectives: '', // Pode ser adicionado se necessário
             patient_response: report.patient_response || '',
@@ -241,7 +258,19 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             attachments: Array.isArray(report.attachments) ? report.attachments : [],
             amount_charged: report.amount_charged || 0,
             created_at: report.created_at,
-            source: 'attendance_report'
+            source: 'attendance_report',
+            // Campos completos dos attendance_reports
+            patient_name: report.patient_name,
+            start_time: report.start_time,
+            end_time: report.end_time,
+            professional_amount: report.professional_amount || 0,
+            institution_amount: report.institution_amount || 0,
+            completed_by_name: report.completed_by_name,
+            validation_status: report.validation_status,
+            validated_at: report.validated_at,
+            validated_by_name: report.validated_by_name,
+            rejection_reason: report.rejection_reason,
+            schedule_id: report.schedule_id
           });
         });
       }
@@ -858,19 +887,37 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                   <Activity className="h-5 w-5" />
                   Informações Básicas
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <span className="font-medium">Tipo de Serviço:</span>
+                    <span className="font-medium">Tipo de Atendimento:</span>
                     <p className="text-muted-foreground">{selectedRecord.service_type}</p>
                   </div>
                   <div>
-                    <span className="font-medium">Data:</span>
+                    <span className="font-medium">Data e Hora:</span>
                     <p className="text-muted-foreground">{formatDateTime(selectedRecord.date)}</p>
                   </div>
+                  {selectedRecord.patient_name && (
+                    <div>
+                      <span className="font-medium">Paciente:</span>
+                      <p className="text-muted-foreground">{selectedRecord.patient_name}</p>
+                    </div>
+                  )}
                   <div>
                     <span className="font-medium">Profissional:</span>
                     <p className="text-muted-foreground">{selectedRecord.professional_name} ({selectedRecord.professional_role})</p>
                   </div>
+                  {selectedRecord.start_time && selectedRecord.end_time && (
+                    <>
+                      <div>
+                        <span className="font-medium">Início:</span>
+                        <p className="text-muted-foreground">{formatDateTime(selectedRecord.start_time)}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Término:</span>
+                        <p className="text-muted-foreground">{formatDateTime(selectedRecord.end_time)}</p>
+                      </div>
+                    </>
+                  )}
                   {selectedRecord.duration && (
                     <div>
                       <span className="font-medium">Duração:</span>
@@ -881,6 +928,24 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                     <span className="font-medium">Status:</span>
                     <p className="text-muted-foreground">{getStatusLabel(selectedRecord.status)}</p>
                   </div>
+                  {selectedRecord.completed_by_name && (
+                    <div>
+                      <span className="font-medium">Finalizado por:</span>
+                      <p className="text-muted-foreground">{selectedRecord.completed_by_name}</p>
+                    </div>
+                  )}
+                  {selectedRecord.validated_by_name && selectedRecord.validated_at && (
+                    <>
+                      <div>
+                        <span className="font-medium">Validado por:</span>
+                        <p className="text-muted-foreground">{selectedRecord.validated_by_name}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Data de Validação:</span>
+                        <p className="text-muted-foreground">{formatDateTime(selectedRecord.validated_at)}</p>
+                      </div>
+                    </>
+                  )}
                   <div>
                     <span className="font-medium">Fonte do Registro:</span>
                     <p className="text-muted-foreground">
@@ -906,7 +971,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 </div>
               )}
 
-              {/* Observações Detalhadas */}
+              {/* Observações da Sessão */}
               {selectedRecord.detailed_notes && (
                 <div>
                   <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -932,6 +997,19 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 </div>
               )}
 
+              {/* Resposta do Paciente */}
+              {selectedRecord.patient_response && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Resposta do Paciente
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.patient_response}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Plano para Próxima Sessão */}
               {selectedRecord.next_session_plan && (
                 <div>
@@ -945,19 +1023,6 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 </div>
               )}
 
-              {/* Objetivos Alcançados */}
-              {selectedRecord.objectives_achieved && (
-                <div>
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    Objetivos Alcançados
-                  </h3>
-                  <div className="bg-card border rounded-lg p-4">
-                    <p className="whitespace-pre-wrap">{selectedRecord.objectives_achieved}</p>
-                  </div>
-                </div>
-              )}
-
               {/* Observações Clínicas */}
               {selectedRecord.clinical_observations && selectedRecord.clinical_observations !== selectedRecord.detailed_notes && (
                 <div>
@@ -967,6 +1032,19 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                   </h3>
                   <div className="bg-card border rounded-lg p-4">
                     <p className="whitespace-pre-wrap">{selectedRecord.clinical_observations}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Objetivos Alcançados */}
+              {selectedRecord.objectives_achieved && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Objetivos Alcançados
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4">
+                    <p className="whitespace-pre-wrap">{selectedRecord.objectives_achieved}</p>
                   </div>
                 </div>
               )}
@@ -1152,23 +1230,85 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 </div>
               )}
 
+              {/* Informações de Validação */}
+              {(selectedRecord.validation_status || selectedRecord.rejection_reason) && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Informações de Validação
+                  </h3>
+                  <div className="bg-card border rounded-lg p-4 space-y-3">
+                    {selectedRecord.validation_status && (
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Status de Validação:</span>
+                        <Badge variant={selectedRecord.validation_status === 'validated' ? 'default' : 'destructive'}>
+                          {selectedRecord.validation_status === 'validated' ? 'Validado' : 
+                           selectedRecord.validation_status === 'rejected' ? 'Rejeitado' : 
+                           'Pendente'}
+                        </Badge>
+                      </div>
+                    )}
+                    {selectedRecord.validated_by_name && (
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Validado por:</span>
+                        <span className="text-muted-foreground">{selectedRecord.validated_by_name}</span>
+                      </div>
+                    )}
+                    {selectedRecord.validated_at && (
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Data de Validação:</span>
+                        <span className="text-muted-foreground">{formatDateTime(selectedRecord.validated_at)}</span>
+                      </div>
+                    )}
+                    {selectedRecord.rejection_reason && (
+                      <div>
+                        <span className="font-medium block mb-2">Motivo da Rejeição:</span>
+                        <div className="bg-red-50 border border-red-200 rounded p-3">
+                          <p className="text-red-800 whitespace-pre-wrap">{selectedRecord.rejection_reason}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Informações Financeiras */}
-              {selectedRecord.amount_charged && selectedRecord.amount_charged > 0 && (
+              {(selectedRecord.amount_charged && selectedRecord.amount_charged > 0) || 
+               (selectedRecord.professional_amount && selectedRecord.professional_amount > 0) ||
+               (selectedRecord.institution_amount && selectedRecord.institution_amount > 0) ? (
                 <div>
                   <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                     <Activity className="h-5 w-5" />
                     Informações Financeiras
                   </h3>
-                  <div className="bg-card border rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">Valor Cobrado:</span>
-                      <span className="text-lg font-semibold text-green-600">
-                        R$ {selectedRecord.amount_charged.toFixed(2)}
-                      </span>
-                    </div>
+                  <div className="bg-card border rounded-lg p-4 space-y-3">
+                    {selectedRecord.amount_charged && selectedRecord.amount_charged > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-green-50 rounded">
+                        <span className="font-medium">Valor Total Cobrado:</span>
+                        <span className="text-lg font-semibold text-green-600">
+                          R$ {selectedRecord.amount_charged.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {selectedRecord.professional_amount && selectedRecord.professional_amount > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
+                        <span className="font-medium">Valor para o Profissional:</span>
+                        <span className="text-lg font-semibold text-blue-600">
+                          R$ {selectedRecord.professional_amount.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {selectedRecord.institution_amount && selectedRecord.institution_amount > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-purple-50 rounded">
+                        <span className="font-medium">Valor para a Instituição:</span>
+                        <span className="text-lg font-semibold text-purple-600">
+                          R$ {selectedRecord.institution_amount.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           )}
           
