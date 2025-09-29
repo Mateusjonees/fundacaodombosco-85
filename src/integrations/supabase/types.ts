@@ -2041,6 +2041,53 @@ export type Database = {
           },
         ]
       }
+      stock_item_attachments: {
+        Row: {
+          document_type: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          notes: string | null
+          stock_item_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          document_type?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          notes?: string | null
+          stock_item_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          document_type?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          notes?: string | null
+          stock_item_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_item_attachments_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_items: {
         Row: {
           barcode: string | null

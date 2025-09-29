@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus } from 'lucide-react';
+import { Plus, Upload, X, FileText, Image } from 'lucide-react';
 
 interface AddStockItemDialogProps {
   isOpen: boolean;
@@ -42,6 +42,8 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -56,6 +58,82 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
     barcode: '',
     expiry_date: ''
   });
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => {
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      
+      if (!validTypes.includes(file.type)) {
+        toast({
+          variant: "destructive",
+          title: "Tipo de arquivo inválido",
+          description: "Apenas JPG, PNG, WebP e PDF são permitidos."
+        });
+        return false;
+      }
+      
+      if (file.size > maxSize) {
+        toast({
+          variant: "destructive",
+          title: "Arquivo muito grande",
+          description: "O arquivo deve ter no máximo 10MB."
+        });
+        return false;
+      }
+      
+      return true;
+    });
+    
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFiles = async (stockItemId: string) => {
+    if (selectedFiles.length === 0) return;
+
+    setUploadingFiles(true);
+    try {
+      for (const file of selectedFiles) {
+        const fileName = `${stockItemId}/${Date.now()}_${file.name}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('stock-documents')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // Registrar anexo na tabela
+        const { error: attachmentError } = await supabase
+          .from('stock_item_attachments')
+          .insert({
+            stock_item_id: stockItemId,
+            file_name: file.name,
+            file_path: fileName,
+            file_size: file.size,
+            file_type: file.type,
+            document_type: file.type === 'application/pdf' ? 'invoice' : 'receipt',
+            uploaded_by: user?.id,
+            notes: 'Documento anexado durante cadastro do item'
+          });
+
+        if (attachmentError) throw attachmentError;
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro no upload",
+        description: "Não foi possível fazer upload dos arquivos."
+      });
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +159,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
     setLoading(true);
     try {
       // Inserir item no estoque (trigger automático criará registro financeiro)
-      const { error: stockError } = await supabase
+      const { data: stockData, error: stockError } = await supabase
         .from('stock_items')
         .insert({
           name: formData.name.trim(),
@@ -98,17 +176,25 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
           expiry_date: formData.expiry_date || null,
           created_by: user?.id,
           is_active: true
-        });
+        })
+        .select()
+        .single();
 
       if (stockError) throw stockError;
+
+      // Upload dos arquivos anexados
+      if (selectedFiles.length > 0 && stockData) {
+        await uploadFiles(stockData.id);
+      }
 
       toast({
         title: "Sucesso",
         description: (() => {
           const expenseValue = formData.total_expense > 0 ? formData.total_expense : (formData.unit_cost * formData.current_quantity);
+          const filesText = selectedFiles.length > 0 ? ` e ${selectedFiles.length} arquivo(s) anexado(s)` : '';
           return expenseValue > 0 && formData.current_quantity > 0 
-            ? `Item adicionado ao estoque e registro financeiro automático criado (R$ ${expenseValue.toFixed(2)})!`
-            : "Item adicionado ao estoque com sucesso!";
+            ? `Item adicionado ao estoque, registro financeiro automático criado (R$ ${expenseValue.toFixed(2)})${filesText}!`
+            : `Item adicionado ao estoque com sucesso${filesText}!`;
         })()
       });
 
@@ -127,6 +213,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
         barcode: '',
         expiry_date: ''
       });
+      setSelectedFiles([]);
 
       onUpdate();
       onClose();
@@ -298,6 +385,72 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
                 value={formData.expiry_date}
                 onChange={(e) => handleInputChange('expiry_date', e.target.value)}
               />
+            </div>
+          </div>
+
+          {/* Seção de Upload de Documentos */}
+          <div className="space-y-4">
+            <div className="border-t pt-4">
+              <Label className="text-base font-medium">Anexar Documentos</Label>
+              <p className="text-sm text-muted-foreground mb-3">
+                Anexe notas fiscais, comprovantes ou outros documentos relacionados ao produto
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Selecionar Arquivos
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    PDF, JPG, PNG, WebP (max 10MB)
+                  </span>
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Arquivos Selecionados:</Label>
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                        <div className="flex items-center gap-2">
+                          {file.type === 'application/pdf' ? (
+                            <FileText className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <Image className="h-4 w-4 text-blue-500" />
+                          )}
+                          <span className="text-sm truncate max-w-xs" title={file.name}>
+                            {file.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
