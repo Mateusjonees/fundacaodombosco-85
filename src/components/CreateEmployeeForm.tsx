@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,14 @@ interface CreateEmployeeFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+}
+
+interface JobPosition {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  is_active: boolean;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -40,6 +48,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
   const { userRole } = useRolePermissions();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -48,8 +57,30 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
     employee_role: 'staff' as EmployeeRole,
     phone: '',
     department: '',
-    unit: ''
+    unit: '',
+    job_position_id: ''
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      loadJobPositions();
+    }
+  }, [isOpen]);
+
+  const loadJobPositions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('custom_job_positions')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setJobPositions(data || []);
+    } catch (error) {
+      console.error('Error loading job positions:', error);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -63,7 +94,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
       employee_role: 'staff',
       phone: '',
       department: '',
-      unit: ''
+      unit: '',
+      job_position_id: ''
     });
     setShowPassword(false);
   };
@@ -102,7 +134,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
             employee_role: formData.employee_role,
             phone: formData.phone || null,
             department: formData.department || null,
-            unit: formData.unit || null
+            unit: formData.unit || null,
+            job_position_id: formData.job_position_id || null
           }
         }
       });
@@ -119,6 +152,21 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
 
       // Verificar se o usuário foi criado
       if (data?.user) {
+        // Se um cargo foi selecionado, criar a associação
+        if (formData.job_position_id) {
+          try {
+            await supabase
+              .from('user_job_assignments')
+              .insert({
+                user_id: data.user.id,
+                position_id: formData.job_position_id,
+                assigned_by: userRole
+              });
+          } catch (assignmentError) {
+            console.log('Warning: Could not assign job position:', assignmentError);
+          }
+        }
+
         // Enviar email de boas-vindas
         try {
           await supabase.functions.invoke('send-employee-confirmation', {
@@ -298,6 +346,34 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
               </SelectContent>
             </Select>
           </div>
+
+          {jobPositions.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="job_position">Cargo Customizado</Label>
+              <Select 
+                value={formData.job_position_id} 
+                onValueChange={(value) => handleInputChange('job_position_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cargo (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum cargo customizado</SelectItem>
+                  {jobPositions.map((position) => (
+                    <SelectItem key={position.id} value={position.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: position.color }}
+                        />
+                        {position.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex gap-2 pt-4">
             <Button 
