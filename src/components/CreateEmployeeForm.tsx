@@ -16,6 +16,13 @@ interface CreateEmployeeFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  prefilledData?: {
+    name?: string;
+    email?: string;
+    password?: string;
+    employee_role?: EmployeeRole;
+    unit?: string;
+  };
 }
 
 interface JobPosition {
@@ -42,7 +49,7 @@ const ROLE_LABELS: Record<string, string> = {
   physiotherapist: 'Fisioterapeuta'
 };
 
-export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmployeeFormProps) => {
+export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }: CreateEmployeeFormProps) => {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const { userRole } = useRolePermissions();
@@ -51,21 +58,34 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
   const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
   
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    employee_role: 'staff' as EmployeeRole,
+    name: prefilledData?.name || '',
+    email: prefilledData?.email || '',
+    password: prefilledData?.password || '',
+    employee_role: (prefilledData?.employee_role || 'staff') as EmployeeRole,
     phone: '',
     department: '',
-    unit: '',
+    unit: prefilledData?.unit || '',
     job_position_id: ''
   });
 
   useEffect(() => {
     if (isOpen) {
       loadJobPositions();
+      // Atualizar form com dados preenchidos quando o dialog abrir
+      if (prefilledData) {
+        setFormData({
+          name: prefilledData.name || '',
+          email: prefilledData.email || '',
+          password: prefilledData.password || '',
+          employee_role: (prefilledData.employee_role || 'staff') as EmployeeRole,
+          phone: '',
+          department: '',
+          unit: prefilledData.unit || '',
+          job_position_id: ''
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, prefilledData]);
 
   const loadJobPositions = async () => {
     try {

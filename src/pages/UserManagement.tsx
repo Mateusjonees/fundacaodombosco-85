@@ -33,6 +33,7 @@ import { useCustomPermissions, PERMISSION_LABELS, PERMISSION_CATEGORIES, type Pe
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CreateEmployeeForm } from '@/components/CreateEmployeeForm';
 
 interface User {
   id: string;
@@ -77,6 +78,7 @@ export default function UserManagement() {
   const [isPermissionDialogOpen, setIsPermissionDialogOpen] = useState(false);
   const [isPositionDialogOpen, setIsPositionDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
 
   // Estados dos formulários
   const [newPosition, setNewPosition] = useState({
@@ -315,6 +317,25 @@ export default function UserManagement() {
           <p className="text-muted-foreground">Controle total sobre usuários, cargos e permissões do sistema</p>
         </div>
         <div className="flex gap-2">
+          {canManageUsers && (
+            <Button 
+              onClick={() => setIsCreateEmployeeDialogOpen(true)}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Novo Funcionário
+            </Button>
+          )}
+          {canManageUsers && (
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setIsCreateEmployeeDialogOpen(true);
+              }}
+            >
+              <Crown className="h-4 w-4 mr-2" />
+              Criar Diretor
+            </Button>
+          )}
           {canManageRoles && (
             <Dialog open={isPositionDialogOpen} onOpenChange={setIsPositionDialogOpen}>
               <DialogTrigger asChild>
@@ -591,6 +612,23 @@ export default function UserManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Criação de Funcionário */}
+      <CreateEmployeeForm
+        isOpen={isCreateEmployeeDialogOpen}
+        onClose={() => setIsCreateEmployeeDialogOpen(false)}
+        onSuccess={() => {
+          loadUsers();
+          setIsCreateEmployeeDialogOpen(false);
+        }}
+        prefilledData={{
+          name: 'Cristiane',
+          email: 'gsfmoreiracris@hotmail.com',
+          password: 'educa123',
+          employee_role: 'director',
+          unit: 'madre'
+        }}
+      />
     </div>
   );
 }
