@@ -622,7 +622,7 @@ export default function UserManagement() {
           setIsCreateEmployeeDialogOpen(false);
         }}
         prefilledData={{
-          name: 'Cristiane',
+          name: 'Cris Moreira',
           email: 'gsfmoreiracris@hotmail.com',
           password: 'educa123',
           employee_role: 'director',
