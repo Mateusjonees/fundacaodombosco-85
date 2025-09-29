@@ -50,6 +50,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
     current_quantity: 0,
     minimum_quantity: 5,
     unit_cost: 0,
+    total_expense: 0, // Novo campo para valor total da despesa
     supplier: '',
     location: '',
     barcode: '',
@@ -102,9 +103,12 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
 
       toast({
         title: "Sucesso",
-        description: formData.unit_cost > 0 && formData.current_quantity > 0 
-          ? `Item adicionado ao estoque e registro financeiro automático criado (R$ ${(formData.unit_cost * formData.current_quantity).toFixed(2)})!`
-          : "Item adicionado ao estoque com sucesso!"
+        description: (() => {
+          const expenseValue = formData.total_expense > 0 ? formData.total_expense : (formData.unit_cost * formData.current_quantity);
+          return expenseValue > 0 && formData.current_quantity > 0 
+            ? `Item adicionado ao estoque e registro financeiro automático criado (R$ ${expenseValue.toFixed(2)})!`
+            : "Item adicionado ao estoque com sucesso!";
+        })()
       });
 
       // Reset form
@@ -116,6 +120,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
         current_quantity: 0,
         minimum_quantity: 5,
         unit_cost: 0,
+        total_expense: 0,
         supplier: '',
         location: '',
         barcode: '',
@@ -236,6 +241,22 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
                 value={formData.unit_cost}
                 onChange={(e) => handleInputChange('unit_cost', parseFloat(e.target.value) || 0)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="total_expense">Valor Total da Despesa (R$)</Label>
+              <Input
+                id="total_expense"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.total_expense}
+                onChange={(e) => handleInputChange('total_expense', parseFloat(e.target.value) || 0)}
+                placeholder="Valor total gasto na compra"
+              />
+              <p className="text-xs text-muted-foreground">
+                Inclua frete, impostos e outros custos além do valor unitário
+              </p>
             </div>
 
             <div className="space-y-2">
