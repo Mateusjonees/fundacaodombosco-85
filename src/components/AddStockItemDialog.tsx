@@ -79,8 +79,8 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
 
     setLoading(true);
     try {
-      // Inserir item no estoque
-      const { data: stockData, error: stockError } = await supabase
+      // Inserir item no estoque (trigger automático criará registro financeiro)
+      const { error: stockError } = await supabase
         .from('stock_items')
         .insert({
           name: formData.name.trim(),
@@ -96,46 +96,14 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
           expiry_date: formData.expiry_date || null,
           created_by: user?.id,
           is_active: true
-        })
-        .select()
-        .single();
-
-      if (stockError) throw stockError;
-
-      // Criar registro financeiro se houver custo e quantidade
-      if (formData.unit_cost > 0 && formData.current_quantity > 0) {
-        const totalCost = formData.unit_cost * formData.current_quantity;
-        
-        const { error: financialError } = await supabase
-          .from('financial_records')
-          .insert({
-            type: 'expense',
-            category: 'supplies',
-            description: `Compra de estoque: ${formData.name}${formData.supplier ? ` - ${formData.supplier}` : ''}`,
-            amount: totalCost,
-            date: new Date().toISOString().split('T')[0],
-            payment_method: 'cash',
-            notes: `Item: ${formData.name} | Categoria: ${formData.category} | Quantidade: ${formData.current_quantity} ${formData.unit} | Custo unitário: R$ ${formData.unit_cost.toFixed(2)}${formData.supplier ? ` | Fornecedor: ${formData.supplier}` : ''}${formData.location ? ` | Localização: ${formData.location}` : ''}`,
-            created_by: user?.id
-          });
-
-        if (financialError) {
-          console.error('Error creating financial record:', financialError);
-          // Não falha a operação se der erro no financeiro, mas avisa o usuário
-          toast({
-            variant: "destructive",
-            title: "Aviso",
-            description: "Item adicionado ao estoque, mas houve erro ao criar o registro financeiro."
-          });
-        }
-      }
+        });
 
       if (stockError) throw stockError;
 
       toast({
         title: "Sucesso",
         description: formData.unit_cost > 0 && formData.current_quantity > 0 
-          ? `Item adicionado ao estoque e registro financeiro criado (R$ ${(formData.unit_cost * formData.current_quantity).toFixed(2)})!`
+          ? `Item adicionado ao estoque e registro financeiro automático criado (R$ ${(formData.unit_cost * formData.current_quantity).toFixed(2)})!`
           : "Item adicionado ao estoque com sucesso!"
       });
 
