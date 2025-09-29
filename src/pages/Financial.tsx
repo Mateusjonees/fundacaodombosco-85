@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, Shield } from 'lucide-react';
+import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, Shield, Edit2, Trash2 } from 'lucide-react';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { EditFinancialRecordDialog } from '@/components/EditFinancialRecordDialog';
 
 interface FinancialRecord {
   id: string;
@@ -45,6 +46,8 @@ export default function Financial() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<FinancialRecord | null>(null);
   const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -297,6 +300,36 @@ export default function Financial() {
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível adicionar a nota.",
+      });
+    }
+  };
+
+  const handleEditRecord = (record: FinancialRecord) => {
+    setEditingRecord(record);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteRecord = async (recordId: string) => {
+    try {
+      const { error } = await supabase
+        .from('financial_records')
+        .delete()
+        .eq('id', recordId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Registro financeiro excluído com sucesso!"
+      });
+
+      loadFinancialRecords();
+    } catch (error) {
+      console.error('Error deleting financial record:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível excluir o registro financeiro."
       });
     }
   };
@@ -706,16 +739,17 @@ export default function Financial() {
                 </p>
               ) : (
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Pagamento</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                   <TableHeader>
+                     <TableRow>
+                       <TableHead>Data</TableHead>
+                       <TableHead>Tipo</TableHead>
+                       <TableHead>Categoria</TableHead>
+                       <TableHead>Descrição</TableHead>
+                       <TableHead>Valor</TableHead>
+                       <TableHead>Pagamento</TableHead>
+                       <TableHead>Ações</TableHead>
+                     </TableRow>
+                   </TableHeader>
                   <TableBody>
                     {filteredRecords.map((record) => (
                       <TableRow key={record.id}>
@@ -734,12 +768,31 @@ export default function Financial() {
                         <TableCell className={record.type === 'income' ? 'text-green-600' : 'text-red-600'}>
                           {record.type === 'income' ? '+' : '-'} R$ {record.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {record.payment_method}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
+                         <TableCell>
+                           <Badge variant="outline">
+                             {record.payment_method}
+                           </Badge>
+                         </TableCell>
+                         <TableCell>
+                           <div className="flex items-center gap-2">
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={() => handleEditRecord(record)}
+                             >
+                               <Edit2 className="h-4 w-4" />
+                             </Button>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={() => handleDeleteRecord(record.id)}
+                               className="text-destructive hover:text-destructive"
+                             >
+                               <Trash2 className="h-4 w-4" />
+                             </Button>
+                           </div>
+                         </TableCell>
+                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
@@ -1099,6 +1152,16 @@ export default function Financial() {
           )}
         </CardContent>
       </Card>
+
+      <EditFinancialRecordDialog
+        record={editingRecord}
+        open={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingRecord(null);
+        }}
+        onSave={loadFinancialRecords}
+      />
     </div>
   );
 }
