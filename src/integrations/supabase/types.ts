@@ -2056,6 +2056,7 @@ export type Database = {
           minimum_quantity: number | null
           name: string
           supplier: string | null
+          total_expense: number | null
           unit: string | null
           unit_cost: number | null
           updated_at: string
@@ -2074,6 +2075,7 @@ export type Database = {
           minimum_quantity?: number | null
           name: string
           supplier?: string | null
+          total_expense?: number | null
           unit?: string | null
           unit_cost?: number | null
           updated_at?: string
@@ -2092,6 +2094,7 @@ export type Database = {
           minimum_quantity?: number | null
           name?: string
           supplier?: string | null
+          total_expense?: number | null
           unit?: string | null
           unit_cost?: number | null
           updated_at?: string

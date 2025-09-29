@@ -91,6 +91,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
           current_quantity: formData.current_quantity,
           minimum_quantity: formData.minimum_quantity,
           unit_cost: formData.unit_cost,
+          total_expense: formData.total_expense,
           supplier: formData.supplier.trim() || null,
           location: formData.location.trim() || null,
           barcode: formData.barcode.trim() || null,
