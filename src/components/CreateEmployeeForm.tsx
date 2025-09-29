@@ -360,7 +360,6 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                 <SelectValue placeholder="Selecione uma unidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Selecione uma unidade</SelectItem>
                 <SelectItem value="madre">MADRE</SelectItem>
                 <SelectItem value="floresta">Floresta</SelectItem>
               </SelectContent>
@@ -378,7 +377,6 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                   <SelectValue placeholder="Selecione um cargo (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum cargo customizado</SelectItem>
                   {jobPositions.map((position) => (
                     <SelectItem key={position.id} value={position.id}>
                       <div className="flex items-center gap-2">
