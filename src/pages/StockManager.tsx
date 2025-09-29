@@ -157,7 +157,9 @@ export default function StockManager() {
 
       if (filters.month && filters.year) {
         const startDate = `${filters.year}-${filters.month.padStart(2, '0')}-01`;
-        const endDate = new Date(parseInt(filters.year), parseInt(filters.month), 0).toISOString().split('T')[0];
+        // Corrigir o cálculo da data final do mês
+        const lastDay = new Date(parseInt(filters.year), parseInt(filters.month), 0).getDate();
+        const endDate = `${filters.year}-${filters.month.padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
         query = query.gte('date', startDate).lte('date', endDate);
       } else if (filters.year && !filters.month) {
         query = query.gte('date', `${filters.year}-01-01`).lte('date', `${filters.year}-12-31`);
