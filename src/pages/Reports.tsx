@@ -11,10 +11,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
-import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield } from 'lucide-react';
+import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Combobox } from '@/components/ui/combobox';
+import { DeleteFinancialRecordsDialog } from '@/components/DeleteFinancialRecordsDialog';
 
 interface EmployeeReport {
   id: string;
@@ -56,6 +57,7 @@ export default function Reports() {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
   const { user } = useAuth();
   const { 
     canViewReports, 
@@ -362,6 +364,16 @@ export default function Reports() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Relatórios de Atendimento</h1>
         <div className="flex gap-2">
+          {isDirector() && (
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteFinancialDialogOpen(true)}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir Registros Financeiros
+            </Button>
+          )}
           {canConfigureReports?.() && (
             <Button variant="outline" onClick={clearFilters}>
               <Filter className="h-4 w-4 mr-2" />
@@ -1178,6 +1190,11 @@ export default function Reports() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <DeleteFinancialRecordsDialog 
+        open={isDeleteFinancialDialogOpen}
+        onClose={() => setIsDeleteFinancialDialogOpen(false)}
+      />
     </div>
   );
 }
