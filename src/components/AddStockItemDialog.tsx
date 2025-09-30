@@ -158,6 +158,9 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
 
     setLoading(true);
     try {
+      console.log('Tentando inserir item no estoque...', formData);
+      console.log('User ID:', user?.id);
+      
       // Inserir item no estoque (trigger automático criará registro financeiro)
       const { data: stockData, error: stockError } = await supabase
         .from('stock_items')
@@ -180,7 +183,12 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
         .select()
         .single();
 
-      if (stockError) throw stockError;
+      console.log('Resultado da inserção:', { stockData, stockError });
+
+      if (stockError) {
+        console.error('Erro ao inserir item:', stockError);
+        throw stockError;
+      }
 
       // Upload dos arquivos anexados
       if (selectedFiles.length > 0 && stockData) {
