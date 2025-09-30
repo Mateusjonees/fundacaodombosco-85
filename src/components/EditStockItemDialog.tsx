@@ -120,11 +120,16 @@ export default function EditStockItemDialog({ item, isOpen, onClose, onUpdate }:
 
       console.log('Updating stock item:', item.id, updateData);
 
+      // Verificar se houve mudança de quantidade para registrar movimentação
+      const quantityChanged = formData.current_quantity !== item.current_quantity;
+      const quantityDiff = formData.current_quantity - item.current_quantity;
+
       const { data, error } = await supabase
         .from('stock_items')
         .update(updateData)
         .eq('id', item.id)
-        .select();
+        .select()
+        .single();
 
       if (error) {
         console.error('Supabase update error:', error);
@@ -132,6 +137,42 @@ export default function EditStockItemDialog({ item, isOpen, onClose, onUpdate }:
       }
 
       console.log('Update successful:', data);
+
+      // Registrar movimentação se a quantidade mudou
+      if (quantityChanged) {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        const movementData = {
+          stock_item_id: item.id,
+          type: quantityDiff > 0 ? 'entrada' : 'saida',
+          quantity: Math.abs(quantityDiff),
+          previous_quantity: item.current_quantity,
+          new_quantity: formData.current_quantity,
+          unit_cost: formData.unit_cost,
+          total_cost: Math.abs(quantityDiff) * formData.unit_cost,
+          reason: 'Ajuste através de edição',
+          notes: `Item editado: ${item.name}${item.name !== formData.name.trim() ? ` → ${formData.name.trim()}` : ''}`,
+          date: new Date().toISOString().split('T')[0],
+          created_by: user?.id,
+          moved_by: user?.id
+        };
+
+        console.log('Creating movement record:', movementData);
+
+        const { error: movementError } = await supabase
+          .from('stock_movements')
+          .insert([movementData]);
+
+        if (movementError) {
+          console.error('Error creating movement:', movementError);
+          // Não falhar a atualização se o registro de movimento falhar
+          toast({
+            variant: "default",
+            title: "Aviso",
+            description: "Item atualizado, mas não foi possível registrar a movimentação."
+          });
+        }
+      }
 
       toast({
         title: "Sucesso",

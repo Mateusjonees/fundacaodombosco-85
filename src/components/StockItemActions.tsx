@@ -206,9 +206,35 @@ export default function StockItemActions({ item, onUpdate, clients = [] }: Stock
   const handleDeleteItem = async () => {
     setLoading(true);
     try {
+      // Primeiro, registrar a movimentação de remoção
+      if (item.current_quantity > 0) {
+        const { error: movementError } = await supabase
+          .from('stock_movements')
+          .insert([{
+            stock_item_id: item.id,
+            type: 'saida',
+            quantity: item.current_quantity,
+            previous_quantity: item.current_quantity,
+            new_quantity: 0,
+            reason: 'Item excluído do sistema',
+            notes: `Item "${item.name}" foi removido/desativado do estoque`,
+            date: new Date().toISOString().split('T')[0],
+            created_by: user?.id,
+            moved_by: user?.id
+          }]);
+
+        if (movementError) {
+          console.error('Error creating deletion movement:', movementError);
+        }
+      }
+
+      // Depois, desativar o item
       const { error } = await supabase
         .from('stock_items')
-        .update({ is_active: false })
+        .update({ 
+          is_active: false,
+          current_quantity: 0 // Zerar quantidade ao desativar
+        })
         .eq('id', item.id);
 
       if (error) throw error;
