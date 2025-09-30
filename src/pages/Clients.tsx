@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
@@ -17,6 +18,7 @@ import ClientDetailsView from '@/components/ClientDetailsView';
 import { BulkImportClientsDialog } from '@/components/BulkImportClientsDialog';
 import { AutoImportClientsDialog } from '@/components/AutoImportClientsDialog';
 import { PatientReportGenerator } from '@/components/PatientReportGenerator';
+import { ClientAssignmentManager } from '@/components/ClientAssignmentManager';
 import { importClientsFromFile } from '@/utils/importClients';
 import { executeDirectImport } from '@/utils/directImport';
 
@@ -485,7 +487,7 @@ export default function Patients() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Lista de Pacientes</h1>
+          <h1 className="text-3xl font-bold text-foreground">Gerenciar Pacientes</h1>
           <p className="text-muted-foreground">
             {isGodMode() 
               ? '🔑 Modo Deus Ativo - Acesso total aos pacientes' 
@@ -803,6 +805,78 @@ export default function Patients() {
         </Card>
       </div>
 
+      <Tabs defaultValue="list" className="space-y-6">
+        <TabsList className="grid w-full max-w-md" style={{ gridTemplateColumns: isCoordinatorOrDirector() ? '1fr 1fr' : '1fr' }}>
+          <TabsTrigger value="list">Lista de Pacientes</TabsTrigger>
+          {isCoordinatorOrDirector() && (
+            <TabsTrigger value="assignments">Gerenciar Vinculações</TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6">
+          {/* Filters Section */}
+          <Card className="bg-muted/50 border-muted">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-foreground">Filtros</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-foreground">Unidade:</Label>
+                  <Select value={unitFilter} onValueChange={setUnitFilter}>
+                    <SelectTrigger className="bg-background border-border">
+                      <SelectValue placeholder="Todas as Unidades" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as Unidades</SelectItem>
+                      <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                      <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-foreground">Idade:</Label>
+                  <Select value={ageFilter} onValueChange={setAgeFilter}>
+                    <SelectTrigger className="bg-background border-border">
+                      <SelectValue placeholder="Todas as Idades" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as Idades</SelectItem>
+                      <SelectItem value="minor">Menor de Idade</SelectItem>
+                      <SelectItem value="adult">Maior de Idade</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {isCoordinatorOrDirector() && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground">Profissional:</Label>
+                    <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
+                      <SelectTrigger className="bg-background border-border">
+                        <SelectValue placeholder="Todos os Profissionais" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os Profissionais</SelectItem>
+                        {employees.map(employee => {
+                          const assignedCount = clientAssignments.filter(assignment => 
+                            assignment.employee_id === employee.user_id && assignment.is_active
+                          ).length;
+                          
+                          return (
+                            <SelectItem key={employee.id} value={employee.id}>
+                              {employee.name} ({assignedCount} pacientes)
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Lista de Pacientes</CardTitle>
@@ -911,6 +985,14 @@ export default function Patients() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {isCoordinatorOrDirector() && (
+          <TabsContent value="assignments">
+            <ClientAssignmentManager />
+          </TabsContent>
+        )}
+      </Tabs>
       
       <BulkImportClientsDialog 
         isOpen={isBulkImportOpen}
