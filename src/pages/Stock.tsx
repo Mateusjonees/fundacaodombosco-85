@@ -62,21 +62,29 @@ export default function Stock() {
 
   const loadStockItems = async () => {
     try {
+      console.log('Loading stock items...');
       const { data, error } = await supabase
         .from('stock_items')
         .select('*')
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading stock items:', error);
+        throw error;
+      }
+      
+      console.log('Stock items loaded:', data);
       
       // Garantir que os dados sempre tenham valores válidos para o Select
+      // mas sem sobrescrever valores existentes
       const processedData = (data || []).map(item => ({
         ...item,
         category: item.category || 'Outros',
         unit: item.unit || 'Unidade'
       }));
       
+      console.log('Processed stock items:', processedData);
       setStockItems(processedData);
     } catch (error) {
       console.error('Error loading stock items:', error);

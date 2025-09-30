@@ -409,7 +409,10 @@ export default function StockItemActions({ item, onUpdate, clients = [] }: Stock
       <EditStockItemDialog
         item={item}
         isOpen={isEditDialogOpen} 
-        onClose={() => setIsEditDialogOpen(false)}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          onUpdate();
+        }}
         onUpdate={onUpdate}
       />
 

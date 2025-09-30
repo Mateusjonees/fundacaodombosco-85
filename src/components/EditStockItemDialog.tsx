@@ -103,39 +103,52 @@ export default function EditStockItemDialog({ item, isOpen, onClose, onUpdate }:
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('stock_items')
-        .update({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          category: formData.category && formData.category !== '' ? formData.category : null,
-          unit: formData.unit,
-          current_quantity: formData.current_quantity,
-          minimum_quantity: formData.minimum_quantity,
-          unit_cost: formData.unit_cost,
-          supplier: formData.supplier.trim() || null,
-          location: formData.location.trim() || null,
-          barcode: formData.barcode.trim() || null,
-          expiry_date: formData.expiry_date || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', item.id);
+      const updateData = {
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        category: formData.category && formData.category !== '' ? formData.category : null,
+        unit: formData.unit,
+        current_quantity: formData.current_quantity,
+        minimum_quantity: formData.minimum_quantity,
+        unit_cost: formData.unit_cost,
+        supplier: formData.supplier.trim() || null,
+        location: formData.location.trim() || null,
+        barcode: formData.barcode.trim() || null,
+        expiry_date: formData.expiry_date || null,
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
+      console.log('Updating stock item:', item.id, updateData);
+
+      const { data, error } = await supabase
+        .from('stock_items')
+        .update(updateData)
+        .eq('id', item.id)
+        .select();
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
+
+      console.log('Update successful:', data);
 
       toast({
         title: "Sucesso",
         description: "Item atualizado com sucesso!"
       });
 
-      onUpdate();
       onClose();
-    } catch (error) {
+      // Aguardar um pouco antes de recarregar para garantir que o banco atualizou
+      setTimeout(() => {
+        onUpdate();
+      }, 100);
+    } catch (error: any) {
       console.error('Error updating stock item:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar o item."
+        description: error?.message || "Não foi possível atualizar o item."
       });
     } finally {
       setLoading(false);
