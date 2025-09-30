@@ -323,15 +323,49 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Verificar se já existe vinculação
+      const { data: existing, error: checkError } = await supabase
         .from('client_assignments')
-        .insert({
-          client_id: client.id,
-          employee_id: selectedProfessional,
-          assigned_by: user?.id
-        });
+        .select('id, is_active')
+        .eq('client_id', client.id)
+        .eq('employee_id', selectedProfessional)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (checkError) throw checkError;
+
+      if (existing) {
+        if (!existing.is_active) {
+          // Reativar vinculação existente
+          const { error: updateError } = await supabase
+            .from('client_assignments')
+            .update({ 
+              is_active: true,
+              assigned_by: user?.id 
+            })
+            .eq('id', existing.id);
+
+          if (updateError) throw updateError;
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Já vinculado",
+            description: "Este profissional já está vinculado a este paciente.",
+          });
+          setLoading(false);
+          return;
+        }
+      } else {
+        // Criar nova vinculação
+        const { error } = await supabase
+          .from('client_assignments')
+          .insert({
+            client_id: client.id,
+            employee_id: selectedProfessional,
+            assigned_by: user?.id
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Sucesso",
@@ -426,18 +460,45 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
     if (validEmployees.length === 0) return;
 
     try {
-      // Criar múltiplas vinculações
-      const assignments = validEmployees.map(employeeId => ({
-        client_id: client.id,
-        employee_id: employeeId,
-        assigned_by: user?.id
-      }));
+      // Verificar e criar/reativar vinculações
+      for (const employeeId of validEmployees) {
+        // Verificar se já existe uma vinculação
+        const { data: existing, error: checkError } = await supabase
+          .from('client_assignments')
+          .select('id, is_active')
+          .eq('client_id', client.id)
+          .eq('employee_id', employeeId)
+          .maybeSingle();
 
-      const { error } = await supabase
-        .from('client_assignments')
-        .insert(assignments);
+        if (checkError) throw checkError;
 
-      if (error) throw error;
+        if (existing) {
+          // Se existe mas está inativa, reativar
+          if (!existing.is_active) {
+            const { error: updateError } = await supabase
+              .from('client_assignments')
+              .update({ 
+                is_active: true,
+                assigned_by: user?.id 
+              })
+              .eq('id', existing.id);
+
+            if (updateError) throw updateError;
+          }
+          // Se já existe e está ativa, apenas continuar
+        } else {
+          // Criar nova vinculação
+          const { error: insertError } = await supabase
+            .from('client_assignments')
+            .insert({
+              client_id: client.id,
+              employee_id: employeeId,
+              assigned_by: user?.id
+            });
+
+          if (insertError) throw insertError;
+        }
+      }
 
       toast({
         title: "Sucesso",
@@ -447,6 +508,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       setIsAssignDialogOpen(false);
       setSelectedEmployees(['']); // Reset para um campo vazio
       loadCurrentAssignments();
+      loadAvailableEmployees();
     } catch (error) {
       console.error('Error assigning professionals:', error);
       toast({
@@ -498,7 +560,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
           employee_id,
           assigned_at,
           is_active,
-          profiles (
+          profiles!client_assignments_employee_id_fkey (
             name,
             employee_role
           )
