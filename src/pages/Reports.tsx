@@ -68,6 +68,10 @@ export default function Reports() {
   } = useRolePermissions();
   const { toast } = useToast();
 
+  // Determinar a unidade do coordenador
+  const coordinatorUnit = userRole === 'coordinator_madre' ? 'madre' : 
+                         userRole === 'coordinator_floresta' ? 'floresta' : null;
+
   // Debug: Log user info
   useEffect(() => {
     console.log('Reports Debug:', {
@@ -86,18 +90,27 @@ export default function Reports() {
       return;
     }
 
-  // Apenas diretores podem acessar relatórios
-  if (userRole !== 'director') {
-    console.log('No permission to view reports - directors only');
+  // Permitir acesso a diretores e coordenadores
+  const canAccessReports = userRole === 'director' || 
+                          userRole === 'coordinator_madre' || 
+                          userRole === 'coordinator_floresta';
+  
+  if (!canAccessReports) {
+    console.log('No permission to view reports');
     toast({
       variant: "destructive",
       title: "Acesso Restrito",
-      description: "Apenas diretores têm acesso aos relatórios do sistema."
+      description: "Você não tem permissão para acessar os relatórios."
     });
     return;
   }
 
-  console.log('Director detected, loading reports...');
+  // Se for coordenador, aplicar filtro de unidade automaticamente
+  if (coordinatorUnit && selectedUnit === 'all') {
+    setSelectedUnit(coordinatorUnit);
+  }
+
+  console.log('Loading reports for user role:', userRole);
   loadEmployees();
   loadClients();
   loadAttendanceReports();
@@ -117,9 +130,12 @@ export default function Reports() {
         .select('id, name, unit')
         .eq('is_active', true);
 
-      // Para diretores: mostrar todos os pacientes (madre e floresta)
-      // Para outros: manter filtros existentes se houver
-      if (userRole !== 'director' && selectedUnit !== 'all') {
+      // Aplicar filtro de unidade baseado no role
+      if (coordinatorUnit) {
+        // Coordenadores veem apenas sua unidade
+        query = query.eq('unit', coordinatorUnit);
+      } else if (selectedUnit !== 'all') {
+        // Diretores podem filtrar por unidade escolhida
         query = query.eq('unit', selectedUnit);
       }
 
@@ -138,9 +154,7 @@ export default function Reports() {
         .from('attendance_reports')
         .select(`
           *,
-          clients!attendance_reports_client_id_fkey(name),
-          professional_name,
-          patient_name
+          clients!attendance_reports_client_id_fkey(name, unit)
         `)
         .order('start_time', { ascending: false });
 
@@ -176,22 +190,30 @@ export default function Reports() {
 
       if (error) throw error;
       
+      // Filtrar por unidade se for coordenador
+      let filteredData = data || [];
+      if (coordinatorUnit) {
+        filteredData = filteredData.filter(report => 
+          report.clients?.unit === coordinatorUnit
+        );
+      } else if (selectedUnit !== 'all') {
+        filteredData = filteredData.filter(report => 
+          report.clients?.unit === selectedUnit
+        );
+      }
+      
       // Mapeamos os dados para incluir os nomes dos professionals
-      const reportsWithNames = await Promise.all((data || []).map(async (report) => {
-        if (!report.professional_name) {
-          // Buscar nome do profissional usando nossa função helper
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('user_id', report.employee_id)
-            .single();
-          
-          report.professional_name = profileData?.name || 'Nome não encontrado';
-        }
+      const reportsWithNames = await Promise.all(filteredData.map(async (report) => {
+        // Buscar nome do profissional
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('user_id', report.employee_id)
+          .single();
         
         return {
           ...report,
-          profiles: { name: report.professional_name },
+          profiles: { name: profileData?.name || report.professional_name || 'Nome não encontrado' },
           clients: { name: report.patient_name || report.clients?.name }
         };
       }));
@@ -235,7 +257,7 @@ export default function Reports() {
         .from('employee_reports')
         .select(`
           *,
-          clients!employee_reports_client_id_fkey(name)
+          clients!employee_reports_client_id_fkey(name, unit)
         `)
         .order('session_date', { ascending: false })
         .limit(100);
@@ -248,8 +270,20 @@ export default function Reports() {
 
       if (error) throw error;
       
+      // Filtrar por unidade se for coordenador
+      let filteredData = data || [];
+      if (coordinatorUnit) {
+        filteredData = filteredData.filter(report => 
+          report.clients?.unit === coordinatorUnit
+        );
+      } else if (selectedUnit !== 'all') {
+        filteredData = filteredData.filter(report => 
+          report.clients?.unit === selectedUnit
+        );
+      }
+      
       // Buscar nomes dos profissionais para cada relatório
-      const reportsWithNames = await Promise.all((data || []).map(async (report) => {
+      const reportsWithNames = await Promise.all(filteredData.map(async (report) => {
         const { data: profileData } = await supabase
           .from('profiles')
           .select('name')
@@ -347,13 +381,17 @@ export default function Reports() {
     return <div className="p-6">Carregando relatórios...</div>;
   }
 
-  // Apenas diretores podem acessar relatórios
-  if (userRole !== 'director') {
+  // Verificar se tem permissão para acessar
+  const canAccessReports = userRole === 'director' || 
+                          userRole === 'coordinator_madre' || 
+                          userRole === 'coordinator_floresta';
+  
+  if (!canAccessReports) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Acesso restrito a diretores</p>
+          <p className="text-muted-foreground">Acesso restrito a coordenadores e diretores</p>
         </div>
       </div>
     );
@@ -448,12 +486,16 @@ export default function Reports() {
 
             <div>
               <Label>Unidade</Label>
-              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+              <Select 
+                value={selectedUnit} 
+                onValueChange={setSelectedUnit}
+                disabled={!!coordinatorUnit}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as unidades</SelectItem>
+                  {!coordinatorUnit && <SelectItem value="all">Todas as unidades</SelectItem>}
                   <SelectItem value="madre">MADRE</SelectItem>
                   <SelectItem value="floresta">Floresta</SelectItem>
                 </SelectContent>
