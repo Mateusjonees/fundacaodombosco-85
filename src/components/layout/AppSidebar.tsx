@@ -18,6 +18,7 @@ import {
   Shield,
   Heart,
   ChevronLeft,
+  ClipboardList,
   LucideIcon
 } from 'lucide-react';
 
@@ -44,6 +45,7 @@ const iconMapping: Record<string, LucideIcon> = {
   UserPlus,
   Users,
   Calendar,
+  ClipboardList,
   UserCheck,
   FolderOpen,
   DollarSign,
@@ -110,6 +112,17 @@ const getMenuItemsForRole = (permissions: any) => {
       url: '/schedule', 
       icon: 'Calendar', 
       order_index: 4 
+    });
+  }
+
+  // Controle de Agendamentos - apenas coordenadores e diretores
+  if (permissions.isDirector() || permissions.isCoordinator()) {
+    items.push({ 
+      id: 'schedule-control', 
+      title: 'Controle de Agendamentos', 
+      url: '/schedule-control', 
+      icon: 'ClipboardList', 
+      order_index: 4.5
     });
   }
 

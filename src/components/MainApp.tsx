@@ -17,6 +17,7 @@ import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 // Import page components
 import Clients from '@/pages/Clients';
 import Schedule from '@/pages/Schedule';
+import ScheduleControl from '@/pages/ScheduleControl';
 import Financial from '@/pages/Financial';
 import Contracts from '@/pages/Contracts';
 import UserManagement from '@/pages/UserManagement';
@@ -158,6 +159,7 @@ export const MainApp = () => {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/schedule" element={<Schedule />} />
+                <Route path="/schedule-control" element={<ScheduleControl />} />
                 <Route path="/attendance-validation" element={<AttendanceValidation />} />
                 <Route path="/financial" element={<Financial />} />
                 <Route path="/contracts" element={<Contracts />} />
