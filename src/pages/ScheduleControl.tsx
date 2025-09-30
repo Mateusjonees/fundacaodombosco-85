@@ -104,10 +104,12 @@ export default function ScheduleControl() {
         case 'week':
           startDate = startOfWeek(selectedDate, { locale: ptBR });
           endDate = endOfWeek(selectedDate, { locale: ptBR });
+          endDate.setHours(23, 59, 59, 999);
           break;
         case 'month':
           startDate = startOfMonth(selectedDate);
           endDate = endOfMonth(selectedDate);
+          endDate.setHours(23, 59, 59, 999);
           break;
       }
 
@@ -119,7 +121,7 @@ export default function ScheduleControl() {
           profiles!schedules_employee_id_fkey (name)
         `)
         .gte('start_time', startDate.toISOString())
-        .lte('start_time', endDate.toISOString())
+        .lt('start_time', endDate.toISOString())
         .order('start_time');
 
       // Filtros
@@ -201,8 +203,21 @@ export default function ScheduleControl() {
   };
 
   const renderDayView = () => {
+    // Agrupar agendamentos por hora
+    const schedulesByHour: Record<string, Schedule[]> = {};
+    
+    schedules.forEach(schedule => {
+      const hour = format(new Date(schedule.start_time), 'HH:00');
+      if (!schedulesByHour[hour]) {
+        schedulesByHour[hour] = [];
+      }
+      schedulesByHour[hour].push(schedule);
+    });
+
+    const sortedHours = Object.keys(schedulesByHour).sort();
+
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {schedules.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
@@ -210,49 +225,59 @@ export default function ScheduleControl() {
             </CardContent>
           </Card>
         ) : (
-          schedules.map((schedule) => (
-            <Card key={schedule.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold">
-                        {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{schedule.profiles?.name || 'Profissional não atribuído'}</span>
-                    </div>
+          sortedHours.map((hour) => (
+            <div key={hour}>
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold">{hour}</h3>
+                <div className="flex-1 h-px bg-border ml-2" />
+              </div>
+              <div className="space-y-3">
+                {schedulesByHour[hour].map((schedule) => (
+                  <Card key={schedule.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm">
+                              {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{schedule.clients?.name || 'Paciente não identificado'}</span>
+                          </div>
 
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{schedule.clients?.name || 'Paciente não identificado'}</span>
-                    </div>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{schedule.profiles?.name || 'Profissional não atribuído'}</span>
+                          </div>
 
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        Unidade: {schedule.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
-                      </span>
-                    </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              {schedule.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                            </span>
+                          </div>
 
-                    {schedule.notes && (
-                      <p className="text-sm text-muted-foreground mt-2">{schedule.notes}</p>
-                    )}
-                  </div>
+                          {schedule.notes && (
+                            <p className="text-sm text-muted-foreground mt-2">{schedule.notes}</p>
+                          )}
+                        </div>
 
-                  <div className="text-right space-y-2">
-                    {getStatusBadge(schedule.status)}
-                    {schedule.patient_arrived && (
-                      <Badge variant="outline" className="block">Paciente chegou</Badge>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                        <div className="text-right space-y-2">
+                          {getStatusBadge(schedule.status)}
+                          {schedule.patient_arrived && (
+                            <Badge variant="outline" className="block">Paciente chegou</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           ))
         )}
       </div>
