@@ -150,18 +150,19 @@ export default function Schedule() {
     try {
       let query = supabase
         .from('profiles')
-        .select('user_id, id, name, employee_role, department')
+        .select('user_id, id, name, employee_role, department, unit')
         .eq('is_active', true)
+        .not('employee_role', 'is', null)
         .order('name');
 
       // Aplicar filtros baseados no role do usuário para funcionários
       if (userProfile) {
         if (userProfile.employee_role === 'coordinator_madre') {
-          // Coordenador Madre pode ver profissionais da unidade madre
-          query = query.or(`employee_role.eq.coordinator_madre,employee_role.eq.staff,employee_role.eq.psychologist,employee_role.eq.psychopedagogue,employee_role.eq.speech_therapist,employee_role.eq.nutritionist,employee_role.eq.physiotherapist,employee_role.eq.musictherapist,user_id.eq.${user?.id}`);
+          // Coordenador Madre pode ver profissionais da unidade madre ou sem unidade
+          query = query.or('unit.eq.madre,unit.is.null');
         } else if (userProfile.employee_role === 'coordinator_floresta') {
           // Coordenador Floresta pode ver profissionais da unidade floresta
-          query = query.or(`employee_role.eq.coordinator_floresta,employee_role.eq.staff,employee_role.eq.psychologist,employee_role.eq.psychopedagogue,employee_role.eq.speech_therapist,employee_role.eq.nutritionist,employee_role.eq.physiotherapist,employee_role.eq.musictherapist,user_id.eq.${user?.id}`);
+          query = query.eq('unit', 'floresta');
         } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
           // Para outros profissionais, só mostrar eles mesmos
           query = query.eq('user_id', user?.id);
@@ -975,8 +976,12 @@ export default function Schedule() {
                       onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
                       placeholder="Buscar profissional por nome, email ou telefone..."
                       unitFilter={
+                        // Para coordenadores, usar sua unidade específica
                         userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
                         userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                        // Para recepcionistas, usar a unidade do agendamento sendo criado
+                        userProfile?.employee_role === 'receptionist' ? newAppointment.unit :
+                        // Para diretores, mostrar todos
                         'all'
                       }
                       disabled={!isAdmin}
@@ -1025,7 +1030,14 @@ export default function Schedule() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="unit">Unidade</Label>
-                    <Select value={newAppointment.unit} onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}>
+                    <Select 
+                      value={newAppointment.unit} 
+                      onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}
+                      disabled={
+                        userProfile?.employee_role === 'coordinator_madre' || 
+                        userProfile?.employee_role === 'coordinator_floresta'
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a unidade" />
                       </SelectTrigger>
