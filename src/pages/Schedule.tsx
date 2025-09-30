@@ -79,15 +79,19 @@ export default function Schedule() {
     sessionCount: 1
   });
 
-  // Auto-definir a unidade baseada no coordenador logado
+  // Auto-definir a unidade baseada no funcionário logado
   useEffect(() => {
     if (userProfile) {
-      let defaultUnit = 'madre';
+      // Priorizar a unidade definida no perfil do usuário
+      let defaultUnit = userProfile.unit || 'madre';
       
-      if (userProfile.employee_role === 'coordinator_floresta') {
-        defaultUnit = 'floresta';
-      } else if (userProfile.employee_role === 'coordinator_madre') {
-        defaultUnit = 'madre';
+      // Fallback baseado no cargo se não houver unidade definida
+      if (!userProfile.unit) {
+        if (userProfile.employee_role === 'coordinator_floresta') {
+          defaultUnit = 'floresta';
+        } else if (userProfile.employee_role === 'coordinator_madre') {
+          defaultUnit = 'madre';
+        }
       }
       
       setNewAppointment(prev => ({
