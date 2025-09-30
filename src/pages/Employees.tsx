@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +15,8 @@ import { Search, Eye, Edit, UserPlus, Users, Clock, Settings, Shield } from 'luc
 import EmployeePermissions from '@/components/EmployeePermissions';
 import PasswordManager from '@/components/PasswordManager';
 import { CustomRoleManager } from '@/components/CustomRoleManager';
+
+type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
 
 interface Employee {
   id: string;
@@ -55,6 +59,18 @@ export default function Employees() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<{
+    name: string;
+    employee_role: EmployeeRole;
+    phone: string;
+    department: string;
+  }>({
+    name: '',
+    employee_role: 'staff',
+    phone: '',
+    department: '',
+  });
   const { toast } = useToast();
 
   const isDirector = userProfile?.employee_role === 'director';
@@ -125,6 +141,50 @@ export default function Employees() {
   const openPermissionsDialog = (employee: Employee) => {
     setSelectedEmployee(employee);
     setPermissionsDialogOpen(true);
+  };
+
+  const openEditDialog = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setFormData({
+      name: employee.name || '',
+      employee_role: employee.employee_role as EmployeeRole || 'staff',
+      phone: employee.phone || '',
+      department: employee.department || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateEmployee = async () => {
+    if (!selectedEmployee) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          employee_role: formData.employee_role,
+          phone: formData.phone,
+          department: formData.department,
+        })
+        .eq('id', selectedEmployee.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Funcionário atualizado com sucesso.",
+      });
+
+      setEditDialogOpen(false);
+      loadEmployees();
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o funcionário.",
+      });
+    }
   };
 
   if (!userProfile) {
@@ -321,7 +381,11 @@ export default function Employees() {
                               <Button variant="outline" size="sm">
                                 <Eye className="h-3 w-3" />
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => openEditDialog(employee)}
+                              >
                                 <Edit className="h-3 w-3" />
                               </Button>
                               <Button
@@ -463,6 +527,67 @@ export default function Employees() {
               />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Funcionário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nome</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="role">Cargo</Label>
+              <Select 
+                value={formData.employee_role} 
+                onValueChange={(value: EmployeeRole) => setFormData({ ...formData, employee_role: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="department">Departamento</Label>
+              <Input
+                id="department"
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateEmployee}>
+                Salvar Alterações
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
