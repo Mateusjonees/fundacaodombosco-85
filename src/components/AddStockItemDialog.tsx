@@ -386,7 +386,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="expiry_date">Data de Validade</Label>
+              <Label htmlFor="expiry_date">Data</Label>
               <Input
                 id="expiry_date"
                 type="date"
