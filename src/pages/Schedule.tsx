@@ -158,11 +158,11 @@ export default function Schedule() {
       // Aplicar filtros baseados no role do usuário para funcionários
       if (userProfile) {
         if (userProfile.employee_role === 'coordinator_madre') {
-          // Coordenador Madre pode ver profissionais da unidade madre ou sem unidade
-          query = query.or('unit.eq.madre,unit.is.null');
+          // Coordenador Madre pode ver todos os profissionais exceto os específicos do floresta
+          query = query.not('employee_role', 'eq', 'coordinator_floresta');
         } else if (userProfile.employee_role === 'coordinator_floresta') {
-          // Coordenador Floresta pode ver profissionais da unidade floresta
-          query = query.eq('unit', 'floresta');
+          // Coordenador Floresta pode ver todos os profissionais exceto os específicos da madre
+          query = query.not('employee_role', 'eq', 'coordinator_madre');
         } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
           // Para outros profissionais, só mostrar eles mesmos
           query = query.eq('user_id', user?.id);

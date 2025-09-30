@@ -83,8 +83,15 @@ export function ProfessionalCommandAutocomplete({
         query = query.eq('employee_role', roleFilter as any);
       }
 
+      // Filtrar por unidade baseado no employee_role
       if (unitFilter && unitFilter !== 'all') {
-        query = query.eq('unit', unitFilter);
+        if (unitFilter === 'madre') {
+          // Madre: excluir apenas coordenador do floresta
+          query = query.not('employee_role', 'eq', 'coordinator_floresta');
+        } else if (unitFilter === 'floresta') {
+          // Floresta: excluir apenas coordenador da madre
+          query = query.not('employee_role', 'eq', 'coordinator_madre');
+        }
       }
 
       const { data, error } = await query.order('name');
