@@ -137,22 +137,20 @@ export default function UserManagement() {
     }
 
     try {
-      // Usar supabase.auth.signUp para criação segura
-      const { data, error } = await supabase.auth.signUp({
-        email: newEmployee.email,
-        password: newEmployee.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name: newEmployee.name,
-            employee_role: newEmployee.employee_role,
-            department: newEmployee.department || null
-          }
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('create-users', {
+        body: {
+          email: newEmployee.email,
+          password: newEmployee.password,
+          name: newEmployee.name,
+          employee_role: newEmployee.employee_role,
+          phone: null,
+          department: newEmployee.department || null
         }
       });
 
       if (error) {
-        console.error('Signup error:', error);
+        console.error('Error creating user:', error);
         toast({
           variant: "destructive",
           title: "Erro ao criar funcionário",
@@ -161,8 +159,7 @@ export default function UserManagement() {
         return;
       }
 
-      // Verificar se o usuário foi criado
-      if (data?.user) {
+      if (data?.success) {
         toast({
           title: "Funcionário criado com sucesso",
           description: `Login criado para ${newEmployee.name}. O funcionário já pode fazer login no sistema.`,
@@ -179,6 +176,8 @@ export default function UserManagement() {
         title: "Erro ao criar funcionário",
         description: "Ocorreu um erro inesperado. Tente novamente.",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
