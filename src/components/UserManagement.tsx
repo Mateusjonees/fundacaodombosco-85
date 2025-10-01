@@ -118,6 +118,8 @@ export default function UserManagement() {
   };
 
   const handleCreateEmployee = async () => {
+    console.log('Iniciando criação de usuário:', newEmployee);
+    
     if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim()) {
       toast({
         variant: "destructive",
@@ -138,6 +140,14 @@ export default function UserManagement() {
 
     try {
       setLoading(true);
+      
+      console.log('Invocando edge function create-users com dados:', {
+        email: newEmployee.email,
+        name: newEmployee.name,
+        employee_role: newEmployee.employee_role,
+        department: newEmployee.department
+      });
+
       const { data, error } = await supabase.functions.invoke('create-users', {
         body: {
           email: newEmployee.email,
@@ -149,12 +159,24 @@ export default function UserManagement() {
         }
       });
 
+      console.log('Resposta da edge function:', { data, error });
+
       if (error) {
         console.error('Error creating user:', error);
         toast({
           variant: "destructive",
           title: "Erro ao criar funcionário",
           description: error.message || "Erro ao criar funcionário.",
+        });
+        return;
+      }
+
+      if (data?.error) {
+        console.error('Error from function:', data.error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar funcionário",
+          description: data.error || "Erro ao criar funcionário.",
         });
         return;
       }
@@ -168,13 +190,20 @@ export default function UserManagement() {
         setIsDialogOpen(false);
         resetForm();
         loadEmployees();
+      } else {
+        console.error('Resposta inesperada:', data);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar funcionário",
+          description: "Resposta inesperada do servidor.",
+        });
       }
     } catch (error: any) {
       console.error('Error creating employee:', error);
       toast({
         variant: "destructive",
         title: "Erro ao criar funcionário",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
+        description: error.message || "Ocorreu um erro inesperado. Tente novamente.",
       });
     } finally {
       setLoading(false);

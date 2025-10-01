@@ -11,6 +11,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  console.log('Edge function create-users invoked');
+
   try {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -56,6 +58,8 @@ serve(async (req) => {
 
     // Get user data from request body
     const body = await req.json();
+    console.log('Request body:', { ...body, password: '***' });
+    
     const { email, password, name, employee_role, phone, department } = body;
 
     if (!email || !password || !name || !employee_role) {
