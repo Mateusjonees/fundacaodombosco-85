@@ -83,47 +83,59 @@ serve(async (req) => {
     });
 
     if (createError) {
+      console.error('Error creating user:', createError);
       return new Response(
         JSON.stringify({ error: createError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (createdUser.user) {
-      // Update profile
-      const { error: profileUpdateError } = await supabaseAdmin
-        .from('profiles')
-        .update({
-          name,
-          phone: phone || null,
-          department: department || null,
-          employee_role,
-          is_active: true
-        })
-        .eq('user_id', createdUser.user.id);
-
-      if (profileUpdateError) {
-        console.error('Error updating profile:', profileUpdateError);
-        // Try to delete the user if profile update fails
-        await supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
-        return new Response(
-          JSON.stringify({ error: 'Failed to update profile' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
+    if (!createdUser.user) {
+      console.error('No user created');
       return new Response(
-        JSON.stringify({ 
-          success: true,
-          user: {
-            id: createdUser.user.id,
-            email: createdUser.user.email,
-            name
-          }
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Failed to create user' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('User created successfully:', createdUser.user.id);
+
+    // Update profile with explicit employee_role casting
+    const { error: profileUpdateError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        name,
+        phone: phone || null,
+        department: department || null,
+        employee_role: employee_role,
+        is_active: true
+      })
+      .eq('user_id', createdUser.user.id);
+
+    if (profileUpdateError) {
+      console.error('Error updating profile:', profileUpdateError);
+      // Try to delete the user if profile update fails
+      await supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
+      return new Response(
+        JSON.stringify({ error: `Failed to update profile: ${profileUpdateError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Profile updated successfully');
+
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        user: {
+          id: createdUser.user.id,
+          email: createdUser.user.email,
+          name,
+          employee_role
+        }
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('Unexpected error:', error);
