@@ -59,37 +59,36 @@ serve(async (req) => {
       );
     }
 
-    // Delete the specific users that were already removed from profiles/employees
-    const userIdsToDelete = [
-      'd137ae9c-fb15-4a07-8a99-3016cd5da132', // Amanda Paola
-      '14a88df6-c8a3-4214-9fa1-e22827611f05', // Christopher
-      'c2365a4a-b2e1-4e8a-ac3b-05992ce93fb0'  // Clinica
-    ];
-
-    let deletedCount = 0;
-    const errors = [];
-
-    for (const userId of userIdsToDelete) {
-      try {
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-        if (error) {
-          console.error(`Error deleting user ${userId}:`, error);
-          errors.push(`Failed to delete user ${userId}: ${error.message}`);
-        } else {
-          deletedCount++;
-          console.log(`Successfully deleted user ${userId}`);
-        }
-      } catch (error) {
-        console.error(`Unexpected error deleting user ${userId}:`, error);
-        errors.push(`Unexpected error deleting user ${userId}`);
-      }
+    // Get user ID from request body
+    const { userId } = await req.json();
+    
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'User ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
+    // Delete the user from auth.users
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    
+    if (deleteError) {
+      console.error(`Error deleting user ${userId}:`, deleteError);
+      return new Response(
+        JSON.stringify({ 
+          error: `Failed to delete user: ${deleteError.message}`,
+          userId
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Successfully deleted user ${userId} from auth.users`);
+    
     return new Response(
       JSON.stringify({ 
-        message: `Successfully deleted ${deletedCount} users from auth.users`,
-        deletedCount,
-        errors: errors.length > 0 ? errors : undefined
+        message: 'User successfully deleted from authentication system',
+        userId
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

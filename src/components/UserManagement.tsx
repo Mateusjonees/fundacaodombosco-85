@@ -15,6 +15,7 @@ import { UserPlus, Users, Edit, Trash2, Shield } from 'lucide-react';
 
 interface Employee {
   id: string;
+  user_id: string;
   name: string;
   email: string;
   employee_role: string;
@@ -92,6 +93,7 @@ export default function UserManagement() {
           const { data: userData } = await supabase.auth.admin.getUserById(profile.user_id);
           return {
             id: profile.id,
+            user_id: profile.user_id,
             name: profile.name || 'N/A',
             email: userData.user?.email || 'N/A',
             employee_role: profile.employee_role,
@@ -213,6 +215,41 @@ export default function UserManagement() {
       case 'coordinator_floresta': return 'secondary';
       case 'health_professional': return 'outline';
       default: return 'outline';
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Tem certeza que deseja deletar permanentemente o usuário ${userName}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('delete-users', {
+        body: { userId }
+      });
+
+      if (error) {
+        toast({
+          title: "Erro",
+          description: `Erro ao deletar usuário: ${error.message}`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Sucesso",
+          description: `Usuário ${userName} deletado com sucesso.`,
+        });
+        loadEmployees();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: `Erro inesperado: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -402,6 +439,7 @@ export default function UserManagement() {
                   <TableHead className="text-foreground">Departamento</TableHead>
                   <TableHead className="text-foreground">Status</TableHead>
                   <TableHead className="text-foreground">Data de Criação</TableHead>
+                  <TableHead className="text-foreground">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -422,6 +460,17 @@ export default function UserManagement() {
                     </TableCell>
                     <TableCell className="text-foreground">
                       {new Date(employee.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteUser(employee.user_id, employee.name)}
+                        disabled={loading}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
