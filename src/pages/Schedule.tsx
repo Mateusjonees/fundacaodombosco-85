@@ -1037,17 +1037,13 @@ export default function Schedule() {
                     <Select 
                       value={newAppointment.unit} 
                       onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}
-                      disabled={
-                        userProfile?.employee_role === 'coordinator_madre' || 
-                        userProfile?.employee_role === 'coordinator_floresta'
-                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a unidade" />
                       </SelectTrigger>
                       <SelectContent className="bg-background border shadow-md z-50">
-                        <SelectItem value="madre">MADRE</SelectItem>
-                        <SelectItem value="floresta">Floresta</SelectItem>
+                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
