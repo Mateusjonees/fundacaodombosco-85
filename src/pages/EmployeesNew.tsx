@@ -195,19 +195,50 @@ export default function EmployeesNew() {
   const handleUpdateEmployee = async () => {
     if (!editingEmployee) return;
 
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: editingEmployee.name,
-          employee_role: editingEmployee.employee_role as any,
-          phone: editingEmployee.phone,
-          department: editingEmployee.department,
-          unit: editingEmployee.unit === 'none' ? null : editingEmployee.unit
-        })
-        .eq('user_id', editingEmployee.user_id);
+    console.log('🔄 Iniciando atualização do funcionário:', {
+      user_id: editingEmployee.user_id,
+      name: editingEmployee.name,
+      employee_role: editingEmployee.employee_role,
+      phone: editingEmployee.phone,
+      department: editingEmployee.department,
+      unit: editingEmployee.unit
+    });
 
-      if (error) throw error;
+    try {
+      const updateData = {
+        name: editingEmployee.name,
+        employee_role: editingEmployee.employee_role as any,
+        phone: editingEmployee.phone,
+        department: editingEmployee.department,
+        unit: editingEmployee.unit === 'none' ? null : editingEmployee.unit
+      };
+
+      console.log('📝 Dados para atualizar:', updateData);
+
+      const { data, error, status, statusText } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('user_id', editingEmployee.user_id)
+        .select();
+
+      console.log('📊 Resposta do Supabase:', { data, error, status, statusText });
+
+      if (error) {
+        console.error('❌ Erro no update:', error);
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('⚠️ Nenhum registro foi atualizado. Possível problema de permissão RLS.');
+        toast({
+          variant: "destructive",
+          title: "Erro de permissão",
+          description: "Você não tem permissão para atualizar este funcionário, ou o registro não foi encontrado.",
+        });
+        return;
+      }
+
+      console.log('✅ Funcionário atualizado com sucesso:', data);
 
       toast({
         title: "Funcionário atualizado",
@@ -218,7 +249,7 @@ export default function EmployeesNew() {
       setEditingEmployee(null);
       loadEmployees();
     } catch (error: any) {
-      console.error('Error updating employee:', error);
+      console.error('❌ Error updating employee:', error);
       toast({
         variant: "destructive",
         title: "Erro",
