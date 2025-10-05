@@ -166,12 +166,12 @@ export default function Dashboard() {
       </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-blue-50 to-white">
+        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-green-50 to-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
               {isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
             </CardTitle>
-            <div className="p-2.5 sm:p-3 bg-blue-500 rounded-xl shadow-lg">
+            <div className="p-2.5 sm:p-3 bg-green-500 rounded-xl shadow-lg">
               <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
           </CardHeader>
@@ -183,12 +183,12 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-green-50 to-white">
+        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-emerald-50 to-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
               {isDirectorOrCoordinator ? 'Consultas Hoje' : 'Minhas Consultas'}
             </CardTitle>
-            <div className="p-2.5 sm:p-3 bg-green-500 rounded-xl shadow-lg">
+            <div className="p-2.5 sm:p-3 bg-emerald-500 rounded-xl shadow-lg">
               <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
           </CardHeader>
@@ -201,12 +201,12 @@ export default function Dashboard() {
         </Card>
 
         {isDirectorOrCoordinator && (
-          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-amber-50 to-white">
+          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-teal-50 to-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Receita Mensal
               </CardTitle>
-              <div className="p-2.5 sm:p-3 bg-amber-500 rounded-xl shadow-lg">
+              <div className="p-2.5 sm:p-3 bg-teal-500 rounded-xl shadow-lg">
                 <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
             </CardHeader>
@@ -222,12 +222,12 @@ export default function Dashboard() {
         )}
 
         {isDirectorOrCoordinator && (
-          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-purple-50 to-white">
+          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-lime-50 to-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Funcionários
               </CardTitle>
-              <div className="p-2.5 sm:p-3 bg-purple-500 rounded-xl shadow-lg">
+              <div className="p-2.5 sm:p-3 bg-lime-500 rounded-xl shadow-lg">
                 <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
             </CardHeader>

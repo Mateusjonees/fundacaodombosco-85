@@ -4,27 +4,27 @@
 
 @layer base {
   :root {
-    /* Modern Clean Theme */
-    --background: 210 20% 98%;
-    --foreground: 210 20% 10%;
+    /* Modern Green Theme */
+    --background: 140 30% 98%;
+    --foreground: 140 20% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 10%;
+    --card-foreground: 140 20% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 10%;
-    --primary: 202 83% 41%;
+    --popover-foreground: 140 20% 10%;
+    --primary: 142 50% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 202 83% 51%;
-    --secondary: 142 50% 55%;
+    --primary-glow: 142 60% 65%;
+    --secondary: 142 40% 45%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 210 20% 96%;
-    --muted-foreground: 210 15% 40%;
-    --accent: 142 45% 92%;
-    --accent-foreground: 210 20% 10%;
+    --muted: 140 30% 96%;
+    --muted-foreground: 140 15% 40%;
+    --accent: 142 35% 92%;
+    --accent-foreground: 140 20% 10%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 20% 90%;
+    --border: 140 25% 90%;
     --input: 0 0% 100%;
-    --ring: 202 83% 41%;
+    --ring: 142 50% 55%;
     --radius: 0.75rem;
     
     /* Professional Healthcare Colors */
@@ -60,15 +60,15 @@
     --chart-4: 200 40% 50%;
     --chart-5: 220 35% 55%;
     
-    /* Sidebar - Azul Dom Bosco */
-    --sidebar-background: 202 83% 41%;
+    /* Sidebar - Verde Dom Bosco */
+    --sidebar-background: 142 50% 45%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 202 83% 51%;
+    --sidebar-primary: 142 55% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 202 70% 35%;
+    --sidebar-accent: 142 45% 40%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 202 60% 30%;
-    --sidebar-ring: 202 83% 51%;
+    --sidebar-border: 142 40% 35%;
+    --sidebar-ring: 142 55% 55%;
 
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
@@ -114,15 +114,15 @@
     --shadow-elegant: 0 8px 30px -8px hsl(0 0% 0% / 0.4);
     --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
     
-    /* Dark sidebar - Azul Dom Bosco */
-    --sidebar-background: 202 83% 41%;
+    /* Dark sidebar - Verde Dom Bosco */
+    --sidebar-background: 142 50% 45%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 202 83% 51%;
+    --sidebar-primary: 142 55% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 202 70% 35%;
+    --sidebar-accent: 142 45% 40%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 202 60% 30%;
-    --sidebar-ring: 202 83% 51%;
+    --sidebar-border: 142 40% 35%;
+    --sidebar-ring: 142 55% 55%;
   }
 }
 
@@ -141,7 +141,7 @@
   /* Login Components */
   .login-wrapper {
     @apply min-h-screen w-full fixed top-0 left-0 z-50 flex items-center justify-center p-4;
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   }
 
   .login-card {
