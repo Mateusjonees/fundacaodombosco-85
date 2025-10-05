@@ -114,41 +114,38 @@ export const MainApp = () => {
   return (
     <Router>
       <SidebarProvider>
-        <div className="min-h-screen w-full flex">
+        <div className="min-h-screen w-full flex bg-gray-50">
           <AppSidebar />
           
           <div className="flex-1 flex flex-col">
-            {/* Header with hamburger menu */}
-            <header className="bg-card border-b border-border p-4 sticky top-0 z-40">
-              <div className="flex items-center justify-between">
+            {/* Modern Professional Header */}
+            <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+              <div className="flex items-center justify-between px-6 py-3">
                 <div className="flex items-center gap-4">
-                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 rounded-md border hover:bg-accent">
-                    <Menu className="h-4 w-4" />
+                  <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-gray-100 transition-colors">
+                    <Menu className="h-5 w-5 text-gray-600" />
                   </SidebarTrigger>
-                  <h1 className="text-xl font-bold text-primary hidden sm:block">FUNDAÇÃO DOM BOSCO</h1>
-                  <h1 className="text-lg font-bold text-primary sm:hidden">FDB</h1>
                 </div>
                 
                 <div className="flex items-center gap-4">
                   <AppointmentNotifications />
                   <PendingAttendancesNotification />
-                  <div className="text-right hidden sm:block">
-                    <Badge variant="secondary" className="mb-1">
-                      {currentUserProfile?.name || user?.email}
-                    </Badge>
-                    <div className="text-xs text-muted-foreground">
-                      {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Carregando...'}
+                  
+                  {currentUserProfile && (
+                    <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+                      <div className="text-right hidden sm:block">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {currentUserProfile.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {ROLE_LABELS[currentUserProfile.employee_role] || currentUserProfile.employee_role}
+                        </p>
+                      </div>
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#1976D2] to-[#66BB6A] flex items-center justify-center text-white font-semibold shadow-md">
+                        {currentUserProfile.name.charAt(0).toUpperCase()}
+                      </div>
                     </div>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleLogout}
-                    className="gap-2"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sair</span>
-                  </Button>
+                  )}
                 </div>
               </div>
             </header>

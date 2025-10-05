@@ -38,6 +38,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import logo from '@/assets/fundacao-dom-bosco-horizontal-logo.png';
 
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
@@ -251,30 +252,34 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-60"}>
-      <SidebarContent>
+    <Sidebar className={collapsed ? "w-16" : "w-64"}>
+      <SidebarContent className="bg-white border-r border-gray-200">
         <SidebarGroup>
-            <div className="flex flex-col items-center p-4">
-              {!collapsed && (
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-primary">
-                    Fundação Dom Bosco
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Sistema de Gestão
-                  </div>
-                </div>
-              )}
-            </div>
-          
-          <div className="flex items-center justify-between px-3 py-2">
-            <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-              MENU PRINCIPAL
-            </SidebarGroupLabel>
+          {/* Logo Header */}
+          <div className="flex items-center justify-center px-4 py-6 border-b border-gray-100">
+            {!collapsed ? (
+              <img 
+                src={logo} 
+                alt="Fundação Dom Bosco" 
+                className="h-12 w-auto transition-all duration-300"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-gradient-to-br from-[#1976D2] to-[#66BB6A] rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">FD</span>
+              </div>
+            )}
           </div>
           
-          <SidebarGroupContent>
-            <SidebarMenu>
+          <div className="px-3 py-4">
+            {!collapsed && (
+              <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Menu Principal
+              </SidebarGroupLabel>
+            )}
+          </div>
+          
+          <SidebarGroupContent className="px-2">
+            <SidebarMenu className="space-y-1">
               {navigationItems.map((item) => {
                 const IconComponent = iconMapping[item.icon];
                 return (
@@ -282,10 +287,18 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url} 
-                        className={({ isActive }) => getNavCls({ isActive })}
+                        className={({ isActive }) => 
+                          `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-[#1976D2]/10 to-[#66BB6A]/10 text-[#1976D2] font-medium shadow-sm' 
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          } ${collapsed ? 'justify-center' : ''}`
+                        }
                       >
-                        {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
-                        {!collapsed && <span>{item.title}</span>}
+                        {IconComponent && (
+                          <IconComponent className={`h-5 w-5 ${collapsed ? '' : 'mr-0'}`} />
+                        )}
+                        {!collapsed && <span className="text-sm">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -296,17 +309,17 @@ export function AppSidebar() {
         </SidebarGroup>
         
         {/* Logout Section */}
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupContent>
+        <SidebarGroup className="mt-auto border-t border-gray-100 pt-4">
+          <SidebarGroupContent className="px-2">
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button 
                     onClick={handleLogout}
-                    className="w-full text-left hover:bg-destructive hover:text-destructive-foreground"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-red-600 hover:bg-red-50 w-full ${collapsed ? 'justify-center' : 'text-left'}`}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>Sair do Sistema</span>}
+                    <LogOut className="h-5 w-5" />
+                    {!collapsed && <span className="text-sm font-medium">Sair do Sistema</span>}
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
