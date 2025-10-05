@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import logo from '@/assets/logo-dom-bosco-moderna.png';
+import logo from '@/assets/logo-dom-bosco-transparente.png';
 
 import { 
   Users, 
@@ -261,10 +261,10 @@ export function AppSidebar() {
             <div className="flex flex-col items-center py-6 px-4 border-b border-white/10">
               {!collapsed ? (
                 <div className="w-full">
-                  <img src={logo} alt="Fundação Dom Bosco" className="h-16 w-auto mx-auto mb-3" />
+                  <img src={logo} alt="Fundação Dom Bosco" className="h-20 w-auto mx-auto mb-2" />
                 </div>
               ) : (
-                <img src={logo} alt="FDB" className="h-10 w-10" />
+                <img src={logo} alt="FDB" className="h-12 w-12" />
               )}
             </div>
           

@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
-import logo from '@/assets/logo-dom-bosco-moderna.png';
+import logo from '@/assets/logo-dom-bosco-transparente.png';
 import { Lock, Mail } from 'lucide-react';
 
 interface LoginFormProps {
@@ -89,7 +89,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
     <div className="login-wrapper">
       <Card className="login-card">
         <div className="login-logo-section">
-          <img src={logo} alt="Fundação Dom Bosco" className="h-32 w-auto sm:h-40" />
+          <img src={logo} alt="Fundação Dom Bosco" className="h-28 w-auto sm:h-32" />
         </div>
         
         <CardHeader className="text-center space-y-2 pt-8 px-6 sm:px-8">
