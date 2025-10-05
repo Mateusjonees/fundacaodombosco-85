@@ -2418,36 +2418,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          expires_at: string | null
-          granted_at: string | null
-          granted_by: string | null
-          id: string
-          is_active: boolean | null
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          expires_at?: string | null
-          granted_at?: string | null
-          granted_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          expires_at?: string | null
-          granted_at?: string | null
-          granted_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_sessions: {
         Row: {
           id: string
@@ -2708,13 +2678,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["employee_role"]
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
       is_coordinator: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2776,7 +2739,7 @@ export type Database = {
         Returns: boolean
       }
       user_has_role: {
-        Args: { allowed_roles: Database["public"]["Enums"]["employee_role"][] }
+        Args: { required_roles: Database["public"]["Enums"]["employee_role"][] }
         Returns: boolean
       }
       validate_attendance_report: {
@@ -2805,18 +2768,6 @@ export type Database = {
       }
     }
     Enums: {
-      app_role:
-        | "director"
-        | "coordinator_madre"
-        | "coordinator_floresta"
-        | "psychologist"
-        | "psychopedagogue"
-        | "speech_therapist"
-        | "nutritionist"
-        | "terapeuta_ocupacional"
-        | "receptionist"
-        | "intern"
-        | "financeiro"
       employee_role:
         | "director"
         | "coordinator_madre"
@@ -3059,19 +3010,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "director",
-        "coordinator_madre",
-        "coordinator_floresta",
-        "psychologist",
-        "psychopedagogue",
-        "speech_therapist",
-        "nutritionist",
-        "terapeuta_ocupacional",
-        "receptionist",
-        "intern",
-        "financeiro",
-      ],
       employee_role: [
         "director",
         "coordinator_madre",
