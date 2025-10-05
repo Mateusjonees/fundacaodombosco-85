@@ -84,78 +84,95 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   };
 
   return (
-    <div className="login-split-container">
-      {/* Left side - Login Form */}
-      <div className="login-form-side">
-        <div className="login-form-content">
-          <div className="text-left mb-8">
-            <img 
-              src={logo} 
-              alt="Fundação Dom Bosco Saúde" 
-              className="h-16 mb-6"
-            />
-            <h1 className="text-3xl font-bold text-[#2E7D32] mb-2">
-              Login
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Acesso ao Sistema de Gestão
-            </p>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="form-group">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground mb-2 block">
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                placeholder="seu@email.com"
-                className="h-11 px-4 bg-white border-gray-300 rounded-md focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] transition-all"
-              />
-            </div>
-            <div className="form-group">
-              <Label htmlFor="password" className="text-sm font-medium text-foreground mb-2 block">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                placeholder="••••••••"
-                className="h-11 px-4 bg-white border-gray-300 rounded-md focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] transition-all"
-              />
-            </div>
-            <div className="flex items-center justify-between mb-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-[#2E7D32] border-gray-300 rounded focus:ring-[#2E7D32]" />
-                <span className="text-sm text-foreground">Remember Me</span>
-              </label>
-            </div>
-            <Button
-              type="submit" 
-              className="w-full h-12 bg-[#2E7D32] hover:bg-[#1B5E20] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 mt-6" 
-              disabled={isLoading}
-            >
-              {isLoading ? 'Entrando...' : 'Log In'}
-            </Button>
-          </form>
-        </div>
-      </div>
-
-      {/* Right side - Dom Bosco Image */}
-      <div className="login-illustration-side">
+    <div className="login-creative-container">
+      {/* Background Image */}
+      <div className="login-bg-image">
         <img 
           src={bgImage} 
           alt="Dom Bosco Saúde" 
           className="w-full h-full object-cover"
         />
+        <div className="login-overlay"></div>
+      </div>
+
+      {/* Centered Login Card */}
+      <div className="login-card-wrapper">
+        <div className="login-card-container">
+          {/* Logo and Title */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-6">
+              <div className="bg-white rounded-2xl p-4 shadow-lg">
+                <img 
+                  src={logo} 
+                  alt="Fundação Dom Bosco Saúde" 
+                  className="h-16"
+                />
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Bem-vindo
+            </h1>
+            <p className="text-sm text-white/80">
+              Sistema de Gestão - Acesso Restrito
+            </p>
+          </div>
+
+          {/* Login Form Card */}
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="form-group">
+                <Label htmlFor="email" className="text-sm font-semibold text-foreground mb-2 block">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  placeholder="seu@email.com"
+                  className="h-12 px-4 bg-white border-2 border-gray-200 rounded-xl focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20 transition-all"
+                />
+              </div>
+              <div className="form-group">
+                <Label htmlFor="password" className="text-sm font-semibold text-foreground mb-2 block">
+                  Senha
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  placeholder="••••••••"
+                  className="h-12 px-4 bg-white border-2 border-gray-200 rounded-xl focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20 transition-all"
+                />
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 text-[#2E7D32] border-gray-300 rounded focus:ring-[#2E7D32]" />
+                  <span className="text-sm text-foreground">Lembrar-me</span>
+                </label>
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full h-13 bg-gradient-to-r from-[#2E7D32] to-[#43A047] hover:from-[#1B5E20] hover:to-[#2E7D32] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⏳</span>
+                    Entrando...
+                  </span>
+                ) : (
+                  'Entrar no Sistema'
+                )}
+              </Button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );
