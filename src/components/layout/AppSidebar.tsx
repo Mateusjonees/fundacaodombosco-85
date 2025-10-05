@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import logo from '@/assets/fundacao-dom-bosco-logo.png';
 
 import { 
   Users, 
@@ -19,7 +20,8 @@ import {
   Heart,
   ChevronLeft,
   ClipboardList,
-  LucideIcon
+  LucideIcon,
+  Bell
 } from 'lucide-react';
 
 import {
@@ -229,7 +231,7 @@ export function AppSidebar() {
   };
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted/50";
+    isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
 
   const handleLogout = async () => {
     try {
@@ -252,24 +254,29 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
-      <SidebarContent>
+      <SidebarContent className="bg-sidebar">
         <SidebarGroup>
-            <div className="flex flex-col items-center p-4">
-              {!collapsed && (
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-primary">
-                    Fundação Dom Bosco
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Sistema de Gestão
+            <div className="flex flex-col items-center p-4 border-b border-sidebar-border">
+              {!collapsed ? (
+                <div className="flex items-center gap-2">
+                  <img src={logo} alt="Fundação Dom Bosco" className="h-10 w-10 rounded-full" />
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-sidebar-foreground">
+                      Fundação Dom Bosco
+                    </div>
+                    <div className="text-xs text-sidebar-foreground/70">
+                      Gestão Clínica
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <img src={logo} alt="FDB" className="h-8 w-8 rounded-full" />
               )}
             </div>
           
-          <div className="flex items-center justify-between px-3 py-2">
-            <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-              MENU PRINCIPAL
+          <div className="flex items-center justify-between px-3 py-3 mt-2">
+            <SidebarGroupLabel className={collapsed ? "sr-only" : "text-sidebar-foreground/70 text-xs uppercase"}>
+              Menu Principal
             </SidebarGroupLabel>
           </div>
           
@@ -296,14 +303,14 @@ export function AppSidebar() {
         </SidebarGroup>
         
         {/* Logout Section */}
-        <SidebarGroup className="mt-auto">
+        <SidebarGroup className="mt-auto border-t border-sidebar-border pt-2">
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button 
                     onClick={handleLogout}
-                    className="w-full text-left hover:bg-destructive hover:text-destructive-foreground"
+                    className="w-full text-left hover:bg-destructive hover:text-destructive-foreground text-sidebar-foreground"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     {!collapsed && <span>Sair do Sistema</span>}

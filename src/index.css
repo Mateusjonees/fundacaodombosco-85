@@ -60,15 +60,15 @@
     --chart-4: 200 40% 50%;
     --chart-5: 220 35% 55%;
     
-    /* Sidebar */
-    --sidebar-background: 120 50% 95%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 120 40% 70%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 120 35% 88%;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 120 30% 85%;
-    --sidebar-ring: 120 40% 70%;
+    /* Sidebar - Verde Escuro */
+    --sidebar-background: 145 50% 25%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 145 50% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 50% 30%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 145 40% 30%;
+    --sidebar-ring: 145 50% 40%;
 
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
@@ -114,15 +114,15 @@
     --shadow-elegant: 0 8px 30px -8px hsl(0 0% 0% / 0.4);
     --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
     
-    /* Dark sidebar */
-    --sidebar-background: 120 50% 95%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 120 40% 70%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 120 35% 88%;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 120 30% 85%;
-    --sidebar-ring: 120 40% 70%;
+    /* Dark sidebar - Verde Escuro */
+    --sidebar-background: 145 50% 25%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 145 50% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 50% 30%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 145 40% 30%;
+    --sidebar-ring: 145 50% 40%;
   }
 }
 

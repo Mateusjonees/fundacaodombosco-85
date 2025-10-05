@@ -11,7 +11,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { EmployeeManager } from '@/components/EmployeeManager';
-import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus, Shield, Package, Menu } from 'lucide-react';
+import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus, Shield, Package, Menu, Bell, ChevronDown } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 
 // Import page components
@@ -119,32 +119,37 @@ export const MainApp = () => {
           
           <div className="flex-1 flex flex-col">
             {/* Header with hamburger menu */}
-            <header className="bg-card border-b border-border p-4 sticky top-0 z-40">
+            <header className="bg-card border-b border-border px-6 py-3 sticky top-0 z-40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 rounded-md border hover:bg-accent">
+                  <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-md border hover:bg-accent">
                     <Menu className="h-4 w-4" />
                   </SidebarTrigger>
-                  <h1 className="text-xl font-bold text-primary hidden sm:block">FUNDAÇÃO DOM BOSCO</h1>
-                  <h1 className="text-lg font-bold text-primary sm:hidden">FDB</h1>
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <AppointmentNotifications />
-                  <PendingAttendancesNotification />
-                  <div className="text-right hidden sm:block">
-                    <Badge variant="secondary" className="mb-1">
-                      {currentUserProfile?.name || user?.email}
-                    </Badge>
-                    <div className="text-xs text-muted-foreground">
-                      {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Carregando...'}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <AppointmentNotifications />
+                    <PendingAttendancesNotification />
                   </div>
+                  
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted">
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-foreground">
+                        {currentUserProfile?.name || user?.email}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Carregando...'}
+                      </div>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm" 
                     onClick={handleLogout}
-                    className="gap-2"
+                    className="gap-2 text-muted-foreground hover:text-foreground"
                   >
                     <LogOut className="h-4 w-4" />
                     <span className="hidden sm:inline">Sair</span>

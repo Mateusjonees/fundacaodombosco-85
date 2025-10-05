@@ -149,85 +149,94 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold">Painel</h2>
+      <div className="space-y-2">
+        <h2 className="text-3xl font-bold text-foreground">Painel</h2>
+      </div>
       
-      <Card>
+      <Card className="bg-gradient-to-br from-card to-muted/20">
         <CardHeader>
-          <CardTitle>Bem-vindo ao Sistema</CardTitle>
+          <CardTitle className="text-xl">Bem-vindo ao Sistema</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4">
-            Olá, <strong>{currentUserProfile?.name || user?.email}</strong>! 
-            Você está conectado ao sistema da Fundação Dom Bosco como <strong>{currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}</strong>.
+          <p className="text-muted-foreground mb-2">
+            Olá, <strong className="text-foreground">{currentUserProfile?.name || user?.email}</strong>! Você está conectado ao sistema da Fundação Dom Bosco como <strong className="text-foreground">{currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}</strong>.
           </p>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Use o menu lateral para acessar as diferentes funcionalidades do sistema.
           </p>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {isDirectorOrCoordinator ? 'Total de Pacientes' : 'Meus Pacientes'}
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Users className="h-5 w-5 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalClients}</div>
-            <p className="text-xs text-muted-foreground">
-              {isDirectorOrCoordinator ? 'Cadastrados no sistema' : 'Vinculados a você'}
+            <div className="text-3xl font-bold text-foreground">{stats.totalClients}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {isDirectorOrCoordinator ? 'cadastrados no sistema' : 'vinculados a você'}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {isDirectorOrCoordinator ? 'Consultas Hoje' : 'Minhas Consultas Hoje'}
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {isDirectorOrCoordinator ? 'Consultas Hoje' : 'Minhas Consultas'}
             </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Calendar className="h-5 w-5 text-green-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.todayAppointments}</div>
-            <p className="text-xs text-muted-foreground">
-              Agendamentos para hoje
+            <div className="text-3xl font-bold text-foreground">{stats.todayAppointments}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              agendamentos para hoje
             </p>
           </CardContent>
         </Card>
 
         {isDirectorOrCoordinator && (
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Receita Mensal
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Financeiro
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <DollarSign className="h-5 w-5 text-yellow-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              <div className="text-3xl font-bold text-foreground">
+                R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Faturamento do mês
+              <p className="text-xs text-muted-foreground mt-1">
+                receita mensal
               </p>
             </CardContent>
           </Card>
         )}
 
         {isDirectorOrCoordinator && (
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Funcionários
               </CardTitle>
-              <UserPlus className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <UserPlus className="h-5 w-5 text-purple-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalEmployees}</div>
-              <p className="text-xs text-muted-foreground">
-                Registrados no sistema
+              <div className="text-3xl font-bold text-foreground">{stats.totalEmployees}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                registrados no sistema
               </p>
             </CardContent>
           </Card>
