@@ -83,7 +83,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
     }
   };
 
-  return (
+   return (
     <div className="login-creative-container">
       {/* Background Image */}
       <div className="login-bg-image">
@@ -98,30 +98,30 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
       {/* Centered Login Card */}
       <div className="login-card-wrapper">
         <div className="login-card-container">
-          {/* Logo and Title */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-6">
-              <div className="bg-white rounded-2xl p-4 shadow-lg">
+          {/* Logo and Title - Outside white card */}
+          <div className="text-center mb-6 relative z-20">
+            <div className="flex justify-center mb-4">
+              <div className="bg-white rounded-2xl p-3 shadow-2xl">
                 <img 
                   src={logo} 
                   alt="Fundação Dom Bosco Saúde" 
-                  className="h-16"
+                  className="h-14 md:h-16"
                 />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg">
               Bem-vindo
             </h1>
-            <p className="text-sm text-white/80">
+            <p className="text-sm text-white drop-shadow-md">
               Sistema de Gestão - Acesso Restrito
             </p>
           </div>
 
           {/* Login Form Card */}
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8">
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="form-group">
-                <Label htmlFor="email" className="text-sm font-semibold text-foreground mb-2 block">
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700 mb-2 block">
                   Email
                 </Label>
                 <Input
@@ -132,11 +132,11 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                   required
                   disabled={isLoading}
                   placeholder="seu@email.com"
-                  className="h-12 px-4 bg-white border-2 border-gray-200 rounded-xl focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20 transition-all"
+                  className="h-12 px-4 bg-white border-2 border-gray-200 rounded-xl focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20 transition-all text-base"
                 />
               </div>
               <div className="form-group">
-                <Label htmlFor="password" className="text-sm font-semibold text-foreground mb-2 block">
+                <Label htmlFor="password" className="text-sm font-semibold text-gray-700 mb-2 block">
                   Senha
                 </Label>
                 <Input
@@ -147,22 +147,22 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                   required
                   disabled={isLoading}
                   placeholder="••••••••"
-                  className="h-12 px-4 bg-white border-2 border-gray-200 rounded-xl focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20 transition-all"
+                  className="h-12 px-4 bg-white border-2 border-gray-200 rounded-xl focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/20 transition-all text-base"
                 />
               </div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" className="w-4 h-4 text-[#2E7D32] border-gray-300 rounded focus:ring-[#2E7D32]" />
-                  <span className="text-sm text-foreground">Lembrar-me</span>
+                  <span className="text-sm text-gray-700">Lembrar-me</span>
                 </label>
               </div>
               <Button 
                 type="submit" 
-                className="w-full h-13 bg-gradient-to-r from-[#2E7D32] to-[#43A047] hover:from-[#1B5E20] hover:to-[#2E7D32] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5" 
+                className="w-full h-12 bg-gradient-to-r from-[#2E7D32] to-[#43A047] hover:from-[#1B5E20] hover:to-[#2E7D32] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 mt-6" 
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center justify-center gap-2">
                     <span className="animate-spin">⏳</span>
                     Entrando...
                   </span>

@@ -177,22 +177,23 @@
 
   .login-bg-image img {
     @apply w-full h-full object-cover;
-    filter: brightness(0.8);
+    filter: brightness(0.85);
   }
 
   .login-overlay {
     @apply absolute inset-0;
     background: linear-gradient(
       135deg,
-      rgba(46, 125, 50, 0.7) 0%,
-      rgba(67, 160, 71, 0.6) 50%,
-      rgba(46, 125, 50, 0.8) 100%
+      rgba(46, 125, 50, 0.75) 0%,
+      rgba(67, 160, 71, 0.65) 50%,
+      rgba(46, 125, 50, 0.75) 100%
     );
     backdrop-filter: blur(2px);
   }
 
   .login-card-wrapper {
-    @apply relative z-10 flex items-center justify-center w-full px-4;
+    @apply relative flex items-center justify-center w-full px-4;
+    z-index: 10;
     animation: fadeInUp 0.6s ease-out;
   }
 
