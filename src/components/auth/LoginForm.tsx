@@ -7,7 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
-import logo from '@/assets/fundacao-dom-bosco-logo.png';
+import logo from '@/assets/logo-dom-bosco-moderna.png';
+import { Lock, Mail } from 'lucide-react';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -86,25 +87,24 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
 
   return (
     <div className="login-wrapper">
-      <div className="login-wave-top"></div>
-      
-      <div className="login-content">
-        <Card className="login-card">
-          <CardHeader className="text-center space-y-4 pb-4">
-            <div className="flex justify-center">
-              <img src={logo} alt="Fundação Dom Bosco" className="h-16 w-auto" />
-            </div>
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-foreground">
-                Bem-vindo
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Sistema de Gestão - Acesso Restrito</p>
-            </div>
-          </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+      <Card className="login-card">
+        <div className="login-logo-section">
+          <img src={logo} alt="Fundação Dom Bosco" className="h-32 w-auto sm:h-40" />
+        </div>
+        
+        <CardHeader className="text-center space-y-2 pt-8 px-6 sm:px-8">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
+            Bem-vindo de volta
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">Faça login para acessar o sistema</p>
+        </CardHeader>
+        
+        <CardContent className="px-6 sm:px-8 pb-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
@@ -112,12 +112,16 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
-                  placeholder="user@email.com"
-                  className="h-11"
+                  placeholder="seu@email.com"
+                  className="h-12 pl-10 bg-muted/30 border-none focus:bg-card transition-colors"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-foreground">Senha</Label>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">Senha</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
@@ -126,35 +130,35 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                   required
                   disabled={isLoading}
                   placeholder="••••••••"
-                  className="h-11"
+                  className="h-12 pl-10 bg-muted/30 border-none focus:bg-card transition-colors"
                 />
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="remember" 
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                />
-                <label
-                  htmlFor="remember"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Lembrar-me
-                </label>
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full h-11 bg-[#2d8f3d] hover:bg-[#267a33] text-white font-medium" 
-                disabled={isLoading}
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="remember" 
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              />
+              <label
+                htmlFor="remember"
+                className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="login-wave-bottom"></div>
+                Manter conectado
+              </label>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all" 
+              disabled={isLoading}
+            >
+              {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

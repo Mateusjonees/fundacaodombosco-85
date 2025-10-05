@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import logo from '@/assets/fundacao-dom-bosco-logo.png';
+import logo from '@/assets/logo-dom-bosco-moderna.png';
 
 import { 
   Users, 
@@ -231,7 +231,9 @@ export function AppSidebar() {
   };
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
+    isActive 
+      ? "bg-white/10 text-white font-medium backdrop-blur-sm" 
+      : "hover:bg-white/5 text-sidebar-foreground/90 hover:text-white transition-all";
 
   const handleLogout = async () => {
     try {
@@ -253,31 +255,30 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-60"}>
+    <Sidebar className={collapsed ? "w-16" : "w-64"}>
       <SidebarContent className="bg-sidebar">
         <SidebarGroup>
-            <div className="flex flex-col items-center p-4 border-b border-sidebar-border">
+            <div className="flex flex-col items-center py-6 px-4 border-b border-sidebar-border/20">
               {!collapsed ? (
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="Fundação Dom Bosco" className="h-10 w-10 rounded-full" />
-                  <div className="text-left">
-                    <div className="text-sm font-semibold text-sidebar-foreground">
-                      Fundação Dom Bosco
-                    </div>
-                    <div className="text-xs text-sidebar-foreground/70">
-                      Gestão Clínica
+                <div className="w-full">
+                  <img src={logo} alt="Fundação Dom Bosco" className="h-16 w-auto mx-auto mb-3" />
+                  <div className="text-center">
+                    <div className="text-xs font-medium text-sidebar-foreground/80 tracking-wider">
+                      SISTEMA DE GESTÃO
                     </div>
                   </div>
                 </div>
               ) : (
-                <img src={logo} alt="FDB" className="h-8 w-8 rounded-full" />
+                <img src={logo} alt="FDB" className="h-10 w-10" />
               )}
             </div>
           
-          <div className="flex items-center justify-between px-3 py-3 mt-2">
-            <SidebarGroupLabel className={collapsed ? "sr-only" : "text-sidebar-foreground/70 text-xs uppercase"}>
-              Menu Principal
-            </SidebarGroupLabel>
+          <div className="flex items-center justify-between px-4 py-4 mt-2">
+            {!collapsed && (
+              <SidebarGroupLabel className="text-sidebar-foreground/60 text-xs font-semibold uppercase tracking-wider">
+                Menu
+              </SidebarGroupLabel>
+            )}
           </div>
           
           <SidebarGroupContent>

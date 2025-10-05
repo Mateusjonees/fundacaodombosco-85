@@ -148,95 +148,93 @@ export default function Dashboard() {
   const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta'].includes(currentUserProfile?.employee_role);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in">
       <div className="space-y-2">
-        <h2 className="text-3xl font-bold text-foreground">Painel</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Painel</h2>
+        <p className="text-sm text-muted-foreground">Visão geral do sistema</p>
       </div>
       
-      <Card className="bg-gradient-to-br from-card to-muted/20">
+      <Card className="bg-gradient-to-br from-primary/5 via-card to-secondary/5 border-none shadow-md">
         <CardHeader>
-          <CardTitle className="text-xl">Bem-vindo ao Sistema</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Olá, {currentUserProfile?.name || user?.email?.split('@')[0]}! 👋</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-2">
-            Olá, <strong className="text-foreground">{currentUserProfile?.name || user?.email}</strong>! Você está conectado ao sistema da Fundação Dom Bosco como <strong className="text-foreground">{currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}</strong>.
-          </p>
           <p className="text-sm text-muted-foreground">
-            Use o menu lateral para acessar as diferentes funcionalidades do sistema.
+            Você está conectado como <strong className="text-foreground">{currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}</strong>
           </p>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-blue-50 to-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
               {isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
             </CardTitle>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
+            <div className="p-2.5 sm:p-3 bg-blue-500 rounded-xl shadow-lg">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">{stats.totalClients}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {isDirectorOrCoordinator ? 'cadastrados no sistema' : 'vinculados a você'}
+            <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{stats.totalClients}</div>
+            <p className="text-xs text-muted-foreground">
+              {isDirectorOrCoordinator ? 'no sistema' : 'atribuídos'}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-green-50 to-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
               {isDirectorOrCoordinator ? 'Consultas Hoje' : 'Minhas Consultas'}
             </CardTitle>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Calendar className="h-5 w-5 text-green-600" />
+            <div className="p-2.5 sm:p-3 bg-green-500 rounded-xl shadow-lg">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">{stats.todayAppointments}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              agendamentos para hoje
+            <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{stats.todayAppointments}</div>
+            <p className="text-xs text-muted-foreground">
+              hoje
             </p>
           </CardContent>
         </Card>
 
         {isDirectorOrCoordinator && (
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Financeiro
+          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-amber-50 to-white">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Receita Mensal
               </CardTitle>
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <DollarSign className="h-5 w-5 text-yellow-600" />
+              <div className="p-2.5 sm:p-3 bg-amber-500 rounded-xl shadow-lg">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div className="text-xl sm:text-2xl font-bold text-foreground mb-1">
+                R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                receita mensal
+              <p className="text-xs text-muted-foreground">
+                este mês
               </p>
             </CardContent>
           </Card>
         )}
 
         {isDirectorOrCoordinator && (
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-purple-50 to-white">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Funcionários
               </CardTitle>
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <UserPlus className="h-5 w-5 text-purple-600" />
+              <div className="p-2.5 sm:p-3 bg-purple-500 rounded-xl shadow-lg">
+                <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.totalEmployees}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                registrados no sistema
+              <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{stats.totalEmployees}</div>
+              <p className="text-xs text-muted-foreground">
+                ativos
               </p>
             </CardContent>
           </Card>

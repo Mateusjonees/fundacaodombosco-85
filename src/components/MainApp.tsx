@@ -119,21 +119,21 @@ export const MainApp = () => {
           
           <div className="flex-1 flex flex-col">
             {/* Header with hamburger menu */}
-            <header className="bg-card border-b border-border px-6 py-3 sticky top-0 z-40">
+            <header className="bg-white/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 py-3 sticky top-0 z-40 shadow-sm">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-md border hover:bg-accent">
+                <div className="flex items-center gap-3">
+                  <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-lg border hover:bg-accent transition-colors">
                     <Menu className="h-4 w-4" />
                   </SidebarTrigger>
                 </div>
                 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     <AppointmentNotifications />
                     <PendingAttendancesNotification />
                   </div>
                   
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted">
+                  <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
                     <div className="text-right">
                       <div className="text-sm font-medium text-foreground">
                         {currentUserProfile?.name || user?.email}
@@ -142,24 +142,23 @@ export const MainApp = () => {
                         {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Carregando...'}
                       </div>
                     </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </div>
                   
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={handleLogout}
-                    className="gap-2 text-muted-foreground hover:text-foreground"
+                    className="gap-2 text-muted-foreground hover:text-foreground h-9"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sair</span>
+                    <span className="hidden lg:inline">Sair</span>
                   </Button>
                 </div>
               </div>
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 p-4 lg:p-6">
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />
