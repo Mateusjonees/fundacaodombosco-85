@@ -152,6 +152,7 @@
 
   .login-logo-section {
     @apply bg-gradient-to-br from-primary to-primary-glow p-8 flex items-center justify-center;
+    min-height: 180px;
   }
 
   @keyframes fadeInScale {

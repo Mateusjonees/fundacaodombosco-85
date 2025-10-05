@@ -89,7 +89,9 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
     <div className="login-wrapper">
       <Card className="login-card">
         <div className="login-logo-section">
-          <img src={logo} alt="Fundação Dom Bosco" className="h-28 w-auto sm:h-32" />
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
+            <img src={logo} alt="Fundação Dom Bosco" className="h-24 w-auto sm:h-28" />
+          </div>
         </div>
         
         <CardHeader className="text-center space-y-2 pt-8 px-6 sm:px-8">
