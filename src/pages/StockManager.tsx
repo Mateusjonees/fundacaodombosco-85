@@ -155,13 +155,13 @@ export default function StockManager() {
         query = query.lte('date', filters.dateTo);
       }
 
-      if (filters.month && filters.year) {
+      // CORRIGIDO: Não aplicar filtro de mês se for "all"
+      if (filters.month && filters.month !== 'all' && filters.year) {
         const startDate = `${filters.year}-${filters.month.padStart(2, '0')}-01`;
-        // Corrigir o cálculo da data final do mês
         const lastDay = new Date(parseInt(filters.year), parseInt(filters.month), 0).getDate();
         const endDate = `${filters.year}-${filters.month.padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
         query = query.gte('date', startDate).lte('date', endDate);
-      } else if (filters.year && !filters.month) {
+      } else if (filters.year && (filters.month === 'all' || !filters.month)) {
         query = query.gte('date', `${filters.year}-01-01`).lte('date', `${filters.year}-12-31`);
       }
 
@@ -276,47 +276,82 @@ export default function StockManager() {
     }
 
     try {
+      // Buscar item atual
+      const item = stockItems.find(i => i.id === newMovement.stock_item_id);
+      if (!item) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Item não encontrado.",
+        });
+        return;
+      }
+
+      const previousQuantity = item.current_quantity;
+      const newQuantity = newMovement.type === 'in' 
+        ? previousQuantity + newMovement.quantity
+        : Math.max(0, previousQuantity - newMovement.quantity);
+      
       const totalCost = newMovement.unit_cost * newMovement.quantity;
       
-      const { error } = await supabase
-        .from('stock_movements')
-        .insert([{
-          ...newMovement,
-          total_cost: totalCost,
-          date: new Date().toISOString().split('T')[0],
-          created_by: user?.id
-        }]);
+      // CORRIGIDO: Criar movimentação com todos os campos necessários
+      const movementData = {
+        stock_item_id: newMovement.stock_item_id,
+        type: newMovement.type === 'in' ? 'entrada' : 'saida', // Usar valores corretos do banco
+        quantity: newMovement.quantity,
+        previous_quantity: previousQuantity,
+        new_quantity: newQuantity,
+        unit_cost: newMovement.unit_cost || 0,
+        total_cost: totalCost,
+        reason: newMovement.reason || (newMovement.type === 'in' ? 'Compra' : 'Uso interno'),
+        date: new Date().toISOString().split('T')[0],
+        moved_by: user?.id,
+        created_by: user?.id
+      };
 
-      if (error) throw error;
+      console.log('📦 Criando movimentação:', movementData);
+
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .insert([movementData])
+        .select();
+
+      if (error) {
+        console.error('❌ Erro ao criar movimentação:', error);
+        throw error;
+      }
+
+      console.log('✅ Movimentação criada:', data);
 
       // Atualizar quantidade do item
-      const item = stockItems.find(i => i.id === newMovement.stock_item_id);
-      if (item) {
-        const newQuantity = newMovement.type === 'in' 
-          ? item.current_quantity + newMovement.quantity
-          : item.current_quantity - newMovement.quantity;
+      const { error: updateError } = await supabase
+        .from('stock_items')
+        .update({ 
+          current_quantity: newQuantity,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', newMovement.stock_item_id);
 
-        await supabase
-          .from('stock_items')
-          .update({ current_quantity: Math.max(0, newQuantity) })
-          .eq('id', newMovement.stock_item_id);
+      if (updateError) {
+        console.error('❌ Erro ao atualizar estoque:', updateError);
+        throw updateError;
       }
 
       toast({
         title: "Sucesso",
-        description: "Movimentação registrada com sucesso!",
+        description: "Movimentação registrada e estoque atualizado!",
       });
 
       setIsMovementDialogOpen(false);
       resetNewMovement();
       loadStockItems();
       loadMovements();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating movement:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível registrar a movimentação.",
+        description: error.message || "Não foi possível registrar a movimentação.",
       });
     }
   };
