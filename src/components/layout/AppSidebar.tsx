@@ -252,7 +252,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"}>
+    <Sidebar className={collapsed ? "w-16" : "w-64 md:block"}>
       <SidebarContent className="bg-white border-r border-gray-200">
         <SidebarGroup>
           {/* Logo Header */}
@@ -261,11 +261,11 @@ export function AppSidebar() {
               <img 
                 src={logo} 
                 alt="Fundação Dom Bosco" 
-                className="h-12 w-auto transition-all duration-300"
+                className="h-10 md:h-12 w-auto transition-all duration-300"
               />
             ) : (
               <div className="w-8 h-8 bg-gradient-to-br from-[#1976D2] to-[#66BB6A] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">FD</span>
+                <span className="text-white font-bold text-xs">FD</span>
               </div>
             )}
           </div>

@@ -66,23 +66,23 @@ export function QuickActions() {
 
   return (
     <Card className="shadow-professional">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">Ações Rápidas</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base md:text-lg font-semibold">Ações Rápidas</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
           {actions.map((action) => {
             const Icon = action.icon;
             return (
               <Button
                 key={action.path}
                 variant="outline"
-                className={`h-20 flex flex-col items-center justify-center gap-1 p-3 transition-all hover:shadow-md ${action.color} hover:text-white border-none text-white`}
+                className={`h-20 md:h-24 flex flex-col items-center justify-center gap-1 p-2 md:p-3 transition-all hover:shadow-lg active:scale-95 ${action.color} hover:text-white border-none text-white touch-manipulation`}
                 onClick={() => handleAction(action.path)}
                 disabled={isLoading}
               >
-                <Icon className="h-6 w-6" />
-                <span className="text-xs font-medium text-center">{action.title}</span>
+                <Icon className="h-5 w-5 md:h-6 md:w-6" />
+                <span className="text-xs font-medium text-center leading-tight">{action.title}</span>
               </Button>
             );
           })}

@@ -136,6 +136,31 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Improved touch targets for mobile */
+  button,
+  a,
+  [role="button"] {
+    @apply min-h-[44px];
+    touch-action: manipulation;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent iOS input zoom */
+  @media (max-width: 768px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 }
 
@@ -249,9 +274,93 @@
     @apply transition-all duration-200 hover:scale-105;
   }
 
-  /* Smooth Transitions */
   * {
     @apply transition-colors duration-150;
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    /* Responsive Tables */
+    table {
+      @apply block overflow-x-auto;
+    }
+
+    /* Responsive Cards */
+    [class*="card"] {
+      @apply rounded-lg;
+    }
+
+    /* Responsive Forms */
+    form {
+      @apply space-y-3;
+    }
+
+    /* Smaller buttons on mobile */
+    button {
+      @apply text-sm;
+    }
+
+    /* Adjust padding */
+    [class*="p-6"] {
+      @apply p-4;
+    }
+
+    [class*="p-8"] {
+      @apply p-4;
+    }
+
+    /* Stack flex containers */
+    .flex {
+      @apply flex-wrap;
+    }
+
+    /* Adjust grid columns */
+    [class*="grid-cols-2"] {
+      @apply grid-cols-1;
+    }
+
+    [class*="grid-cols-3"] {
+      @apply grid-cols-1;
+    }
+
+    [class*="grid-cols-4"] {
+      @apply grid-cols-2;
+    }
+
+    /* Text sizes */
+    h1 {
+      @apply text-2xl;
+    }
+
+    h2 {
+      @apply text-xl;
+    }
+
+    h3 {
+      @apply text-lg;
+    }
+  }
+
+  /* Tablet Responsiveness */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    [class*="grid-cols-3"] {
+      @apply grid-cols-2;
+    }
+
+    [class*="grid-cols-4"] {
+      @apply grid-cols-2;
+    }
+  }
+
+  /* Touch-friendly */
+  @media (hover: none) and (pointer: coarse) {
+    button, a, [role="button"] {
+      @apply min-h-[44px] min-w-[44px];
+    }
+
+    input, select, textarea {
+      @apply min-h-[44px];
+    }
   }
 
   /* Animations */

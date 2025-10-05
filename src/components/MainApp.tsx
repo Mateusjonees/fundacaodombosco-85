@@ -113,27 +113,27 @@ export const MainApp = () => {
 
   return (
     <Router>
-      <SidebarProvider>
-        <div className="min-h-screen w-full flex bg-gray-50">
+      <SidebarProvider defaultOpen={false}>
+        <div className="min-h-screen w-full flex flex-col md:flex-row bg-gray-50">
           <AppSidebar />
           
-          <div className="flex-1 flex flex-col">
-            {/* Modern Professional Header */}
+          <div className="flex-1 flex flex-col w-full">
+            {/* Mobile-optimized Header */}
             <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-              <div className="flex items-center justify-between px-6 py-3">
-                <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between px-3 md:px-6 py-3">
+                <div className="flex items-center gap-2 md:gap-4">
                   <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-gray-100 transition-colors">
                     <Menu className="h-5 w-5 text-gray-600" />
                   </SidebarTrigger>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
                   <AppointmentNotifications />
                   <PendingAttendancesNotification />
                   
                   {currentUserProfile && (
-                    <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-                      <div className="text-right hidden sm:block">
+                    <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-gray-200">
+                      <div className="text-right hidden lg:block">
                         <p className="text-sm font-semibold text-gray-900">
                           {currentUserProfile.name}
                         </p>
@@ -141,7 +141,7 @@ export const MainApp = () => {
                           {ROLE_LABELS[currentUserProfile.employee_role] || currentUserProfile.employee_role}
                         </p>
                       </div>
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#1976D2] to-[#66BB6A] flex items-center justify-center text-white font-semibold shadow-md">
+                      <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-gradient-to-br from-[#1976D2] to-[#66BB6A] flex items-center justify-center text-white font-semibold shadow-md text-sm md:text-base">
                         {currentUserProfile.name.charAt(0).toUpperCase()}
                       </div>
                     </div>
@@ -150,8 +150,9 @@ export const MainApp = () => {
               </div>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-1 p-4 lg:p-6">
+            
+            {/* Mobile-optimized Content */}
+            <main className="flex-1 p-3 md:p-4 lg:p-6">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />

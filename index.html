@@ -3,18 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     
+    <!-- Mobile Optimization -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
     <!-- Resource Hints para otimizar carregamento -->
     <link rel="dns-prefetch" href="https://storage.googleapis.com" />
     <link rel="preconnect" href="https://storage.googleapis.com" crossorigin />
     
     <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/3WF77CQiGnfJw3tdycD5KYgot9b2/uploads/1758120101867-Captura de tele 2025-07-10 090457.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema de Gestão - Fundação Dom Bosco</title>
     
     <!-- Inline critical CSS para evitar FOUC -->
     <style>
-      body { margin: 0; background: #fff; }
+      body { 
+        margin: 0; 
+        background: #fff; 
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
       #root { min-height: 100vh; }
+      
+      /* Prevent zoom on input focus on iOS */
+      @media screen and (max-width: 768px) {
+        input, select, textarea {
+          font-size: 16px !important;
+        }
+      }
     </style>
   </head>
   <body>
