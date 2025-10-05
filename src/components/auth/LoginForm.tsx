@@ -89,23 +89,29 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
       <div className="login-bubble bubble-3"></div>
       
       <Card className="login-form">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <img 
-              src={logo} 
-              alt="Fundação Dom Bosco Saúde" 
-              className="h-24 w-auto"
-            />
+        <CardHeader className="text-center space-y-6 pt-8 pb-6">
+          <div className="flex justify-center mb-2">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg">
+              <img 
+                src={logo} 
+                alt="Fundação Dom Bosco Saúde" 
+                className="h-20 w-auto transition-transform hover:scale-105 duration-300"
+              />
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-primary">
-            Sistema de Gestão
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">Acesso Restrito</p>
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#2E7D32] to-[#43A047] bg-clip-text text-transparent">
+              Sistema de Gestão
+            </CardTitle>
+            <p className="text-sm font-medium text-muted-foreground/80">Acesso Restrito</p>
+          </div>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="px-8 pb-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="form-group">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-sm font-semibold text-foreground/90">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -114,10 +120,13 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                 required
                 disabled={isLoading}
                 placeholder="seu@email.com"
+                className="mt-2 h-12 px-4 bg-white border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all"
               />
             </div>
             <div className="form-group">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-sm font-semibold text-foreground/90">
+                Senha
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -125,15 +134,23 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                placeholder="Sua senha"
+                placeholder="••••••••"
+                className="mt-2 h-12 px-4 bg-white border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all"
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full h-12 bg-gradient-to-r from-[#2E7D32] to-[#43A047] hover:from-[#1B5E20] hover:to-[#2E7D32] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 mt-6" 
               disabled={isLoading}
             >
-              {isLoading ? 'Entrando...' : 'Entrar'}
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">⏳</span>
+                  Entrando...
+                </span>
+              ) : (
+                'Entrar no Sistema'
+              )}
             </Button>
           </form>
           

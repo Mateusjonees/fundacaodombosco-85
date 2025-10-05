@@ -140,14 +140,45 @@
 @layer components {
   /* Login Components */
   .login-container {
-    @apply flex justify-center items-center min-h-screen w-full fixed top-0 left-0 z-50;
-    background: linear-gradient(135deg, hsl(var(--login-bg-start)), hsl(var(--login-bg-end)));
+    @apply flex items-center justify-center min-h-screen relative overflow-hidden;
+    background: linear-gradient(
+      135deg,
+      hsl(142 71% 45% / 0.05) 0%,
+      hsl(120 40% 70% / 0.1) 50%,
+      hsl(160 45% 35% / 0.05) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      hsl(var(--background)) 0%,
+      hsl(var(--secondary)) 100%
+    );
   }
 
   .login-form {
-    @apply bg-card p-8 rounded-xl shadow-2xl w-full max-w-md text-center border;
-    border-color: hsl(var(--login-input-border));
+    @apply relative w-full max-w-md mx-4 rounded-3xl;
+    background: linear-gradient(
+      145deg,
+      hsl(0 0% 100%) 0%,
+      hsl(120 35% 98%) 100%
+    );
+    box-shadow: 
+      0 20px 60px -15px hsl(var(--primary) / 0.2),
+      0 8px 16px -8px hsl(var(--primary) / 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--primary) / 0.1);
+    animation: fade-in 0.5s ease-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .login-form .form-group {
@@ -170,25 +201,29 @@
   }
 
   .login-bubble {
-    @apply absolute rounded-full opacity-60;
-    background: linear-gradient(135deg, hsla(var(--primary) / 0.1), hsla(var(--primary-glow) / 0.2));
+    @apply absolute rounded-full;
+    opacity: 0.4;
+    filter: blur(60px);
   }
 
   .bubble-1 {
-    @apply w-48 h-48 -top-12 -left-20;
-    animation: float 6s ease-in-out infinite;
+    @apply w-96 h-96 -top-32 -left-32;
+    background: radial-gradient(circle, hsl(142 71% 45% / 0.3), transparent);
+    animation: float 8s ease-in-out infinite;
   }
 
   .bubble-2 {
-    @apply w-72 h-72 -bottom-24 -right-28;
-    animation: float 8s ease-in-out infinite reverse;
+    @apply w-[500px] h-[500px] -bottom-40 -right-40;
+    background: radial-gradient(circle, hsl(160 45% 35% / 0.25), transparent);
+    animation: float 10s ease-in-out infinite reverse;
   }
 
   .bubble-3 {
-    @apply w-28 h-28;
-    bottom: 40%;
-    left: 20%;
-    animation: float 7s ease-in-out infinite;
+    @apply w-64 h-64;
+    top: 30%;
+    right: 10%;
+    background: radial-gradient(circle, hsl(120 40% 70% / 0.2), transparent);
+    animation: float 9s ease-in-out infinite;
   }
 
   /* Professional Healthcare UI Components */
