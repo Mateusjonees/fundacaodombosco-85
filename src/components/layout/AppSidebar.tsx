@@ -253,26 +253,28 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={collapsed ? "w-16" : "w-64 md:block"}>
-      <SidebarContent className="bg-white border-r border-gray-200">
+      <SidebarContent className="bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
         <SidebarGroup>
           {/* Logo Header */}
-          <div className="flex items-center justify-center px-4 py-6 border-b border-gray-100">
+          <div className="flex items-center justify-center px-4 py-6 border-b border-sidebar-border/20">
             {!collapsed ? (
-              <img 
-                src={logo} 
-                alt="Fundação Dom Bosco" 
-                className="h-10 md:h-12 w-auto transition-all duration-300"
-              />
+              <div className="bg-white rounded-lg p-2 shadow-md">
+                <img 
+                  src={logo} 
+                  alt="Fundação Dom Bosco" 
+                  className="h-10 md:h-12 w-auto transition-all duration-300"
+                />
+              </div>
             ) : (
-              <div className="w-8 h-8 bg-gradient-to-br from-[#1976D2] to-[#66BB6A] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs">FD</span>
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-primary font-bold text-xs">FD</span>
               </div>
             )}
           </div>
           
           <div className="px-3 py-4">
             {!collapsed && (
-              <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <SidebarGroupLabel className="text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider">
                 Menu Principal
               </SidebarGroupLabel>
             )}
@@ -290,8 +292,8 @@ export function AppSidebar() {
                         className={({ isActive }) => 
                           `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                             isActive 
-                              ? 'bg-gradient-to-r from-[#1976D2]/10 to-[#66BB6A]/10 text-[#1976D2] font-medium shadow-sm' 
-                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm border-l-2 border-white' 
+                              : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                           } ${collapsed ? 'justify-center' : ''}`
                         }
                       >
@@ -309,14 +311,14 @@ export function AppSidebar() {
         </SidebarGroup>
         
         {/* Logout Section */}
-        <SidebarGroup className="mt-auto border-t border-gray-100 pt-4">
+        <SidebarGroup className="mt-auto border-t border-sidebar-border/20 pt-4">
           <SidebarGroupContent className="px-2">
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button 
                     onClick={handleLogout}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-red-600 hover:bg-red-50 w-full ${collapsed ? 'justify-center' : 'text-left'}`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-red-200 hover:text-white hover:bg-red-600/20 w-full ${collapsed ? 'justify-center' : 'text-left'}`}
                   >
                     <LogOut className="h-5 w-5" />
                     {!collapsed && <span className="text-sm font-medium">Sair do Sistema</span>}
