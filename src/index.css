@@ -165,70 +165,49 @@
 }
 
 @layer components {
-  /* Login Creative Layout */
-  .login-creative-container {
-    @apply relative flex items-center justify-center min-h-screen w-full overflow-hidden;
+  /* Modern Login Layout */
+  .login-modern-container {
+    @apply relative flex flex-col min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100;
   }
 
-  .login-bg-image {
-    @apply absolute inset-0 w-full h-full;
+  .login-wave-top {
+    @apply absolute top-0 left-0 w-full;
+    height: 120px;
     z-index: 0;
   }
 
-  .login-bg-image img {
-    @apply w-full h-full object-cover;
-    filter: brightness(0.85);
+  .login-wave-bottom {
+    @apply absolute bottom-0 left-0 w-full;
+    height: 120px;
+    z-index: 0;
   }
 
-  .login-overlay {
-    @apply absolute inset-0;
-    background: linear-gradient(
-      135deg,
-      rgba(46, 125, 50, 0.75) 0%,
-      rgba(67, 160, 71, 0.65) 50%,
-      rgba(46, 125, 50, 0.75) 100%
-    );
-    backdrop-filter: blur(2px);
+  .login-watermark {
+    @apply absolute bottom-8 right-8 text-9xl font-bold select-none pointer-events-none;
+    color: rgba(46, 125, 50, 0.08);
+    z-index: 1;
+    line-height: 1;
   }
 
-  .login-card-wrapper {
-    @apply relative flex items-center justify-center w-full px-4;
+  .login-modern-content {
+    @apply relative flex items-center justify-center flex-1 w-full px-4 py-8;
     z-index: 10;
-    animation: fadeInUp 0.6s ease-out;
+    animation: fadeInScale 0.5s ease-out;
   }
 
-  .login-card-container {
-    @apply w-full max-w-md;
+  .login-modern-card {
+    @apply w-full max-w-md bg-white rounded-2xl shadow-xl p-8 md:p-10;
   }
 
-  @keyframes fadeInUp {
+  @keyframes fadeInScale {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: scale(0.95);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: scale(1);
     }
-  }
-
-  .login-form .form-group {
-    @apply text-left mb-4;
-  }
-
-  .login-form .form-group label {
-    @apply block mb-2 font-medium text-foreground text-sm;
-  }
-
-  .login-form .form-group input {
-    @apply w-full px-4 py-3 border rounded-lg text-sm bg-card transition-all;
-    border-color: hsl(var(--login-input-border));
-  }
-
-  .login-form .form-group input:focus {
-    @apply outline-none;
-    border-color: hsl(var(--login-input-focus));
-    box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
   }
 
   /* Professional Healthcare UI Components */
