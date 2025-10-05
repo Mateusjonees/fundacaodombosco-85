@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
 import logo from '@/assets/fundacao-dom-bosco-saude-logo.png';
+import bgImage from '@/assets/dom-bosco-bg.png';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -148,44 +149,13 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
         </div>
       </div>
 
-      {/* Right side - Illustration */}
+      {/* Right side - Dom Bosco Image */}
       <div className="login-illustration-side">
-        <div className="illustration-content">
-          {/* Stars */}
-          <div className="stars">
-            <div className="star" style={{top: '10%', left: '15%'}}></div>
-            <div className="star" style={{top: '20%', left: '80%'}}></div>
-            <div className="star" style={{top: '40%', left: '25%'}}></div>
-            <div className="star" style={{top: '60%', left: '70%'}}></div>
-            <div className="star" style={{top: '15%', left: '50%'}}></div>
-          </div>
-
-          {/* Shooting stars */}
-          <div className="shooting-star" style={{top: '15%', right: '20%'}}></div>
-          <div className="shooting-star" style={{top: '35%', right: '40%', animationDelay: '2s'}}></div>
-
-          {/* Mountains */}
-          <div className="mountains">
-            <div className="mountain mountain-1"></div>
-            <div className="mountain mountain-2"></div>
-            <div className="mountain mountain-3"></div>
-          </div>
-
-          {/* Medical cross illustration */}
-          <div className="health-icon">
-            <div className="pulse-ring"></div>
-            <svg width="80" height="80" viewBox="0 0 80 80" className="medical-cross">
-              <rect x="30" y="10" width="20" height="60" fill="white" rx="4"/>
-              <rect x="10" y="30" width="60" height="20" fill="white" rx="4"/>
-              <circle cx="40" cy="40" r="8" fill="#2E7D32"/>
-            </svg>
-          </div>
-
-          {/* Clouds */}
-          <div className="cloud cloud-1"></div>
-          <div className="cloud cloud-2"></div>
-          <div className="cloud cloud-3"></div>
-        </div>
+        <img 
+          src={bgImage} 
+          alt="Dom Bosco Saúde" 
+          className="w-full h-full object-cover"
+        />
       </div>
     </div>
   );
