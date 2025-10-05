@@ -83,34 +83,27 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-bubble bubble-1"></div>
-      <div className="login-bubble bubble-2"></div>
-      <div className="login-bubble bubble-3"></div>
-      
-      <Card className="login-form">
-        <CardHeader className="text-center space-y-6 pt-8 pb-6">
-          <div className="flex justify-center mb-2">
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg">
-              <img 
-                src={logo} 
-                alt="Fundação Dom Bosco Saúde" 
-                className="h-20 w-auto transition-transform hover:scale-105 duration-300"
-              />
-            </div>
+    <div className="login-split-container">
+      {/* Left side - Login Form */}
+      <div className="login-form-side">
+        <div className="login-form-content">
+          <div className="text-left mb-8">
+            <img 
+              src={logo} 
+              alt="Fundação Dom Bosco Saúde" 
+              className="h-16 mb-6"
+            />
+            <h1 className="text-3xl font-bold text-[#2E7D32] mb-2">
+              Login
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Acesso ao Sistema de Gestão
+            </p>
           </div>
-          <div className="space-y-2">
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#2E7D32] to-[#43A047] bg-clip-text text-transparent">
-              Sistema de Gestão
-            </CardTitle>
-            <p className="text-sm font-medium text-muted-foreground/80">Acesso Restrito</p>
-          </div>
-        </CardHeader>
-        <CardContent className="px-8 pb-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="form-group">
-              <Label htmlFor="email" className="text-sm font-semibold text-foreground/90">
-                Email
+              <Label htmlFor="email" className="text-sm font-medium text-foreground mb-2 block">
+                Email Address
               </Label>
               <Input
                 id="email"
@@ -120,12 +113,12 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                 required
                 disabled={isLoading}
                 placeholder="seu@email.com"
-                className="mt-2 h-12 px-4 bg-white border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all"
+                className="h-11 px-4 bg-white border-gray-300 rounded-md focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] transition-all"
               />
             </div>
             <div className="form-group">
-              <Label htmlFor="password" className="text-sm font-semibold text-foreground/90">
-                Senha
+              <Label htmlFor="password" className="text-sm font-medium text-foreground mb-2 block">
+                Password
               </Label>
               <Input
                 id="password"
@@ -135,38 +128,65 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                 required
                 disabled={isLoading}
                 placeholder="••••••••"
-                className="mt-2 h-12 px-4 bg-white border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all"
+                className="h-11 px-4 bg-white border-gray-300 rounded-md focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] transition-all"
               />
             </div>
-            <Button 
+            <div className="flex items-center justify-between mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 text-[#2E7D32] border-gray-300 rounded focus:ring-[#2E7D32]" />
+                <span className="text-sm text-foreground">Remember Me</span>
+              </label>
+            </div>
+            <Button
               type="submit" 
-              className="w-full h-12 bg-gradient-to-r from-[#2E7D32] to-[#43A047] hover:from-[#1B5E20] hover:to-[#2E7D32] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 mt-6" 
+              className="w-full h-12 bg-[#2E7D32] hover:bg-[#1B5E20] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 mt-6" 
               disabled={isLoading}
             >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin">⏳</span>
-                  Entrando...
-                </span>
-              ) : (
-                'Entrar no Sistema'
-              )}
+              {isLoading ? 'Entrando...' : 'Log In'}
             </Button>
           </form>
-          
-          {onSwitchToSignUp && false && (
-            <div className="mt-4 text-center">
-              <Button 
-                variant="link" 
-                onClick={onSwitchToSignUp}
-                disabled={isLoading}
-              >
-                Não tem uma conta? Criar conta
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Right side - Illustration */}
+      <div className="login-illustration-side">
+        <div className="illustration-content">
+          {/* Stars */}
+          <div className="stars">
+            <div className="star" style={{top: '10%', left: '15%'}}></div>
+            <div className="star" style={{top: '20%', left: '80%'}}></div>
+            <div className="star" style={{top: '40%', left: '25%'}}></div>
+            <div className="star" style={{top: '60%', left: '70%'}}></div>
+            <div className="star" style={{top: '15%', left: '50%'}}></div>
+          </div>
+
+          {/* Shooting stars */}
+          <div className="shooting-star" style={{top: '15%', right: '20%'}}></div>
+          <div className="shooting-star" style={{top: '35%', right: '40%', animationDelay: '2s'}}></div>
+
+          {/* Mountains */}
+          <div className="mountains">
+            <div className="mountain mountain-1"></div>
+            <div className="mountain mountain-2"></div>
+            <div className="mountain mountain-3"></div>
+          </div>
+
+          {/* Medical cross illustration */}
+          <div className="health-icon">
+            <div className="pulse-ring"></div>
+            <svg width="80" height="80" viewBox="0 0 80 80" className="medical-cross">
+              <rect x="30" y="10" width="20" height="60" fill="white" rx="4"/>
+              <rect x="10" y="30" width="60" height="20" fill="white" rx="4"/>
+              <circle cx="40" cy="40" r="8" fill="#2E7D32"/>
+            </svg>
+          </div>
+
+          {/* Clouds */}
+          <div className="cloud cloud-1"></div>
+          <div className="cloud cloud-2"></div>
+          <div className="cloud cloud-3"></div>
+        </div>
+      </div>
     </div>
   );
 };

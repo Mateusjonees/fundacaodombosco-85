@@ -138,92 +138,245 @@
 }
 
 @layer components {
-  /* Login Components */
-  .login-container {
-    @apply flex items-center justify-center min-h-screen relative overflow-hidden;
+  /* Login Split Screen Layout */
+  .login-split-container {
+    @apply flex min-h-screen w-full;
+  }
+
+  .login-form-side {
+    @apply flex items-center justify-center w-full lg:w-1/2 bg-white p-8;
+  }
+
+  .login-form-content {
+    @apply w-full max-w-md;
+  }
+
+  .login-illustration-side {
+    @apply hidden lg:flex w-1/2 relative overflow-hidden;
     background: linear-gradient(
       135deg,
-      hsl(142 71% 45% / 0.05) 0%,
-      hsl(120 40% 70% / 0.1) 50%,
-      hsl(160 45% 35% / 0.05) 100%
-    ),
-    linear-gradient(
-      to bottom,
-      hsl(var(--background)) 0%,
-      hsl(var(--secondary)) 100%
+      #1a237e 0%,
+      #283593 25%,
+      #3949ab 50%,
+      #5c6bc0 75%,
+      #7986cb 100%
     );
   }
 
-  .login-form {
-    @apply relative w-full max-w-md mx-4 rounded-3xl;
-    background: linear-gradient(
-      145deg,
-      hsl(0 0% 100%) 0%,
-      hsl(120 35% 98%) 100%
-    );
-    box-shadow: 
-      0 20px 60px -15px hsl(var(--primary) / 0.2),
-      0 8px 16px -8px hsl(var(--primary) / 0.15),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--primary) / 0.1);
-    animation: fade-in 0.5s ease-out;
+  .illustration-content {
+    @apply relative w-full h-full;
   }
 
-  @keyframes fade-in {
-    from {
+  /* Stars */
+  .stars {
+    @apply absolute inset-0;
+  }
+
+  .star {
+    @apply absolute w-1 h-1 bg-white rounded-full;
+    animation: twinkle 3s ease-in-out infinite;
+  }
+
+  .star:nth-child(2) {
+    animation-delay: 0.5s;
+  }
+
+  .star:nth-child(3) {
+    animation-delay: 1s;
+  }
+
+  .star:nth-child(4) {
+    animation-delay: 1.5s;
+  }
+
+  .star:nth-child(5) {
+    animation-delay: 2s;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.5); }
+  }
+
+  /* Shooting stars */
+  .shooting-star {
+    @apply absolute w-1 h-1 bg-white rounded-full;
+    animation: shoot 3s ease-in-out infinite;
+    opacity: 0;
+  }
+
+  @keyframes shoot {
+    0% {
+      opacity: 1;
+      transform: translateX(0) translateY(0);
+    }
+    100% {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateX(-150px) translateY(150px);
+    }
+  }
+
+  /* Mountains */
+  .mountains {
+    @apply absolute bottom-0 left-0 right-0 h-[60%];
+  }
+
+  .mountain {
+    @apply absolute bottom-0;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  }
+
+  .mountain-1 {
+    @apply left-0 h-[70%] w-[40%];
+    background: linear-gradient(135deg, #ff6f00 0%, #ff8f00 50%, #ffa726 100%);
+  }
+
+  .mountain-2 {
+    @apply right-0 h-[80%] w-[45%];
+    background: linear-gradient(135deg, #f57c00 0%, #fb8c00 50%, #ffb74d 100%);
+  }
+
+  .mountain-3 {
+    @apply left-[30%] h-[50%] w-[35%];
+    background: linear-gradient(135deg, #e65100 0%, #ef6c00 50%, #ff9800 100%);
+    z-index: 1;
+  }
+
+  /* Medical cross icon */
+  .health-icon {
+    @apply absolute;
+    top: 35%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    animation: float-icon 3s ease-in-out infinite;
+  }
+
+  .pulse-ring {
+    @apply absolute top-1/2 left-1/2 w-32 h-32 rounded-full border-4 border-white/30;
+    transform: translate(-50%, -50%);
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: translate(-50%, -50%) scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  .medical-cross {
+    @apply relative z-10;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+    animation: rotate-icon 20s linear infinite;
+  }
+
+  @keyframes float-icon {
+    0%, 100% {
+      transform: translateX(-50%) translateY(0);
+    }
+    50% {
+      transform: translateX(-50%) translateY(-20px);
+    }
+  }
+
+  @keyframes rotate-icon {
+    from {
+      transform: rotate(0deg);
     }
     to {
-      opacity: 1;
-      transform: translateY(0);
+      transform: rotate(360deg);
     }
   }
 
-  .login-form .form-group {
-    @apply text-left mb-4;
+  /* Clouds */
+  .cloud {
+    @apply absolute bg-white/20 rounded-full;
+    backdrop-filter: blur(2px);
   }
 
-  .login-form .form-group label {
-    @apply block mb-2 font-medium text-foreground text-sm;
+  .cloud::before,
+  .cloud::after {
+    @apply absolute bg-white/20 rounded-full;
+    content: '';
   }
 
-  .login-form .form-group input {
-    @apply w-full px-4 py-3 border rounded-lg text-sm bg-card transition-all;
-    border-color: hsl(var(--login-input-border));
+  .cloud-1 {
+    @apply w-32 h-12;
+    bottom: 25%;
+    left: 10%;
+    animation: float-cloud 15s ease-in-out infinite;
+  }
+
+  .cloud-1::before {
+    @apply w-16 h-16;
+    top: -8px;
+    left: 10px;
+  }
+
+  .cloud-1::after {
+    @apply w-20 h-20;
+    top: -10px;
+    right: 10px;
+  }
+
+  .cloud-2 {
+    @apply w-40 h-14;
+    bottom: 30%;
+    right: 15%;
+    animation: float-cloud 18s ease-in-out infinite;
+    animation-delay: 1s;
+  }
+
+  .cloud-2::before {
+    @apply w-20 h-20;
+    top: -10px;
+    left: 15px;
+  }
+
+  .cloud-2::after {
+    @apply w-24 h-24;
+    top: -12px;
+    right: 15px;
+  }
+
+  .cloud-3 {
+    @apply w-28 h-10;
+    bottom: 35%;
+    left: 50%;
+    animation: float-cloud 20s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+
+  .cloud-3::before {
+    @apply w-14 h-14;
+    top: -7px;
+    left: 8px;
+  }
+
+  .cloud-3::after {
+    @apply w-16 h-16;
+    top: -8px;
+    right: 8px;
+  }
+
+  @keyframes float-cloud {
+    0%, 100% {
+      transform: translateY(0) translateX(0);
+    }
+    50% {
+      transform: translateY(-15px) translateX(10px);
+    }
   }
 
   .login-form .form-group input:focus {
     @apply outline-none;
     border-color: hsl(var(--login-input-focus));
     box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
-  }
-
-  .login-bubble {
-    @apply absolute rounded-full;
-    opacity: 0.4;
-    filter: blur(60px);
-  }
-
-  .bubble-1 {
-    @apply w-96 h-96 -top-32 -left-32;
-    background: radial-gradient(circle, hsl(142 71% 45% / 0.3), transparent);
-    animation: float 8s ease-in-out infinite;
-  }
-
-  .bubble-2 {
-    @apply w-[500px] h-[500px] -bottom-40 -right-40;
-    background: radial-gradient(circle, hsl(160 45% 35% / 0.25), transparent);
-    animation: float 10s ease-in-out infinite reverse;
-  }
-
-  .bubble-3 {
-    @apply w-64 h-64;
-    top: 30%;
-    right: 10%;
-    background: radial-gradient(circle, hsl(120 40% 70% / 0.2), transparent);
-    animation: float 9s ease-in-out infinite;
   }
 
   /* Professional Healthcare UI Components */
