@@ -232,7 +232,7 @@ export function AppSidebar() {
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? "bg-white/15 text-white font-medium rounded-lg px-3 py-2 transition-colors" 
+      ? "bg-white/15 text-white rounded-lg px-3 py-2 transition-colors border-l-2 border-white" 
       : "hover:bg-white/10 text-white/90 hover:text-white rounded-lg px-3 py-2 transition-colors";
 
   const handleLogout = async () => {
@@ -258,37 +258,41 @@ export function AppSidebar() {
     <Sidebar className={collapsed ? "w-16" : "w-64"}>
       <SidebarContent className="bg-sidebar">
         <SidebarGroup>
-            <div className="flex flex-col items-center py-6 px-4 border-b border-white/10">
+            <div className="flex flex-col items-center p-4">
               {!collapsed ? (
                 <div className="w-full">
-                  <img src={logo} alt="Fundação Dom Bosco" className="h-20 w-auto mx-auto mb-2" />
+                  <div className="bg-white rounded-xl p-3 mb-4">
+                    <img src={logo} alt="Fundação Dom Bosco" className="h-12 w-auto mx-auto" />
+                  </div>
                 </div>
               ) : (
-                <img src={logo} alt="FDB" className="h-12 w-12" />
+                <div className="bg-white rounded-lg p-2 mb-2">
+                  <img src={logo} alt="FDB" className="h-8 w-8" />
+                </div>
               )}
             </div>
           
-          <div className="px-3 py-4 mt-2">
+          <div className="px-4 pb-3 pt-1">
             {!collapsed && (
-              <SidebarGroupLabel className="text-white/80 text-xs font-semibold uppercase tracking-wider mb-3 px-2">
+              <SidebarGroupLabel className="text-white/70 text-xs font-semibold uppercase tracking-wider">
                 Menu Principal
               </SidebarGroupLabel>
             )}
           </div>
           
-          <SidebarGroupContent className="px-2">
-            <SidebarMenu className="space-y-1">
+          <SidebarGroupContent className="px-3">
+            <SidebarMenu className="space-y-0.5">
               {navigationItems.map((item) => {
                 const IconComponent = iconMapping[item.icon];
                 return (
                   <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton asChild className="h-11">
+                    <SidebarMenuButton asChild className="h-10">
                       <NavLink 
                         to={item.url} 
                         className={({ isActive }) => getNavCls({ isActive })}
                       >
-                        {IconComponent && <IconComponent className="h-5 w-5 flex-shrink-0" />}
-                        {!collapsed && <span className="ml-3 text-sm font-medium">{item.title}</span>}
+                        {IconComponent && <IconComponent className="h-4 w-4 flex-shrink-0" />}
+                        {!collapsed && <span className="ml-3 text-sm">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -299,17 +303,17 @@ export function AppSidebar() {
         </SidebarGroup>
         
         {/* Logout Section */}
-        <SidebarGroup className="mt-auto border-t border-white/10 pt-2">
-          <SidebarGroupContent className="px-2">
+        <SidebarGroup className="mt-auto pt-2">
+          <SidebarGroupContent className="px-3">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="h-11">
+                <SidebarMenuButton asChild className="h-10">
                   <button 
                     onClick={handleLogout}
                     className="w-full text-left hover:bg-white/10 text-white rounded-lg px-3 py-2 transition-colors flex items-center"
                   >
-                    <LogOut className="h-5 w-5 flex-shrink-0" />
-                    {!collapsed && <span className="ml-3 text-sm font-medium">Sair do Sistema</span>}
+                    <LogOut className="h-4 w-4 flex-shrink-0" />
+                    {!collapsed && <span className="ml-3 text-sm">Sair do Sistema</span>}
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
