@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
+import logo from '@/assets/fundacao-dom-bosco-logo.png';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -15,6 +17,7 @@ interface LoginFormProps {
 export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -82,66 +85,76 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-bubble bubble-1"></div>
-      <div className="login-bubble bubble-2"></div>
-      <div className="login-bubble bubble-3"></div>
+    <div className="login-wrapper">
+      <div className="login-wave-top"></div>
       
-      <Card className="login-form">
-        <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-2xl font-bold text-primary">
-            FUNDAÇÃO DOM BOSCO
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">Sistema de Gestão - Acesso Restrito</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="form-group">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                placeholder="seu@email.com"
-              />
+      <div className="login-content">
+        <Card className="login-card">
+          <CardHeader className="text-center space-y-4 pb-4">
+            <div className="flex justify-center">
+              <img src={logo} alt="Fundação Dom Bosco" className="h-16 w-auto" />
             </div>
-            <div className="form-group">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                placeholder="Sua senha"
-              />
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-bold text-foreground">
+                Bem-vindo
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Sistema de Gestão - Acesso Restrito</p>
             </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? 'Entrando...' : 'Entrar'}
-            </Button>
-          </form>
-          
-          {onSwitchToSignUp && false && (
-            <div className="mt-4 text-center">
+          </CardHeader>
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  placeholder="user@email.com"
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  placeholder="••••••••"
+                  className="h-11"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="remember" 
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                />
+                <label
+                  htmlFor="remember"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Lembrar-me
+                </label>
+              </div>
               <Button 
-                variant="link" 
-                onClick={onSwitchToSignUp}
+                type="submit" 
+                className="w-full h-11 bg-[#2d8f3d] hover:bg-[#267a33] text-white font-medium" 
                 disabled={isLoading}
               >
-                Não tem uma conta? Criar conta
+                {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
               </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="login-wave-bottom"></div>
     </div>
   );
 };

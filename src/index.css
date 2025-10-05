@@ -139,56 +139,30 @@
 
 @layer components {
   /* Login Components */
-  .login-container {
-    @apply flex justify-center items-center min-h-screen w-full fixed top-0 left-0 z-50;
-    background: linear-gradient(135deg, hsl(var(--login-bg-start)), hsl(var(--login-bg-end)));
+  .login-wrapper {
+    @apply min-h-screen w-full fixed top-0 left-0 z-50 flex flex-col;
+    background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
   }
 
-  .login-form {
-    @apply bg-card p-8 rounded-xl shadow-2xl w-full max-w-md text-center border;
-    border-color: hsl(var(--login-input-border));
-    backdrop-filter: blur(20px);
+  .login-wave-top {
+    @apply w-full h-32 relative;
+    background: #2d8f3d;
+    clip-path: ellipse(100% 100% at 50% 0%);
   }
 
-  .login-form .form-group {
-    @apply text-left mb-4;
+  .login-wave-bottom {
+    @apply w-full h-32 mt-auto relative;
+    background: #2d8f3d;
+    clip-path: ellipse(100% 100% at 50% 100%);
   }
 
-  .login-form .form-group label {
-    @apply block mb-2 font-medium text-foreground text-sm;
+  .login-content {
+    @apply flex-1 flex items-center justify-center px-4;
   }
 
-  .login-form .form-group input {
-    @apply w-full px-4 py-3 border rounded-lg text-sm bg-card transition-all;
-    border-color: hsl(var(--login-input-border));
-  }
-
-  .login-form .form-group input:focus {
-    @apply outline-none;
-    border-color: hsl(var(--login-input-focus));
-    box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
-  }
-
-  .login-bubble {
-    @apply absolute rounded-full opacity-60;
-    background: linear-gradient(135deg, hsla(var(--primary) / 0.1), hsla(var(--primary-glow) / 0.2));
-  }
-
-  .bubble-1 {
-    @apply w-48 h-48 -top-12 -left-20;
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .bubble-2 {
-    @apply w-72 h-72 -bottom-24 -right-28;
-    animation: float 8s ease-in-out infinite reverse;
-  }
-
-  .bubble-3 {
-    @apply w-28 h-28;
-    bottom: 40%;
-    left: 20%;
-    animation: float 7s ease-in-out infinite;
+  .login-card {
+    @apply bg-white rounded-2xl shadow-2xl w-full max-w-md;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   }
 
   /* Professional Healthcare UI Components */
