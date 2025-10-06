@@ -11,7 +11,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { EmployeeManager } from '@/components/EmployeeManager';
-import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus, Shield, Package, Menu, Bell, ChevronDown } from 'lucide-react';
+import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus, Shield, Package, Menu } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 
 // Import page components
@@ -119,46 +119,42 @@ export const MainApp = () => {
           
           <div className="flex-1 flex flex-col">
             {/* Header with hamburger menu */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 py-3 sticky top-0 z-40 shadow-sm">
+            <header className="bg-card border-b border-border p-4 sticky top-0 z-40">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-lg border hover:bg-accent transition-colors">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 rounded-md border hover:bg-accent">
                     <Menu className="h-4 w-4" />
                   </SidebarTrigger>
+                  <h1 className="text-xl font-bold text-primary hidden sm:block">FUNDAÇÃO DOM BOSCO</h1>
+                  <h1 className="text-lg font-bold text-primary sm:hidden">FDB</h1>
                 </div>
                 
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <AppointmentNotifications />
-                    <PendingAttendancesNotification />
-                  </div>
-                  
-                  <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-foreground">
-                        {currentUserProfile?.name || user?.email}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Carregando...'}
-                      </div>
+                <div className="flex items-center gap-4">
+                  <AppointmentNotifications />
+                  <PendingAttendancesNotification />
+                  <div className="text-right hidden sm:block">
+                    <Badge variant="secondary" className="mb-1">
+                      {currentUserProfile?.name || user?.email}
+                    </Badge>
+                    <div className="text-xs text-muted-foreground">
+                      {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Carregando...'}
                     </div>
                   </div>
-                  
                   <Button 
-                    variant="ghost" 
+                    variant="outline" 
                     size="sm" 
                     onClick={handleLogout}
-                    className="gap-2 text-muted-foreground hover:text-foreground h-9"
+                    className="gap-2"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span className="hidden lg:inline">Sair</span>
+                    <span className="hidden sm:inline">Sair</span>
                   </Button>
                 </div>
               </div>
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">
+            <main className="flex-1 p-4 lg:p-6">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />

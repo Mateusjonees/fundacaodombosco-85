@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import logo from '@/assets/logo-dom-bosco-transparente.png';
 
 import { 
   Users, 
@@ -20,8 +19,7 @@ import {
   Heart,
   ChevronLeft,
   ClipboardList,
-  LucideIcon,
-  Bell
+  LucideIcon
 } from 'lucide-react';
 
 import {
@@ -231,9 +229,7 @@ export function AppSidebar() {
   };
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-white/15 text-white rounded-lg px-3 py-2 transition-colors border-l-2 border-white" 
-      : "hover:bg-white/10 text-white/90 hover:text-white rounded-lg px-3 py-2 transition-colors";
+    isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted/50";
 
   const handleLogout = async () => {
     try {
@@ -255,44 +251,41 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"}>
-      <SidebarContent className="bg-sidebar">
+    <Sidebar className={collapsed ? "w-14" : "w-60"}>
+      <SidebarContent>
         <SidebarGroup>
             <div className="flex flex-col items-center p-4">
-              {!collapsed ? (
-                <div className="w-full">
-                  <div className="bg-white rounded-xl p-3 mb-4">
-                    <img src={logo} alt="Fundação Dom Bosco" className="h-12 w-auto mx-auto" />
+              {!collapsed && (
+                <div className="text-center">
+                  <div className="text-sm font-semibold text-primary">
+                    Fundação Dom Bosco
                   </div>
-                </div>
-              ) : (
-                <div className="bg-white rounded-lg p-2 mb-2">
-                  <img src={logo} alt="FDB" className="h-8 w-8" />
+                  <div className="text-xs text-muted-foreground">
+                    Sistema de Gestão
+                  </div>
                 </div>
               )}
             </div>
           
-          <div className="px-4 pb-3 pt-1">
-            {!collapsed && (
-              <SidebarGroupLabel className="text-white/70 text-xs font-semibold uppercase tracking-wider">
-                Menu Principal
-              </SidebarGroupLabel>
-            )}
+          <div className="flex items-center justify-between px-3 py-2">
+            <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+              MENU PRINCIPAL
+            </SidebarGroupLabel>
           </div>
           
-          <SidebarGroupContent className="px-3">
-            <SidebarMenu className="space-y-0.5">
+          <SidebarGroupContent>
+            <SidebarMenu>
               {navigationItems.map((item) => {
                 const IconComponent = iconMapping[item.icon];
                 return (
                   <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton asChild className="h-10">
+                    <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url} 
                         className={({ isActive }) => getNavCls({ isActive })}
                       >
-                        {IconComponent && <IconComponent className="h-4 w-4 flex-shrink-0" />}
-                        {!collapsed && <span className="ml-3 text-sm">{item.title}</span>}
+                        {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
+                        {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -303,17 +296,17 @@ export function AppSidebar() {
         </SidebarGroup>
         
         {/* Logout Section */}
-        <SidebarGroup className="mt-auto pt-2">
-          <SidebarGroupContent className="px-3">
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="h-10">
+                <SidebarMenuButton asChild>
                   <button 
                     onClick={handleLogout}
-                    className="w-full text-left hover:bg-white/10 text-white rounded-lg px-3 py-2 transition-colors flex items-center"
+                    className="w-full text-left hover:bg-destructive hover:text-destructive-foreground"
                   >
-                    <LogOut className="h-4 w-4 flex-shrink-0" />
-                    {!collapsed && <span className="ml-3 text-sm">Sair do Sistema</span>}
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {!collapsed && <span>Sair do Sistema</span>}
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>

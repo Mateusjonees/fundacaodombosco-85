@@ -3,12 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
-import logo from '@/assets/logo-dom-bosco-transparente.png';
-import { Lock, Mail } from 'lucide-react';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -18,7 +15,6 @@ interface LoginFormProps {
 export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -86,79 +82,64 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   };
 
   return (
-    <div className="login-wrapper">
-      <Card className="login-card">
-        <div className="login-logo-section">
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <img src={logo} alt="Fundação Dom Bosco" className="h-24 w-auto sm:h-28" />
-          </div>
-        </div>
-        
-        <CardHeader className="text-center space-y-2 pt-8 px-6 sm:px-8">
-          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
-            Bem-vindo de volta
+    <div className="login-container">
+      <div className="login-bubble bubble-1"></div>
+      <div className="login-bubble bubble-2"></div>
+      <div className="login-bubble bubble-3"></div>
+      
+      <Card className="login-form">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-2xl font-bold text-primary">
+            FUNDAÇÃO DOM BOSCO
           </CardTitle>
-          <p className="text-sm text-muted-foreground">Faça login para acessar o sistema</p>
+          <p className="text-sm text-muted-foreground">Sistema de Gestão - Acesso Restrito</p>
         </CardHeader>
-        
-        <CardContent className="px-6 sm:px-8 pb-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  placeholder="seu@email.com"
-                  className="h-12 pl-10 bg-muted/30 border-none focus:bg-card transition-colors"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-foreground">Senha</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  placeholder="••••••••"
-                  className="h-12 pl-10 bg-muted/30 border-none focus:bg-card transition-colors"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="remember" 
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="form-group">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                placeholder="seu@email.com"
               />
-              <label
-                htmlFor="remember"
-                className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Manter conectado
-              </label>
             </div>
-            
+            <div className="form-group">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                placeholder="Sua senha"
+              />
+            </div>
             <Button 
               type="submit" 
-              className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all" 
+              className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
+              {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
+          
+          {onSwitchToSignUp && false && (
+            <div className="mt-4 text-center">
+              <Button 
+                variant="link" 
+                onClick={onSwitchToSignUp}
+                disabled={isLoading}
+              >
+                Não tem uma conta? Criar conta
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

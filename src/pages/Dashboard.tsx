@@ -148,93 +148,86 @@ export default function Dashboard() {
   const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta'].includes(currentUserProfile?.employee_role);
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in">
-      <div className="space-y-2">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Painel</h2>
-        <p className="text-sm text-muted-foreground">Visão geral do sistema</p>
-      </div>
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold">Painel</h2>
       
-      <Card className="bg-gradient-to-br from-primary/5 via-card to-secondary/5 border-none shadow-md">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Olá, {currentUserProfile?.name || user?.email?.split('@')[0]}! 👋</CardTitle>
+          <CardTitle>Bem-vindo ao Sistema</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Você está conectado como <strong className="text-foreground">{currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}</strong>
+          <p className="text-muted-foreground mb-4">
+            Olá, <strong>{currentUserProfile?.name || user?.email}</strong>! 
+            Você está conectado ao sistema da Fundação Dom Bosco como <strong>{currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}</strong>.
+          </p>
+          <p className="text-muted-foreground">
+            Use o menu lateral para acessar as diferentes funcionalidades do sistema.
           </p>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-green-50 to-white">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-              {isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {isDirectorOrCoordinator ? 'Total de Pacientes' : 'Meus Pacientes'}
             </CardTitle>
-            <div className="p-2.5 sm:p-3 bg-green-500 rounded-xl shadow-lg">
-              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            </div>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{stats.totalClients}</div>
+            <div className="text-2xl font-bold">{stats.totalClients}</div>
             <p className="text-xs text-muted-foreground">
-              {isDirectorOrCoordinator ? 'no sistema' : 'atribuídos'}
+              {isDirectorOrCoordinator ? 'Cadastrados no sistema' : 'Vinculados a você'}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-emerald-50 to-white">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-              {isDirectorOrCoordinator ? 'Consultas Hoje' : 'Minhas Consultas'}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {isDirectorOrCoordinator ? 'Consultas Hoje' : 'Minhas Consultas Hoje'}
             </CardTitle>
-            <div className="p-2.5 sm:p-3 bg-emerald-500 rounded-xl shadow-lg">
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            </div>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{stats.todayAppointments}</div>
+            <div className="text-2xl font-bold">{stats.todayAppointments}</div>
             <p className="text-xs text-muted-foreground">
-              hoje
+              Agendamentos para hoje
             </p>
           </CardContent>
         </Card>
 
         {isDirectorOrCoordinator && (
-          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-teal-50 to-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
                 Receita Mensal
               </CardTitle>
-              <div className="p-2.5 sm:p-3 bg-teal-500 rounded-xl shadow-lg">
-                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-              </div>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-foreground mb-1">
-                R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              <div className="text-2xl font-bold">
+                R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                este mês
+                Faturamento do mês
               </p>
             </CardContent>
           </Card>
         )}
 
         {isDirectorOrCoordinator && (
-          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none bg-gradient-to-br from-lime-50 to-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
                 Funcionários
               </CardTitle>
-              <div className="p-2.5 sm:p-3 bg-lime-500 rounded-xl shadow-lg">
-                <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-              </div>
+              <UserPlus className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{stats.totalEmployees}</div>
+              <div className="text-2xl font-bold">{stats.totalEmployees}</div>
               <p className="text-xs text-muted-foreground">
-                ativos
+                Registrados no sistema
               </p>
             </CardContent>
           </Card>
