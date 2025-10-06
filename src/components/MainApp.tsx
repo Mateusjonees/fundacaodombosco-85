@@ -113,46 +113,48 @@ export const MainApp = () => {
 
   return (
     <Router>
-      <SidebarProvider defaultOpen={false}>
-        <div className="min-h-screen w-full flex flex-col md:flex-row bg-gradient-to-br from-gray-50 to-gray-100">
+      <SidebarProvider>
+        <div className="min-h-screen w-full flex">
           <AppSidebar />
           
-          <div className="flex-1 flex flex-col w-full">
-            {/* Mobile-optimized Header */}
-            <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-40">
-              <div className="flex items-center justify-between px-3 md:px-6 py-3">
-                <div className="flex items-center gap-2 md:gap-4">
-                  <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-gray-100 transition-colors">
-                    <Menu className="h-5 w-5 text-gray-600" />
+          <div className="flex-1 flex flex-col">
+            {/* Header with hamburger menu */}
+            <header className="bg-card border-b border-border p-4 sticky top-0 z-40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 rounded-md border hover:bg-accent">
+                    <Menu className="h-4 w-4" />
                   </SidebarTrigger>
+                  <h1 className="text-xl font-bold text-primary hidden sm:block">FUNDAÇÃO DOM BOSCO</h1>
+                  <h1 className="text-lg font-bold text-primary sm:hidden">FDB</h1>
                 </div>
                 
-                <div className="flex items-center gap-2 md:gap-4">
+                <div className="flex items-center gap-4">
                   <AppointmentNotifications />
                   <PendingAttendancesNotification />
-                  
-                  {currentUserProfile && (
-                    <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-gray-200">
-                      <div className="text-right hidden lg:block">
-                        <p className="text-sm font-semibold text-gray-900">
-                          {currentUserProfile.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {ROLE_LABELS[currentUserProfile.employee_role] || currentUserProfile.employee_role}
-                        </p>
-                      </div>
-                      <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold shadow-md text-sm md:text-base">
-                        {currentUserProfile.name.charAt(0).toUpperCase()}
-                      </div>
+                  <div className="text-right hidden sm:block">
+                    <Badge variant="secondary" className="mb-1">
+                      {currentUserProfile?.name || user?.email}
+                    </Badge>
+                    <div className="text-xs text-muted-foreground">
+                      {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Carregando...'}
                     </div>
-                  )}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleLogout}
+                    className="gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="hidden sm:inline">Sair</span>
+                  </Button>
                 </div>
               </div>
             </header>
 
-            
-            {/* Mobile-optimized Content */}
-            <main className="flex-1 p-3 md:p-4 lg:p-6">
+            {/* Main Content */}
+            <main className="flex-1 p-4 lg:p-6">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />
