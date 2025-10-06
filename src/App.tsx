@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { SignUpForm } from "@/components/auth/SignUpForm";
-import { MainApp } from "@/components/MainApp";
 import { Loader2 } from 'lucide-react';
+
+// Lazy load componentes principais para reduzir bundle inicial
+const LoginForm = lazy(() => import("@/components/auth/LoginForm").then(m => ({ default: m.LoginForm })));
+const SignUpForm = lazy(() => import("@/components/auth/SignUpForm").then(m => ({ default: m.SignUpForm })));
+const MainApp = lazy(() => import("@/components/MainApp").then(m => ({ default: m.MainApp })));
 
 const queryClient = new QueryClient();
 
@@ -38,26 +40,55 @@ const AppContent = () => {
   if (!user) {
     if (showSignUp) {
       return (
-        <SignUpForm 
-          onSuccess={() => {
-            setShowApp(true);
-          }}
-          onSwitchToLogin={() => setShowSignUp(false)}
-        />
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground">Carregando...</p>
+            </div>
+          </div>
+        }>
+          <SignUpForm 
+            onSuccess={() => {
+              setShowApp(true);
+            }}
+            onSwitchToLogin={() => setShowSignUp(false)}
+          />
+        </Suspense>
       );
     }
     
     return (
-      <LoginForm 
-        onSuccess={() => {
-          setShowApp(true);
-        }}
-        onSwitchToSignUp={() => setShowSignUp(true)}
-      />
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Carregando...</p>
+          </div>
+        </div>
+      }>
+        <LoginForm 
+          onSuccess={() => {
+            setShowApp(true);
+          }}
+          onSwitchToSignUp={() => setShowSignUp(true)}
+        />
+      </Suspense>
     );
   }
 
-  return <MainApp />;
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    }>
+      <MainApp />
+    </Suspense>
+  );
 };
 
 const App = () => (
