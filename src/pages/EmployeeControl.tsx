@@ -55,6 +55,13 @@ interface AttendanceReport {
   validation_status: string;
   professional_amount: number;
   amount_charged: number;
+  client_id: string;
+  clients?: {
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+  };
 }
 
 interface TimesheetEntry {
@@ -170,7 +177,7 @@ export default function EmployeeControl() {
 
   const loadEmployeeDetails = async (userId: string) => {
     try {
-      // Buscar atendimentos detalhados
+      // Buscar atendimentos detalhados com dados do cliente
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance_reports')
         .select(`
@@ -181,7 +188,14 @@ export default function EmployeeControl() {
           session_duration,
           validation_status,
           professional_amount,
-          amount_charged
+          amount_charged,
+          client_id,
+          clients:client_id (
+            id,
+            name,
+            phone,
+            email
+          )
         `)
         .eq('employee_id', userId)
         .order('start_time', { ascending: false });
@@ -431,52 +445,151 @@ export default function EmployeeControl() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="attendances">
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {attendances.length === 0 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <FileText className="mx-auto h-12 w-12 mb-4" />
-                        <p>Nenhum atendimento registrado</p>
+                <TabsContent value="attendances" className="space-y-6">
+                  {/* Resumo de Clientes Atendidos */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Clientes Atendidos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {attendances.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Users className="mx-auto h-8 w-8 mb-2" />
+                          <p>Nenhum cliente atendido</p>
+                        </div>
+                      ) : (() => {
+                        // Agrupar atendimentos por cliente
+                        const clientsMap = new Map();
+                        attendances.forEach((attendance) => {
+                          const clientId = attendance.client_id;
+                          if (!clientsMap.has(clientId)) {
+                            clientsMap.set(clientId, {
+                              id: clientId,
+                              name: attendance.patient_name,
+                              clientData: attendance.clients,
+                              totalSessions: 0,
+                              totalAmount: 0,
+                              lastSession: attendance.session_date,
+                              validatedSessions: 0,
+                              pendingSessions: 0
+                            });
+                          }
+                          const client = clientsMap.get(clientId);
+                          client.totalSessions += 1;
+                          client.totalAmount += (attendance.professional_amount || 0);
+                          if (attendance.validation_status === 'validated') {
+                            client.validatedSessions += 1;
+                          } else if (attendance.validation_status === 'pending_validation') {
+                            client.pendingSessions += 1;
+                          }
+                          if (new Date(attendance.session_date) > new Date(client.lastSession)) {
+                            client.lastSession = attendance.session_date;
+                          }
+                        });
+                        
+                        const clients = Array.from(clientsMap.values());
+                        
+                        return (
+                          <div className="grid gap-4 md:grid-cols-2">
+                            {clients.map((client: any) => (
+                              <div key={client.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div className="flex-1">
+                                    <p className="font-medium text-lg">{client.name}</p>
+                                    {client.clientData && (
+                                      <div className="text-sm text-muted-foreground space-y-1 mt-2">
+                                        {client.clientData.phone && (
+                                          <p>📞 {client.clientData.phone}</p>
+                                        )}
+                                        {client.clientData.email && (
+                                          <p>✉️ {client.clientData.email}</p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Badge variant="outline" className="ml-2">
+                                    {client.totalSessions} {client.totalSessions === 1 ? 'sessão' : 'sessões'}
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div className="flex flex-col p-2 bg-muted/50 rounded">
+                                    <span className="text-muted-foreground">Total recebido</span>
+                                    <span className="font-medium text-green-600">{formatCurrency(client.totalAmount)}</span>
+                                  </div>
+                                  <div className="flex flex-col p-2 bg-muted/50 rounded">
+                                    <span className="text-muted-foreground">Última sessão</span>
+                                    <span className="font-medium">{format(new Date(client.lastSession), "dd/MM/yyyy")}</span>
+                                  </div>
+                                  <div className="flex flex-col p-2 bg-muted/50 rounded">
+                                    <span className="text-muted-foreground">Validadas</span>
+                                    <span className="font-medium text-green-600">{client.validatedSessions}</span>
+                                  </div>
+                                  <div className="flex flex-col p-2 bg-muted/50 rounded">
+                                    <span className="text-muted-foreground">Pendentes</span>
+                                    <span className="font-medium text-yellow-600">{client.pendingSessions}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+
+                  {/* Histórico Detalhado */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Histórico de Atendimentos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {attendances.length === 0 ? (
+                          <div className="text-center py-12 text-muted-foreground">
+                            <FileText className="mx-auto h-12 w-12 mb-4" />
+                            <p>Nenhum atendimento registrado</p>
+                          </div>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Data</TableHead>
+                                <TableHead>Paciente</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Duração</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Valor</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {attendances.map((attendance) => (
+                                <TableRow key={attendance.id}>
+                                  <TableCell>
+                                    {format(new Date(attendance.session_date), 'dd/MM/yyyy')}
+                                  </TableCell>
+                                  <TableCell>{attendance.patient_name}</TableCell>
+                                  <TableCell>{attendance.attendance_type}</TableCell>
+                                  <TableCell>{attendance.session_duration || 0} min</TableCell>
+                                  <TableCell>
+                                    <Badge variant={
+                                      attendance.validation_status === 'validated' ? 'default' :
+                                      attendance.validation_status === 'rejected' ? 'destructive' :
+                                      'secondary'
+                                    }>
+                                      {attendance.validation_status === 'validated' ? 'Validado' :
+                                       attendance.validation_status === 'rejected' ? 'Rejeitado' :
+                                       'Pendente'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{formatCurrency(attendance.professional_amount || 0)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
                       </div>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Paciente</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Duração</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Valor</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {attendances.map((attendance) => (
-                            <TableRow key={attendance.id}>
-                              <TableCell>
-                                {format(new Date(attendance.session_date), 'dd/MM/yyyy')}
-                              </TableCell>
-                              <TableCell>{attendance.patient_name}</TableCell>
-                              <TableCell>{attendance.attendance_type}</TableCell>
-                              <TableCell>{attendance.session_duration || 0} min</TableCell>
-                              <TableCell>
-                                <Badge variant={
-                                  attendance.validation_status === 'validated' ? 'default' :
-                                  attendance.validation_status === 'rejected' ? 'destructive' :
-                                  'secondary'
-                                }>
-                                  {attendance.validation_status === 'validated' ? 'Validado' :
-                                   attendance.validation_status === 'rejected' ? 'Rejeitado' :
-                                   'Pendente'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{formatCurrency(attendance.professional_amount || 0)}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 <TabsContent value="timesheet">
