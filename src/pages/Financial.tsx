@@ -82,12 +82,6 @@ export default function Financial() {
                       userRole === 'financeiro' || 
                       customPermissions.hasPermission('view_financial');
     
-    console.log('🔐 Verificação de acesso - Financial:', {
-      userRole,
-      hasCustomPermission: customPermissions.hasPermission('view_financial'),
-      hasAccess
-    });
-    
     if (!hasAccess) {
       toast({
         variant: "destructive",
@@ -100,7 +94,7 @@ export default function Financial() {
     loadFinancialRecords();
     loadFinancialNotes();
     loadPendingPayments();
-  }, [roleLoading, userRole]);
+  }, [roleLoading, userRole, customPermissions.loading]);
 
   const loadFinancialRecords = async () => {
     setLoading(true);
@@ -435,16 +429,20 @@ export default function Financial() {
     return noteDate.getMonth() === currentMonth && noteDate.getFullYear() === currentYear;
   });
 
-  if (roleLoading) {
+  if (roleLoading || customPermissions.loading) {
     return <div className="p-6">Carregando...</div>;
   }
 
-  if (userRole !== 'director') {
+  const hasAccess = userRole === 'director' || 
+                    userRole === 'financeiro' || 
+                    customPermissions.hasPermission('view_financial');
+
+  if (!hasAccess) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Acesso restrito a diretores</p>
+          <p className="text-muted-foreground">Acesso restrito a diretores e área financeira</p>
         </div>
       </div>
     );
