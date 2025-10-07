@@ -110,13 +110,15 @@ const PERMISSION_CATEGORIES = {
 export default function EmployeePermissions({ employeeId, employeeName }: EmployeePermissionsProps) {
   const { user } = useAuth();
   const [grantedPermissions, setGrantedPermissions] = useState<Set<string>>(new Set());
+  const [rolePermissions, setRolePermissions] = useState<Set<string>>(new Set());
+  const [employeeRole, setEmployeeRole] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [isDirector, setIsDirector] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     checkUserRole();
-    loadPermissions();
+    loadEmployeeRoleAndPermissions();
   }, [employeeId, user]);
 
   const checkUserRole = async () => {
@@ -136,19 +138,46 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
     }
   };
 
-  const loadPermissions = async () => {
+  const loadEmployeeRoleAndPermissions = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Buscar o cargo do funcionário
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('employee_role')
+        .eq('user_id', employeeId)
+        .single();
+
+      if (profileError) throw profileError;
+      
+      const role = profileData?.employee_role;
+      setEmployeeRole(role || '');
+
+      // Buscar permissões do cargo
+      if (role) {
+        const { data: rolePerms, error: rolePermsError } = await supabase
+          .from('role_permissions')
+          .select('permission, granted')
+          .eq('employee_role', role)
+          .eq('granted', true);
+
+        if (rolePermsError) throw rolePermsError;
+        
+        const rolePermSet = new Set(rolePerms?.map(p => p.permission) || []);
+        setRolePermissions(rolePermSet);
+      }
+
+      // Buscar permissões personalizadas específicas do usuário
+      const { data: userPerms, error: userPermsError } = await supabase
         .from('user_specific_permissions')
         .select('permission, granted')
         .eq('user_id', employeeId)
         .eq('granted', true);
 
-      if (error) throw error;
+      if (userPermsError) throw userPermsError;
       
-      const permissions = new Set(data?.map(p => p.permission) || []);
-      setGrantedPermissions(permissions);
+      const customPermissions = new Set(userPerms?.map(p => p.permission) || []);
+      setGrantedPermissions(customPermissions);
     } catch (error) {
       console.error('Error loading permissions:', error);
       toast({
@@ -259,7 +288,9 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
               {category.permissions.map((perm) => {
-                const isGranted = grantedPermissions.has(perm.key);
+                const hasRolePermission = rolePermissions.has(perm.key);
+                const hasCustomPermission = grantedPermissions.has(perm.key);
+                const isActive = hasRolePermission || hasCustomPermission;
                 
                 return (
                   <div 
@@ -273,15 +304,20 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
                       >
                         {perm.label}
                       </Label>
-                      {isGranted && (
-                        <div className="text-xs text-muted-foreground mt-1">
+                      {hasRolePermission && (
+                        <div className="text-xs text-primary mt-1 font-medium">
+                          ✓ Permissão do Cargo
+                        </div>
+                      )}
+                      {hasCustomPermission && (
+                        <div className="text-xs text-green-600 mt-1 font-medium">
                           Personalizado: Permitido
                         </div>
                       )}
                     </div>
                     <Switch
                       id={perm.key}
-                      checked={isGranted}
+                      checked={isActive}
                       onCheckedChange={(checked) => 
                         togglePermission(perm.key, checked)
                       }
