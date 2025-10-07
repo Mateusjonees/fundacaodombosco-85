@@ -33,6 +33,7 @@ import EmployeeControl from '@/pages/EmployeeControl';
 import PendingAttendancesNotification from '@/components/PendingAttendancesNotification';
 import AppointmentNotifications from '@/components/AppointmentNotifications';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { QuickHelpCenter } from '@/components/QuickHelpCenter';
 
 interface Profile {
   id: string;
@@ -135,6 +136,7 @@ export const MainApp = () => {
                 
                 <div className="flex items-center gap-2 sm:gap-4">
                   <GlobalSearch />
+                  <QuickHelpCenter />
                   <AppointmentNotifications />
                   <PendingAttendancesNotification />
                   <div className="text-right hidden lg:block">
