@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { 
   Send, 
   MessageCircle, 
@@ -409,16 +410,7 @@ export const MessagingApp = () => {
   };
 
   const getRoleLabel = (role: string) => {
-    const labels = {
-      director: 'Diretor',
-      coordinator_madre: 'Coord. Madre',
-      coordinator_floresta: 'Coord. Floresta',
-      physiotherapist: 'Fisioterapeuta',
-      therapist: 'Terapeuta',
-      receptionist: 'Recepção',
-      staff: 'Funcionário'
-    };
-    return labels[role as keyof typeof labels] || 'Funcionário';
+    return ROLE_LABELS[role as keyof typeof ROLE_LABELS] || 'Funcionário(a)';
   };
 
   const filteredContacts = contacts.filter(contact =>
