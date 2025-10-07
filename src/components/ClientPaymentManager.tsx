@@ -39,6 +39,11 @@ interface ClientPayment {
   description?: string;
   due_date?: string;
   payment_method?: string;
+  credit_card_installments?: number;
+  down_payment_amount?: number;
+  down_payment_method?: string;
+  payment_combination?: any[];
+  notes?: string;
   status: 'pending' | 'partial' | 'completed' | 'overdue';
   created_at: string;
 }
@@ -79,7 +84,12 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
     installments_total: 1,
     description: '',
     due_date: new Date(),
-    payment_method: ''
+    payment_method: '',
+    credit_card_installments: 1,
+    down_payment_amount: '',
+    down_payment_method: '',
+    notes: '',
+    is_manual_combination: false
   });
 
   const [paymentData, setPaymentData] = useState({
@@ -210,6 +220,10 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
 
     setLoading(true);
     try {
+      // Calcular valores para entrada + parcelamento
+      const downPaymentAmount = parseFloat(newPayment.down_payment_amount) || 0;
+      const remainingAmount = totalAmount - downPaymentAmount;
+      
       // Criar o pagamento principal
       const { data: paymentData, error: paymentError } = await supabase
         .from('client_payments')
@@ -218,10 +232,15 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
           total_amount: totalAmount,
           payment_type: newPayment.payment_type,
           installments_total: newPayment.payment_type === 'avista' ? 1 : newPayment.installments_total,
-          amount_remaining: totalAmount,
+          amount_remaining: totalAmount - downPaymentAmount,
+          amount_paid: downPaymentAmount,
           description: newPayment.description,
           due_date: format(newPayment.due_date, 'yyyy-MM-dd'),
           payment_method: newPayment.payment_method,
+          credit_card_installments: newPayment.payment_method === 'cartao_credito' ? newPayment.credit_card_installments : 1,
+          down_payment_amount: downPaymentAmount,
+          down_payment_method: newPayment.down_payment_method || null,
+          notes: newPayment.notes || null,
           created_by: user?.id,
           unit: 'madre'
         })
@@ -232,11 +251,14 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
 
       // Criar parcelas se for a prazo
       if (newPayment.payment_type === 'aprazo') {
+        // Se teve entrada, parcelar apenas o restante
+        const amountToInstall = downPaymentAmount > 0 ? remainingAmount : totalAmount;
+        
         const { error: installmentsError } = await supabase
           .rpc('create_payment_installments', {
             p_client_payment_id: paymentData.id,
             p_installments_total: newPayment.installments_total,
-            p_total_amount: totalAmount,
+            p_total_amount: amountToInstall,
             p_first_due_date: format(newPayment.due_date, 'yyyy-MM-dd')
           });
 
@@ -249,6 +271,8 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
             client_payment_id: paymentData.id,
             installment_number: 1,
             amount: totalAmount,
+            paid_amount: downPaymentAmount,
+            status: downPaymentAmount >= totalAmount ? 'paid' : 'pending',
             due_date: format(newPayment.due_date, 'yyyy-MM-dd')
           });
 
@@ -270,7 +294,12 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
         installments_total: 1,
         description: '',
         due_date: new Date(),
-        payment_method: ''
+        payment_method: '',
+        credit_card_installments: 1,
+        down_payment_amount: '',
+        down_payment_method: '',
+        notes: '',
+        is_manual_combination: false
       });
       loadPayments();
     } catch (error) {
@@ -469,10 +498,34 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
                     </div>
                   </div>
 
+                  {payment.down_payment_amount && payment.down_payment_amount > 0 && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <Label className="text-xs text-green-700 font-semibold">Entrada Paga</Label>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="font-medium text-green-700">{formatCurrency(payment.down_payment_amount)}</p>
+                        <p className="text-sm text-green-600">{payment.down_payment_method}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {payment.payment_method === 'cartao_credito' && payment.credit_card_installments && payment.credit_card_installments > 1 && (
+                    <div className="mb-4">
+                      <Label className="text-xs text-muted-foreground">Parcelas no Cartão</Label>
+                      <p className="text-sm">{payment.credit_card_installments}x no cartão de crédito</p>
+                    </div>
+                  )}
+
                   {payment.description && (
                     <div className="mb-4">
                       <Label className="text-xs text-muted-foreground">Descrição</Label>
                       <p className="text-sm">{payment.description}</p>
+                    </div>
+                  )}
+
+                  {payment.notes && (
+                    <div className="mb-4">
+                      <Label className="text-xs text-muted-foreground">Observações</Label>
+                      <p className="text-sm italic">{payment.notes}</p>
                     </div>
                   )}
 
@@ -547,24 +600,94 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
                 </div>
               )}
 
-                <div>
-                  <Label>Forma de Pagamento *</Label>
-                  <Select 
-                    value={newPayment.payment_method} 
-                    onValueChange={(value) => setNewPayment({ ...newPayment, payment_method: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione forma de pagamento..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
-                      <SelectItem value="cartao_credito">💳 Cartão de Crédito</SelectItem>
-                      <SelectItem value="cartao_debito">💳 Cartão de Débito</SelectItem>
-                    <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="transferencia">Transferência</SelectItem>
-                    <SelectItem value="boleto">Boleto</SelectItem>
+              <div>
+                <Label>Forma de Pagamento *</Label>
+                <Select 
+                  value={newPayment.payment_method} 
+                  onValueChange={(value) => setNewPayment({ ...newPayment, payment_method: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione forma de pagamento..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
+                    <SelectItem value="cartao_credito">💳 Cartão de Crédito</SelectItem>
+                    <SelectItem value="cartao_debito">💳 Cartão de Débito</SelectItem>
+                    <SelectItem value="pix">📱 PIX</SelectItem>
+                    <SelectItem value="transferencia">🏦 Transferência</SelectItem>
+                    <SelectItem value="boleto">📄 Boleto</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {newPayment.payment_method === 'cartao_credito' && (
+                <div>
+                  <Label>Parcelas no Cartão de Crédito</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={newPayment.credit_card_installments}
+                    onChange={(e) => setNewPayment({ ...newPayment, credit_card_installments: parseInt(e.target.value) || 1 })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Parcelas direto na máquina de cartão
+                  </p>
+                </div>
+              )}
+
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="manual_combination"
+                    checked={newPayment.is_manual_combination}
+                    onChange={(e) => setNewPayment({ ...newPayment, is_manual_combination: e.target.checked })}
+                    className="rounded"
+                  />
+                  <Label htmlFor="manual_combination" className="cursor-pointer">
+                    Pagamento com entrada + parcelamento
+                  </Label>
+                </div>
+
+                {newPayment.is_manual_combination && (
+                  <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-sm">Valor da Entrada</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          value={newPayment.down_payment_amount}
+                          onChange={(e) => setNewPayment({ ...newPayment, down_payment_amount: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Forma de Pgto da Entrada</Label>
+                        <Select 
+                          value={newPayment.down_payment_method} 
+                          onValueChange={(value) => setNewPayment({ ...newPayment, down_payment_method: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
+                            <SelectItem value="pix">📱 PIX</SelectItem>
+                            <SelectItem value="cartao_debito">💳 Débito</SelectItem>
+                            <SelectItem value="transferencia">🏦 Transferência</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {parseFloat(newPayment.down_payment_amount) > 0 && parseFloat(newPayment.total_amount) > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Restante a parcelar: {formatCurrency(parseFloat(newPayment.total_amount) - parseFloat(newPayment.down_payment_amount))}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -600,6 +723,16 @@ export default function ClientPaymentManager({ clientId, clientName, userProfile
                   placeholder="Descrição do pagamento..."
                   value={newPayment.description}
                   onChange={(e) => setNewPayment({ ...newPayment, description: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label>Observações</Label>
+                <Textarea
+                  placeholder="Observações adicionais sobre o pagamento..."
+                  value={newPayment.notes}
+                  onChange={(e) => setNewPayment({ ...newPayment, notes: e.target.value })}
+                  rows={2}
                 />
               </div>
             </div>

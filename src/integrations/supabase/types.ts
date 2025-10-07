@@ -608,11 +608,16 @@ export type Database = {
           client_id: string
           created_at: string
           created_by: string
+          credit_card_installments: number | null
           description: string | null
+          down_payment_amount: number | null
+          down_payment_method: string | null
           due_date: string | null
           id: string
           installments_paid: number | null
           installments_total: number | null
+          notes: string | null
+          payment_combination: Json | null
           payment_method: string | null
           payment_type: string
           status: string
@@ -626,11 +631,16 @@ export type Database = {
           client_id: string
           created_at?: string
           created_by: string
+          credit_card_installments?: number | null
           description?: string | null
+          down_payment_amount?: number | null
+          down_payment_method?: string | null
           due_date?: string | null
           id?: string
           installments_paid?: number | null
           installments_total?: number | null
+          notes?: string | null
+          payment_combination?: Json | null
           payment_method?: string | null
           payment_type: string
           status?: string
@@ -644,11 +654,16 @@ export type Database = {
           client_id?: string
           created_at?: string
           created_by?: string
+          credit_card_installments?: number | null
           description?: string | null
+          down_payment_amount?: number | null
+          down_payment_method?: string | null
           due_date?: string | null
           id?: string
           installments_paid?: number | null
           installments_total?: number | null
+          notes?: string | null
+          payment_combination?: Json | null
           payment_method?: string | null
           payment_type?: string
           status?: string
