@@ -76,7 +76,10 @@ export default function Contracts() {
   });
 
   useEffect(() => {
-    if (roleLoading || customPermissions.loading) return;
+    if (roleLoading || customPermissions.loading) {
+      console.log('⏳ Aguardando carregamento de permissões...', { roleLoading, customLoading: customPermissions.loading });
+      return;
+    }
     
     // Verificar permissão: diretor, coordenador floresta OU permissão customizada
     const hasAccess = userRole === 'director' || 
@@ -99,7 +102,7 @@ export default function Contracts() {
     }
     
     loadClients();
-  }, [roleLoading, userRole]);
+  }, [roleLoading, userRole, customPermissions.loading, customPermissions.hasPermission('view_contracts')]);
 
   const loadClients = async () => {
     setLoading(true);
