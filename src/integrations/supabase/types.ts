@@ -2508,6 +2508,7 @@ export type Database = {
           id: string
           permission: Database["public"]["Enums"]["permission_action"]
           reason: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -2518,6 +2519,7 @@ export type Database = {
           id?: string
           permission: Database["public"]["Enums"]["permission_action"]
           reason?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -2528,6 +2530,7 @@ export type Database = {
           id?: string
           permission?: Database["public"]["Enums"]["permission_action"]
           reason?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []

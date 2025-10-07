@@ -239,55 +239,33 @@ export default function UserManagement() {
 
   const updateUserPermission = async (userId: string, permission: PermissionAction, granted: boolean, reason: string = '') => {
     try {
-      // Primeiro, verificar se já existe uma permissão para este usuário/permissão
-      const { data: existing, error: checkError } = await supabase
-        .from('user_specific_permissions')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('permission', permission)
-        .maybeSingle();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
-
-      let error;
+      console.log('Atualizando permissão:', { userId, permission, granted });
       
-      if (existing) {
-        // Atualizar permissão existente
-        const updateResult = await supabase
-          .from('user_specific_permissions')
-          .update({
-            granted,
-            reason,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existing.id);
-        
-        error = updateResult.error;
-      } else {
-        // Criar nova permissão
-        const insertResult = await supabase
-          .from('user_specific_permissions')
-          .insert([{
-            user_id: userId,
-            permission,
-            granted,
-            reason
-          }]);
-        
-        error = insertResult.error;
-      }
+      const { data, error } = await supabase
+        .from('user_specific_permissions')
+        .upsert({
+          user_id: userId,
+          permission,
+          granted,
+          reason,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,permission'
+        })
+        .select();
 
       if (error) throw error;
+
+      console.log('Permissão atualizada:', data);
 
       toast({
         title: "Permissão atualizada!",
         description: `Permissão "${PERMISSION_LABELS[permission]}" foi ${granted ? 'concedida' : 'revogada'} com sucesso.`
       });
 
+      // Recarregar permissões do usuário
       if (selectedUser?.id === userId) {
-        loadUserPermissions(userId);
+        await loadUserPermissions(userId);
       }
     } catch (error: any) {
       console.error('Error updating permission:', error);
