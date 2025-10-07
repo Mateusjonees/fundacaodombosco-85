@@ -13,6 +13,7 @@ import { useAuditLog } from '@/hooks/useAuditLog';
 import { EmployeeManager } from '@/components/EmployeeManager';
 import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus, Shield, Package, Menu } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 // Import page components
 import Clients from '@/pages/Clients';
@@ -156,18 +157,76 @@ export const MainApp = () => {
             {/* Main Content */}
             <main className="flex-1 p-4 lg:p-6">
               <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/schedule" element={<Schedule />} />
-                <Route path="/schedule-control" element={<ScheduleControl />} />
-                <Route path="/attendance-validation" element={<AttendanceValidation />} />
-                <Route path="/financial" element={<Financial />} />
-                <Route path="/contracts" element={<Contracts />} />
-                <Route path="/stock" element={<StockManager />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/my-patients" element={<MyPatients />} />
-                <Route path="/employees-new" element={<EmployeesNew />} />
-                <Route path="/users" element={<UserManagement />} />
+                <Route path="/" element={
+                  <ProtectedRoute requiredPermission="view_dashboard">
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/clients" element={
+                  <ProtectedRoute requiredPermission="view_clients">
+                    <Clients />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/schedule" element={
+                  <ProtectedRoute requiredPermission="view_schedules">
+                    <Schedule />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/schedule-control" element={
+                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta']}>
+                    <ScheduleControl />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/attendance-validation" element={
+                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta']}>
+                    <AttendanceValidation />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/financial" element={
+                  <ProtectedRoute requiredPermission="view_financial">
+                    <Financial />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/contracts" element={
+                  <ProtectedRoute requiredPermission="view_contracts">
+                    <Contracts />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/stock" element={
+                  <ProtectedRoute requiredPermission="view_stock">
+                    <StockManager />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/reports" element={
+                  <ProtectedRoute requiredPermission="view_reports">
+                    <Reports />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/my-patients" element={
+                  <MyPatients />
+                } />
+                
+                <Route path="/employees-new" element={
+                  <ProtectedRoute requiredPermission="view_employees">
+                    <EmployeesNew />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/users" element={
+                  <ProtectedRoute requiredPermission="manage_users" allowedRoles={['director']}>
+                    <UserManagement />
+                  </ProtectedRoute>
+                } />
+                
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
