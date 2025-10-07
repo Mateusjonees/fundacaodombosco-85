@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useCustomPermissions, PERMISSION_LABELS, PERMISSION_CATEGORIES, type PermissionAction } from '@/hooks/useCustomPermissions';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CreateEmployeeForm } from '@/components/CreateEmployeeForm';
@@ -62,14 +63,29 @@ interface UserPermissionOverride {
   expires_at?: string;
 }
 
+interface AuditLog {
+  id: string;
+  user_id: string;
+  entity_type: string;
+  entity_id?: string;
+  action: string;
+  old_data?: any;
+  new_data?: any;
+  metadata?: any;
+  created_at: string;
+  user_name?: string;
+}
+
 export default function UserManagement() {
   const { toast } = useToast();
   const { hasPermission } = useCustomPermissions();
   const rolePermissions = useRolePermissions();
+  const { logAction } = useAuditLog();
   const [users, setUsers] = useState<User[]>([]);
   const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userPermissions, setUserPermissions] = useState<UserPermissionOverride[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -108,7 +124,8 @@ export default function UserManagement() {
     setLoading(true);
     await Promise.all([
       loadUsers(),
-      loadJobPositions()
+      loadJobPositions(),
+      loadAuditLogs()
     ]);
     setLoading(false);
   };
@@ -159,6 +176,44 @@ export default function UserManagement() {
       setJobPositions(data || []);
     } catch (error) {
       console.error('Error loading job positions:', error);
+    }
+  };
+
+  const loadAuditLogs = async () => {
+    try {
+      console.log('📋 Carregando logs de auditoria...');
+      
+      const { data: logs, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      // Buscar nomes dos usuários
+      const userIds = [...new Set(logs?.map(log => log.user_id) || [])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', userIds);
+
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+
+      const logsWithNames = logs?.map(log => ({
+        ...log,
+        user_name: profilesMap.get(log.user_id) || 'Usuário desconhecido'
+      })) || [];
+
+      console.log('✅ Logs carregados:', logsWithNames.length);
+      setAuditLogs(logsWithNames);
+    } catch (error) {
+      console.error('❌ Erro ao carregar logs de auditoria:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar logs",
+        description: "Não foi possível carregar os logs de auditoria."
+      });
     }
   };
 
@@ -285,15 +340,29 @@ export default function UserManagement() {
 
       console.log('Permissão atualizada com sucesso:', data);
 
+      // Registrar no log de auditoria
+      await logAction({
+        entityType: 'user_permissions',
+        entityId: userId,
+        action: granted ? 'grant_permission' : 'revoke_permission',
+        newData: { permission, granted },
+        metadata: { 
+          permission_label: PERMISSION_LABELS[permission],
+          reason,
+          target_user_id: userId
+        }
+      });
+
       toast({
         title: "Permissão atualizada!",
         description: `Permissão "${PERMISSION_LABELS[permission]}" foi ${granted ? 'concedida' : 'revogada'} com sucesso.`
       });
 
-      // Recarregar permissões do usuário
+      // Recarregar permissões do usuário e logs
       if (selectedUser?.id === userId) {
         await loadUserPermissions(userId);
       }
+      await loadAuditLogs();
     } catch (error: any) {
       console.error('=== ERRO AO ATUALIZAR PERMISSÃO ===');
       console.error('Erro completo:', error);
@@ -589,13 +658,50 @@ export default function UserManagement() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Log de Auditoria
+                Log de Auditoria ({auditLogs.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
-                Logs de auditoria de permissões serão exibidos aqui.
-              </p>
+              {auditLogs.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhum log de auditoria encontrado.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data/Hora</TableHead>
+                      <TableHead>Usuário</TableHead>
+                      <TableHead>Ação</TableHead>
+                      <TableHead>Entidade</TableHead>
+                      <TableHead>Detalhes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {auditLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="text-sm">
+                          {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="font-medium">{log.user_name}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            log.action.includes('delete') ? 'destructive' :
+                            log.action.includes('create') ? 'default' :
+                            'secondary'
+                          }>
+                            {log.action}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{log.entity_type}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
+                          {log.metadata ? JSON.stringify(log.metadata).slice(0, 50) + '...' : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
