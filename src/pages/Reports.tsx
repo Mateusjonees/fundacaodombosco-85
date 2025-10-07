@@ -86,46 +86,26 @@ export default function Reports() {
   }, [user, userRole, roleLoading]);
 
   useEffect(() => {
-    // Se ainda está carregando roles, aguarde
-    if (roleLoading || customPermissions.loading) {
-      console.log('Still loading user role or custom permissions...');
+    if (roleLoading || customPermissions.loading) return;
+
+    const canAccessReports = userRole === 'director' || 
+                            userRole === 'coordinator_madre' || 
+                            userRole === 'coordinator_floresta' ||
+                            customPermissions.hasPermission('view_reports');
+    
+    if (!canAccessReports) {
+      toast({
+        variant: "destructive",
+        title: "Acesso Restrito",
+        description: "Você não tem permissão para acessar os relatórios."
+      });
       return;
     }
 
-  // Permitir acesso a diretores, coordenadores OU com permissão customizada
-  const canAccessReports = userRole === 'director' || 
-                          userRole === 'coordinator_madre' || 
-                          userRole === 'coordinator_floresta' ||
-                          customPermissions.hasPermission('view_reports');
-  
-  console.log('🔐 Verificação de acesso - Reports:', {
-    userRole,
-    hasCustomPermission: customPermissions.hasPermission('view_reports'),
-    canAccessReports
-  });
-  
-  if (!canAccessReports) {
-    console.log('No permission to view reports');
-    toast({
-      variant: "destructive",
-      title: "Acesso Restrito",
-      description: "Você não tem permissão para acessar os relatórios."
-    });
-    return;
-  }
+    if (coordinatorUnit && selectedUnit === 'all') {
+      setSelectedUnit(coordinatorUnit);
+    }
 
-  // Se for coordenador, aplicar filtro de unidade automaticamente
-  if (coordinatorUnit && selectedUnit === 'all') {
-    setSelectedUnit(coordinatorUnit);
-  }
-
-  console.log('Loading reports for user role:', userRole);
-  loadEmployees();
-  loadClients();
-  loadAttendanceReports();
-  loadEmployeeReports();
-    
-    console.log('Loading reports data...');
     loadEmployees();
     loadClients();
     loadAttendanceReports();
@@ -167,7 +147,6 @@ export default function Reports() {
         `)
         .order('start_time', { ascending: false });
 
-      // Aplicar filtros
       if (selectedEmployee !== 'all') {
         query = query.eq('employee_id', selectedEmployee);
       }
@@ -195,11 +174,10 @@ export default function Reports() {
         query = query.eq('attendance_type', sessionType);
       }
 
-      const { data, error } = await query.limit(200);
+      const { data, error } = await query.limit(100);
 
       if (error) throw error;
       
-      // Filtrar por unidade se for coordenador
       let filteredData = data || [];
       if (coordinatorUnit) {
         filteredData = filteredData.filter(report => 
@@ -211,20 +189,19 @@ export default function Reports() {
         );
       }
       
-      // Mapeamos os dados para incluir os nomes dos professionals
-      const reportsWithNames = await Promise.all(filteredData.map(async (report) => {
-        // Buscar nome do profissional
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('user_id', report.employee_id)
-          .single();
-        
-        return {
-          ...report,
-          profiles: { name: profileData?.name || report.professional_name || 'Nome não encontrado' },
-          clients: { name: report.patient_name || report.clients?.name }
-        };
+      // Buscar todos os profiles de uma vez
+      const employeeIds = [...new Set(filteredData.map(r => r.employee_id))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', employeeIds);
+      
+      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.name]) || []);
+      
+      const reportsWithNames = filteredData.map(report => ({
+        ...report,
+        profiles: { name: profilesMap.get(report.employee_id) || report.professional_name || 'Nome não encontrado' },
+        clients: { name: report.patient_name || report.clients?.name }
       }));
       
       setAttendanceReports(reportsWithNames);
@@ -269,7 +246,7 @@ export default function Reports() {
           clients!employee_reports_client_id_fkey(name, unit)
         `)
         .order('session_date', { ascending: false })
-        .limit(100);
+        .limit(50);
 
       if (selectedEmployee !== 'all') {
         query = query.eq('employee_id', selectedEmployee);
@@ -279,7 +256,6 @@ export default function Reports() {
 
       if (error) throw error;
       
-      // Filtrar por unidade se for coordenador
       let filteredData = data || [];
       if (coordinatorUnit) {
         filteredData = filteredData.filter(report => 
@@ -291,18 +267,18 @@ export default function Reports() {
         );
       }
       
-      // Buscar nomes dos profissionais para cada relatório
-      const reportsWithNames = await Promise.all(filteredData.map(async (report) => {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('user_id', report.employee_id)
-          .single();
-        
-        return {
-          ...report,
-          profiles: { name: profileData?.name || 'Nome não encontrado' }
-        };
+      // Buscar todos os profiles de uma vez
+      const employeeIds = [...new Set(filteredData.map(r => r.employee_id))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', employeeIds);
+      
+      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.name]) || []);
+      
+      const reportsWithNames = filteredData.map(report => ({
+        ...report,
+        profiles: { name: profilesMap.get(report.employee_id) || 'Nome não encontrado' }
       }));
       
       setEmployeeReports(reportsWithNames);
