@@ -164,15 +164,24 @@ export default function UserManagement() {
 
   const loadUserPermissions = async (userId: string) => {
     try {
+      console.log('Carregando permissões para usuário:', userId);
+      
       const { data, error } = await supabase
         .from('user_specific_permissions')
         .select('*')
         .eq('user_id', userId);
 
       if (error) throw error;
+      
+      console.log('Permissões carregadas:', data);
       setUserPermissions(data || []);
     } catch (error) {
       console.error('Error loading user permissions:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar permissões",
+        description: "Não foi possível carregar as permissões do usuário."
+      });
     }
   };
 
@@ -230,30 +239,62 @@ export default function UserManagement() {
 
   const updateUserPermission = async (userId: string, permission: PermissionAction, granted: boolean, reason: string = '') => {
     try {
-      const { error } = await supabase
+      // Primeiro, verificar se já existe uma permissão para este usuário/permissão
+      const { data: existing, error: checkError } = await supabase
         .from('user_specific_permissions')
-        .upsert([{
-          user_id: userId,
-          permission,
-          granted,
-          reason
-        }]);
+        .select('id')
+        .eq('user_id', userId)
+        .eq('permission', permission)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      let error;
+      
+      if (existing) {
+        // Atualizar permissão existente
+        const updateResult = await supabase
+          .from('user_specific_permissions')
+          .update({
+            granted,
+            reason,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+        
+        error = updateResult.error;
+      } else {
+        // Criar nova permissão
+        const insertResult = await supabase
+          .from('user_specific_permissions')
+          .insert([{
+            user_id: userId,
+            permission,
+            granted,
+            reason
+          }]);
+        
+        error = insertResult.error;
+      }
 
       if (error) throw error;
 
       toast({
         title: "Permissão atualizada!",
-        description: `Permissão foi ${granted ? 'concedida' : 'revogada'} com sucesso.`
+        description: `Permissão "${PERMISSION_LABELS[permission]}" foi ${granted ? 'concedida' : 'revogada'} com sucesso.`
       });
 
       if (selectedUser?.id === userId) {
         loadUserPermissions(userId);
       }
     } catch (error: any) {
+      console.error('Error updating permission:', error);
       toast({
         variant: "destructive",
         title: "Erro ao atualizar permissão",
-        description: error.message
+        description: error.message || "Não foi possível atualizar a permissão."
       });
     }
   };
