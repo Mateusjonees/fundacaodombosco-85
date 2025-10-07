@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { TimeClock } from '@/components/TimeClock';
 import { Users, Calendar, DollarSign, UserPlus } from 'lucide-react';
 
 interface DashboardStats {
@@ -151,22 +152,24 @@ export default function Dashboard() {
     <div className="space-y-6">
       <h2 className="text-3xl font-bold">Painel</h2>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Bem-vindo ao Sistema</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">
-            Olá, <strong>{currentUserProfile?.name || user?.email}</strong>! 
-            Você está conectado ao sistema da Fundação Dom Bosco como <strong>{currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}</strong>.
-          </p>
-          <p className="text-muted-foreground">
-            Use o menu lateral para acessar as diferentes funcionalidades do sistema.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Bem-vindo ao Sistema</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Olá, <strong>{currentUserProfile?.name || user?.email}</strong>! 
+                Você está conectado ao sistema da Fundação Dom Bosco como <strong>{currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}</strong>.
+              </p>
+              <p className="text-muted-foreground">
+                Use o menu lateral para acessar as diferentes funcionalidades do sistema.
+              </p>
+            </CardContent>
+          </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -232,6 +235,13 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
+          </div>
+        </div>
+
+        {/* Ponto Eletrônico */}
+        <div className="lg:col-span-1">
+          <TimeClock />
+        </div>
       </div>
     </div>
   );
