@@ -53,16 +53,21 @@ export function GlobalSearch() {
 
     setLoading(true);
     const allResults: SearchResult[] = [];
+    const searchTerm = `%${searchQuery}%`;
 
     try {
       // Buscar pacientes
-      const { data: clients } = await supabase
+      const { data: clients, error: clientsError } = await supabase
         .from('clients')
         .select('id, name, cpf, phone, email')
-        .or(`name.ilike.%${searchQuery}%,cpf.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
+        .ilike('name', searchTerm)
         .limit(5);
 
-      if (clients) {
+      if (clientsError) {
+        console.error('Erro ao buscar pacientes:', clientsError);
+      }
+
+      if (clients && clients.length > 0) {
         clients.forEach((client) => {
           allResults.push({
             id: client.id,
@@ -75,14 +80,18 @@ export function GlobalSearch() {
       }
 
       // Buscar funcionários
-      const { data: employees } = await supabase
+      const { data: employees, error: employeesError } = await supabase
         .from('profiles')
         .select('id, user_id, name, email, phone, employee_role')
         .not('employee_role', 'is', null)
-        .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
+        .ilike('name', searchTerm)
         .limit(5);
 
-      if (employees) {
+      if (employeesError) {
+        console.error('Erro ao buscar funcionários:', employeesError);
+      }
+
+      if (employees && employees.length > 0) {
         employees.forEach((emp) => {
           allResults.push({
             id: emp.id,
@@ -94,8 +103,8 @@ export function GlobalSearch() {
         });
       }
 
-      // Buscar agendamentos (apenas futuros ou de hoje)
-      const { data: schedules } = await supabase
+      // Buscar agendamentos
+      const { data: schedules, error: schedulesError } = await supabase
         .from('schedules')
         .select(`
           id,
@@ -104,12 +113,15 @@ export function GlobalSearch() {
           clients (name),
           profiles:employee_id (name)
         `)
-        .or(`title.ilike.%${searchQuery}%`)
-        .gte('start_time', new Date().toISOString())
-        .order('start_time', { ascending: true })
+        .ilike('title', searchTerm)
+        .order('start_time', { ascending: false })
         .limit(5);
 
-      if (schedules) {
+      if (schedulesError) {
+        console.error('Erro ao buscar agendamentos:', schedulesError);
+      }
+
+      if (schedules && schedules.length > 0) {
         schedules.forEach((schedule: any) => {
           const clientName = schedule.clients?.name || 'Cliente não informado';
           const profName = schedule.profiles?.name || 'Profissional não informado';
@@ -125,13 +137,17 @@ export function GlobalSearch() {
       }
 
       // Buscar itens de estoque
-      const { data: stockItems } = await supabase
+      const { data: stockItems, error: stockError } = await supabase
         .from('stock_items')
         .select('id, name, category, current_quantity, unit')
-        .or(`name.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`)
+        .ilike('name', searchTerm)
         .limit(5);
 
-      if (stockItems) {
+      if (stockError) {
+        console.error('Erro ao buscar estoque:', stockError);
+      }
+
+      if (stockItems && stockItems.length > 0) {
         stockItems.forEach((item) => {
           allResults.push({
             id: item.id,
@@ -144,6 +160,14 @@ export function GlobalSearch() {
       }
 
       setResults(allResults);
+
+      // Log para debug
+      if (allResults.length === 0) {
+        console.log('Nenhum resultado encontrado para:', searchQuery);
+      } else {
+        console.log(`Encontrados ${allResults.length} resultados para:`, searchQuery);
+      }
+
     } catch (error) {
       console.error('Erro ao buscar:', error);
       toast({
