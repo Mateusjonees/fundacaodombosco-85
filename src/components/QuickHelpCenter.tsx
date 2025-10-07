@@ -104,6 +104,9 @@ export const QuickHelpCenter = () => {
         side="bottom" 
         sideOffset={8}
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          e.preventDefault();
+        }}
       >
         <div className="border-b p-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
