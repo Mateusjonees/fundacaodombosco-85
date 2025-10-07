@@ -146,6 +146,7 @@ export const MainApp = () => {
                 </div>
                 
                 <div className="flex items-center gap-2 sm:gap-4">
+                  <QuickHelpCenter />
                   <GlobalSearch />
                   
                   <DropdownMenu>
@@ -184,8 +185,7 @@ export const MainApp = () => {
                         
                         <div className="px-2">
                           <p className="text-xs font-medium text-muted-foreground mb-2">Configurações</p>
-                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            <QuickHelpCenter />
+                          <div onClick={(e) => e.stopPropagation()}>
                             <ThemeToggle />
                           </div>
                         </div>

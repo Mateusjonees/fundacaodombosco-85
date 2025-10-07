@@ -93,9 +93,9 @@ export const QuickHelpCenter = () => {
   return (
     <Popover modal={false}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative w-full justify-start gap-2">
-          <HelpCircle className="h-4 w-4" />
-          <span>Ajuda Rápida</span>
+        <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-10 sm:w-10">
+          <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="sr-only">Ajuda Rápida</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent 
