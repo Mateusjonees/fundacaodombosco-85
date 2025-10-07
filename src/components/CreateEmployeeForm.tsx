@@ -22,6 +22,7 @@ interface CreateEmployeeFormProps {
     password?: string;
     employee_role?: EmployeeRole;
     unit?: string;
+    phone?: string;
   };
 }
 
@@ -78,7 +79,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
           email: prefilledData.email || '',
           password: prefilledData.password || '',
           employee_role: (prefilledData.employee_role || 'staff') as EmployeeRole,
-          phone: '',
+          phone: prefilledData.phone || '',
           department: '',
           unit: prefilledData.unit || '',
           job_position_id: ''
