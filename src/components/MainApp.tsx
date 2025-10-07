@@ -29,6 +29,7 @@ import MyPatients from '@/pages/MyPatients';
 import AttendanceValidation from '@/pages/AttendanceValidation';
 import EmployeesNew from '@/pages/EmployeesNew';
 import DirectMessages from '@/pages/DirectMessages';
+import EmployeeControl from '@/pages/EmployeeControl';
 import PendingAttendancesNotification from '@/components/PendingAttendancesNotification';
 import AppointmentNotifications from '@/components/AppointmentNotifications';
 
@@ -219,6 +220,12 @@ export const MainApp = () => {
                 <Route path="/employees-new" element={
                   <ProtectedRoute requiredPermission="view_employees">
                     <EmployeesNew />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/employee-control" element={
+                  <ProtectedRoute allowedRoles={['director']}>
+                    <EmployeeControl />
                   </ProtectedRoute>
                 } />
                 

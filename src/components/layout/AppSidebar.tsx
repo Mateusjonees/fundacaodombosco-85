@@ -195,6 +195,17 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     });
   }
 
+  // Controle de Funcionários - apenas diretores
+  if (permissions.isDirector()) {
+    items.push({ 
+      id: 'employee-control', 
+      title: 'Controle de Funcionários', 
+      url: '/employee-control', 
+      icon: 'UserCheck', 
+      order_index: 9.5
+    });
+  }
+
   // Usuários - apenas diretores
   if (permissions.canManageUsers?.()) {
     items.push({ 
