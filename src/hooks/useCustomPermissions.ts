@@ -87,11 +87,18 @@ export const useCustomPermissions = () => {
   const loadUserPermissions = async () => {
     if (!user) return;
 
+    console.log('🔄 Carregando permissões para usuário:', user.id);
+
     try {
       const { data, error } = await supabase
         .rpc('get_user_permissions', { user_uuid: user.id });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar permissões:', error);
+        throw error;
+      }
+      
+      console.log('📦 Dados brutos de permissões:', data);
       
       // Mapear dados para a interface correta
       const mappedPermissions: UserPermission[] = (data || []).map((item: any) => ({
@@ -100,9 +107,11 @@ export const useCustomPermissions = () => {
         source: item.source ?? 'system'
       }));
       
+      console.log('✅ Permissões mapeadas:', mappedPermissions);
+      
       setPermissions(mappedPermissions);
     } catch (error) {
-      console.error('Error loading user permissions:', error);
+      console.error('❌ Erro ao carregar permissões do usuário:', error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +119,9 @@ export const useCustomPermissions = () => {
 
   const hasPermission = (permission: PermissionAction): boolean => {
     const userPermission = permissions.find(p => p.permission === permission);
-    return userPermission?.granted === true;
+    const hasIt = userPermission?.granted === true;
+    console.log(`🔍 Verificando permissão "${permission}":`, hasIt ? '✅ TEM' : '❌ NÃO TEM', '| Total de permissões:', permissions.length);
+    return hasIt;
   };
 
   const hasAnyPermission = (permissionList: PermissionAction[]): boolean => {

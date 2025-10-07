@@ -2717,7 +2717,7 @@ export type Database = {
         }[]
       }
       get_user_permissions: {
-        Args: Record<PropertyKey, never> | { user_uuid: string }
+        Args: Record<PropertyKey, never> | { user_uuid?: string }
         Returns: {
           permission: Database["public"]["Enums"]["permission_type"]
         }[]
