@@ -138,7 +138,6 @@ export const MainApp = () => {
                   <GlobalSearch />
                   <QuickHelpCenter />
                   <AppointmentNotifications />
-                  <PendingAttendancesNotification />
                   <div className="text-right hidden lg:block">
                     <Badge variant="secondary" className="mb-1">
                       {currentUserProfile?.name || user?.email}
