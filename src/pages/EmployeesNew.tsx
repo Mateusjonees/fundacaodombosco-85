@@ -56,6 +56,7 @@ export default function EmployeesNew() {
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
+    cpf: '',
     password: '',
     employee_role: 'staff',
     phone: '',
@@ -146,7 +147,8 @@ export default function EmployeesNew() {
             employee_role: newEmployee.employee_role,
             phone: newEmployee.phone || null,
             department: newEmployee.department || null,
-            unit: newEmployee.unit === 'none' ? null : (newEmployee.unit || null)
+            unit: newEmployee.unit === 'none' ? null : (newEmployee.unit || null),
+            document_cpf: newEmployee.cpf || null
           }
         }
       });
@@ -289,6 +291,7 @@ export default function EmployeesNew() {
     setNewEmployee({
       name: '',
       email: '',
+      cpf: '',
       password: '',
       employee_role: 'staff',
       phone: '',
@@ -383,6 +386,16 @@ export default function EmployeesNew() {
                   value={newEmployee.email}
                   onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
                   placeholder="email@exemplo.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  value={newEmployee.cpf}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, cpf: e.target.value })}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
                 />
               </div>
               <div className="space-y-2">
