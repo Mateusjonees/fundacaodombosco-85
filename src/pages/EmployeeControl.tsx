@@ -22,6 +22,7 @@ import {
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { format, differenceInMinutes, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { EmployeeReportGenerator } from '@/components/EmployeeReportGenerator';
 
 interface EmployeeData {
   id: string;
@@ -383,9 +384,18 @@ export default function EmployeeControl() {
         {/* Detalhes do Funcionário */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>
-              {selectedEmployee ? selectedEmployee.name : 'Selecione um funcionário'}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                {selectedEmployee ? selectedEmployee.name : 'Selecione um funcionário'}
+              </CardTitle>
+              {selectedEmployee && (
+                <EmployeeReportGenerator 
+                  employee={selectedEmployee}
+                  attendances={attendances}
+                  timesheet={timesheet}
+                />
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {!selectedEmployee ? (
