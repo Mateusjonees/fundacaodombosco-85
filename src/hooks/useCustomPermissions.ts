@@ -85,9 +85,13 @@ export const useCustomPermissions = () => {
   }, [user]);
 
   const loadUserPermissions = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('⚠️ loadUserPermissions: Nenhum usuário logado');
+      return;
+    }
 
     console.log('🔄 Carregando permissões para usuário:', user.id);
+    console.log('📧 Email do usuário:', user.email);
 
     try {
       const { data, error } = await supabase
@@ -98,7 +102,8 @@ export const useCustomPermissions = () => {
         throw error;
       }
       
-      console.log('📦 Dados brutos de permissões:', data);
+      console.log('📦 Dados brutos de permissões recebidos:', data);
+      console.log('📊 Quantidade de permissões recebidas:', data?.length || 0);
       
       // Mapear dados para a interface correta
       const mappedPermissions: UserPermission[] = (data || []).map((item: any) => ({
@@ -109,12 +114,18 @@ export const useCustomPermissions = () => {
       
       console.log('✅ Permissões mapeadas:', mappedPermissions);
       console.log('📊 Total de permissões ativas:', mappedPermissions.filter(p => p.granted).length);
+      console.log('🎯 Permissões específicas:', {
+        view_contracts: mappedPermissions.find(p => p.permission === 'view_contracts'),
+        view_financial: mappedPermissions.find(p => p.permission === 'view_financial'),
+        view_clients: mappedPermissions.find(p => p.permission === 'view_clients')
+      });
       
       setPermissions(mappedPermissions);
     } catch (error) {
       console.error('❌ Erro ao carregar permissões do usuário:', error);
     } finally {
       setLoading(false);
+      console.log('✅ Loading finalizado');
     }
   };
 
