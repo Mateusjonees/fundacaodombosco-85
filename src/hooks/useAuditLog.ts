@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AuditLogData {
   entityType: string;
@@ -17,19 +18,33 @@ export const useAuditLog = () => {
     if (!user) return;
 
     try {
-      // For now, just log to console until audit_logs table is created
-      console.log('Audit Log:', {
+      console.log('📝 Salvando log de auditoria:', {
         user_id: user.id,
         entity_type: data.entityType,
         entity_id: data.entityId,
         action: data.action,
-        old_data: data.oldData,
-        new_data: data.newData,
-        metadata: data.metadata || {},
-        timestamp: new Date().toISOString(),
       });
+
+      const { error } = await supabase
+        .from('audit_logs')
+        .insert({
+          user_id: user.id,
+          entity_type: data.entityType,
+          entity_id: data.entityId || null,
+          action: data.action,
+          old_data: data.oldData || null,
+          new_data: data.newData || null,
+          metadata: data.metadata || {},
+        });
+
+      if (error) {
+        console.error('❌ Erro ao salvar log de auditoria:', error);
+        throw error;
+      }
+
+      console.log('✅ Log de auditoria salvo com sucesso');
     } catch (error) {
-      console.error('Unexpected error logging audit action:', error);
+      console.error('Erro inesperado ao registrar ação de auditoria:', error);
     }
   }, [user]);
 
