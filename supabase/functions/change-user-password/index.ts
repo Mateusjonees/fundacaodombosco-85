@@ -13,6 +13,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Change password request received');
+    
     // Create a Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -28,6 +30,7 @@ serve(async (req) => {
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header');
       return new Response(
         JSON.stringify({ error: 'No authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -39,22 +42,44 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
+      console.error('Invalid token:', authError);
       return new Response(
         JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('User authenticated:', user.id);
+
     // Check if the user is a director
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('employee_role')
+      .select('employee_role, is_active')
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile || profile.employee_role !== 'director') {
+    console.log('User profile:', profile);
+
+    if (profileError) {
+      console.error('Profile error:', profileError);
       return new Response(
-        JSON.stringify({ error: 'Insufficient permissions. Only directors can change passwords.' }),
+        JSON.stringify({ error: 'Could not verify user permissions' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!profile || !profile.is_active) {
+      console.error('User not active');
+      return new Response(
+        JSON.stringify({ error: 'User account is not active' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (profile.employee_role !== 'director') {
+      console.error('User is not director:', profile.employee_role);
+      return new Response(
+        JSON.stringify({ error: 'Apenas diretores podem alterar senhas de outros usuários.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -63,6 +88,7 @@ serve(async (req) => {
     const { userId, newPassword } = await req.json();
 
     if (!userId || !newPassword) {
+      console.error('Missing data:', { userId: !!userId, newPassword: !!newPassword });
       return new Response(
         JSON.stringify({ error: 'Missing userId or newPassword' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -70,11 +96,14 @@ serve(async (req) => {
     }
 
     if (newPassword.length < 6) {
+      console.error('Password too short');
       return new Response(
-        JSON.stringify({ error: 'Password must be at least 6 characters long' }),
+        JSON.stringify({ error: 'A senha deve ter pelo menos 6 caracteres.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Updating password for user:', userId);
 
     // Update the user's password using admin API
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
@@ -85,20 +114,25 @@ serve(async (req) => {
     if (error) {
       console.error('Error updating password:', error);
       return new Response(
-        JSON.stringify({ error: 'Failed to update password' }),
+        JSON.stringify({ error: 'Falha ao atualizar senha: ' + error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('Password updated successfully');
+
     return new Response(
-      JSON.stringify({ message: 'Password updated successfully' }),
+      JSON.stringify({ 
+        message: 'Senha atualizada com sucesso',
+        data: { user_id: data.user.id }
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Erro interno do servidor: ' + error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
