@@ -271,7 +271,7 @@ export default function DirectMessages() {
           recipient_id: selectedUser.user_id,
           subject: 'Mensagem Direta',
           message_body: newMessage.trim(),
-          message_type: 'direct',
+          message_type: 'general',
           priority: 'normal'
         })
         .select();
