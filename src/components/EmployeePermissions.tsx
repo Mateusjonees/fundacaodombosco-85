@@ -153,6 +153,7 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
       
       const role = profileData?.employee_role;
       setEmployeeRole(role || '');
+      console.log('🔍 Cargo do funcionário:', role);
 
       // Buscar permissões do cargo
       if (role) {
@@ -162,9 +163,15 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
           .eq('employee_role', role)
           .eq('granted', true);
 
-        if (rolePermsError) throw rolePermsError;
+        console.log('📋 Permissões do cargo encontradas:', rolePerms);
+        
+        if (rolePermsError) {
+          console.error('❌ Erro ao buscar permissões do cargo:', rolePermsError);
+          throw rolePermsError;
+        }
         
         const rolePermSet = new Set(rolePerms?.map(p => p.permission) || []);
+        console.log('✅ Set de permissões do cargo:', Array.from(rolePermSet));
         setRolePermissions(rolePermSet);
       }
 
@@ -174,6 +181,8 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
         .select('permission, granted')
         .eq('user_id', employeeId);
 
+      console.log('👤 Permissões personalizadas:', userPerms);
+      
       if (userPermsError) throw userPermsError;
       
       // Criar dois conjuntos: permissões concedidas e permissões bloqueadas
@@ -187,6 +196,9 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
           customBlocked.add(p.permission);
         }
       });
+      
+      console.log('✅ Permissões personalizadas concedidas:', Array.from(customGranted));
+      console.log('❌ Permissões bloqueadas:', Array.from(customBlocked));
       
       setGrantedPermissions(customGranted);
       setBlockedPermissions(customBlocked);
