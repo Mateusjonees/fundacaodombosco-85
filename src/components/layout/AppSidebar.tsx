@@ -38,6 +38,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
@@ -59,7 +60,7 @@ const iconMapping: Record<string, LucideIcon> = {
 };
 
 // Dynamic menu items based on role permissions
-const getMenuItemsForRole = (permissions: any) => {
+const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   const items = [];
   
   // Painel - sempre visível para usuários autenticados
@@ -72,7 +73,7 @@ const getMenuItemsForRole = (permissions: any) => {
   });
 
   // Pacientes - baseado em permissões
-  if (permissions.canViewAllClients() || permissions.isProfessional()) {
+  if (permissions.canViewAllClients() || permissions.isProfessional() || customPermissions.hasPermission('view_clients')) {
     items.push({ 
       id: 'clients', 
       title: 'Pacientes',
@@ -105,7 +106,7 @@ const getMenuItemsForRole = (permissions: any) => {
   }
 
   // Agenda - baseado em permissões
-  if (permissions.canViewAllSchedules() || permissions.isProfessional()) {
+  if (permissions.canViewAllSchedules() || permissions.isProfessional() || customPermissions.hasPermission('view_schedules')) {
     items.push({ 
       id: 'schedule', 
       title: 'Agenda', 
@@ -126,8 +127,8 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
-  // Financeiro - apenas diretor e financeiro
-  if (permissions.canAccessFinancial()) {
+  // Financeiro - apenas diretor e financeiro OU com permissão customizada
+  if (permissions.canAccessFinancial() || customPermissions.hasPermission('view_financial')) {
     items.push({ 
       id: 'financial', 
       title: 'Financeiro', 
@@ -137,8 +138,8 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
-  // Contratos - apenas diretores e coordenadores do Floresta
-  if (permissions.userRole === 'director' || permissions.userRole === 'coordinator_floresta') {
+  // Contratos - diretores, coordenadores do Floresta OU com permissão customizada
+  if (permissions.userRole === 'director' || permissions.userRole === 'coordinator_floresta' || customPermissions.hasPermission('view_contracts')) {
     items.push({ 
       id: 'contracts', 
       title: 'Contratos - Floresta', 
@@ -148,8 +149,8 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
-  // Estoque - apenas diretor e financeiro
-  if (permissions.canManageStock()) {
+  // Estoque - apenas diretor e financeiro OU com permissão customizada
+  if (permissions.canManageStock() || customPermissions.hasPermission('view_stock')) {
     items.push({ 
       id: 'stock', 
       title: 'Estoque', 
@@ -159,8 +160,8 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
-  // Relatórios - coordenadores e diretores
-  if (permissions.canViewReports()) {
+  // Relatórios - coordenadores e diretores OU com permissão customizada
+  if (permissions.canViewReports() || customPermissions.hasPermission('view_reports')) {
     items.push({ 
       id: 'reports', 
       title: 'Relatórios', 
@@ -170,8 +171,8 @@ const getMenuItemsForRole = (permissions: any) => {
     });
   }
 
-  // Funcionários - coordenadores e diretores
-  if (permissions.canManageEmployees()) {
+  // Funcionários - coordenadores e diretores OU com permissão customizada
+  if (permissions.canManageEmployees() || customPermissions.hasPermission('view_employees')) {
     items.push({ 
       id: 'employees', 
       title: 'Funcionários', 
@@ -210,16 +211,21 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = useRolePermissions();
+  const customPermissions = useCustomPermissions();
   const currentPath = location.pathname;
   const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
 
   // Load navigation items based on permissions
   useEffect(() => {
-    if (!permissions.loading) {
-      const items = getMenuItemsForRole(permissions);
+    if (!permissions.loading && !customPermissions.loading) {
+      console.log('Atualizando menu com permissões:', {
+        rolePermissions: permissions.userRole,
+        customPermissions: customPermissions.permissions
+      });
+      const items = getMenuItemsForRole(permissions, customPermissions);
       setNavigationItems(items);
     }
-  }, [permissions.loading, permissions.userRole]);
+  }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions]);
 
   const isActive = (path: string) => {
     if (path === '/') {
