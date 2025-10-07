@@ -239,7 +239,31 @@ export default function UserManagement() {
 
   const updateUserPermission = async (userId: string, permission: PermissionAction, granted: boolean, reason: string = '') => {
     try {
-      console.log('Atualizando permissão:', { userId, permission, granted });
+      console.log('=== INICIANDO ATUALIZAÇÃO DE PERMISSÃO ===');
+      console.log('Dados:', { userId, permission, granted, reason });
+      
+      // Verificar se o usuário atual é diretor
+      const { data: currentUser } = await supabase.auth.getUser();
+      console.log('Usuário autenticado:', currentUser.user?.id);
+      
+      const { data: currentUserProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('employee_role, is_active, name')
+        .eq('user_id', currentUser.user?.id)
+        .single();
+      
+      console.log('Perfil do usuário atual:', currentUserProfile);
+      
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
+        throw new Error('Erro ao verificar permissões: ' + profileError.message);
+      }
+
+      if (!currentUserProfile || currentUserProfile.employee_role !== 'director') {
+        throw new Error('Apenas diretores podem gerenciar permissões');
+      }
+
+      console.log('Fazendo upsert na tabela user_specific_permissions...');
       
       const { data, error } = await supabase
         .from('user_specific_permissions')
@@ -247,16 +271,19 @@ export default function UserManagement() {
           user_id: userId,
           permission,
           granted,
-          reason,
+          reason: reason || null,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id,permission'
         })
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro no upsert:', error);
+        throw error;
+      }
 
-      console.log('Permissão atualizada:', data);
+      console.log('Permissão atualizada com sucesso:', data);
 
       toast({
         title: "Permissão atualizada!",
@@ -268,7 +295,8 @@ export default function UserManagement() {
         await loadUserPermissions(userId);
       }
     } catch (error: any) {
-      console.error('Error updating permission:', error);
+      console.error('=== ERRO AO ATUALIZAR PERMISSÃO ===');
+      console.error('Erro completo:', error);
       toast({
         variant: "destructive",
         title: "Erro ao atualizar permissão",
