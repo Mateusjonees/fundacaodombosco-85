@@ -262,9 +262,13 @@ export function GlobalSearch() {
           onValueChange={setQuery}
         />
         <CommandList>
-          <CommandEmpty>
-            {loading ? 'Buscando...' : 'Nenhum resultado encontrado.'}
-          </CommandEmpty>
+          {loading ? (
+            <CommandEmpty>Buscando...</CommandEmpty>
+          ) : results.length === 0 && query.length >= 2 ? (
+            <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+          ) : results.length === 0 ? (
+            <CommandEmpty>Digite pelo menos 2 caracteres para buscar...</CommandEmpty>
+          ) : null}
 
           {Object.entries(groupedResults).map(([type, items], index) => (
             <div key={type}>
@@ -273,17 +277,20 @@ export function GlobalSearch() {
                 {items.map((result) => (
                   <CommandItem
                     key={result.id}
+                    value={result.id}
                     onSelect={() => handleSelect(result)}
                     className="cursor-pointer"
                   >
-                    {getIcon(result.type)}
-                    <div className="flex flex-col">
-                      <span>{result.title}</span>
-                      {result.subtitle && (
-                        <span className="text-xs text-muted-foreground">
-                          {result.subtitle}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2 w-full">
+                      {getIcon(result.type)}
+                      <div className="flex flex-col flex-1">
+                        <span className="font-medium">{result.title}</span>
+                        {result.subtitle && (
+                          <span className="text-xs text-muted-foreground">
+                            {result.subtitle}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </CommandItem>
                 ))}
