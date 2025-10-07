@@ -2575,6 +2575,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_director_user: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       create_payment_installments: {
         Args: {
           p_client_payment_id: string
