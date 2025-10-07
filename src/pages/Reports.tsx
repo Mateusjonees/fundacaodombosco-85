@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -66,6 +67,7 @@ export default function Reports() {
     userRole, 
     loading: roleLoading 
   } = useRolePermissions();
+  const customPermissions = useCustomPermissions();
   const { toast } = useToast();
 
   // Determinar a unidade do coordenador
@@ -85,15 +87,22 @@ export default function Reports() {
 
   useEffect(() => {
     // Se ainda está carregando roles, aguarde
-    if (roleLoading) {
-      console.log('Still loading user role...');
+    if (roleLoading || customPermissions.loading) {
+      console.log('Still loading user role or custom permissions...');
       return;
     }
 
-  // Permitir acesso a diretores e coordenadores
+  // Permitir acesso a diretores, coordenadores OU com permissão customizada
   const canAccessReports = userRole === 'director' || 
                           userRole === 'coordinator_madre' || 
-                          userRole === 'coordinator_floresta';
+                          userRole === 'coordinator_floresta' ||
+                          customPermissions.hasPermission('view_reports');
+  
+  console.log('🔐 Verificação de acesso - Reports:', {
+    userRole,
+    hasCustomPermission: customPermissions.hasPermission('view_reports'),
+    canAccessReports
+  });
   
   if (!canAccessReports) {
     console.log('No permission to view reports');

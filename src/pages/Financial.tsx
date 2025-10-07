@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, Shield, Edit2, Trash2 } from 'lucide-react';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { EditFinancialRecordDialog } from '@/components/EditFinancialRecordDialog';
 
 interface FinancialRecord {
@@ -55,6 +56,7 @@ export default function Financial() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { userRole, loading: roleLoading } = useRolePermissions();
+  const customPermissions = useCustomPermissions();
 
   const [newRecord, setNewRecord] = useState({
     type: 'income',
@@ -73,10 +75,20 @@ export default function Financial() {
   });
 
   useEffect(() => {
-    if (roleLoading) return;
+    if (roleLoading || customPermissions.loading) return;
     
-    // Apenas diretores podem acessar financeiro
-    if (userRole !== 'director') {
+    // Verificar permissão: diretor, financeiro OU permissão customizada
+    const hasAccess = userRole === 'director' || 
+                      userRole === 'financeiro' || 
+                      customPermissions.hasPermission('view_financial');
+    
+    console.log('🔐 Verificação de acesso - Financial:', {
+      userRole,
+      hasCustomPermission: customPermissions.hasPermission('view_financial'),
+      hasAccess
+    });
+    
+    if (!hasAccess) {
       toast({
         variant: "destructive",
         title: "Acesso Restrito",

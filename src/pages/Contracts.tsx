@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -50,6 +51,7 @@ export default function Contracts() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { userRole, loading: roleLoading } = useRolePermissions();
+  const customPermissions = useCustomPermissions();
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -74,10 +76,20 @@ export default function Contracts() {
   });
 
   useEffect(() => {
-    if (roleLoading) return;
+    if (roleLoading || customPermissions.loading) return;
     
-    // Apenas diretores e coordenadores do Floresta podem acessar contratos
-    if (userRole !== 'director' && userRole !== 'coordinator_floresta') {
+    // Verificar permissão: diretor, coordenador floresta OU permissão customizada
+    const hasAccess = userRole === 'director' || 
+                      userRole === 'coordinator_floresta' || 
+                      customPermissions.hasPermission('view_contracts');
+    
+    console.log('🔐 Verificação de acesso - Contracts:', {
+      userRole,
+      hasCustomPermission: customPermissions.hasPermission('view_contracts'),
+      hasAccess
+    });
+    
+    if (!hasAccess) {
       toast({
         variant: "destructive",
         title: "Acesso Restrito",

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { Search, Users, Power, UserCheck, UserX, Plus, Edit, Eye, EyeOff } from 'lucide-react';
 
 interface Employee {
@@ -44,6 +45,7 @@ const roleNames: Record<string, string> = {
 
 export default function EmployeesNew() {
   const permissions = useRolePermissions();
+  const customPermissions = useCustomPermissions();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,6 +63,31 @@ export default function EmployeesNew() {
     unit: ''
   });
   const { toast } = useToast();
+
+  // Verificar acesso
+  useEffect(() => {
+    if (permissions.loading || customPermissions.loading) return;
+    
+    const hasAccess = permissions.userRole === 'director' || 
+                      permissions.userRole === 'coordinator_madre' ||
+                      permissions.userRole === 'coordinator_floresta' ||
+                      customPermissions.hasPermission('view_employees');
+    
+    console.log('🔐 Verificação de acesso - Employees:', {
+      userRole: permissions.userRole,
+      hasCustomPermission: customPermissions.hasPermission('view_employees'),
+      hasAccess
+    });
+    
+    if (!hasAccess) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Você não tem permissão para visualizar funcionários.",
+      });
+      window.history.back();
+    }
+  }, [permissions.loading, customPermissions.loading, permissions.userRole]);
 
   useEffect(() => {
     loadEmployees();

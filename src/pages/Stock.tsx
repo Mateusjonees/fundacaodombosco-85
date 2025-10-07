@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { Package, Plus, AlertTriangle, TrendingUp, TrendingDown, ArrowLeftRight, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -47,6 +49,34 @@ export default function Stock() {
   const [isImporting, setIsImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+  const { userRole, loading: roleLoading } = useRolePermissions();
+  const customPermissions = useCustomPermissions();
+
+  // Verificar acesso ao estoque
+  useEffect(() => {
+    if (roleLoading || customPermissions.loading) return;
+    
+    const hasAccess = userRole === 'director' || 
+                      userRole === 'financeiro' ||
+                      userRole === 'coordinator_madre' ||
+                      userRole === 'coordinator_floresta' ||
+                      customPermissions.hasPermission('view_stock');
+    
+    console.log('🔐 Verificação de acesso - Stock:', {
+      userRole,
+      hasCustomPermission: customPermissions.hasPermission('view_stock'),
+      hasAccess
+    });
+    
+    if (!hasAccess) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Você não tem permissão para acessar o estoque.",
+      });
+      window.history.back();
+    }
+  }, [roleLoading, customPermissions.loading, userRole]);
 
   useEffect(() => {
     loadStockItems();

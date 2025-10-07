@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload, Database, FileDown, FileText } from 'lucide-react';
 import ClientDetailsView from '@/components/ClientDetailsView';
@@ -51,6 +52,7 @@ interface UserProfile {
 export default function Patients() {
   const { user } = useAuth();
   const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
+  const customPermissions = useCustomPermissions();
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [clientAssignments, setClientAssignments] = useState<any[]>([]);
