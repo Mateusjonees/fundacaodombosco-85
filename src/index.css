@@ -105,6 +105,14 @@
     --warning: 45 85% 65%;
     --info: 203 79% 50%;
     
+    /* Login specific colors - Dark Mode */
+    --login-bg-start: 210 30% 10%;
+    --login-bg-end: 203 30% 15%;
+    --login-form-bg: 210 25% 12%;
+    --login-text: 210 15% 95%;
+    --login-input-border: 210 20% 22%;
+    --login-input-focus: 203 79% 50%;
+    
     /* Dark mode gradients */
     --gradient-primary: linear-gradient(135deg, hsl(203 79% 50%), hsl(203 70% 60%));
     --gradient-secondary: linear-gradient(135deg, hsl(112 42% 60%), hsl(112 50% 70%));

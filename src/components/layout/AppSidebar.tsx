@@ -41,6 +41,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
@@ -362,9 +363,12 @@ export function AppSidebar() {
         </SidebarGroup>
         
         {/* Logout Section */}
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupContent>
+        <SidebarGroup className="mt-auto border-t">
+          <SidebarGroupContent className="space-y-1 py-2">
             <SidebarMenu>
+              <SidebarMenuItem>
+                <ThemeToggle collapsed={collapsed} />
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button 
