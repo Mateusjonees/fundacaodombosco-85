@@ -108,6 +108,7 @@ export const useCustomPermissions = () => {
       }));
       
       console.log('✅ Permissões mapeadas:', mappedPermissions);
+      console.log('📊 Total de permissões ativas:', mappedPermissions.filter(p => p.granted).length);
       
       setPermissions(mappedPermissions);
     } catch (error) {

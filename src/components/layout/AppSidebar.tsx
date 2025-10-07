@@ -139,7 +139,16 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   }
 
   // Contratos - diretores, coordenadores do Floresta OU com permissão customizada
-  if (permissions.userRole === 'director' || permissions.userRole === 'coordinator_floresta' || customPermissions.hasPermission('view_contracts')) {
+  const hasContractsPermission = customPermissions.hasPermission('view_contracts');
+  console.log('🔍 Verificando acesso a Contratos:', {
+    isDirector: permissions.userRole === 'director',
+    isCoordinatorFloresta: permissions.userRole === 'coordinator_floresta',
+    hasCustomPermission: hasContractsPermission,
+    userRole: permissions.userRole
+  });
+  
+  if (permissions.userRole === 'director' || permissions.userRole === 'coordinator_floresta' || hasContractsPermission) {
+    console.log('✅ LIBERADO: Adicionando menu Contratos');
     items.push({ 
       id: 'contracts', 
       title: 'Contratos - Floresta', 
@@ -147,6 +156,8 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       icon: 'FolderOpen', 
       order_index: 6 
     });
+  } else {
+    console.log('❌ BLOQUEADO: Não adicionando menu Contratos');
   }
 
   // Estoque - apenas diretor e financeiro OU com permissão customizada
