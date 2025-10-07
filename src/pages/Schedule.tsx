@@ -61,10 +61,11 @@ export default function Schedule() {
 
   // Verificar se o usuário tem permissões administrativas
   const [userProfile, setUserProfile] = useState<any>(null);
-  const isAdmin = userProfile?.employee_role === 'director' || 
-                  userProfile?.employee_role === 'coordinator_madre' || 
-                  userProfile?.employee_role === 'coordinator_floresta' ||
-                  userProfile?.employee_role === 'receptionist';
+  const userRole = userProfile?.employee_role;
+  const isAdmin = userRole === 'director' || 
+                  userRole === 'coordinator_madre' || 
+                  userRole === 'coordinator_floresta' ||
+                  userRole === 'receptionist';
 
   console.log('User profile:', userProfile); // Debug log
 
@@ -269,11 +270,24 @@ export default function Schedule() {
           if (clientIds.length > 0) {
             query = query.in('client_id', clientIds);
           }
-        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
+        } else if (userProfile.employee_role === 'receptionist') {
+          // Recepcionista vê agendamentos apenas da sua unidade
+          const userUnit = userProfile.unit || 'madre';
+          const { data: clientsInUnit } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('unit', userUnit)
+            .eq('is_active', true);
+          
+          const clientIds = clientsInUnit?.map(c => c.id) || [];
+          if (clientIds.length > 0) {
+            query = query.in('client_id', clientIds);
+          }
+        } else if (userProfile.employee_role !== 'director') {
           // Para outros profissionais, mostrar apenas seus próprios agendamentos
           query = query.eq('employee_id', userProfile.id);
         }
-        // Diretores e recepcionistas veem todos os agendamentos (sem filtro adicional)
+        // Diretores veem todos os agendamentos (sem filtro adicional)
       }
 
             // Filtros adicionais para administradores
@@ -674,24 +688,28 @@ export default function Schedule() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="filterRole">Função</Label>
-                    <Select value={filterRole} onValueChange={setFilterRole}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todas as funções" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as funções</SelectItem>
-                        <SelectItem value="psychologist">Psicólogos</SelectItem>
-                        <SelectItem value="speech_therapist">Fonoaudiólogos</SelectItem>
-                        <SelectItem value="psychopedagogue">Psicopedagogos</SelectItem>
-                        <SelectItem value="nutritionist">Nutricionistas</SelectItem>
-                        <SelectItem value="physiotherapist">Fisioterapeutas</SelectItem>
-                        <SelectItem value="musictherapist">Musicoterapeutas</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Filtro de Função - Apenas para Diretores */}
+                  {userRole === 'director' && (
+                    <div>
+                      <Label htmlFor="filterRole">Função</Label>
+                      <Select value={filterRole} onValueChange={setFilterRole}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todas as funções" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as funções</SelectItem>
+                          <SelectItem value="psychologist">Psicólogos</SelectItem>
+                          <SelectItem value="speech_therapist">Fonoaudiólogos</SelectItem>
+                          <SelectItem value="occupational_therapist">Terapeutas Ocupacionais</SelectItem>
+                          <SelectItem value="physiotherapist">Fisioterapeutas</SelectItem>
+                          <SelectItem value="nutritionist">Nutricionistas</SelectItem>
+                          <SelectItem value="neuropsychologist">Neuropsicólogos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
+                  {/* Filtro de Funcionário */}
                   <div>
                     <Label htmlFor="filterEmployee">Profissional</Label>
                     <Select value={filterEmployee} onValueChange={setFilterEmployee}>
@@ -700,28 +718,43 @@ export default function Schedule() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos os profissionais</SelectItem>
-                        {employees.map((employee) => (
-                          <SelectItem key={employee.user_id} value={employee.user_id}>
-                            {employee.name}
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.user_id} value={emp.user_id}>
+                            {emp.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div>
-                    <Label htmlFor="filterUnit">Unidade</Label>
-                    <Select value={filterUnit} onValueChange={setFilterUnit}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todas as unidades" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as unidades</SelectItem>
-                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Filtro de Unidade - Apenas para Diretores */}
+                  {userRole === 'director' && (
+                    <div>
+                      <Label htmlFor="filterUnit">Unidade</Label>
+                      <Select value={filterUnit} onValueChange={setFilterUnit}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todas as unidades" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as unidades</SelectItem>
+                          <SelectItem value="madre">MADRE</SelectItem>
+                          <SelectItem value="floresta">FLORESTA</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Info da unidade atual para Coordenadores e Recepcionistas */}
+                  {(userRole === 'coordinator_madre' || userRole === 'coordinator_floresta' || userRole === 'receptionist') && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm font-medium">Unidade Atual:</p>
+                      <p className="text-lg font-bold">
+                        {userRole === 'coordinator_madre' ? 'MADRE' : 
+                         userRole === 'coordinator_floresta' ? 'FLORESTA' : 
+                         userProfile?.unit === 'madre' ? 'MADRE' : 'FLORESTA'}
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -733,7 +766,7 @@ export default function Schedule() {
           <div className="space-y-6">
             {/* Lista de Agendamentos */}
             <Card>
-              <CardHeader>
+               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
                   Agenda do Dia - {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
