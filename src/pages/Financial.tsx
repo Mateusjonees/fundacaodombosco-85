@@ -16,6 +16,10 @@ import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download,
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { EditFinancialRecordDialog } from '@/components/EditFinancialRecordDialog';
+import { FinancialProjection } from '@/components/FinancialProjection';
+import { DefaultManagementPanel } from '@/components/DefaultManagementPanel';
+import { CostCenterAnalysis } from '@/components/CostCenterAnalysis';
+import { PaymentReceiptGenerator } from '@/components/PaymentReceiptGenerator';
 
 interface FinancialRecord {
   id: string;
@@ -718,12 +722,15 @@ export default function Financial() {
       </Card>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-8 lg:grid-cols-8">
           <TabsTrigger value="all">Todas</TabsTrigger>
           <TabsTrigger value="income">Receitas</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
           <TabsTrigger value="pending">A Receber</TabsTrigger>
-          <TabsTrigger value="notes">Notas Diárias</TabsTrigger>
+          <TabsTrigger value="notes">Notas</TabsTrigger>
+          <TabsTrigger value="projection">Projeção</TabsTrigger>
+          <TabsTrigger value="default">Inadimplência</TabsTrigger>
+          <TabsTrigger value="costcenter">Centro Custo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
@@ -775,9 +782,9 @@ export default function Financial() {
                         <TableCell className="max-w-xs truncate">
                           {record.description || '-'}
                         </TableCell>
-                        <TableCell className={record.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                          {record.type === 'income' ? '+' : '-'} R$ {record.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </TableCell>
+                         <TableCell className={record.type === 'income' ? 'text-green-600' : 'text-red-600'}>
+                           {record.type === 'income' ? '+' : '-'} R$ {record.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                         </TableCell>
                          <TableCell>
                            <Badge variant="outline">
                              {record.payment_method}
@@ -785,6 +792,19 @@ export default function Financial() {
                          </TableCell>
                          <TableCell>
                            <div className="flex items-center gap-2">
+                             {record.type === 'income' && (
+                               <PaymentReceiptGenerator 
+                                 payment={{
+                                   id: record.id,
+                                   amount: record.amount,
+                                   date: record.date,
+                                   description: record.description || '',
+                                   payment_method: record.payment_method || 'cash',
+                                   client_name: record.clients?.name
+                                 }}
+                                 variant="icon"
+                               />
+                             )}
                              <Button
                                variant="ghost"
                                size="sm"
@@ -1124,6 +1144,18 @@ export default function Financial() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="projection">
+          <FinancialProjection />
+        </TabsContent>
+
+        <TabsContent value="default">
+          <DefaultManagementPanel />
+        </TabsContent>
+
+        <TabsContent value="costcenter">
+          <CostCenterAnalysis />
         </TabsContent>
       </Tabs>
 
