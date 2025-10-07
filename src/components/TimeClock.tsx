@@ -82,15 +82,15 @@ export function TimeClock() {
   const handleClockIn = async () => {
     try {
       setLoading(true);
-      const now = new Date().toISOString();
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const now = new Date();
+      const today = format(now, 'yyyy-MM-dd');
 
       const { data, error } = await supabase
         .from('employee_timesheet')
         .insert({
           employee_id: user?.id,
           date: today,
-          clock_in: now,
+          clock_in: now.toISOString(),
           status: 'pending'
         })
         .select()
@@ -101,7 +101,7 @@ export function TimeClock() {
       setCurrentEntry(data);
       toast({
         title: "Entrada registrada",
-        description: `Ponto batido às ${format(new Date(now), 'HH:mm:ss')}`,
+        description: `Ponto batido às ${format(now, 'HH:mm:ss')}`,
       });
     } catch (error: any) {
       console.error('Erro ao bater ponto:', error);
@@ -120,16 +120,16 @@ export function TimeClock() {
 
     try {
       setLoading(true);
-      const now = new Date().toISOString();
+      const now = new Date();
       const totalHours = calculateTotalHours({
         ...currentEntry,
-        clock_out: now
+        clock_out: now.toISOString()
       });
 
       const { error } = await supabase
         .from('employee_timesheet')
         .update({
-          clock_out: now,
+          clock_out: now.toISOString(),
           total_hours: totalHours
         })
         .eq('id', currentEntry.id);
@@ -139,7 +139,7 @@ export function TimeClock() {
       await loadTodayEntry();
       toast({
         title: "Saída registrada",
-        description: `Ponto batido às ${format(new Date(now), 'HH:mm:ss')}. Total: ${totalHours.toFixed(2)}h`,
+        description: `Ponto batido às ${format(now, 'HH:mm:ss')}. Total: ${totalHours.toFixed(2)}h`,
       });
     } catch (error: any) {
       console.error('Erro ao registrar saída:', error);
@@ -158,12 +158,12 @@ export function TimeClock() {
 
     try {
       setLoading(true);
-      const now = new Date().toISOString();
+      const now = new Date();
 
       const { error } = await supabase
         .from('employee_timesheet')
         .update({
-          break_start: now
+          break_start: now.toISOString()
         })
         .eq('id', currentEntry.id);
 
@@ -172,7 +172,7 @@ export function TimeClock() {
       await loadTodayEntry();
       toast({
         title: "Pausa iniciada",
-        description: `Início da pausa às ${format(new Date(now), 'HH:mm:ss')}`,
+        description: `Início da pausa às ${format(now, 'HH:mm:ss')}`,
       });
     } catch (error: any) {
       console.error('Erro ao iniciar pausa:', error);
@@ -191,12 +191,12 @@ export function TimeClock() {
 
     try {
       setLoading(true);
-      const now = new Date().toISOString();
+      const now = new Date();
 
       const { error } = await supabase
         .from('employee_timesheet')
         .update({
-          break_end: now
+          break_end: now.toISOString()
         })
         .eq('id', currentEntry.id);
 
@@ -205,7 +205,7 @@ export function TimeClock() {
       await loadTodayEntry();
       toast({
         title: "Pausa finalizada",
-        description: `Fim da pausa às ${format(new Date(now), 'HH:mm:ss')}`,
+        description: `Fim da pausa às ${format(now, 'HH:mm:ss')}`,
       });
     } catch (error: any) {
       console.error('Erro ao finalizar pausa:', error);
