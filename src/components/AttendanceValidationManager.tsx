@@ -225,33 +225,33 @@ export default function AttendanceValidationManager() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Validação de Atendimentos</h1>
-          <p className="text-muted-foreground">
-            Atendimentos aguardando validação para serem processados no sistema
+          <h1 className="text-xl sm:text-2xl font-bold">Validação de Atendimentos</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Atendimentos aguardando validação
           </p>
         </div>
-        <Badge variant="secondary" className="text-lg px-3 py-1">
+        <Badge variant="secondary" className="text-base sm:text-lg px-3 py-1 w-fit">
           {pendingAttendances.length} pendente{pendingAttendances.length !== 1 ? 's' : ''}
         </Badge>
       </div>
 
       {/* Filtros */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+        <CardHeader className="p-4">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
             Filtros
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="p-4 pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <Label htmlFor="unit-filter">Unidade</Label>
+              <Label htmlFor="unit-filter" className="text-sm">Unidade</Label>
               <Select value={unitFilter} onValueChange={setUnitFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Selecione uma unidade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -262,21 +262,23 @@ export default function AttendanceValidationManager() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="employee-filter">Funcionário</Label>
-              <Combobox
-                options={[
-                  { value: "all", label: "Todos os funcionários" },
-                  ...employees.map((employee) => ({
-                    value: employee.user_id,
-                    label: employee.name
-                  }))
-                ]}
-                value={employeeFilter}
-                onValueChange={setEmployeeFilter}
-                placeholder="Buscar funcionário..."
-                searchPlaceholder="Digite o nome do funcionário..."
-                emptyMessage="Nenhum funcionário encontrado."
-              />
+              <Label htmlFor="employee-filter" className="text-sm">Funcionário</Label>
+              <div className="mt-1">
+                <Combobox
+                  options={[
+                    { value: "all", label: "Todos os funcionários" },
+                    ...employees.map((employee) => ({
+                      value: employee.user_id,
+                      label: employee.name
+                    }))
+                  ]}
+                  value={employeeFilter}
+                  onValueChange={setEmployeeFilter}
+                  placeholder="Buscar funcionário..."
+                  searchPlaceholder="Digite o nome do funcionário..."
+                  emptyMessage="Nenhum funcionário encontrado."
+                />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -293,69 +295,71 @@ export default function AttendanceValidationManager() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {pendingAttendances.map((attendance) => (
             <Card key={attendance.id} className="border-l-4 border-l-yellow-500">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    {attendance.patient_name}
+              <CardHeader className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="truncate">{attendance.patient_name}</span>
                   </CardTitle>
-                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 w-fit">
                     <Clock className="h-3 w-3 mr-1" />
                     Pendente
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                  <div>
-                    <Label className="font-medium">Profissional</Label>
-                    <p className="text-muted-foreground">{attendance.professional_name}</p>
+              <CardContent className="space-y-3 sm:space-y-4 p-4 pt-0">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 text-sm">
+                  <div className="col-span-2 sm:col-span-1">
+                    <Label className="font-medium text-xs sm:text-sm">Profissional</Label>
+                    <p className="text-muted-foreground text-xs sm:text-sm truncate">{attendance.professional_name}</p>
                   </div>
                   <div>
-                    <Label className="font-medium">Unidade</Label>
-                    <p className="text-muted-foreground">
+                    <Label className="font-medium text-xs sm:text-sm">Unidade</Label>
+                    <p className="text-muted-foreground text-xs sm:text-sm">
                       {attendance.unit === 'madre' ? 'Madre' : 'Floresta'}
                     </p>
                   </div>
                   <div>
-                    <Label className="font-medium">Tipo</Label>
-                    <p className="text-muted-foreground">{attendance.attendance_type}</p>
+                    <Label className="font-medium text-xs sm:text-sm">Tipo</Label>
+                    <p className="text-muted-foreground text-xs sm:text-sm truncate">{attendance.attendance_type}</p>
                   </div>
                   <div>
-                    <Label className="font-medium">Duração</Label>
-                    <p className="text-muted-foreground">{attendance.session_duration} min</p>
+                    <Label className="font-medium text-xs sm:text-sm">Duração</Label>
+                    <p className="text-muted-foreground text-xs sm:text-sm">{attendance.session_duration} min</p>
                   </div>
                   <div>
-                    <Label className="font-medium">Data/Hora</Label>
-                    <p className="text-muted-foreground">
+                    <Label className="font-medium text-xs sm:text-sm">Data/Hora</Label>
+                    <p className="text-muted-foreground text-xs sm:text-sm">
                       {formatDate(attendance.start_time)}
                     </p>
                   </div>
                 </div>
 
                 {attendance.materials_used && Array.isArray(attendance.materials_used) && attendance.materials_used.length > 0 && (
-                  <div>
-                    <Label className="font-medium flex items-center gap-1">
-                      <Package className="h-4 w-4" />
+                  <div className="bg-muted/30 p-3 rounded-md">
+                    <Label className="font-medium flex items-center gap-1 text-xs sm:text-sm">
+                      <Package className="h-3 w-3 sm:h-4 sm:w-4" />
                       Materiais ({Array.isArray(attendance.materials_used) ? attendance.materials_used.length : 0})
                     </Label>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Custo total: R$ {getTotalMaterialsCost(attendance.materials_used).toFixed(2)}
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => setSelectedAttendance(attendance)}
+                    className="w-full sm:w-auto"
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    Revisar
+                    <span className="hidden sm:inline">Revisar</span>
+                    <span className="sm:hidden">Ver Detalhes</span>
                   </Button>
                   <Button 
                     size="sm"
@@ -363,6 +367,7 @@ export default function AttendanceValidationManager() {
                       setSelectedAttendance(attendance);
                       setValidationAction('validate');
                     }}
+                    className="w-full sm:w-auto"
                   >
                     <Check className="h-4 w-4 mr-1" />
                     Validar
@@ -374,6 +379,7 @@ export default function AttendanceValidationManager() {
                       setSelectedAttendance(attendance);
                       setValidationAction('reject');
                     }}
+                    className="w-full sm:w-auto"
                   >
                     <X className="h-4 w-4 mr-1" />
                     Rejeitar

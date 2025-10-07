@@ -154,7 +154,7 @@ export const MainApp = () => {
                         <User className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-72 bg-background z-50 p-2">
+                    <DropdownMenuContent align="end" className="w-80 bg-background z-50 p-2">
                       <DropdownMenuLabel className="pb-3">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-semibold leading-none">
@@ -167,12 +167,27 @@ export const MainApp = () => {
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       
-                      <div className="py-2">
-                        <div className="px-2 py-2 flex items-center justify-end gap-3">
-                          <QuickHelpCenter />
-                          <AppointmentNotifications />
-                          <PendingAttendancesNotification />
-                          <ThemeToggle />
+                      <div className="py-2 space-y-2">
+                        <div className="px-2">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">Notificações</p>
+                          <div className="space-y-2">
+                            <div className="hover:bg-accent rounded-md transition-colors">
+                              <AppointmentNotifications />
+                            </div>
+                            <div className="hover:bg-accent rounded-md transition-colors">
+                              <PendingAttendancesNotification />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <DropdownMenuSeparator />
+                        
+                        <div className="px-2 flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-muted-foreground">Configurações</span>
+                          <div className="flex gap-2">
+                            <QuickHelpCenter />
+                            <ThemeToggle />
+                          </div>
                         </div>
                       </div>
                       
