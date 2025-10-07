@@ -74,6 +74,8 @@ export default function PasswordManager({ employeeId, employeeName, employeeEmai
 
     setLoading(true);
     try {
+      console.log('Iniciando troca de senha para:', employeeId);
+      
       // Obter token de autenticação
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -81,18 +83,27 @@ export default function PasswordManager({ employeeId, employeeName, employeeEmai
         throw new Error('Sessão não encontrada');
       }
 
+      console.log('Chamando edge function change-user-password');
+
       // Chamar edge function para alterar senha
       const { data, error } = await supabase.functions.invoke('change-user-password', {
         body: {
           userId: employeeId,
           newPassword: newPassword
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
         }
       });
 
-      if (error) throw error;
+      console.log('Resposta da edge function:', { data, error });
+
+      if (error) {
+        console.error('Erro da edge function:', error);
+        throw new Error(error.message || 'Erro ao chamar função de troca de senha');
+      }
+
+      if (data?.error) {
+        console.error('Erro no retorno:', data.error);
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Sucesso",
@@ -106,7 +117,7 @@ export default function PasswordManager({ employeeId, employeeName, employeeEmai
       console.error('Error updating password:', error);
       toast({
         variant: "destructive",
-        title: "Erro",
+        title: "Erro ao alterar senha",
         description: error.message || "Não foi possível alterar a senha. Tente novamente.",
       });
     } finally {

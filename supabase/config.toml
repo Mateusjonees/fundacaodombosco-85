@@ -6,5 +6,8 @@ verify_jwt = true
 [functions.delete-users]
 verify_jwt = true
 
+[functions.change-user-password]
+verify_jwt = true
+
 [functions.send-employee-confirmation]
 verify_jwt = false
