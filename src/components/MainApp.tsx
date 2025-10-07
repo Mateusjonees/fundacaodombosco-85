@@ -42,6 +42,9 @@ import PendingAttendancesNotification from '@/components/PendingAttendancesNotif
 import AppointmentNotifications from '@/components/AppointmentNotifications';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { QuickHelpCenter } from '@/components/QuickHelpCenter';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { Link } from 'react-router-dom';
+import { MessageSquare } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -151,7 +154,7 @@ export const MainApp = () => {
                         <User className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64">
+                    <DropdownMenuContent align="end" className="w-64 bg-background z-50">
                       <DropdownMenuLabel>
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-medium leading-none">
@@ -174,8 +177,25 @@ export const MainApp = () => {
                             <span className="text-muted-foreground">Notificações</span>
                             <AppointmentNotifications />
                           </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Validar Atendimentos</span>
+                            <PendingAttendancesNotification />
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Modo Escuro</span>
+                            <ThemeToggle />
+                          </div>
                         </div>
                       </div>
+                      
+                      <DropdownMenuSeparator />
+                      
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link to="/messages" className="flex items-center">
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          <span>Mensagens</span>
+                        </Link>
+                      </DropdownMenuItem>
                       
                       <DropdownMenuSeparator />
                       
