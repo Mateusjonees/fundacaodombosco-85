@@ -94,6 +94,7 @@ export default function Reports() {
                             customPermissions.hasPermission('view_reports');
     
     if (!canAccessReports) {
+      setLoading(false);
       toast({
         variant: "destructive",
         title: "Acesso Restrito",
@@ -134,6 +135,7 @@ export default function Reports() {
       setClients(data || []);
     } catch (error) {
       console.error('Error loading clients:', error);
+      setClients([]);
     }
   };
 
@@ -212,6 +214,7 @@ export default function Reports() {
         title: "Erro",
         description: "Não foi possível carregar os relatórios de atendimento."
       });
+      setAttendanceReports([]);
     }
   };
 
@@ -234,6 +237,7 @@ export default function Reports() {
       setEmployees(data || []);
     } catch (error) {
       console.error('Error loading employees:', error);
+      setEmployees([]);
     }
   };
 
@@ -289,6 +293,7 @@ export default function Reports() {
         title: "Erro",
         description: "Não foi possível carregar os relatórios."
       });
+      setEmployeeReports([]);
     } finally {
       setLoading(false);
     }
