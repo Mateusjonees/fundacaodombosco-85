@@ -34,13 +34,13 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
     >
       {theme === 'dark' ? (
         <>
-          <Sun className={`h-5 w-5 ${collapsed ? '' : 'mr-2'}`} />
-          {!collapsed && <span>Modo Claro</span>}
+          <Sun className={`h-4 w-4 ${collapsed ? '' : 'mr-2'}`} />
+          {!collapsed && <span className="text-sm">Modo Claro</span>}
         </>
       ) : (
         <>
-          <Moon className={`h-5 w-5 ${collapsed ? '' : 'mr-2'}`} />
-          {!collapsed && <span>Modo Escuro</span>}
+          <Moon className={`h-4 w-4 ${collapsed ? '' : 'mr-2'}`} />
+          {!collapsed && <span className="text-sm">Modo Escuro</span>}
         </>
       )}
     </Button>

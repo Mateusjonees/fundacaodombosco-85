@@ -240,7 +240,7 @@ interface MenuItem {
 }
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpen, isMobile } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { user } = useAuth();
@@ -278,6 +278,13 @@ export function AppSidebar() {
     }
   }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions]);
 
+  // Fechar sidebar automaticamente em mobile após navegar
+  useEffect(() => {
+    if (isMobile && state === 'expanded') {
+      setOpen(false);
+    }
+  }, [currentPath, isMobile]);
+
   const isActive = (path: string) => {
     if (path === '/') {
       return currentPath === '/';
@@ -308,7 +315,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-60"}>
+    <Sidebar className={collapsed ? "w-14" : "w-60 md:w-60"}>
       <SidebarContent>
         <SidebarGroup>
             <div className="flex flex-col items-center p-4 border-b">
@@ -317,9 +324,9 @@ export function AppSidebar() {
                   <img 
                     src={logo} 
                     alt="Fundação Dom Bosco" 
-                    className="h-20 w-auto object-contain mx-auto"
+                    className="h-16 md:h-20 w-auto object-contain mx-auto"
                   />
-                  <div>
+                  <div className="hidden md:block">
                     <div className="text-xs font-semibold text-primary">
                       Sistema de Gestão
                     </div>
@@ -335,8 +342,8 @@ export function AppSidebar() {
             </div>
           
           <div className="flex items-center justify-between px-3 py-2">
-            <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-              MENU PRINCIPAL
+            <SidebarGroupLabel className={collapsed ? "sr-only" : "text-xs md:text-sm"}>
+              MENU
             </SidebarGroupLabel>
           </div>
           
@@ -352,7 +359,7 @@ export function AppSidebar() {
                         className={({ isActive }) => getNavCls({ isActive })}
                       >
                         {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
-                        {!collapsed && <span>{item.title}</span>}
+                        {!collapsed && <span className="text-sm">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -376,7 +383,7 @@ export function AppSidebar() {
                     className="w-full text-left hover:bg-destructive hover:text-destructive-foreground"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>Sair do Sistema</span>}
+                    {!collapsed && <span className="text-sm">Sair</span>}
                   </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
