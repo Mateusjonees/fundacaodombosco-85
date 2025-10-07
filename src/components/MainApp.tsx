@@ -182,9 +182,9 @@ export const MainApp = () => {
                         
                         <DropdownMenuSeparator />
                         
-                        <div className="px-2 flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium text-muted-foreground">Configurações</span>
-                          <div className="flex gap-2">
+                        <div className="px-2">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">Configurações</p>
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                             <QuickHelpCenter />
                             <ThemeToggle />
                           </div>

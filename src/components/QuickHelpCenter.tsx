@@ -91,14 +91,14 @@ const categories = Array.from(new Set(tutorials.map(t => t.category)));
 
 export const QuickHelpCenter = () => {
   return (
-    <Popover>
+    <Popover modal={false}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <HelpCircle className="h-5 w-5" />
           <span className="sr-only">Ajuda Rápida</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="end">
+      <PopoverContent className="w-[400px] p-0 z-[60]" align="end" side="bottom">
         <div className="border-b p-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <HelpCircle className="h-5 w-5" />
