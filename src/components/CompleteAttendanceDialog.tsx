@@ -292,6 +292,34 @@ export default function CompleteAttendanceDialog({
         validation_status: 'pending_validation' // Status inicial
       });
 
+      // 5. Atualizar dados do cliente com informações da sessão
+      const clientUpdateData: any = {
+        last_session_date: new Date().toISOString().split('T')[0],
+        last_session_type: attendanceData.sessionType,
+        last_session_notes: attendanceData.clinicalObservations,
+        updated_at: new Date().toISOString()
+      };
+
+      // Se houver informações sobre progresso ou sintomas, adicionar ao update
+      if (attendanceData.objectivesAchieved.trim()) {
+        clientUpdateData.treatment_progress = attendanceData.objectivesAchieved;
+      }
+
+      if (attendanceData.patientResponse.trim()) {
+        clientUpdateData.clinical_observations = attendanceData.patientResponse;
+      }
+
+      // Atualizar o registro do cliente
+      const { error: clientUpdateError } = await supabase
+        .from('clients')
+        .update(clientUpdateData)
+        .eq('id', schedule.client_id);
+
+      if (clientUpdateError) {
+        console.error('Error updating client data:', clientUpdateError);
+        // Não bloqueia o fluxo, apenas registra o erro
+      }
+
       // REMOVIDO: Processamento de estoque e financeiro (será feito apenas após validação)
 
       toast({
