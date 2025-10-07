@@ -255,7 +255,7 @@ export function GlobalSearch() {
         </kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
         <CommandInput
           placeholder="Buscar pacientes, funcionários, agendamentos ou estoque..."
           value={query}
@@ -277,7 +277,7 @@ export function GlobalSearch() {
                 {items.map((result) => (
                   <CommandItem
                     key={result.id}
-                    value={result.id}
+                    value={`${result.type}-${result.id}-${result.title}`}
                     onSelect={() => handleSelect(result)}
                     className="cursor-pointer"
                   >
