@@ -59,23 +59,11 @@ export const CostCenterAnalysis = () => {
     try {
       const { start, end } = getDateRange();
 
-      // Buscar dados financeiros por unidade
       const units: UnitData[] = [];
       const categories: Record<string, number> = {};
-      
-      // Também buscar despesas de compra de estoque (supplies)
-      const { data: stockExpenses } = await supabase
-        .from('financial_records')
-        .select('amount, category, date')
-        .eq('type', 'expense')
-        .eq('category', 'supplies')
-        .gte('date', start)
-        .lte('date', end);
-
-      const totalStockExpenses = stockExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
       for (const unit of ['madre', 'floresta']) {
-        // Receitas por unidade - buscar de clientes vinculados à unidade
+        // 1. Buscar clientes da unidade
         const { data: clientsInUnit } = await supabase
           .from('clients')
           .select('id')
@@ -83,57 +71,103 @@ export const CostCenterAnalysis = () => {
         
         const clientIds = clientsInUnit?.map(c => c.id) || [];
 
-        // Receitas por unidade (financial_records com client_id da unidade)
-        let revenues: any[] = [];
+        let totalReceita = 0;
+        let totalDespesa = 0;
+
+        // 2. RECEITAS - Financial Records (income com client_id)
         if (clientIds.length > 0) {
-          const { data } = await supabase
+          const { data: financialIncomes } = await supabase
             .from('financial_records')
             .select('amount, category')
             .eq('type', 'income')
             .in('client_id', clientIds)
             .gte('date', start)
             .lte('date', end);
-          revenues = data || [];
+
+          const finIncomeTotal = financialIncomes?.reduce((sum, r) => {
+            categories[r.category] = (categories[r.category] || 0) + Number(r.amount);
+            return sum + Number(r.amount);
+          }, 0) || 0;
+          
+          totalReceita += finIncomeTotal;
         }
 
-        // Despesas por unidade (financial_records com client_id da unidade)
-        let expenses: any[] = [];
+        // 3. RECEITAS - Client Payments por unidade
+        const { data: clientPayments } = await supabase
+          .from('client_payments')
+          .select('amount_paid, description')
+          .eq('unit', unit)
+          .gte('due_date', start)
+          .lte('due_date', end);
+
+        const paymentsTotal = clientPayments?.reduce((sum, p) => {
+          return sum + Number(p.amount_paid);
+        }, 0) || 0;
+        
+        totalReceita += paymentsTotal;
+
+        // 4. RECEITAS - Automatic Financial Records (atendimentos validados)
         if (clientIds.length > 0) {
-          const { data } = await supabase
+          const { data: autoRecords } = await supabase
+            .from('automatic_financial_records')
+            .select('amount, patient_id')
+            .eq('transaction_type', 'income')
+            .in('patient_id', clientIds)
+            .gte('payment_date', start)
+            .lte('payment_date', end);
+
+          const autoTotal = autoRecords?.reduce((sum, r) => sum + Number(r.amount), 0) || 0;
+          totalReceita += autoTotal;
+        }
+
+        // 5. DESPESAS - Financial Records (expense com client_id)
+        if (clientIds.length > 0) {
+          const { data: financialExpenses } = await supabase
             .from('financial_records')
             .select('amount, category')
             .eq('type', 'expense')
             .in('client_id', clientIds)
             .gte('date', start)
             .lte('date', end);
-          expenses = data || [];
+
+          const finExpenseTotal = financialExpenses?.reduce((sum, e) => {
+            return sum + Number(e.amount);
+          }, 0) || 0;
+          
+          totalDespesa += finExpenseTotal;
         }
 
-        // Também buscar de client_payments se tiver unidade
-        const { data: clientPayments } = await supabase
-          .from('client_payments')
-          .select('amount_paid, unit')
-          .eq('unit', unit)
-          .gte('due_date', start)
-          .lte('due_date', end);
+        // 6. DESPESAS - Estoque (supplies) - dividir igualmente entre unidades
+        const { data: stockExpenses } = await supabase
+          .from('financial_records')
+          .select('amount')
+          .eq('type', 'expense')
+          .eq('category', 'supplies')
+          .gte('date', start)
+          .lte('date', end);
 
-        const receita = (revenues?.reduce((sum, r) => sum + Number(r.amount), 0) || 0) +
-                       (clientPayments?.reduce((sum, p) => sum + Number(p.amount_paid), 0) || 0);
-        
-        // Despesas incluindo metade das compras de estoque para cada unidade
-        const despesa = (expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0) + 
-                       (totalStockExpenses / 2); // Dividir despesas de estoque entre as unidades
+        const stockTotal = stockExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+        totalDespesa += (stockTotal / 2); // Divide entre as 2 unidades
+
+        // 7. DESPESAS - Pagamentos automáticos a profissionais
+        if (clientIds.length > 0) {
+          const { data: profPayments } = await supabase
+            .from('automatic_financial_records')
+            .select('amount, patient_id')
+            .eq('transaction_type', 'expense')
+            .in('patient_id', clientIds)
+            .gte('payment_date', start)
+            .lte('payment_date', end);
+
+          const profTotal = profPayments?.reduce((sum, r) => sum + Number(r.amount), 0) || 0;
+          totalDespesa += profTotal;
+        }
 
         units.push({
           unit: unit.charAt(0).toUpperCase() + unit.slice(1),
-          receita,
-          despesa,
-          saldo: receita - despesa
-        });
-
-        // Agregar por categoria
-        revenues?.forEach(r => {
-          categories[r.category] = (categories[r.category] || 0) + Number(r.amount);
+          receita: totalReceita,
+          despesa: totalDespesa,
+          saldo: totalReceita - totalDespesa
         });
       }
 
