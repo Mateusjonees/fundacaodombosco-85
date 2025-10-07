@@ -239,35 +239,64 @@ export default function DirectMessages() {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedUser) return;
+    if (!newMessage.trim() || !selectedUser) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Por favor, digite uma mensagem",
+      });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Usuário não autenticado",
+      });
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      console.log('Enviando mensagem:', {
+        sender_id: user.id,
+        recipient_id: selectedUser.user_id,
+        message_body: newMessage.trim()
+      });
+
+      const { data, error } = await supabase
         .from('internal_messages')
         .insert({
-          sender_id: user?.id,
+          sender_id: user.id,
           recipient_id: selectedUser.user_id,
           subject: 'Mensagem Direta',
           message_body: newMessage.trim(),
-          message_type: 'direct'
-        });
+          message_type: 'direct',
+          priority: 'normal'
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado ao enviar mensagem:', error);
+        throw error;
+      }
+
+      console.log('Mensagem enviada com sucesso:', data);
 
       setNewMessage('');
-      loadMessages(selectedUser.user_id);
-      loadConversations();
+      await loadMessages(selectedUser.user_id);
+      await loadConversations();
       
       toast({
         title: "Mensagem enviada",
         description: `Mensagem enviada para ${selectedUser.name}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível enviar a mensagem",
+        title: "Erro ao enviar mensagem",
+        description: error.message || "Não foi possível enviar a mensagem. Tente novamente.",
       });
     }
   };
