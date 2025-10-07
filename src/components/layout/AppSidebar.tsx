@@ -19,6 +19,7 @@ import {
   Heart,
   ChevronLeft,
   ClipboardList,
+  MessageSquare,
   LucideIcon
 } from 'lucide-react';
 
@@ -57,6 +58,7 @@ const iconMapping: Record<string, LucideIcon> = {
   CheckSquare,
   Shield,
   Heart,
+  MessageSquare,
 };
 
 // Dynamic menu items based on role permissions
@@ -203,6 +205,15 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       order_index: 10 
     });
   }
+
+  // Mensagens - todos os usuários autenticados
+  items.push({ 
+    id: 'messages', 
+    title: 'Mensagens', 
+    url: '/messages', 
+    icon: 'MessageSquare', 
+    order_index: 11 
+  });
 
   return items.sort((a, b) => a.order_index - b.order_index);
 };

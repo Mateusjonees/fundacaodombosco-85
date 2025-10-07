@@ -28,6 +28,7 @@ import Dashboard from '@/pages/Dashboard';
 import MyPatients from '@/pages/MyPatients';
 import AttendanceValidation from '@/pages/AttendanceValidation';
 import EmployeesNew from '@/pages/EmployeesNew';
+import DirectMessages from '@/pages/DirectMessages';
 import PendingAttendancesNotification from '@/components/PendingAttendancesNotification';
 import AppointmentNotifications from '@/components/AppointmentNotifications';
 
@@ -225,6 +226,10 @@ export const MainApp = () => {
                   <ProtectedRoute requiredPermission="manage_users" allowedRoles={['director']}>
                     <UserManagement />
                   </ProtectedRoute>
+                } />
+                
+                <Route path="/messages" element={
+                  <DirectMessages />
                 } />
                 
                 <Route path="*" element={<Navigate to="/" replace />} />
