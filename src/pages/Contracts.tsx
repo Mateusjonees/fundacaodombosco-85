@@ -38,6 +38,11 @@ interface ContractData {
   paymentMethod: string;
   value: string;
   contractDate: string;
+  creditCardInstallments: number;
+  downPaymentAmount: string;
+  downPaymentMethod: string;
+  isManualCombination: boolean;
+  paymentNotes: string;
 }
 
 export default function Contracts() {
@@ -60,7 +65,12 @@ export default function Contracts() {
     address: '',
     paymentMethod: 'PIX',
     value: '1.600,00',
-    contractDate: new Date().toISOString().split('T')[0]
+    contractDate: new Date().toISOString().split('T')[0],
+    creditCardInstallments: 1,
+    downPaymentAmount: '',
+    downPaymentMethod: 'Dinheiro',
+    isManualCombination: false,
+    paymentNotes: ''
   });
 
   useEffect(() => {
@@ -119,6 +129,36 @@ export default function Contracts() {
   };
 
   const generateContract = () => {
+    const contractValueNumber = parseContractValue(contractData.value);
+    const downPaymentNum = contractData.downPaymentAmount 
+      ? parseFloat(contractData.downPaymentAmount.replace(',', '.'))
+      : 0;
+    const remainingAmount = contractValueNumber - downPaymentNum;
+
+    let paymentDetailsText = '';
+    
+    if (contractData.paymentMethod === 'Manual') {
+      paymentDetailsText = `
+FORMA DE PAGAMENTO COMBINADA:
+- Entrada: R$ ${contractData.downPaymentAmount || '0,00'} (${contractData.downPaymentMethod})
+- Saldo restante: R$ ${remainingAmount.toFixed(2).replace('.', ',')}
+${contractData.paymentNotes ? `- Observações: ${contractData.paymentNotes}` : ''}
+`;
+    } else if (contractData.paymentMethod === 'Cartão') {
+      const installmentValue = (contractValueNumber / contractData.creditCardInstallments).toFixed(2).replace('.', ',');
+      paymentDetailsText = `
+FORMA DE PAGAMENTO:
+- ${contractData.creditCardInstallments}x de R$ ${installmentValue} no Cartão de Crédito
+- Valor total: R$ ${contractData.value}
+`;
+    } else {
+      paymentDetailsText = `
+FORMA DE PAGAMENTO:
+- ${contractData.paymentMethod}
+- Valor total: R$ ${contractData.value}
+`;
+    }
+
     const contractContent = `
 Contrato de Prestação de Serviços 
 Avaliação Neuropsicológica 
@@ -225,8 +265,11 @@ a primeira sessão de avaliação (anamnese).
  
 2.6.2. O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado 
 será no total de R$ ${contractData.value || '______________________'} 
-(${contractData.value || '______________________________________________'}) O pagamento dos honorários 
-referentes ao serviço de Avaliação Neuropsicológica será efetuado:  
+(${contractData.value || '______________________________________________'})
+
+${paymentDetailsText}
+
+O pagamento dos honorários referentes ao serviço de Avaliação Neuropsicológica será efetuado:  
  
 (  ) R$ _________________ à vista pagos na data da anamnese.  
 (  ) R$ _________________ parcelado no Boleto  
@@ -357,21 +400,29 @@ Contratante
       }
 
       // Criar registro de pagamento do paciente
+      const downPaymentNum = contractData.downPaymentAmount 
+        ? parseFloat(contractData.downPaymentAmount.replace(',', '.'))
+        : 0;
+
       const { error: paymentError } = await supabase
         .from('client_payments')
         .insert([{
           client_id: contractData.clientId,
           payment_type: 'Avaliação Neuropsicológica',
           total_amount: contractValueNumber,
-          amount_paid: contractValueNumber,
-          amount_remaining: 0,
-          status: 'completed',
-          payment_method: 'Contrato',
+          amount_paid: contractData.paymentMethod === 'Manual' ? downPaymentNum : contractValueNumber,
+          amount_remaining: contractData.paymentMethod === 'Manual' ? (contractValueNumber - downPaymentNum) : 0,
+          status: contractData.paymentMethod === 'Manual' && downPaymentNum < contractValueNumber ? 'partial' : 'completed',
+          payment_method: contractData.paymentMethod,
           description: `Pagamento de Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
           unit: 'floresta',
           created_by: user?.id,
-          installments_total: 1,
-          installments_paid: 1
+          installments_total: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : 1,
+          installments_paid: contractData.paymentMethod === 'Manual' && downPaymentNum > 0 ? 1 : (contractData.paymentMethod === 'Cartão' ? 0 : 1),
+          credit_card_installments: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : null,
+          down_payment_amount: contractData.paymentMethod === 'Manual' ? downPaymentNum : null,
+          down_payment_method: contractData.paymentMethod === 'Manual' ? contractData.downPaymentMethod : null,
+          notes: contractData.paymentNotes || `Forma de pagamento: ${contractData.paymentMethod}`
         }]);
 
       if (paymentError) {
@@ -452,7 +503,13 @@ Contratante
 
       toast({
         title: "Contrato processado com sucesso!",
-        description: `Contrato impresso por ${userName}. Registros financeiros, de atendimento e de pagamento criados automaticamente.`,
+        description: `Contrato impresso por ${userName}. ${
+          contractData.paymentMethod === 'Manual' 
+            ? `Entrada de R$ ${contractData.downPaymentAmount || '0,00'} registrada.` 
+            : contractData.paymentMethod === 'Cartão'
+            ? `Pagamento em ${contractData.creditCardInstallments}x registrado.`
+            : 'Pagamento registrado.'
+        }`,
       });
       
       // Resetar form e fechar dialog
@@ -482,7 +539,12 @@ Contratante
       address: '',
       paymentMethod: 'PIX',
       value: '1.600,00',
-      contractDate: new Date().toISOString().split('T')[0]
+      contractDate: new Date().toISOString().split('T')[0],
+      creditCardInstallments: 1,
+      downPaymentAmount: '',
+      downPaymentMethod: 'Dinheiro',
+      isManualCombination: false,
+      paymentNotes: ''
     });
   };
 
@@ -686,10 +748,95 @@ Contratante
                           <SelectItem value="Cartão">Cartão de Crédito</SelectItem>
                           <SelectItem value="Boleto">Boleto Bancário</SelectItem>
                           <SelectItem value="Transferência">Transferência Bancária</SelectItem>
+                          <SelectItem value="Manual">Pagamento Manual/Combinado</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
+
+                  {/* Parcelas para Cartão de Crédito */}
+                  {contractData.paymentMethod === 'Cartão' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="creditCardInstallments">Número de Parcelas</Label>
+                      <Select
+                        value={contractData.creditCardInstallments.toString()}
+                        onValueChange={(value) => setContractData(prev => ({ ...prev, creditCardInstallments: parseInt(value) }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num}x de R$ {(parseContractValue(contractData.value) / num).toFixed(2).replace('.', ',')}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Modo Manual/Combinado */}
+                  {contractData.paymentMethod === 'Manual' && (
+                    <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold">Configuração de Pagamento Manual</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Configure entradas, parcelas e diferentes formas de pagamento
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="downPaymentAmount">Valor da Entrada (R$)</Label>
+                          <Input
+                            id="downPaymentAmount"
+                            value={contractData.downPaymentAmount}
+                            onChange={(e) => setContractData(prev => ({ ...prev, downPaymentAmount: e.target.value }))}
+                            placeholder="0,00"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="downPaymentMethod">Forma de Pagamento da Entrada</Label>
+                          <Select
+                            value={contractData.downPaymentMethod}
+                            onValueChange={(value) => setContractData(prev => ({ ...prev, downPaymentMethod: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                              <SelectItem value="PIX">PIX</SelectItem>
+                              <SelectItem value="Cartão Débito">Cartão de Débito</SelectItem>
+                              <SelectItem value="Transferência">Transferência</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="paymentNotes">Observações sobre o Pagamento</Label>
+                        <Textarea
+                          id="paymentNotes"
+                          value={contractData.paymentNotes}
+                          onChange={(e) => setContractData(prev => ({ ...prev, paymentNotes: e.target.value }))}
+                          placeholder="Ex: Restante em 3 parcelas no boleto, primeira em 30 dias..."
+                          rows={3}
+                        />
+                      </div>
+
+                      {contractData.downPaymentAmount && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                          <div className="text-sm text-blue-700">
+                            <div className="font-semibold mb-1">Resumo do Pagamento:</div>
+                            <div>• Entrada: R$ {contractData.downPaymentAmount} ({contractData.downPaymentMethod})</div>
+                            <div>• Restante: R$ {(parseContractValue(contractData.value) - parseFloat(contractData.downPaymentAmount.replace(',', '.') || '0')).toFixed(2).replace('.', ',')}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
