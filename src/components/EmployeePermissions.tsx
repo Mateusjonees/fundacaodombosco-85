@@ -110,6 +110,7 @@ const PERMISSION_CATEGORIES = {
 export default function EmployeePermissions({ employeeId, employeeName }: EmployeePermissionsProps) {
   const { user } = useAuth();
   const [grantedPermissions, setGrantedPermissions] = useState<Set<string>>(new Set());
+  const [blockedPermissions, setBlockedPermissions] = useState<Set<string>>(new Set());
   const [rolePermissions, setRolePermissions] = useState<Set<string>>(new Set());
   const [employeeRole, setEmployeeRole] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -167,17 +168,29 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
         setRolePermissions(rolePermSet);
       }
 
-      // Buscar permissões personalizadas específicas do usuário
+      // Buscar TODAS as permissões personalizadas específicas do usuário (inclusive as negativas)
       const { data: userPerms, error: userPermsError } = await supabase
         .from('user_specific_permissions')
         .select('permission, granted')
-        .eq('user_id', employeeId)
-        .eq('granted', true);
+        .eq('user_id', employeeId);
 
       if (userPermsError) throw userPermsError;
       
-      const customPermissions = new Set(userPerms?.map(p => p.permission) || []);
-      setGrantedPermissions(customPermissions);
+      // Criar dois conjuntos: permissões concedidas e permissões bloqueadas
+      const customGranted = new Set<string>();
+      const customBlocked = new Set<string>();
+      
+      userPerms?.forEach(p => {
+        if (p.granted) {
+          customGranted.add(p.permission);
+        } else {
+          customBlocked.add(p.permission);
+        }
+      });
+      
+      setGrantedPermissions(customGranted);
+      setBlockedPermissions(customBlocked);
+      
     } catch (error) {
       console.error('Error loading permissions:', error);
       toast({
@@ -200,6 +213,8 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
       return;
     }
 
+    const hasRolePermission = rolePermissions.has(permissionKey);
+    
     setLoading(true);
     try {
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
@@ -208,30 +223,52 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
         throw new Error('Usuário não autenticado');
       }
 
-      if (granted) {
-        // Adicionar permissão
-        const { error } = await supabase
-          .from('user_specific_permissions')
-          .upsert({
-            user_id: employeeId,
-            permission: permissionKey as PermissionAction,
-            granted: true,
-            granted_by: currentUser.id,
-          });
-
-        if (error) throw error;
-        
-        setGrantedPermissions(prev => new Set(prev).add(permissionKey));
-      } else {
-        // Remover permissão
-        const { error } = await supabase
+      // Se está ativando e já tem pelo cargo, não precisa fazer nada
+      if (granted && hasRolePermission) {
+        // Remove override se existir (volta ao padrão do cargo)
+        await supabase
           .from('user_specific_permissions')
           .delete()
           .eq('user_id', employeeId)
           .eq('permission', permissionKey as PermissionAction);
-
-        if (error) throw error;
         
+        setGrantedPermissions(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(permissionKey);
+          return newSet;
+        });
+        
+        toast({
+          title: "Permissão do cargo",
+          description: "Esta permissão já está incluída no cargo.",
+        });
+        return;
+      }
+
+      // Criar ou atualizar permissão específica
+      const { error } = await supabase
+        .from('user_specific_permissions')
+        .upsert({
+          user_id: employeeId,
+          permission: permissionKey as PermissionAction,
+          granted: granted,
+          granted_by: currentUser.id,
+        });
+
+      if (error) throw error;
+      
+      if (granted) {
+        setGrantedPermissions(prev => new Set(prev).add(permissionKey));
+        setBlockedPermissions(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(permissionKey);
+          return newSet;
+        });
+      } else {
+        // Se desativando uma permissão do cargo, adiciona ao bloqueio
+        if (hasRolePermission) {
+          setBlockedPermissions(prev => new Set(prev).add(permissionKey));
+        }
         setGrantedPermissions(prev => {
           const newSet = new Set(prev);
           newSet.delete(permissionKey);
@@ -241,7 +278,11 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
 
       toast({
         title: "Sucesso",
-        description: `Permissão ${granted ? 'concedida' : 'removida'} com sucesso!`,
+        description: granted 
+          ? "Permissão personalizada concedida com sucesso!" 
+          : hasRolePermission 
+            ? "Permissão do cargo foi bloqueada."
+            : "Permissão removida com sucesso!",
       });
 
     } catch (error: any) {
@@ -290,7 +331,8 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
               {category.permissions.map((perm) => {
                 const hasRolePermission = rolePermissions.has(perm.key);
                 const hasCustomPermission = grantedPermissions.has(perm.key);
-                const isActive = hasRolePermission || hasCustomPermission;
+                const isBlocked = blockedPermissions.has(perm.key);
+                const isActive = (hasRolePermission && !isBlocked) || hasCustomPermission;
                 
                 return (
                   <div 
@@ -304,14 +346,19 @@ export default function EmployeePermissions({ employeeId, employeeName }: Employ
                       >
                         {perm.label}
                       </Label>
-                      {hasRolePermission && (
+                      {hasRolePermission && !isBlocked && (
                         <div className="text-xs text-primary mt-1 font-medium">
                           ✓ Permissão do Cargo
                         </div>
                       )}
                       {hasCustomPermission && (
                         <div className="text-xs text-green-600 mt-1 font-medium">
-                          Personalizado: Permitido
+                          ✓ Personalizado: Permitido
+                        </div>
+                      )}
+                      {isBlocked && (
+                        <div className="text-xs text-red-600 mt-1 font-medium">
+                          ✗ Bloqueado (override do cargo)
                         </div>
                       )}
                     </div>
