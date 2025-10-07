@@ -18,91 +18,147 @@ interface EmployeePermissionsProps {
 }
 
 const PERMISSION_CATEGORIES = {
-  viewing: {
-    label: 'Visualização',
+  dashboard: {
+    label: 'Painel',
     permissions: [
-      { key: 'view_dashboard', label: 'Ver Painel' },
-      { key: 'view_clients', label: 'Ver Clientes' },
-      { key: 'view_schedules', label: 'Ver Agendamentos' },
-      { key: 'view_financial', label: 'Ver Financeiro' },
-      { key: 'view_reports', label: 'Ver Relatórios' },
-      { key: 'view_stock', label: 'Ver Estoque' },
-      { key: 'view_employees', label: 'Ver Funcionários' },
-      { key: 'view_medical_records', label: 'Ver Prontuários' },
-      { key: 'view_contracts', label: 'Ver Contratos' },
-      { key: 'view_messages', label: 'Ver Mensagens' },
-      { key: 'view_files', label: 'Ver Arquivos' },
-      { key: 'view_quality_control', label: 'Ver Controle de Qualidade' },
-      { key: 'view_timesheet', label: 'Ver Ponto Eletrônico' },
-      { key: 'view_meeting_alerts', label: 'Ver Alertas de Reunião' }
+      { key: 'view_dashboard', label: 'Visualizar Painel' },
     ]
   },
-  creating: {
-    label: 'Criação',
+  clients: {
+    label: 'Pacientes',
     permissions: [
-      { key: 'create_clients', label: 'Criar Clientes' },
-      { key: 'create_schedules', label: 'Criar Agendamentos' },
-      { key: 'create_financial_records', label: 'Criar Registros Financeiros' },
-      { key: 'create_stock_items', label: 'Criar Itens de Estoque' },
-      { key: 'create_employees', label: 'Criar Funcionários' },
+      { key: 'view_clients', label: 'Visualizar Pacientes' },
+      { key: 'create_clients', label: 'Cadastrar Novos Pacientes' },
+      { key: 'edit_clients', label: 'Editar Dados de Pacientes' },
+      { key: 'delete_clients', label: 'Excluir Pacientes' },
+      { key: 'assign_clients', label: 'Atribuir Pacientes a Profissionais' },
+      { key: 'view_medical_records', label: 'Visualizar Prontuários' },
       { key: 'create_medical_records', label: 'Criar Prontuários' },
-      { key: 'create_contracts', label: 'Criar Contratos' },
-      { key: 'create_messages', label: 'Criar Mensagens' },
-      { key: 'create_files', label: 'Criar Arquivos' },
-      { key: 'create_quality_evaluations', label: 'Criar Avaliações de Qualidade' },
-      { key: 'create_meeting_alerts', label: 'Criar Alertas de Reunião' }
-    ]
-  },
-  editing: {
-    label: 'Edição',
-    permissions: [
-      { key: 'edit_clients', label: 'Editar Clientes' },
-      { key: 'edit_schedules', label: 'Editar Agendamentos' },
-      { key: 'edit_financial_records', label: 'Editar Registros Financeiros' },
-      { key: 'edit_stock_items', label: 'Editar Itens de Estoque' },
-      { key: 'edit_employees', label: 'Editar Funcionários' },
       { key: 'edit_medical_records', label: 'Editar Prontuários' },
-      { key: 'edit_contracts', label: 'Editar Contratos' },
-      { key: 'edit_files', label: 'Editar Arquivos' },
-      { key: 'edit_system_settings', label: 'Editar Configurações do Sistema' },
-      { key: 'edit_user_permissions', label: 'Editar Permissões de Usuários' }
-    ]
-  },
-  deleting: {
-    label: 'Exclusão',
-    permissions: [
-      { key: 'delete_clients', label: 'Excluir Clientes' },
-      { key: 'delete_schedules', label: 'Excluir Agendamentos' },
-      { key: 'delete_financial_records', label: 'Excluir Registros Financeiros' },
-      { key: 'delete_stock_items', label: 'Excluir Itens de Estoque' },
-      { key: 'delete_employees', label: 'Excluir Funcionários' },
       { key: 'delete_medical_records', label: 'Excluir Prontuários' },
-      { key: 'delete_contracts', label: 'Excluir Contratos' },
-      { key: 'delete_files', label: 'Excluir Arquivos' }
     ]
   },
-  administrative: {
-    label: 'Administrativo',
+  schedules: {
+    label: 'Agenda',
     permissions: [
-      { key: 'manage_users', label: 'Gerenciar Usuários' },
-      { key: 'manage_roles', label: 'Gerenciar Cargos' },
-      { key: 'change_user_passwords', label: 'Alterar Senhas de Usuários' },
-      { key: 'view_audit_logs', label: 'Ver Logs de Auditoria' },
-      { key: 'manage_system_settings', label: 'Gerenciar Configurações' },
-      { key: 'export_data', label: 'Exportar Dados' },
-      { key: 'import_data', label: 'Importar Dados' },
-      { key: 'view_sensitive_data', label: 'Ver Dados Sensíveis' }
-    ]
-  },
-  special: {
-    label: 'Especiais',
-    permissions: [
+      { key: 'view_schedules', label: 'Visualizar Agenda' },
+      { key: 'create_schedules', label: 'Criar Agendamentos' },
+      { key: 'edit_schedules', label: 'Editar Agendamentos' },
+      { key: 'delete_schedules', label: 'Excluir Agendamentos' },
       { key: 'confirm_appointments', label: 'Confirmar Atendimentos' },
       { key: 'cancel_appointments', label: 'Cancelar Atendimentos' },
-      { key: 'approve_timesheet', label: 'Aprovar Ponto' },
-      { key: 'assign_clients', label: 'Atribuir Clientes' },
-      { key: 'generate_reports', label: 'Gerar Relatórios' },  
-      { key: 'access_all_units', label: 'Acesso a Todas as Unidades' }
+    ]
+  },
+  financial: {
+    label: 'Financeiro',
+    permissions: [
+      { key: 'view_financial', label: 'Visualizar Registros Financeiros' },
+      { key: 'create_financial', label: 'Criar Lançamentos Financeiros' },
+      { key: 'edit_financial', label: 'Editar Lançamentos Financeiros' },
+      { key: 'delete_financial', label: 'Excluir Lançamentos Financeiros' },
+    ]
+  },
+  contracts: {
+    label: 'Contratos',
+    permissions: [
+      { key: 'view_contracts', label: 'Visualizar Contratos' },
+      { key: 'create_contracts', label: 'Criar Novos Contratos' },
+      { key: 'edit_contracts', label: 'Editar Contratos' },
+      { key: 'delete_contracts', label: 'Excluir Contratos' },
+    ]
+  },
+  stock: {
+    label: 'Estoque',
+    permissions: [
+      { key: 'view_stock', label: 'Visualizar Estoque' },
+      { key: 'create_stock', label: 'Adicionar Itens ao Estoque' },
+      { key: 'edit_stock', label: 'Editar Itens do Estoque' },
+      { key: 'delete_stock', label: 'Excluir Itens do Estoque' },
+    ]
+  },
+  reports: {
+    label: 'Relatórios',
+    permissions: [
+      { key: 'view_reports', label: 'Visualizar Relatórios' },
+      { key: 'create_reports', label: 'Gerar Novos Relatórios' },
+      { key: 'export_data', label: 'Exportar Dados' },
+    ]
+  },
+  employees: {
+    label: 'Funcionários',
+    permissions: [
+      { key: 'view_employees', label: 'Visualizar Funcionários' },
+      { key: 'create_employees', label: 'Cadastrar Funcionários' },
+      { key: 'edit_employees', label: 'Editar Dados de Funcionários' },
+      { key: 'delete_employees', label: 'Excluir Funcionários' },
+    ]
+  },
+  users: {
+    label: 'Usuários e Permissões',
+    permissions: [
+      { key: 'manage_users', label: 'Gerenciar Usuários do Sistema' },
+      { key: 'manage_roles', label: 'Gerenciar Cargos e Funções' },
+      { key: 'change_user_passwords', label: 'Alterar Senhas de Usuários' },
+      { key: 'edit_user_permissions', label: 'Editar Permissões de Usuários' },
+      { key: 'view_audit_logs', label: 'Visualizar Logs de Auditoria' },
+    ]
+  },
+  messages: {
+    label: 'Mensagens',
+    permissions: [
+      { key: 'view_messages', label: 'Visualizar Mensagens' },
+      { key: 'create_messages', label: 'Enviar Mensagens' },
+    ]
+  },
+  files: {
+    label: 'Arquivos',
+    permissions: [
+      { key: 'view_files', label: 'Visualizar Arquivos' },
+      { key: 'create_files', label: 'Fazer Upload de Arquivos' },
+      { key: 'edit_files', label: 'Editar Arquivos' },
+      { key: 'delete_files', label: 'Excluir Arquivos' },
+    ]
+  },
+  documents: {
+    label: 'Documentos',
+    permissions: [
+      { key: 'view_documents', label: 'Visualizar Documentos' },
+      { key: 'create_documents', label: 'Criar Documentos' },
+      { key: 'edit_documents', label: 'Editar Documentos' },
+      { key: 'delete_documents', label: 'Excluir Documentos' },
+    ]
+  },
+  quality: {
+    label: 'Controle de Qualidade',
+    permissions: [
+      { key: 'view_quality_control', label: 'Visualizar Controle de Qualidade' },
+      { key: 'create_quality_evaluations', label: 'Criar Avaliações de Qualidade' },
+    ]
+  },
+  timesheet: {
+    label: 'Ponto Eletrônico',
+    permissions: [
+      { key: 'view_timesheet', label: 'Visualizar Ponto Eletrônico' },
+      { key: 'approve_timesheet', label: 'Aprovar Registros de Ponto' },
+    ]
+  },
+  meetings: {
+    label: 'Alertas de Reunião',
+    permissions: [
+      { key: 'view_meeting_alerts', label: 'Visualizar Alertas de Reunião' },
+      { key: 'create_meeting_alerts', label: 'Criar Alertas de Reunião' },
+    ]
+  },
+  system: {
+    label: 'Configurações do Sistema',
+    permissions: [
+      { key: 'manage_system_settings', label: 'Gerenciar Configurações Gerais' },
+      { key: 'edit_system_settings', label: 'Editar Configurações do Sistema' },
+      { key: 'import_data', label: 'Importar Dados' },
+      { key: 'view_sensitive_data', label: 'Visualizar Dados Sensíveis' },
+      { key: 'access_all_units', label: 'Acesso a Todas as Unidades' },
+      { key: 'system_admin', label: 'Administrador do Sistema' },
+      { key: 'manage_permissions', label: 'Gerenciar Permissões' },
     ]
   }
 };
