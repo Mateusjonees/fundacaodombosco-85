@@ -240,6 +240,12 @@ export default function EmployeeControl() {
     return `${hours}h ${mins}min`;
   };
 
+  const formatDateSafe = (dateString: string) => {
+    // Adicionar 'T00:00:00' se for apenas data para evitar problemas de timezone
+    const date = dateString.includes('T') ? new Date(dateString) : new Date(dateString + 'T12:00:00');
+    return format(date, 'dd/MM/yyyy');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -610,17 +616,19 @@ export default function EmployeeControl() {
                             <TableHead>Status</TableHead>
                           </TableRow>
                         </TableHeader>
-                        <TableBody>
+                         <TableBody>
                           {timesheet.map((entry) => (
                             <TableRow key={entry.id}>
-                              <TableCell>{format(new Date(entry.date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell>{formatDateSafe(entry.date)}</TableCell>
                               <TableCell>
                                 {entry.clock_in ? format(new Date(entry.clock_in), 'HH:mm') : '-'}
                               </TableCell>
                               <TableCell>
                                 {entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm') : '-'}
                               </TableCell>
-                              <TableCell>{entry.total_hours?.toFixed(2) || 0}h</TableCell>
+                              <TableCell>
+                                {entry.total_hours ? formatMinutesToHours(Math.round(entry.total_hours * 60)) : '0min'}
+                              </TableCell>
                               <TableCell>
                                 <Badge variant={
                                   entry.status === 'approved' ? 'default' :
