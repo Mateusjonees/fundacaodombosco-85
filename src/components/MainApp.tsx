@@ -32,6 +32,7 @@ import DirectMessages from '@/pages/DirectMessages';
 import EmployeeControl from '@/pages/EmployeeControl';
 import PendingAttendancesNotification from '@/components/PendingAttendancesNotification';
 import AppointmentNotifications from '@/components/AppointmentNotifications';
+import { GlobalSearch } from '@/components/GlobalSearch';
 
 interface Profile {
   id: string;
@@ -132,10 +133,11 @@ export const MainApp = () => {
                   <h1 className="text-lg font-bold text-primary sm:hidden">FDB</h1>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <GlobalSearch />
                   <AppointmentNotifications />
                   <PendingAttendancesNotification />
-                  <div className="text-right hidden sm:block">
+                  <div className="text-right hidden lg:block">
                     <Badge variant="secondary" className="mb-1">
                       {currentUserProfile?.name || user?.email}
                     </Badge>
