@@ -167,21 +167,11 @@ export const MainApp = () => {
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       
-                      <div className="py-2 space-y-1">
-                        <div className="flex items-center justify-between px-2 py-2 hover:bg-accent rounded-md transition-colors">
-                          <span className="text-sm">Ajuda</span>
+                      <div className="py-2">
+                        <div className="px-2 py-2 flex items-center justify-end gap-3">
                           <QuickHelpCenter />
-                        </div>
-                        <div className="flex items-center justify-between px-2 py-2 hover:bg-accent rounded-md transition-colors">
-                          <span className="text-sm">Notificações</span>
                           <AppointmentNotifications />
-                        </div>
-                        <div className="flex items-center justify-between px-2 py-2 hover:bg-accent rounded-md transition-colors">
-                          <span className="text-sm">Validar Atendimentos</span>
                           <PendingAttendancesNotification />
-                        </div>
-                        <div className="flex items-center justify-between px-2 py-2 hover:bg-accent rounded-md transition-colors">
-                          <span className="text-sm">Modo Escuro</span>
                           <ThemeToggle />
                         </div>
                       </div>

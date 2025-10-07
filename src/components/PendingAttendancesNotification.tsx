@@ -63,16 +63,18 @@ export default function PendingAttendancesNotification() {
 
   return (
     <Button 
-      variant="outline" 
-      size="sm" 
+      variant="ghost" 
+      size="icon" 
       onClick={() => navigate('/attendance-validation')}
-      className="relative gap-2 bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+      className="relative"
+      title="Validar Atendimentos"
     >
-      <AlertCircle className="h-4 w-4" />
-      <span className="hidden sm:inline">Validar Atendimentos</span>
-      <Badge variant="destructive" className="absolute -top-2 -right-2 px-1 py-0 text-xs min-w-[20px] h-5">
-        {pendingCount}
-      </Badge>
+      <AlertCircle className="h-5 w-5 text-yellow-600" />
+      {pendingCount > 0 && (
+        <Badge variant="destructive" className="absolute -top-1 -right-1 px-1.5 py-0 text-xs min-w-[18px] h-[18px] flex items-center justify-center">
+          {pendingCount}
+        </Badge>
+      )}
     </Button>
   );
 }
