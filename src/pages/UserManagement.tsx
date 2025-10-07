@@ -95,6 +95,8 @@ export default function UserManagement() {
   const [isPositionDialogOpen, setIsPositionDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
+  const [isAuditDetailsDialogOpen, setIsAuditDetailsDialogOpen] = useState(false);
+  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
 
   // Estados dos formulários
   const [newPosition, setNewPosition] = useState({
@@ -667,40 +669,100 @@ export default function UserManagement() {
                   Nenhum log de auditoria encontrado.
                 </p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>Usuário</TableHead>
-                      <TableHead>Ação</TableHead>
-                      <TableHead>Entidade</TableHead>
-                      <TableHead>Detalhes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {auditLogs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="text-sm">
-                          {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </TableCell>
-                        <TableCell className="font-medium">{log.user_name}</TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            log.action.includes('delete') ? 'destructive' :
-                            log.action.includes('create') ? 'default' :
-                            'secondary'
-                          }>
-                            {log.action}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{log.entity_type}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
-                          {log.metadata ? JSON.stringify(log.metadata).slice(0, 50) + '...' : '-'}
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[180px]">Data/Hora</TableHead>
+                        <TableHead className="w-[200px]">Usuário</TableHead>
+                        <TableHead className="w-[150px]">Ação</TableHead>
+                        <TableHead className="w-[120px]">Entidade</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead className="w-[100px]">Ações</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {auditLogs.map((log) => {
+                        // Tradução de ações
+                        const actionTranslations: Record<string, string> = {
+                          'login_success': 'Login realizado',
+                          'login_attempted': 'Tentativa de login',
+                          'login_failed': 'Falha no login',
+                          'logout_completed': 'Logout realizado',
+                          'permission_updated': 'Permissão atualizada',
+                          'user_created': 'Usuário criado',
+                          'user_updated': 'Usuário atualizado',
+                          'user_deleted': 'Usuário excluído',
+                          'create': 'Criação',
+                          'update': 'Atualização',
+                          'delete': 'Exclusão',
+                        };
+
+                        // Tradução de entidades
+                        const entityTranslations: Record<string, string> = {
+                          'auth': 'Autenticação',
+                          'user': 'Usuário',
+                          'permission': 'Permissão',
+                          'client': 'Cliente',
+                          'schedule': 'Agendamento',
+                          'financial': 'Financeiro',
+                        };
+
+                        // Descrição legível dos metadados
+                        const getReadableDescription = () => {
+                          if (log.action.includes('login') || log.action.includes('logout')) {
+                            return log.metadata?.msg || 'Evento de autenticação';
+                          }
+                          if (log.action === 'permission_updated') {
+                            return `Permissão ${log.metadata?.permission || 'desconhecida'}: ${log.metadata?.granted ? 'concedida' : 'removida'}`;
+                          }
+                          if (log.metadata?.description) {
+                            return log.metadata.description;
+                          }
+                          return 'Ação registrada';
+                        };
+
+                        return (
+                          <TableRow key={log.id}>
+                            <TableCell className="text-sm whitespace-nowrap">
+                              {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {log.user_name || 'Usuário desconhecido'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                log.action.includes('delete') || log.action.includes('failed') ? 'destructive' :
+                                log.action.includes('create') || log.action.includes('success') ? 'default' :
+                                'secondary'
+                              }>
+                                {actionTranslations[log.action] || log.action}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {entityTranslations[log.entity_type] || log.entity_type}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {getReadableDescription()}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedAuditLog(log);
+                                  setIsAuditDetailsDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -806,6 +868,79 @@ export default function UserManagement() {
           unit: 'madre'
         }}
       />
+
+      {/* Dialog de Detalhes da Auditoria */}
+      <Dialog open={isAuditDetailsDialogOpen} onOpenChange={setIsAuditDetailsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Log de Auditoria</DialogTitle>
+          </DialogHeader>
+          {selectedAuditLog && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Data/Hora</Label>
+                  <p className="text-sm font-medium">
+                    {format(new Date(selectedAuditLog.created_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Usuário</Label>
+                  <p className="text-sm font-medium">{selectedAuditLog.user_name || 'Desconhecido'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Ação</Label>
+                  <p className="text-sm font-medium">{selectedAuditLog.action}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Entidade</Label>
+                  <p className="text-sm font-medium">{selectedAuditLog.entity_type}</p>
+                </div>
+                {selectedAuditLog.entity_id && (
+                  <div className="col-span-2">
+                    <Label className="text-xs text-muted-foreground">ID da Entidade</Label>
+                    <p className="text-sm font-mono">{selectedAuditLog.entity_id}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedAuditLog.metadata && Object.keys(selectedAuditLog.metadata).length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">Metadados</Label>
+                  <div className="bg-muted p-4 rounded-md space-y-2">
+                    {Object.entries(selectedAuditLog.metadata).map(([key, value]) => (
+                      <div key={key} className="flex gap-2">
+                        <span className="text-xs font-semibold min-w-[120px]">{key}:</span>
+                        <span className="text-xs text-muted-foreground flex-1 break-all">
+                          {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedAuditLog.old_data && (
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">Dados Anteriores</Label>
+                  <pre className="bg-muted p-4 rounded-md text-xs overflow-x-auto">
+                    {JSON.stringify(selectedAuditLog.old_data, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {selectedAuditLog.new_data && (
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">Dados Novos</Label>
+                  <pre className="bg-muted p-4 rounded-md text-xs overflow-x-auto">
+                    {JSON.stringify(selectedAuditLog.new_data, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
