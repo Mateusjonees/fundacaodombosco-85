@@ -432,111 +432,117 @@ export default function Reports() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Search className="h-4 w-4" />
+            <Search className="h-5 w-5" />
             Filtros de Pesquisa
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-            <div>
-              <Label>Funcionário</Label>
-              <Combobox
-                options={[
-                  { value: "all", label: "Todos os funcionários" },
-                  ...employees.map(employee => ({
-                    value: employee.user_id,
-                    label: employee.name
-                  }))
-                ]}
-                value={selectedEmployee}
-                onValueChange={setSelectedEmployee}
-                placeholder="Buscar funcionário..."
-                searchPlaceholder="Digite o nome do funcionário..."
-                emptyMessage="Nenhum funcionário encontrado."
-              />
+          <div className="space-y-6">
+            {/* Primeira linha: Funcionário, Paciente, Unidade */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Funcionário</Label>
+                <Combobox
+                  options={[
+                    { value: "all", label: "Todos os funcionários" },
+                    ...employees.map(employee => ({
+                      value: employee.user_id,
+                      label: employee.name
+                    }))
+                  ]}
+                  value={selectedEmployee}
+                  onValueChange={setSelectedEmployee}
+                  placeholder="Buscar funcionário..."
+                  searchPlaceholder="Digite o nome do funcionário..."
+                  emptyMessage="Nenhum funcionário encontrado."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Paciente</Label>
+                <Combobox
+                  options={[
+                    { value: "all", label: "Todos os pacientes" },
+                    ...clients.map(client => ({
+                      value: client.id,
+                      label: client.name
+                    }))
+                  ]}
+                  value={selectedClient}
+                  onValueChange={setSelectedClient}
+                  placeholder="Buscar paciente..."
+                  searchPlaceholder="Digite o nome do paciente..."
+                  emptyMessage="Nenhum paciente encontrado."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Unidade</Label>
+                <Select 
+                  value={selectedUnit} 
+                  onValueChange={setSelectedUnit}
+                  disabled={!!coordinatorUnit}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!coordinatorUnit && <SelectItem value="all">Todas as unidades</SelectItem>}
+                    <SelectItem value="madre">MADRE</SelectItem>
+                    <SelectItem value="floresta">Floresta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <Label>Paciente</Label>
-              <Combobox
-                options={[
-                  { value: "all", label: "Todos os pacientes" },
-                  ...clients.map(client => ({
-                    value: client.id,
-                    label: client.name
-                  }))
-                ]}
-                value={selectedClient}
-                onValueChange={setSelectedClient}
-                placeholder="Buscar paciente..."
-                searchPlaceholder="Digite o nome do paciente..."
-                emptyMessage="Nenhum paciente encontrado."
-              />
-            </div>
+            {/* Segunda linha: Tipo de Atendimento e Período */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Tipo de Atendimento</Label>
+                <Select value={sessionType} onValueChange={setSessionType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os tipos</SelectItem>
+                    <SelectItem value="Consulta">Consulta</SelectItem>
+                    <SelectItem value="Terapia">Terapia</SelectItem>
+                    <SelectItem value="Avaliação">Avaliação</SelectItem>
+                    <SelectItem value="Fonoaudiologia">Fonoaudiologia</SelectItem>
+                    <SelectItem value="Psicologia">Psicologia</SelectItem>
+                    <SelectItem value="Musicoterapia">Musicoterapia</SelectItem>
+                    <SelectItem value="Fisioterapia">Fisioterapia</SelectItem>
+                    <SelectItem value="Nutrição">Nutrição</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label>Unidade</Label>
-              <Select 
-                value={selectedUnit} 
-                onValueChange={setSelectedUnit}
-                disabled={!!coordinatorUnit}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas" />
-                </SelectTrigger>
-                <SelectContent>
-                  {!coordinatorUnit && <SelectItem value="all">Todas as unidades</SelectItem>}
-                  <SelectItem value="madre">MADRE</SelectItem>
-                  <SelectItem value="floresta">Floresta</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Mês</Label>
+                <Input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                />
+              </div>
 
-            <div>
-              <Label>Tipo de Atendimento</Label>
-              <Select value={sessionType} onValueChange={setSessionType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
-                  <SelectItem value="Consulta">Consulta</SelectItem>
-                  <SelectItem value="Terapia">Terapia</SelectItem>
-                  <SelectItem value="Avaliação">Avaliação</SelectItem>
-                  <SelectItem value="Fonoaudiologia">Fonoaudiologia</SelectItem>
-                  <SelectItem value="Psicologia">Psicologia</SelectItem>
-                  <SelectItem value="Musicoterapia">Musicoterapia</SelectItem>
-                  <SelectItem value="Fisioterapia">Fisioterapia</SelectItem>
-                  <SelectItem value="Nutrição">Nutrição</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Data Inicial</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
 
-            <div>
-              <Label>Mês</Label>
-              <Input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label>Data Inicial</Label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label>Data Final</Label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Data Final</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           
