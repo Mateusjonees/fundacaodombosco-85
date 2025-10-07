@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RequiredLabel } from '@/components/ui/required-label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -238,7 +239,7 @@ export default function ClientForm() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <Label htmlFor="name">Nome Completo</Label>
+                <RequiredLabel htmlFor="name" required>Nome Completo</RequiredLabel>
                 <Input
                   id="name"
                   value={formData.name}
@@ -248,7 +249,7 @@ export default function ClientForm() {
               </div>
               
               <div>
-                <Label htmlFor="birth_date">Data de Nascimento</Label>
+                <RequiredLabel htmlFor="birth_date" required>Data de Nascimento</RequiredLabel>
                 <Input
                   id="birth_date"
                   type="date"
@@ -260,7 +261,7 @@ export default function ClientForm() {
               </div>
               
               <div>
-                <Label htmlFor="gender">Gênero</Label>
+                <RequiredLabel htmlFor="gender">Gênero</RequiredLabel>
                 <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />

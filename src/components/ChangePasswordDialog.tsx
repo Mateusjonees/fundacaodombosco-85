@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RequiredLabel } from '@/components/ui/required-label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -128,7 +129,7 @@ export const ChangePasswordDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="newPassword">Nova Senha *</Label>
+            <RequiredLabel htmlFor="newPassword" required>Nova Senha</RequiredLabel>
             <div className="relative">
               <Input
                 id="newPassword"

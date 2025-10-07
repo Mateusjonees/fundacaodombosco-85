@@ -62,23 +62,52 @@ export const CostCenterAnalysis = () => {
       // Buscar dados financeiros por unidade
       const units: UnitData[] = [];
       const categories: Record<string, number> = {};
+      
+      // Também buscar despesas de compra de estoque (supplies)
+      const { data: stockExpenses } = await supabase
+        .from('financial_records')
+        .select('amount, category, date')
+        .eq('type', 'expense')
+        .eq('category', 'supplies')
+        .gte('date', start)
+        .lte('date', end);
+
+      const totalStockExpenses = stockExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
       for (const unit of ['madre', 'floresta']) {
-        // Receitas por unidade
-        const { data: revenues } = await supabase
-          .from('financial_records')
-          .select('amount, category')
-          .eq('type', 'income')
-          .gte('date', start)
-          .lte('date', end);
+        // Receitas por unidade - buscar de clientes vinculados à unidade
+        const { data: clientsInUnit } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('unit', unit);
+        
+        const clientIds = clientsInUnit?.map(c => c.id) || [];
 
-        // Despesas por unidade
-        const { data: expenses } = await supabase
-          .from('financial_records')
-          .select('amount, category')
-          .eq('type', 'expense')
-          .gte('date', start)
-          .lte('date', end);
+        // Receitas por unidade (financial_records com client_id da unidade)
+        let revenues: any[] = [];
+        if (clientIds.length > 0) {
+          const { data } = await supabase
+            .from('financial_records')
+            .select('amount, category')
+            .eq('type', 'income')
+            .in('client_id', clientIds)
+            .gte('date', start)
+            .lte('date', end);
+          revenues = data || [];
+        }
+
+        // Despesas por unidade (financial_records com client_id da unidade)
+        let expenses: any[] = [];
+        if (clientIds.length > 0) {
+          const { data } = await supabase
+            .from('financial_records')
+            .select('amount, category')
+            .eq('type', 'expense')
+            .in('client_id', clientIds)
+            .gte('date', start)
+            .lte('date', end);
+          expenses = data || [];
+        }
 
         // Também buscar de client_payments se tiver unidade
         const { data: clientPayments } = await supabase
@@ -90,7 +119,10 @@ export const CostCenterAnalysis = () => {
 
         const receita = (revenues?.reduce((sum, r) => sum + Number(r.amount), 0) || 0) +
                        (clientPayments?.reduce((sum, p) => sum + Number(p.amount_paid), 0) || 0);
-        const despesa = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+        
+        // Despesas incluindo metade das compras de estoque para cada unidade
+        const despesa = (expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0) + 
+                       (totalStockExpenses / 2); // Dividir despesas de estoque entre as unidades
 
         units.push({
           unit: unit.charAt(0).toUpperCase() + unit.slice(1),

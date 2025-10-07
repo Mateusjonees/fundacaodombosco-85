@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RequiredLabel } from '@/components/ui/required-label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -256,7 +257,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nome Completo *</Label>
+            <RequiredLabel htmlFor="name" required>Nome Completo</RequiredLabel>
             <Input
               id="name"
               type="text"
@@ -268,7 +269,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <RequiredLabel htmlFor="email" required>Email</RequiredLabel>
             <Input
               id="email"
               type="email"
@@ -280,7 +281,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Senha *</Label>
+            <RequiredLabel htmlFor="password" required>Senha</RequiredLabel>
             <div className="relative">
               <Input
                 id="password"

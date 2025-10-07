@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RequiredLabel } from '@/components/ui/required-label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
@@ -257,7 +258,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome do Item *</Label>
+              <RequiredLabel htmlFor="name" required>Nome do Item</RequiredLabel>
               <Input
                 id="name"
                 value={formData.name}
@@ -287,7 +288,7 @@ export default function AddStockItemDialog({ isOpen, onClose, onUpdate }: AddSto
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unit">Unidade *</Label>
+              <RequiredLabel htmlFor="unit" required>Unidade</RequiredLabel>
               <Select 
                 value={formData.unit} 
                 onValueChange={(value) => handleInputChange('unit', value)}
