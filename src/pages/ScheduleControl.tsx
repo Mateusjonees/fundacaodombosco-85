@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,7 @@ import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addW
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ClientDetailsView from '@/components/ClientDetailsView';
 
 interface Schedule {
   id: string;
@@ -43,6 +45,32 @@ export default function ScheduleControl() {
   const [selectedEmployee, setSelectedEmployee] = useState('all');
   const [selectedUnit, setSelectedUnit] = useState('all');
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+
+  const handleClientClick = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', clientId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setSelectedClient(data);
+        setIsClientDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error loading client details:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar os detalhes do paciente.",
+      });
+    }
+  };
 
   useEffect(() => {
     loadUserProfile();
@@ -246,7 +274,12 @@ export default function ScheduleControl() {
                           
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{schedule.clients?.name || 'Paciente não identificado'}</span>
+                            <button
+                              onClick={() => handleClientClick(schedule.client_id)}
+                              className="font-medium hover:text-primary hover:underline transition-colors"
+                            >
+                              {schedule.clients?.name || 'Paciente não identificado'}
+                            </button>
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -311,7 +344,12 @@ export default function ScheduleControl() {
                       <div className="font-semibold">
                         {format(new Date(schedule.start_time), 'HH:mm')}
                       </div>
-                      <div className="truncate">{schedule.clients?.name}</div>
+                      <button
+                        onClick={() => handleClientClick(schedule.client_id)}
+                        className="truncate hover:text-primary hover:underline transition-colors text-left w-full"
+                      >
+                        {schedule.clients?.name}
+                      </button>
                       <div className="truncate text-muted-foreground">
                         {schedule.profiles?.name}
                       </div>
@@ -360,7 +398,14 @@ export default function ScheduleControl() {
                     <TableCell>
                       {format(new Date(schedule.start_time), 'HH:mm')} - {format(new Date(schedule.end_time), 'HH:mm')}
                     </TableCell>
-                    <TableCell>{schedule.clients?.name || 'N/A'}</TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => handleClientClick(schedule.client_id)}
+                        className="hover:text-primary hover:underline transition-colors"
+                      >
+                        {schedule.clients?.name || 'N/A'}
+                      </button>
+                    </TableCell>
                     <TableCell>{schedule.profiles?.name || 'N/A'}</TableCell>
                     <TableCell>
                       {schedule.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
@@ -516,6 +561,34 @@ export default function ScheduleControl() {
           </>
         )}
       </div>
+
+      {/* Dialog de Detalhes do Cliente */}
+      <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Paciente</DialogTitle>
+          </DialogHeader>
+          {selectedClient && (
+            <ClientDetailsView 
+              client={selectedClient}
+              onEdit={() => {
+                // Recarregar dados do cliente após edição
+                if (selectedClient?.id) {
+                  handleClientClick(selectedClient.id);
+                }
+              }}
+              onBack={() => setIsClientDialogOpen(false)}
+              onRefresh={() => {
+                // Recarregar agendamentos após atualização
+                loadSchedules();
+                if (selectedClient?.id) {
+                  handleClientClick(selectedClient.id);
+                }
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
