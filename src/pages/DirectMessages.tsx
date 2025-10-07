@@ -111,6 +111,7 @@ export default function DirectMessages() {
 
   const loadUsers = async () => {
     try {
+      console.log('🔍 Carregando usuários disponíveis...');
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, name, employee_role, is_active')
@@ -118,10 +119,20 @@ export default function DirectMessages() {
         .neq('user_id', user?.id)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar usuários:', error);
+        throw error;
+      }
+      
+      console.log('✅ Usuários carregados:', data?.length || 0, data);
       setUsers(data || []);
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+      console.error('❌ Erro ao carregar usuários:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar usuários",
+        description: "Não foi possível carregar a lista de usuários disponíveis.",
+      });
     }
   };
 
@@ -391,8 +402,13 @@ export default function DirectMessages() {
               {/* Todos os usuários */}
               <div>
                 <div className="px-4 py-2 text-xs font-semibold text-muted-foreground">
-                  TODOS OS USUÁRIOS
+                  TODOS OS USUÁRIOS ({filteredUsers.length})
                 </div>
+                {filteredUsers.length === 0 && (
+                  <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    Nenhum usuário encontrado
+                  </div>
+                )}
                 {filteredUsers.map((u) => (
                   <button
                     key={u.user_id}
