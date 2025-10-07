@@ -154,10 +154,10 @@ export const MainApp = () => {
                         <User className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 bg-background z-50">
-                      <DropdownMenuLabel>
+                    <DropdownMenuContent align="end" className="w-72 bg-background z-50 p-2">
+                      <DropdownMenuLabel className="pb-3">
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">
+                          <p className="text-sm font-semibold leading-none">
                             {currentUserProfile?.name || user?.email}
                           </p>
                           <p className="text-xs leading-none text-muted-foreground">
@@ -167,40 +167,38 @@ export const MainApp = () => {
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       
-                      <div className="p-2">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Ajuda</span>
-                            <QuickHelpCenter />
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Notificações</span>
-                            <AppointmentNotifications />
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Validar Atendimentos</span>
-                            <PendingAttendancesNotification />
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Modo Escuro</span>
-                            <ThemeToggle />
-                          </div>
+                      <div className="py-2 space-y-1">
+                        <div className="flex items-center justify-between px-2 py-2 hover:bg-accent rounded-md transition-colors">
+                          <span className="text-sm">Ajuda</span>
+                          <QuickHelpCenter />
+                        </div>
+                        <div className="flex items-center justify-between px-2 py-2 hover:bg-accent rounded-md transition-colors">
+                          <span className="text-sm">Notificações</span>
+                          <AppointmentNotifications />
+                        </div>
+                        <div className="flex items-center justify-between px-2 py-2 hover:bg-accent rounded-md transition-colors">
+                          <span className="text-sm">Validar Atendimentos</span>
+                          <PendingAttendancesNotification />
+                        </div>
+                        <div className="flex items-center justify-between px-2 py-2 hover:bg-accent rounded-md transition-colors">
+                          <span className="text-sm">Modo Escuro</span>
+                          <ThemeToggle />
                         </div>
                       </div>
                       
                       <DropdownMenuSeparator />
                       
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/messages" className="flex items-center">
-                          <MessageSquare className="mr-2 h-4 w-4" />
+                      <DropdownMenuItem asChild className="cursor-pointer mt-1">
+                        <Link to="/messages" className="flex items-center px-2 py-2">
+                          <MessageSquare className="mr-3 h-4 w-4" />
                           <span>Mensagens</span>
                         </Link>
                       </DropdownMenuItem>
                       
                       <DropdownMenuSeparator />
                       
-                      <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
-                        <LogOut className="mr-2 h-4 w-4" />
+                      <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer mt-1 px-2 py-2">
+                        <LogOut className="mr-3 h-4 w-4" />
                         <span>Sair</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
