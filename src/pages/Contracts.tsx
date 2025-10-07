@@ -104,12 +104,17 @@ export default function Contracts() {
   const loadClients = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('clients')
         .select('*')
-        .eq('is_active', true)
-        .eq('unit', 'floresta') // Apenas pacientes da unidade Floresta
-        .order('name');
+        .eq('is_active', true);
+
+      // Se não for diretor, filtra apenas pela unidade floresta
+      if (userRole !== 'director') {
+        query = query.eq('unit', 'floresta');
+      }
+
+      const { data, error } = await query.order('name');
 
       if (error) throw error;
       setClients(data || []);
