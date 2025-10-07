@@ -74,9 +74,22 @@ export default function PasswordManager({ employeeId, employeeName, employeeEmai
 
     setLoading(true);
     try {
-      // Usar a função administrativa do Supabase para atualizar senha
-      const { error } = await supabase.auth.admin.updateUserById(employeeId, {
-        password: newPassword
+      // Obter token de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      // Chamar edge function para alterar senha
+      const { data, error } = await supabase.functions.invoke('change-user-password', {
+        body: {
+          userId: employeeId,
+          newPassword: newPassword
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
@@ -91,27 +104,11 @@ export default function PasswordManager({ employeeId, employeeName, employeeEmai
       setConfirmPassword('');
     } catch (error: any) {
       console.error('Error updating password:', error);
-      
-      // Como fallback, enviar email de reset
-      try {
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(employeeEmail, {
-          redirectTo: window.location.origin + '/reset-password'
-        });
-
-        if (resetError) throw resetError;
-
-        toast({
-          title: "Email de Reset Enviado",
-          description: `Um email de redefinição de senha foi enviado para ${employeeEmail}`,
-        });
-        setIsOpen(false);
-      } catch (resetError) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível alterar a senha. Tente novamente.",
-        });
-      }
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Não foi possível alterar a senha. Tente novamente.",
+      });
     } finally {
       setLoading(false);
     }
