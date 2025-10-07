@@ -4,125 +4,127 @@
 
 @layer base {
   :root {
-    /* Light Green Theme with Black Text and White Inputs */
-    --background: 120 50% 95%;
-    --foreground: 0 0% 0%;
+    /* Modern Blue & Green Theme - Fundação Dom Bosco */
+    --background: 210 40% 98%;
+    --foreground: 210 20% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 210 20% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 120 40% 70%;
-    --primary-foreground: 0 0% 0%;
-    --primary-glow: 120 50% 80%;
-    --secondary: 120 30% 90%;
-    --secondary-foreground: 0 0% 0%;
-    --muted: 120 40% 92%;
-    --muted-foreground: 0 0% 25%;
-    --accent: 120 35% 88%;
-    --accent-foreground: 0 0% 0%;
+    --popover-foreground: 210 20% 15%;
+    --primary: 203 79% 43%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 203 70% 55%;
+    --secondary: 112 42% 57%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 30% 96%;
+    --muted-foreground: 210 15% 45%;
+    --accent: 203 70% 95%;
+    --accent-foreground: 203 79% 43%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 120 30% 85%;
+    --border: 210 25% 90%;
     --input: 0 0% 100%;
-    --ring: 120 40% 70%;
+    --ring: 203 79% 43%;
     --radius: 0.75rem;
     
-    /* Professional Healthcare Colors */
-    --medical-primary: 142 71% 45%;
-    --medical-secondary: 160 45% 35%;
-    --medical-accent: 180 25% 85%;
-    --success: 120 65% 45%;
-    --warning: 45 85% 55%;
-    --info: 200 75% 55%;
+    /* Modern Healthcare Colors */
+    --medical-primary: 203 79% 43%;
+    --medical-secondary: 112 42% 57%;
+    --medical-accent: 203 70% 95%;
+    --success: 142 70% 45%;
+    --warning: 45 90% 60%;
+    --info: 203 79% 43%;
     
     /* Login specific colors */
-    --login-bg-start: 120 50% 95%;
-    --login-bg-end: 120 40% 90%;
+    --login-bg-start: 210 40% 98%;
+    --login-bg-end: 203 30% 95%;
     --login-form-bg: 0 0% 100%;
-    --login-text: 0 0% 0%;
-    --login-input-border: 120 30% 85%;
-    --login-input-focus: 120 40% 70%;
+    --login-text: 210 20% 15%;
+    --login-input-border: 210 25% 90%;
+    --login-input-focus: 203 79% 43%;
     
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--accent)));
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--accent)));
+    /* Modern Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(203 79% 43%), hsl(203 70% 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(112 42% 57%), hsl(112 50% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%), hsl(203 30% 95%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(203 70% 98%));
     
-    /* Shadows */
-    --shadow-professional: 0 4px 20px -2px hsl(var(--primary) / 0.1);
-    --shadow-elegant: 0 8px 30px -8px hsl(var(--primary) / 0.15);
-    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.2);
+    /* Modern Shadows */
+    --shadow-professional: 0 4px 20px -2px rgba(27, 117, 188, 0.1);
+    --shadow-elegant: 0 8px 30px -8px rgba(27, 117, 188, 0.15);
+    --shadow-glow: 0 0 40px rgba(27, 117, 188, 0.2);
     
     /* Chart colors for healthcare data */
-    --chart-1: 142 71% 45%;
-    --chart-2: 160 45% 35%;
-    --chart-3: 180 25% 65%;
-    --chart-4: 200 40% 50%;
-    --chart-5: 220 35% 55%;
+    --chart-1: 203 79% 43%;
+    --chart-2: 112 42% 57%;
+    --chart-3: 203 60% 60%;
+    --chart-4: 112 35% 45%;
+    --chart-5: 203 50% 70%;
     
     /* Sidebar */
-    --sidebar-background: 120 50% 95%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 120 40% 70%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 120 35% 88%;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 120 30% 85%;
-    --sidebar-ring: 120 40% 70%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 20% 15%;
+    --sidebar-primary: 203 79% 43%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 203 70% 95%;
+    --sidebar-accent-foreground: 203 79% 43%;
+    --sidebar-border: 210 25% 90%;
+    --sidebar-ring: 203 79% 43%;
 
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .dark {
-    /* Light Green Theme - Keep light mode for dark mode too */
-    --background: 120 50% 95%;
-    --foreground: 0 0% 0%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 120 40% 70%;
-    --primary-foreground: 0 0% 0%;
-    --primary-glow: 120 50% 80%;
-    --secondary: 120 30% 90%;
-    --secondary-foreground: 0 0% 0%;
-    --muted: 120 40% 92%;
-    --muted-foreground: 0 0% 25%;
-    --accent: 120 35% 88%;
-    --accent-foreground: 0 0% 0%;
+    /* Modern Dark Theme - Fundação Dom Bosco */
+    --background: 210 30% 10%;
+    --foreground: 210 15% 95%;
+    --card: 210 25% 12%;
+    --card-foreground: 210 15% 95%;
+    --popover: 210 25% 12%;
+    --popover-foreground: 210 15% 95%;
+    --primary: 203 79% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 203 70% 60%;
+    --secondary: 112 42% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 20% 18%;
+    --muted-foreground: 210 15% 65%;
+    --accent: 203 60% 25%;
+    --accent-foreground: 203 79% 80%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 120 30% 85%;
-    --input: 0 0% 100%;
-    --ring: 120 40% 70%;
+    --border: 210 20% 22%;
+    --input: 210 25% 15%;
+    --ring: 203 79% 50%;
     
-    /* Professional Healthcare Colors - Dark Mode */
-    --medical-primary: 142 65% 55%;
-    --medical-secondary: 160 40% 45%;
-    --medical-accent: 180 20% 20%;
-    --success: 120 60% 50%;
-    --warning: 45 80% 60%;
-    --info: 200 70% 60%;
+    /* Dark Mode Healthcare Colors */
+    --medical-primary: 203 79% 50%;
+    --medical-secondary: 112 42% 60%;
+    --medical-accent: 203 60% 25%;
+    --success: 142 65% 50%;
+    --warning: 45 85% 65%;
+    --info: 203 79% 50%;
     
     /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--accent)));
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--accent)));
+    --gradient-primary: linear-gradient(135deg, hsl(203 79% 50%), hsl(203 70% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(112 42% 60%), hsl(112 50% 70%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 30% 10%), hsl(203 30% 15%));
+    --gradient-card: linear-gradient(145deg, hsl(210 25% 12%), hsl(203 40% 18%));
     
     /* Dark mode shadows */
-    --shadow-professional: 0 4px 20px -2px hsl(0 0% 0% / 0.3);
-    --shadow-elegant: 0 8px 30px -8px hsl(0 0% 0% / 0.4);
-    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
+    --shadow-professional: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+    --shadow-elegant: 0 8px 30px -8px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 40px rgba(27, 117, 188, 0.3);
     
     /* Dark sidebar */
-    --sidebar-background: 120 50% 95%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 120 40% 70%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 120 35% 88%;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 120 30% 85%;
-    --sidebar-ring: 120 40% 70%;
+    --sidebar-background: 210 25% 12%;
+    --sidebar-foreground: 210 15% 95%;
+    --sidebar-primary: 203 79% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 203 60% 25%;
+    --sidebar-accent-foreground: 203 79% 80%;
+    --sidebar-border: 210 20% 22%;
+    --sidebar-ring: 203 79% 50%;
   }
 }
 

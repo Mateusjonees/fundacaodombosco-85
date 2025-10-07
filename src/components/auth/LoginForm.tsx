@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
+import logo from '@/assets/fundacao-dom-bosco-logo-main.png';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -88,11 +89,20 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
       <div className="login-bubble bubble-3"></div>
       
       <Card className="login-form">
-        <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-2xl font-bold text-primary">
-            FUNDAÇÃO DOM BOSCO
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">Sistema de Gestão - Acesso Restrito</p>
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <img 
+              src={logo} 
+              alt="Fundação Dom Bosco" 
+              className="h-32 w-auto object-contain"
+            />
+          </div>
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-primary">
+              Sistema de Gestão
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Acesso Restrito</p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

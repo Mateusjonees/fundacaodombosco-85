@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import logo from '@/assets/fundacao-dom-bosco-logo-main.png';
 
 import { 
   Users, 
@@ -309,16 +310,26 @@ export function AppSidebar() {
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
       <SidebarContent>
         <SidebarGroup>
-            <div className="flex flex-col items-center p-4">
-              {!collapsed && (
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-primary">
-                    Fundação Dom Bosco
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Sistema de Gestão
+            <div className="flex flex-col items-center p-4 border-b">
+              {!collapsed ? (
+                <div className="text-center space-y-3">
+                  <img 
+                    src={logo} 
+                    alt="Fundação Dom Bosco" 
+                    className="h-20 w-auto object-contain mx-auto"
+                  />
+                  <div>
+                    <div className="text-xs font-semibold text-primary">
+                      Sistema de Gestão
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <img 
+                  src={logo} 
+                  alt="Fundação Dom Bosco" 
+                  className="h-8 w-auto object-contain"
+                />
               )}
             </div>
           
