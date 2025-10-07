@@ -138,125 +138,240 @@ export const useCustomPermissions = () => {
 };
 
 export const PERMISSION_LABELS: Record<PermissionAction, string> = {
-  // Visualização
-  view_dashboard: 'Ver Painel',
-  view_clients: 'Ver Clientes',
-  view_schedules: 'Ver Agendamentos',
-  view_financial: 'Ver Financeiro',
-  view_reports: 'Ver Relatórios',
-  view_stock: 'Ver Estoque',
-  view_employees: 'Ver Funcionários',
-  view_medical_records: 'Ver Prontuários',
-  view_contracts: 'Ver Contratos',
-  view_messages: 'Ver Mensagens',
-  view_files: 'Ver Arquivos',
-  view_quality_control: 'Ver Controle de Qualidade',
-  view_timesheet: 'Ver Ponto Eletrônico',
-  view_meeting_alerts: 'Ver Alertas de Reunião',
-
-  // Criação
-  create_clients: 'Criar Clientes',
-  create_schedules: 'Criar Agendamentos',
-  create_financial_records: 'Criar Registros Financeiros',
-  create_stock_items: 'Criar Itens de Estoque',
-  create_employees: 'Criar Funcionários',
+  // Painel
+  view_dashboard: 'Visualizar Painel',
+  
+  // Pacientes
+  view_clients: 'Visualizar Pacientes',
+  create_clients: 'Cadastrar Novos Pacientes',
+  edit_clients: 'Editar Dados de Pacientes',
+  delete_clients: 'Excluir Pacientes',
+  assign_clients: 'Atribuir Pacientes a Profissionais',
+  view_medical_records: 'Visualizar Prontuários',
   create_medical_records: 'Criar Prontuários',
-  create_contracts: 'Criar Contratos',
-  create_messages: 'Criar Mensagens',
-  create_files: 'Criar Arquivos',
-  create_quality_evaluations: 'Criar Avaliações de Qualidade',
-  create_meeting_alerts: 'Criar Alertas de Reunião',
-
-  // Edição
-  edit_clients: 'Editar Clientes',
-  edit_schedules: 'Editar Agendamentos',
-  edit_financial_records: 'Editar Registros Financeiros',
-  edit_stock_items: 'Editar Itens de Estoque',
-  edit_employees: 'Editar Funcionários',
   edit_medical_records: 'Editar Prontuários',
-  edit_contracts: 'Editar Contratos',
-  edit_files: 'Editar Arquivos',
-  edit_system_settings: 'Editar Configurações do Sistema',
-  edit_user_permissions: 'Editar Permissões de Usuários',
-
-  // Exclusão
-  delete_clients: 'Excluir Clientes',
-  delete_schedules: 'Excluir Agendamentos',
-  delete_financial_records: 'Excluir Registros Financeiros',
-  delete_stock_items: 'Excluir Itens de Estoque',
-  delete_employees: 'Excluir Funcionários',
   delete_medical_records: 'Excluir Prontuários',
-  delete_contracts: 'Excluir Contratos',
-  delete_files: 'Excluir Arquivos',
 
-  // Administrativo
-  manage_users: 'Gerenciar Usuários',
-  manage_roles: 'Gerenciar Cargos',
-  change_user_passwords: 'Alterar Senhas de Usuários',
-  view_audit_logs: 'Ver Logs de Auditoria',
-  manage_system_settings: 'Gerenciar Configurações',
-  export_data: 'Exportar Dados',
-  import_data: 'Importar Dados',
-  view_sensitive_data: 'Ver Dados Sensíveis',
-
-  // Especiais
+  // Agenda
+  view_schedules: 'Visualizar Agenda',
+  create_schedules: 'Criar Agendamentos',
+  edit_schedules: 'Editar Agendamentos',
+  delete_schedules: 'Excluir Agendamentos',
   confirm_appointments: 'Confirmar Atendimentos',
   cancel_appointments: 'Cancelar Atendimentos',
-  approve_timesheet: 'Aprovar Ponto',
-  assign_clients: 'Atribuir Clientes',
-  generate_reports: 'Gerar Relatórios',
+
+  // Financeiro
+  view_financial: 'Visualizar Registros Financeiros',
+  create_financial_records: 'Criar Lançamentos Financeiros',
+  edit_financial_records: 'Editar Lançamentos Financeiros',
+  delete_financial_records: 'Excluir Lançamentos Financeiros',
+
+  // Contratos
+  view_contracts: 'Visualizar Contratos',
+  create_contracts: 'Criar Novos Contratos',
+  edit_contracts: 'Editar Contratos',
+  delete_contracts: 'Excluir Contratos',
+
+  // Estoque
+  view_stock: 'Visualizar Estoque',
+  create_stock_items: 'Adicionar Itens ao Estoque',
+  edit_stock_items: 'Editar Itens do Estoque',
+  delete_stock_items: 'Excluir Itens do Estoque',
+
+  // Relatórios
+  view_reports: 'Visualizar Relatórios',
+  generate_reports: 'Gerar Novos Relatórios',
+  export_data: 'Exportar Dados',
+
+  // Funcionários
+  view_employees: 'Visualizar Funcionários',
+  create_employees: 'Cadastrar Funcionários',
+  edit_employees: 'Editar Dados de Funcionários',
+  delete_employees: 'Excluir Funcionários',
+
+  // Usuários e Permissões
+  manage_users: 'Gerenciar Usuários do Sistema',
+  manage_roles: 'Gerenciar Cargos e Funções',
+  change_user_passwords: 'Alterar Senhas de Usuários',
+  edit_user_permissions: 'Editar Permissões de Usuários',
+  view_audit_logs: 'Visualizar Logs de Auditoria',
+
+  // Mensagens
+  view_messages: 'Visualizar Mensagens',
+  create_messages: 'Enviar Mensagens',
+
+  // Arquivos
+  view_files: 'Visualizar Arquivos',
+  create_files: 'Fazer Upload de Arquivos',
+  edit_files: 'Editar Arquivos',
+  delete_files: 'Excluir Arquivos',
+
+  // Controle de Qualidade
+  view_quality_control: 'Visualizar Controle de Qualidade',
+  create_quality_evaluations: 'Criar Avaliações de Qualidade',
+
+  // Ponto Eletrônico
+  view_timesheet: 'Visualizar Ponto Eletrônico',
+  approve_timesheet: 'Aprovar Registros de Ponto',
+
+  // Alertas de Reunião
+  view_meeting_alerts: 'Visualizar Alertas de Reunião',
+  create_meeting_alerts: 'Criar Alertas de Reunião',
+
+  // Configurações do Sistema
+  manage_system_settings: 'Gerenciar Configurações Gerais',
+  edit_system_settings: 'Editar Configurações do Sistema',
+  import_data: 'Importar Dados',
+  view_sensitive_data: 'Visualizar Dados Sensíveis',
   access_all_units: 'Acesso a Todas as Unidades'
 };
 
 export const PERMISSION_CATEGORIES = {
-  viewing: {
-    label: 'Visualização',
+  dashboard: {
+    label: 'Painel',
+    icon: 'Home',
     permissions: [
-      'view_dashboard', 'view_clients', 'view_schedules', 'view_financial',
-      'view_reports', 'view_stock', 'view_employees', 'view_medical_records',
-      'view_contracts', 'view_messages', 'view_files', 'view_quality_control',
-      'view_timesheet', 'view_meeting_alerts'
+      'view_dashboard'
     ] as PermissionAction[]
   },
-  creating: {
-    label: 'Criação',
+  clients: {
+    label: 'Pacientes',
+    icon: 'Users',
     permissions: [
-      'create_clients', 'create_schedules', 'create_financial_records',
-      'create_stock_items', 'create_employees', 'create_medical_records',
-      'create_contracts', 'create_messages', 'create_files',
-      'create_quality_evaluations', 'create_meeting_alerts'
+      'view_clients',
+      'create_clients',
+      'edit_clients',
+      'delete_clients',
+      'assign_clients',
+      'view_medical_records',
+      'create_medical_records',
+      'edit_medical_records',
+      'delete_medical_records'
     ] as PermissionAction[]
   },
-  editing: {
-    label: 'Edição',
+  schedules: {
+    label: 'Agenda',
+    icon: 'Calendar',
     permissions: [
-      'edit_clients', 'edit_schedules', 'edit_financial_records',
-      'edit_stock_items', 'edit_employees', 'edit_medical_records',
-      'edit_contracts', 'edit_files', 'edit_system_settings',
-      'edit_user_permissions'
+      'view_schedules',
+      'create_schedules',
+      'edit_schedules',
+      'delete_schedules',
+      'confirm_appointments',
+      'cancel_appointments'
     ] as PermissionAction[]
   },
-  deleting: {
-    label: 'Exclusão',
+  financial: {
+    label: 'Financeiro',
+    icon: 'DollarSign',
     permissions: [
-      'delete_clients', 'delete_schedules', 'delete_financial_records',
-      'delete_stock_items', 'delete_employees', 'delete_medical_records',
-      'delete_contracts', 'delete_files'
+      'view_financial',
+      'create_financial_records',
+      'edit_financial_records',
+      'delete_financial_records'
     ] as PermissionAction[]
   },
-  administrative: {
-    label: 'Administrativo',
+  contracts: {
+    label: 'Contratos',
+    icon: 'FolderOpen',
     permissions: [
-      'manage_users', 'manage_roles', 'change_user_passwords',
-      'view_audit_logs', 'manage_system_settings', 'export_data',
-      'import_data', 'view_sensitive_data'
+      'view_contracts',
+      'create_contracts',
+      'edit_contracts',
+      'delete_contracts'
     ] as PermissionAction[]
   },
-  special: {
-    label: 'Especiais',
+  stock: {
+    label: 'Estoque',
+    icon: 'Package',
     permissions: [
-      'confirm_appointments', 'cancel_appointments', 'approve_timesheet',
-      'assign_clients', 'generate_reports', 'access_all_units'
+      'view_stock',
+      'create_stock_items',
+      'edit_stock_items',
+      'delete_stock_items'
+    ] as PermissionAction[]
+  },
+  reports: {
+    label: 'Relatórios',
+    icon: 'BarChart3',
+    permissions: [
+      'view_reports',
+      'generate_reports',
+      'export_data'
+    ] as PermissionAction[]
+  },
+  employees: {
+    label: 'Funcionários',
+    icon: 'UserPlus',
+    permissions: [
+      'view_employees',
+      'create_employees',
+      'edit_employees',
+      'delete_employees'
+    ] as PermissionAction[]
+  },
+  users: {
+    label: 'Usuários e Permissões',
+    icon: 'Shield',
+    permissions: [
+      'manage_users',
+      'manage_roles',
+      'change_user_passwords',
+      'edit_user_permissions',
+      'view_audit_logs'
+    ] as PermissionAction[]
+  },
+  messages: {
+    label: 'Mensagens',
+    icon: 'MessageSquare',
+    permissions: [
+      'view_messages',
+      'create_messages'
+    ] as PermissionAction[]
+  },
+  files: {
+    label: 'Arquivos',
+    icon: 'FolderOpen',
+    permissions: [
+      'view_files',
+      'create_files',
+      'edit_files',
+      'delete_files'
+    ] as PermissionAction[]
+  },
+  quality: {
+    label: 'Controle de Qualidade',
+    icon: 'CheckSquare',
+    permissions: [
+      'view_quality_control',
+      'create_quality_evaluations'
+    ] as PermissionAction[]
+  },
+  timesheet: {
+    label: 'Ponto Eletrônico',
+    icon: 'Clock',
+    permissions: [
+      'view_timesheet',
+      'approve_timesheet'
+    ] as PermissionAction[]
+  },
+  meetings: {
+    label: 'Alertas de Reunião',
+    icon: 'Bell',
+    permissions: [
+      'view_meeting_alerts',
+      'create_meeting_alerts'
+    ] as PermissionAction[]
+  },
+  system: {
+    label: 'Configurações do Sistema',
+    icon: 'Settings',
+    permissions: [
+      'manage_system_settings',
+      'edit_system_settings',
+      'import_data',
+      'view_sensitive_data',
+      'access_all_units'
     ] as PermissionAction[]
   }
 };
