@@ -666,6 +666,29 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                       
                       {/* Detalhes do serviço */}
                       <div className="space-y-3">
+                        {/* Info de Validação - para atendimentos validados */}
+                        {record.source === 'attendance_report' && record.validated_by_name && record.validated_at && (
+                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              <h5 className="font-medium text-sm text-green-800 dark:text-green-300">Atendimento Validado</h5>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-green-700 dark:text-green-400">
+                              <div>
+                                <span className="font-medium">Validado por:</span> {record.validated_by_name}
+                              </div>
+                              <div>
+                                <span className="font-medium">Data da validação:</span> {formatDateTime(record.validated_at)}
+                              </div>
+                              {record.completed_by_name && (
+                                <div>
+                                  <span className="font-medium">Finalizado por:</span> {record.completed_by_name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {record.session_objectives && (
                           <div>
                             <h5 className="font-medium text-sm mb-1">Objetivos da Sessão:</h5>
@@ -840,16 +863,57 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                         )}
                       </div>
                       
+                      {/* Informações Financeiras - para attendance_report */}
+                      {record.source === 'attendance_report' && (record.amount_charged || record.professional_amount || record.institution_amount) && (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 rounded-lg">
+                          <h5 className="font-medium text-sm mb-2 text-blue-800 dark:text-blue-300">Informações Financeiras</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                            {record.amount_charged && record.amount_charged > 0 && (
+                              <div>
+                                <span className="text-xs text-blue-600 dark:text-blue-400 block">Valor Total:</span>
+                                <span className="font-medium text-blue-800 dark:text-blue-300">R$ {record.amount_charged.toFixed(2)}</span>
+                              </div>
+                            )}
+                            {record.professional_amount && record.professional_amount > 0 && (
+                              <div>
+                                <span className="text-xs text-blue-600 dark:text-blue-400 block">Profissional:</span>
+                                <span className="font-medium text-blue-800 dark:text-blue-300">R$ {record.professional_amount.toFixed(2)}</span>
+                              </div>
+                            )}
+                            {record.institution_amount && record.institution_amount > 0 && (
+                              <div>
+                                <span className="text-xs text-blue-600 dark:text-blue-400 block">Fundação:</span>
+                                <span className="font-medium text-blue-800 dark:text-blue-300">R$ {record.institution_amount.toFixed(2)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Fonte do registro */}
                       <div className="mt-3 pt-3 border-t">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <FileText className="h-3 w-3" />
-                          <span>
-                            {record.source === 'schedule' && 'Agendamento'}
-                            {record.source === 'medical_record' && 'Registro Médico'}
-                            {record.source === 'session_report' && 'Relatório de Sessão'}
-                            {record.source === 'attendance_report' && 'Atendimento Concluído'}
-                          </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <FileText className="h-3 w-3" />
+                            <span>
+                              {record.source === 'schedule' && 'Agendamento'}
+                              {record.source === 'medical_record' && 'Registro Médico'}
+                              {record.source === 'session_report' && 'Relatório de Sessão'}
+                              {record.source === 'attendance_report' && 'Atendimento Concluído'}
+                            </span>
+                          </div>
+                          {/* Link para o agendamento original */}
+                          {record.schedule_id && (
+                            <a 
+                              href={`/schedule?id=${record.schedule_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline flex items-center gap-1"
+                            >
+                              <Calendar className="h-3 w-3" />
+                              Ver Agendamento
+                            </a>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1283,32 +1347,67 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                   </h3>
                   <div className="bg-card border rounded-lg p-4 space-y-3">
                     {selectedRecord.amount_charged && selectedRecord.amount_charged > 0 && (
-                      <div className="flex justify-between items-center p-3 bg-green-50 rounded">
+                      <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded">
                         <span className="font-medium">Valor Total Cobrado:</span>
-                        <span className="text-lg font-semibold text-green-600">
+                        <span className="text-lg font-semibold text-green-600 dark:text-green-400">
                           R$ {selectedRecord.amount_charged.toFixed(2)}
                         </span>
                       </div>
                     )}
                     {selectedRecord.professional_amount && selectedRecord.professional_amount > 0 && (
-                      <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
+                      <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
                         <span className="font-medium">Valor para o Profissional:</span>
-                        <span className="text-lg font-semibold text-blue-600">
+                        <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
                           R$ {selectedRecord.professional_amount.toFixed(2)}
                         </span>
                       </div>
                     )}
                     {selectedRecord.institution_amount && selectedRecord.institution_amount > 0 && (
-                      <div className="flex justify-between items-center p-3 bg-purple-50 rounded">
+                      <div className="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded">
                         <span className="font-medium">Valor para a Instituição:</span>
-                        <span className="text-lg font-semibold text-purple-600">
+                        <span className="text-lg font-semibold text-purple-600 dark:text-purple-400">
                           R$ {selectedRecord.institution_amount.toFixed(2)}
                         </span>
                       </div>
                     )}
+                    {/* Custo total dos materiais */}
+                    {selectedRecord.materials_used && selectedRecord.materials_used.length > 0 && (
+                      (() => {
+                        const totalMaterialsCost = selectedRecord.materials_used.reduce((sum: number, material: any) => 
+                          sum + (material.total_cost || 0), 0
+                        );
+                        return totalMaterialsCost > 0 ? (
+                          <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded">
+                            <span className="font-medium">Custo Total dos Materiais:</span>
+                            <span className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                              R$ {totalMaterialsCost.toFixed(2)}
+                            </span>
+                          </div>
+                        ) : null;
+                      })()
+                    )}
                   </div>
                 </div>
               ) : null}
+
+              {/* Link para Agendamento Original */}
+              {selectedRecord.schedule_id && (
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Agendamento Original
+                  </h3>
+                  <a 
+                    href={`/schedule?id=${selectedRecord.schedule_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline flex items-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Visualizar o agendamento completo
+                  </a>
+                </div>
+              )}
             </div>
           )}
           
