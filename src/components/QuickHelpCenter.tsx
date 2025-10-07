@@ -91,14 +91,20 @@ const categories = Array.from(new Set(tutorials.map(t => t.category)));
 
 export const QuickHelpCenter = () => {
   return (
-    <Popover>
+    <Popover modal={false}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative w-full justify-start gap-2">
           <HelpCircle className="h-4 w-4" />
           <span>Ajuda Rápida</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[90vw] sm:w-[400px] p-0" align="end" side="bottom" sideOffset={8}>
+      <PopoverContent 
+        className="w-[90vw] sm:w-[400px] p-0 z-[100]" 
+        align="end" 
+        side="bottom" 
+        sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <div className="border-b p-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <HelpCircle className="h-5 w-5" />
