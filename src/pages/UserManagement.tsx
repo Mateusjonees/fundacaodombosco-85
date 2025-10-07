@@ -287,13 +287,36 @@ export default function UserManagement() {
       return;
     }
 
-    try {
-      const { error } = await supabase.auth.admin.updateUserById(
-        passwordChange.userId,
-        { password: passwordChange.newPassword }
-      );
+    if (passwordChange.newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "A senha deve ter pelo menos 6 caracteres."
+      });
+      return;
+    }
 
-      if (error) throw error;
+    try {
+      console.log('Chamando edge function para trocar senha');
+      
+      const { data, error } = await supabase.functions.invoke('change-user-password', {
+        body: {
+          userId: passwordChange.userId,
+          newPassword: passwordChange.newPassword
+        }
+      });
+
+      console.log('Resposta:', { data, error });
+
+      if (error) {
+        console.error('Erro da edge function:', error);
+        throw new Error(error.message || 'Erro ao chamar função');
+      }
+
+      if (data?.error) {
+        console.error('Erro no retorno:', data.error);
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Senha alterada!",
@@ -303,10 +326,11 @@ export default function UserManagement() {
       setPasswordChange({ userId: '', newPassword: '', confirmPassword: '' });
       setIsPasswordDialogOpen(false);
     } catch (error: any) {
+      console.error('Erro completo:', error);
       toast({
         variant: "destructive",
         title: "Erro ao alterar senha",
-        description: error.message
+        description: error.message || "Não foi possível alterar a senha."
       });
     }
   };
