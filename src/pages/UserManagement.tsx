@@ -193,21 +193,62 @@ export default function UserManagement() {
 
       if (error) throw error;
 
-      // Buscar nomes dos usuários
-      const userIds = [...new Set(logs?.map(log => log.user_id) || [])];
+      // Buscar nomes dos usuários via user_id
+      const userIds = [...new Set(logs?.map(log => log.user_id).filter(Boolean) || [])];
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, name')
+        .select('user_id, name, email')
         .in('user_id', userIds);
 
-      const profilesMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p.name || p.email]) || []);
 
-      const logsWithNames = logs?.map(log => ({
-        ...log,
-        user_name: profilesMap.get(log.user_id) || 'Usuário desconhecido'
-      })) || [];
+      // Buscar também por email nos metadados (para logs de autenticação)
+      const emailsFromMetadata = logs?.map(log => {
+        const metadata = log.metadata as any;
+        if (metadata?.user_email) return metadata.user_email;
+        if (metadata?.email) return metadata.email;
+        return null;
+      }).filter(Boolean) || [];
+
+      const { data: profilesByEmail } = await supabase
+        .from('profiles')
+        .select('email, name, user_id')
+        .in('email', emailsFromMetadata);
+
+      const emailToNameMap = new Map(profilesByEmail?.map(p => [p.email, p.name || p.email]) || []);
+      const emailToUserIdMap = new Map(profilesByEmail?.map(p => [p.email, p.user_id]) || []);
+
+      const logsWithNames = logs?.map(log => {
+        let userName = 'Usuário desconhecido';
+        let userId = log.user_id;
+        const metadata = log.metadata as any;
+
+        // Tentar primeiro pelo user_id
+        if (log.user_id && profilesMap.has(log.user_id)) {
+          userName = profilesMap.get(log.user_id) || userName;
+        } 
+        // Se não tiver user_id, tentar pelo email nos metadados
+        else {
+          const email = metadata?.user_email || metadata?.email;
+          if (email) {
+            if (emailToNameMap.has(email)) {
+              userName = emailToNameMap.get(email) || userName;
+            }
+            if (emailToUserIdMap.has(email)) {
+              userId = emailToUserIdMap.get(email);
+            }
+          }
+        }
+
+        return {
+          ...log,
+          user_id: userId,
+          user_name: userName
+        };
+      }) || [];
 
       console.log('✅ Logs carregados:', logsWithNames.length);
+      console.log('📊 Exemplo de logs:', logsWithNames.slice(0, 3));
       setAuditLogs(logsWithNames);
     } catch (error) {
       console.error('❌ Erro ao carregar logs de auditoria:', error);
