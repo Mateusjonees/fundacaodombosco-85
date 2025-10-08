@@ -190,10 +190,12 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="cash">Dinheiro</SelectItem>
-                <SelectItem value="card">Cartão</SelectItem>
+                <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                <SelectItem value="debit_card">Cartão de Débito</SelectItem>
                 <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="transfer">Transferência</SelectItem>
+                <SelectItem value="bank_transfer">Transferência</SelectItem>
                 <SelectItem value="check">Cheque</SelectItem>
+                <SelectItem value="contract">Contrato</SelectItem>
                 <SelectItem value="internal">Interno</SelectItem>
               </SelectContent>
             </Select>

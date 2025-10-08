@@ -568,6 +568,7 @@ export default function Financial() {
                       <SelectItem value="pix">PIX</SelectItem>
                       <SelectItem value="bank_transfer">Transferência</SelectItem>
                       <SelectItem value="check">Cheque</SelectItem>
+                      <SelectItem value="contract">Contrato</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
