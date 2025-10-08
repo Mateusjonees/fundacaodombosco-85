@@ -553,6 +553,59 @@ export type Database = {
           },
         ]
       }
+      client_feedback_control: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string
+          deadline_date: string
+          id: string
+          notes: string | null
+          report_attached: boolean | null
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by: string
+          deadline_date: string
+          id?: string
+          notes?: string | null
+          report_attached?: boolean | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string
+          deadline_date?: string
+          id?: string
+          notes?: string | null
+          report_attached?: boolean | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_feedback_control_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_notes: {
         Row: {
           client_id: string | null
@@ -2540,6 +2593,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_feedback_deadline: {
+        Args: { start_date: string }
+        Returns: string
+      }
       can_access_financial: {
         Args: Record<PropertyKey, never>
         Returns: boolean
