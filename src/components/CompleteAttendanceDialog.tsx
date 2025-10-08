@@ -56,7 +56,6 @@ export default function CompleteAttendanceDialog({
   const [loading, setLoading] = useState(false);
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
-  const [isValidationMode, setIsValidationMode] = useState(false);
   const [canEditFinancials, setCanEditFinancials] = useState(false);
   
   const [attendanceData, setAttendanceData] = useState({
@@ -107,7 +106,6 @@ export default function CompleteAttendanceDialog({
     if (isOpen) {
       loadStockItems();
       checkUserPermissions();
-      setIsValidationMode(false); // Reset to form mode when dialog opens
     }
   }, [isOpen]);
 
@@ -386,8 +384,8 @@ export default function CompleteAttendanceDialog({
     }
   };
 
-  const goToValidation = () => {
-    // Validar campos obrigatórios antes de ir para validação
+  const goToValidation = async () => {
+    // Validar campos obrigatórios antes de enviar
     if (!attendanceData.sessionObjectives.trim()) {
       toast({
         variant: "destructive",
@@ -406,11 +404,8 @@ export default function CompleteAttendanceDialog({
       return;
     }
     
-    setIsValidationMode(true);
-  };
-
-  const backToForm = () => {
-    setIsValidationMode(false);
+    // Enviar direto para validação
+    await handleComplete();
   };
 
   const getTotalMaterialsCost = () => {
@@ -824,11 +819,10 @@ export default function CompleteAttendanceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            {isValidationMode ? 'Validar Atendimento' : 'Concluir Atendimento'} - {schedule.clients?.name}
+            Concluir Atendimento - {schedule.clients?.name}
           </DialogTitle>
         </DialogHeader>
 
-        {isValidationMode ? renderValidationScreen() : (
         <div className="space-y-6">
           {/* Informações Básicas */}
           <Card>
@@ -1202,26 +1196,14 @@ export default function CompleteAttendanceDialog({
             </Card>
           )}
         </div>
-        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
-          {isValidationMode ? (
-            <>
-              <Button variant="outline" onClick={backToForm} disabled={loading}>
-                Voltar e Editar
-              </Button>
-              <Button onClick={handleComplete} disabled={loading}>
-                {loading ? 'Salvando...' : 'Confirmar e Finalizar'}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={goToValidation} disabled={loading}>
-              Revisar e Validar
-            </Button>
-          )}
+          <Button onClick={goToValidation} disabled={loading}>
+            {loading ? 'Enviando para Revisão...' : 'Enviar para Revisão do Coordenador'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
