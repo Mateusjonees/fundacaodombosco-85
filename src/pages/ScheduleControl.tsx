@@ -13,7 +13,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ClientDetailsView from '@/components/ClientDetailsView';
 
@@ -73,6 +73,55 @@ export default function ScheduleControl() {
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível carregar os detalhes do paciente.",
+      });
+    }
+  };
+
+  const handleNotifyProfessional = async (schedule: Schedule) => {
+    if (!user) return;
+
+    try {
+      // Buscar nome do diretor
+      const { data: directorProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user.id)
+        .single();
+
+      // Buscar nome do cliente
+      const clientName = schedule.clients?.name || 'Cliente';
+
+      // Criar notificação para o profissional
+      const { error } = await supabase
+        .from('appointment_notifications')
+        .insert({
+          schedule_id: schedule.id,
+          employee_id: schedule.employee_id,
+          client_id: schedule.client_id,
+          title: 'Solicitação de Finalização',
+          message: `O diretor ${directorProfile?.name || 'Diretor'} solicita a finalização do atendimento de ${clientName} marcado para ${format(new Date(schedule.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
+          appointment_date: schedule.start_time,
+          appointment_time: format(new Date(schedule.start_time), 'HH:mm'),
+          notification_type: 'completion_request',
+          created_by: user.id,
+          metadata: {
+            requested_by: directorProfile?.name,
+            request_type: 'completion_request'
+          }
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Notificação enviada",
+        description: `${Array.isArray(schedule.profiles) ? schedule.profiles[0]?.name : schedule.profiles?.name} foi notificado para finalizar o atendimento.`,
+      });
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível enviar a notificação.",
       });
     }
   };
@@ -199,15 +248,23 @@ export default function ScheduleControl() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-      scheduled: { label: 'Agendado', variant: 'secondary' },
-      confirmed: { label: 'Confirmado', variant: 'default' },
-      completed: { label: 'Concluído', variant: 'outline' },
-      cancelled: { label: 'Cancelado', variant: 'destructive' },
+    const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon?: any }> = {
+      scheduled: { label: 'Agendado', variant: 'secondary', icon: Clock },
+      confirmed: { label: 'Confirmado', variant: 'default', icon: CheckCircle2 },
+      completed: { label: 'Concluído', variant: 'outline', icon: CheckCircle2 },
+      cancelled: { label: 'Cancelado', variant: 'destructive', icon: XCircle },
+      pending: { label: 'Pendente', variant: 'outline', icon: AlertCircle },
     };
 
     const config = statusConfig[status] || { label: status, variant: 'outline' };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const Icon = config.icon;
+    
+    return (
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        {Icon && <Icon className="h-3 w-3" />}
+        {config.label}
+      </Badge>
+    );
   };
 
   const getDateRangeText = () => {
@@ -274,8 +331,12 @@ export default function ScheduleControl() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm">
+                            <Clock className="h-4 w-4 text-primary" />
+                            <span className="font-semibold text-base">
                               {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              ({Math.round((new Date(schedule.end_time).getTime() - new Date(schedule.start_time).getTime()) / 60000)} min)
                             </span>
                           </div>
                           
@@ -283,7 +344,7 @@ export default function ScheduleControl() {
                             <FileText className="h-4 w-4 text-muted-foreground" />
                             <button
                               onClick={() => handleClientClick(schedule.client_id)}
-                              className="font-medium hover:text-primary hover:underline transition-colors"
+                              className="font-medium text-base hover:text-primary hover:underline transition-colors"
                             >
                               {schedule.clients?.name || 'Paciente não identificado'}
                             </button>
@@ -291,7 +352,7 @@ export default function ScheduleControl() {
 
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">
+                            <span className="text-sm font-medium">
                               {Array.isArray(schedule.profiles) 
                                 ? schedule.profiles[0]?.name 
                                 : schedule.profiles?.name || 'Profissional não atribuído'}
@@ -300,10 +361,16 @@ export default function ScheduleControl() {
 
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
+                            <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'}>
                               {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
-                            </span>
+                            </Badge>
                           </div>
+
+                          {schedule.title && (
+                            <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                              <strong>Tipo:</strong> {schedule.title}
+                            </div>
+                          )}
 
                           {/* Informações para diretores */}
                           {userProfile?.employee_role === 'director' && (
@@ -332,20 +399,39 @@ export default function ScheduleControl() {
                           )}
 
                           {schedule.notes && (
-                            <p className="text-sm text-muted-foreground mt-2">{schedule.notes}</p>
+                            <div className="text-sm bg-blue-50 dark:bg-blue-950/20 p-3 rounded border-l-2 border-blue-500">
+                              <strong>Observações:</strong> {schedule.notes}
+                            </div>
                           )}
 
                           {schedule.status === 'cancelled' && schedule.cancellation_reason && (
-                            <div className="text-sm bg-destructive/10 text-destructive p-2 rounded mt-2">
-                              <strong>Motivo:</strong> {schedule.cancellation_reason}
+                            <div className="text-sm bg-destructive/10 text-destructive p-3 rounded border-l-2 border-destructive">
+                              <strong>Motivo do cancelamento:</strong> {schedule.cancellation_reason}
                             </div>
                           )}
                         </div>
 
-                        <div className="text-right space-y-2">
+                        <div className="flex flex-col items-end gap-2">
                           {getStatusBadge(schedule.status)}
                           {schedule.patient_arrived && (
-                            <Badge variant="outline" className="block">Paciente chegou</Badge>
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Paciente chegou
+                            </Badge>
+                          )}
+                          
+                          {/* Botão de notificação para diretores */}
+                          {userProfile?.employee_role === 'director' && 
+                           (schedule.status === 'confirmed' || schedule.status === 'scheduled') && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleNotifyProfessional(schedule)}
+                              className="gap-2"
+                            >
+                              <Bell className="h-3 w-3" />
+                              Notificar Finalização
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -383,29 +469,39 @@ export default function ScheduleControl() {
                   <p className="text-xs text-muted-foreground">Sem agendamentos</p>
                 ) : (
                   daySchedules.map((schedule) => (
-                    <div key={schedule.id} className="text-xs p-3 bg-accent rounded space-y-1.5 border border-border/50">
-                      <div className="font-semibold">
-                        {format(new Date(schedule.start_time), 'HH:mm')}
+                    <div key={schedule.id} className="text-xs p-3 bg-accent rounded space-y-1.5 border border-border/50 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(schedule.start_time), 'HH:mm')}
+                        </div>
+                        {getStatusBadge(schedule.status)}
                       </div>
+                      
                       <button
                         onClick={() => handleClientClick(schedule.client_id)}
                         className="truncate hover:text-primary hover:underline transition-colors text-left w-full font-medium"
                       >
                         {schedule.clients?.name}
                       </button>
-                      <div className="truncate text-muted-foreground">
+                      
+                      <div className="truncate text-muted-foreground flex items-center gap-1">
+                        <User className="h-3 w-3" />
                         {Array.isArray(schedule.profiles) 
                           ? schedule.profiles[0]?.name 
                           : schedule.profiles?.name}
                       </div>
-                      {getStatusBadge(schedule.status)}
+
+                      <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-[10px]">
+                        {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+                      </Badge>
                       
                       {/* Info para diretores na visualização semanal */}
                       {userProfile?.employee_role === 'director' && (
                         <>
                           {schedule.created_by_profile && (
                             <div className="text-[10px] text-muted-foreground truncate">
-                              Por: {Array.isArray(schedule.created_by_profile) 
+                              📝 {Array.isArray(schedule.created_by_profile) 
                                 ? schedule.created_by_profile[0]?.name 
                                 : schedule.created_by_profile?.name}
                             </div>
@@ -416,6 +512,17 @@ export default function ScheduleControl() {
                                 ? schedule.cancelled_by_profile[0]?.name 
                                 : schedule.cancelled_by_profile?.name}
                             </div>
+                          )}
+                          {(schedule.status === 'confirmed' || schedule.status === 'scheduled') && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleNotifyProfessional(schedule)}
+                              className="w-full h-6 text-[10px] gap-1 mt-1"
+                            >
+                              <Bell className="h-3 w-3" />
+                              Notificar
+                            </Button>
                           )}
                         </>
                       )}
@@ -445,28 +552,34 @@ export default function ScheduleControl() {
                 <TableHead>Profissional</TableHead>
                 <TableHead>Unidade</TableHead>
                 <TableHead>Status</TableHead>
+                {userProfile?.employee_role === 'director' && (
+                  <TableHead>Ações</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {schedules.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={userProfile?.employee_role === 'director' ? 7 : 6} className="text-center text-muted-foreground">
                     Nenhum agendamento encontrado para este mês.
                   </TableCell>
                 </TableRow>
               ) : (
                 schedules.map((schedule) => (
-                  <TableRow key={schedule.id}>
-                    <TableCell>
+                  <TableRow key={schedule.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
                       {format(new Date(schedule.start_time), "dd/MM/yyyy", { locale: ptBR })}
                     </TableCell>
                     <TableCell>
-                      {format(new Date(schedule.start_time), 'HH:mm')} - {format(new Date(schedule.end_time), 'HH:mm')}
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        {format(new Date(schedule.start_time), 'HH:mm')} - {format(new Date(schedule.end_time), 'HH:mm')}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <button
                         onClick={() => handleClientClick(schedule.client_id)}
-                        className="hover:text-primary hover:underline transition-colors"
+                        className="hover:text-primary hover:underline transition-colors font-medium"
                       >
                         {schedule.clients?.name || 'N/A'}
                       </button>
@@ -477,11 +590,19 @@ export default function ScheduleControl() {
                         : schedule.profiles?.name || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+                      <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'}>
+                        {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         {getStatusBadge(schedule.status)}
+                        {schedule.patient_arrived && (
+                          <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Chegou
+                          </Badge>
+                        )}
                         {userProfile?.employee_role === 'director' && schedule.created_by_profile && (
                           <div className="text-[10px] text-muted-foreground">
                             Por: {Array.isArray(schedule.created_by_profile) 
@@ -498,6 +619,21 @@ export default function ScheduleControl() {
                         )}
                       </div>
                     </TableCell>
+                    {userProfile?.employee_role === 'director' && (
+                      <TableCell>
+                        {(schedule.status === 'confirmed' || schedule.status === 'scheduled') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleNotifyProfessional(schedule)}
+                            className="gap-2"
+                          >
+                            <Bell className="h-3 w-3" />
+                            Notificar
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}
