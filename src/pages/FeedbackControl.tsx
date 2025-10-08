@@ -592,8 +592,8 @@ export default function FeedbackControl() {
 
       {/* Dialog de Detalhes e Upload de Laudo */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Devolutiva - {selectedFeedback?.clients?.name}</DialogTitle>
             <DialogDescription>
               {isCoordinator 
@@ -604,7 +604,7 @@ export default function FeedbackControl() {
           </DialogHeader>
 
           {selectedFeedback && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium">CPF</p>
@@ -651,7 +651,7 @@ export default function FeedbackControl() {
               </div>
 
               {/* Contagem Regressiva em Destaque no Dialog */}
-              <div className={`p-6 rounded-lg border-2 ${
+              <div className={`p-4 rounded-lg border-2 ${
                 calculateRemainingDays(selectedFeedback.deadline_date) < 0 
                   ? 'bg-red-50 border-red-300 dark:bg-red-950 dark:border-red-800' 
                   : calculateRemainingDays(selectedFeedback.deadline_date) <= 3 
@@ -659,15 +659,15 @@ export default function FeedbackControl() {
                     : 'bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-800'
               }`}>
                 <div className="text-center">
-                  <AlertCircle className={`h-8 w-8 mx-auto mb-3 ${
+                  <AlertCircle className={`h-6 w-6 mx-auto mb-2 ${
                     calculateRemainingDays(selectedFeedback.deadline_date) < 0 
                       ? 'text-red-600 dark:text-red-400' 
                       : calculateRemainingDays(selectedFeedback.deadline_date) <= 3 
                         ? 'text-orange-600 dark:text-orange-400'
                         : 'text-blue-600 dark:text-blue-400'
                   }`} />
-                  <p className="text-sm font-medium mb-2">⏱️ Contagem Regressiva</p>
-                  <p className={`text-3xl font-bold ${
+                  <p className="text-xs font-medium mb-1">⏱️ Contagem Regressiva</p>
+                  <p className={`text-2xl font-bold ${
                     calculateRemainingDays(selectedFeedback.deadline_date) < 0 
                       ? 'text-red-600 dark:text-red-400' 
                       : calculateRemainingDays(selectedFeedback.deadline_date) <= 3 
@@ -675,12 +675,12 @@ export default function FeedbackControl() {
                         : 'text-blue-600 dark:text-blue-400'
                   }`}>
                     {calculateRemainingDays(selectedFeedback.deadline_date) < 0 
-                      ? `Vencido há ${Math.abs(calculateRemainingDays(selectedFeedback.deadline_date))} dias úteis` 
+                      ? `Vencido há ${Math.abs(calculateRemainingDays(selectedFeedback.deadline_date))} dias` 
                       : calculateRemainingDays(selectedFeedback.deadline_date) === 0
                         ? '🔥 Vence hoje!'
                         : `${calculateRemainingDays(selectedFeedback.deadline_date)} ${calculateRemainingDays(selectedFeedback.deadline_date) === 1 ? 'dia útil' : 'dias úteis'}`}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Prazo de 15 dias úteis desde o lançamento
                   </p>
                 </div>
@@ -698,9 +698,9 @@ export default function FeedbackControl() {
               {!selectedFeedback.report_attached && (
                 <>
                   {(isCoordinator || selectedFeedback.assigned_to === user?.id) ? (
-                    <div className="border-2 border-dashed rounded-lg p-6">
+                    <div className="border-2 border-dashed rounded-lg p-4">
                       <div className="text-center space-y-2">
-                        <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
+                        <FileText className="h-8 w-8 text-muted-foreground mx-auto" />
                         <div>
                           <p className="text-sm font-medium">Anexar Laudo</p>
                           <p className="text-xs text-muted-foreground">
@@ -710,6 +710,7 @@ export default function FeedbackControl() {
                         <label className="cursor-pointer">
                           <Button 
                             variant="default" 
+                            size="sm"
                             disabled={uploadingLaudo}
                             onClick={(e) => {
                               e.preventDefault();
@@ -750,7 +751,7 @@ export default function FeedbackControl() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 mt-4">
             <Button variant="outline" onClick={() => {
               setShowDetailsDialog(false);
               setSelectedFeedback(null);
