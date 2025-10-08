@@ -600,7 +600,7 @@ export default function Schedule() {
       'scheduled': { text: 'Agendado', variant: 'default' as const },
       'confirmed': { text: 'Confirmado', variant: 'secondary' as const },
       'completed': { text: 'Concluído', variant: 'outline' as const },
-      'pending_validation': { text: 'Aguardando Validação', variant: 'secondary' as const },
+      'pending_validation': { text: 'Aguardando Validação', variant: 'outline' as const, className: 'border-amber-500 text-amber-700 bg-amber-50' },
       'cancelled': { text: 'Cancelado', variant: 'destructive' as const }
     };
     
@@ -845,9 +845,12 @@ export default function Schedule() {
                           <div className="flex items-center gap-3">
                             <Badge 
                               {...getStatusBadge(schedule.status)} 
-                              className={`${schedule.patient_arrived ? 'border-emerald-500 bg-emerald-100 text-emerald-800 font-semibold' : ''} text-sm`}
+                              className={`${
+                                schedule.patient_arrived ? 'border-emerald-500 bg-emerald-100 text-emerald-800 font-semibold' : 
+                                schedule.status === 'pending_validation' ? 'border-amber-500 bg-amber-50 text-amber-700' : ''
+                              } text-sm`}
                             >
-                              {schedule.patient_arrived ? '✓ Paciente Presente' : getStatusBadge(schedule.status).text}
+                              {schedule.patient_arrived && schedule.status !== 'pending_validation' ? '✓ Paciente Presente' : getStatusBadge(schedule.status).text}
                             </Badge>
                             {schedule.patient_arrived && schedule.arrived_at && (
                               <span className="text-xs text-muted-foreground">
@@ -885,6 +888,7 @@ export default function Schedule() {
                               Editar
                             </Button>
 
+                            {/* Botões de ação apenas para agendamentos pendentes */}
                             {['scheduled', 'confirmed'].includes(schedule.status) && (
                               <>
                                 <Button
@@ -915,6 +919,14 @@ export default function Schedule() {
                                   Cancelar
                                 </Button>
                               </>
+                            )}
+                            
+                            {/* Status de atendimento concluído aguardando validação */}
+                            {schedule.status === 'pending_validation' && (
+                              <div className="flex items-center gap-2 text-amber-600">
+                                <Clock className="h-4 w-4" />
+                                <span className="text-sm font-medium">Aguardando validação do coordenador</span>
+                              </div>
                             )}
 
                             {isAdmin && (
