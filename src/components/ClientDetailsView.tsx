@@ -32,7 +32,9 @@ import {
   RotateCcw,
   AlertTriangle,
   UserPlus,
-  Minus
+  Minus,
+  Download,
+  Eye
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
@@ -115,6 +117,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
   const [currentAssignments, setCurrentAssignments] = useState<any[]>([]);
   const { toast } = useToast();
+  const [laudoInfo, setLaudoInfo] = useState<{ file_path: string; completed_at: string } | null>(null);
+  const [loadingLaudo, setLoadingLaudo] = useState(false);
 
   // Helper function to check if user is coordinator or director
   const isCoordinatorOrDirector = () => {
@@ -135,7 +139,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       loadEmployees(),
       loadUserProfile(),
       loadAvailableEmployees(),
-      loadCurrentAssignments()
+      loadCurrentAssignments(),
+      loadLaudoInfo()
     ]);
   };
 
@@ -153,6 +158,89 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       setUserProfile(data);
     } catch (error) {
       console.error('Error loading user profile:', error);
+    }
+  };
+
+  const loadLaudoInfo = async () => {
+    try {
+      setLoadingLaudo(true);
+      const { data, error } = await supabase
+        .from('client_feedback_control')
+        .select('laudo_file_path, completed_at')
+        .eq('client_id', client.id)
+        .not('laudo_file_path', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
+        setLaudoInfo({
+          file_path: data.laudo_file_path,
+          completed_at: data.completed_at
+        });
+      } else {
+        setLaudoInfo(null);
+      }
+    } catch (error) {
+      console.error('Error loading laudo info:', error);
+    } finally {
+      setLoadingLaudo(false);
+    }
+  };
+
+  const handleDownloadLaudo = async () => {
+    if (!laudoInfo?.file_path) return;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('laudos')
+        .download(laudoInfo.file_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `laudo_${client.name}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Sucesso",
+        description: "Laudo baixado com sucesso!",
+      });
+    } catch (error: any) {
+      console.error('Error downloading laudo:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível baixar o laudo.",
+      });
+    }
+  };
+
+  const handleViewLaudo = async () => {
+    if (!laudoInfo?.file_path) return;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('laudos')
+        .createSignedUrl(laudoInfo.file_path, 3600);
+
+      if (error) throw error;
+
+      window.open(data.signedUrl, '_blank');
+    } catch (error: any) {
+      console.error('Error viewing laudo:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível visualizar o laudo.",
+      });
     }
   };
 
@@ -1056,12 +1144,13 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
       <Card>
         <CardContent className="pt-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="details">Detalhes</TabsTrigger>
               <TabsTrigger value="professionals">Profissionais Vinculados</TabsTrigger>
               <TabsTrigger value="payments">Pagamentos</TabsTrigger>
               <TabsTrigger value="history">Histórico</TabsTrigger>
               <TabsTrigger value="contracts">Contratos</TabsTrigger>
+              <TabsTrigger value="laudo">Laudo</TabsTrigger>
             </TabsList>
 
             <TabsContent value="details" className="mt-6">
@@ -1260,6 +1349,77 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
 
             <TabsContent value="contracts" className="mt-6">
               <ContractGenerator client={client} />
+            </TabsContent>
+
+            <TabsContent value="laudo" className="mt-6">
+              {loadingLaudo ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : laudoInfo ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-6 border rounded-lg bg-card">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-primary/10 rounded-full">
+                        <FileText className="h-8 w-8 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Laudo Anexado</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Finalizado em {new Date(laudoInfo.completed_at).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleViewLaudo}
+                        className="flex items-center gap-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Visualizar
+                      </Button>
+                      <Button
+                        onClick={handleDownloadLaudo}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Baixar
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      Informação Importante
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Este cliente foi marcado como inativo após a anexação do laudo. 
+                      O documento está armazenado de forma segura e pode ser acessado a qualquer momento.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-4 bg-muted rounded-full">
+                      <FileText className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-1">Nenhum Laudo Anexado</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Este cliente ainda não possui laudo anexado. <br />
+                        O laudo é anexado através do controle de devolutiva.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
