@@ -330,38 +330,37 @@ export default function CompleteAttendanceDialog({
       // 4. Criar/atualizar employee_report usando upsert (evita erro de duplicação)
       console.log('📄 Criando/atualizando employee_report...');
       
-      // Primeiro, tentar deletar qualquer registro existente para garantir que o upsert funcione
-      await supabase
+      const { error: employeeError } = await supabase
         .from('employee_reports')
-        .delete()
-        .eq('schedule_id', schedule.id);
-      
-      const { error: employeeError } = await supabase.from('employee_reports').insert({
-        employee_id: schedule.employee_id,
-        client_id: schedule.client_id,
-        schedule_id: schedule.id,
-        session_date: new Date().toISOString().split('T')[0],
-        session_type: attendanceData.sessionType,
-        session_duration: attendanceData.actualDuration,
-        effort_rating: attendanceData.effortRating,
-        quality_rating: attendanceData.overallQuality,
-        patient_cooperation: attendanceData.patientCooperation,
-        goal_achievement: attendanceData.goalAchievement,
-        session_objectives: attendanceData.sessionObjectives,
-        techniques_used: attendanceData.objectivesAchieved,
-        patient_response: attendanceData.patientResponse,
-        professional_notes: attendanceData.clinicalObservations,
-        next_session_plan: attendanceData.nextSessionPlan,
-        materials_used: processedMaterials,
-        materials_cost: totalMaterialsCost,
-        attachments: uploadedAttachments,
-        session_location: 'Clínica',
-        supervision_required: attendanceData.supervisionNeeded,
-        follow_up_needed: !!attendanceData.nextSessionPlan,
-        completed_by: user.id,
-        completed_by_name: completedByName,
-        validation_status: 'pending_validation'
-      });
+        .upsert({
+          employee_id: schedule.employee_id,
+          client_id: schedule.client_id,
+          schedule_id: schedule.id,
+          session_date: new Date().toISOString().split('T')[0],
+          session_type: attendanceData.sessionType,
+          session_duration: attendanceData.actualDuration,
+          effort_rating: attendanceData.effortRating,
+          quality_rating: attendanceData.overallQuality,
+          patient_cooperation: attendanceData.patientCooperation,
+          goal_achievement: attendanceData.goalAchievement,
+          session_objectives: attendanceData.sessionObjectives,
+          techniques_used: attendanceData.objectivesAchieved,
+          patient_response: attendanceData.patientResponse,
+          professional_notes: attendanceData.clinicalObservations,
+          next_session_plan: attendanceData.nextSessionPlan,
+          materials_used: processedMaterials,
+          materials_cost: totalMaterialsCost,
+          attachments: uploadedAttachments,
+          session_location: 'Clínica',
+          supervision_required: attendanceData.supervisionNeeded,
+          follow_up_needed: !!attendanceData.nextSessionPlan,
+          completed_by: user.id,
+          completed_by_name: completedByName,
+          validation_status: 'pending_validation'
+        }, {
+          onConflict: 'schedule_id',
+          ignoreDuplicates: false
+        });
       
       if (employeeError) {
         console.error('❌ Erro ao criar/atualizar employee_report:', employeeError);
