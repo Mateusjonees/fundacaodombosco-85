@@ -760,8 +760,8 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
 
   const getUnitLabel = (unit: string) => {
     switch (unit) {
-      case 'madre': return 'Clínica Social (Madre)';
-      case 'floresta': return 'Neuro (Floresta)';
+      case 'madre': return 'MADRE';
+      case 'floresta': return 'Floresta';
       default: return unit || 'Não informado';
     }
   };

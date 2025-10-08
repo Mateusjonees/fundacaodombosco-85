@@ -1075,8 +1075,8 @@ export default function Schedule() {
                         <SelectValue placeholder="Selecione a unidade" />
                       </SelectTrigger>
                       <SelectContent className="bg-background border shadow-md z-50">
-                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                        <SelectItem value="madre">MADRE</SelectItem>
+                        <SelectItem value="floresta">Floresta</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

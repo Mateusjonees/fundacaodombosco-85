@@ -256,8 +256,8 @@ export default function AttendanceValidationManager() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as unidades</SelectItem>
-                  <SelectItem value="madre">Unidade Madre</SelectItem>
-                  <SelectItem value="floresta">Unidade Floresta</SelectItem>
+                  <SelectItem value="madre">MADRE</SelectItem>
+                  <SelectItem value="floresta">Floresta</SelectItem>
                 </SelectContent>
               </Select>
             </div>

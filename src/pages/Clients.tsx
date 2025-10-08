@@ -584,12 +584,12 @@ export default function Patients() {
                     <SelectContent>
                       {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'receptionist') && (
                         <>
-                          <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                          <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                          <SelectItem value="madre">MADRE</SelectItem>
+                          <SelectItem value="floresta">Floresta</SelectItem>
                         </>
                       )}
                       {userProfile?.employee_role === 'coordinator_madre' && (
-                        <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
+                        <SelectItem value="madre">MADRE</SelectItem>
                       )}
                       {userProfile?.employee_role === 'coordinator_floresta' && (
                         <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
@@ -724,8 +724,8 @@ export default function Patients() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as Unidades</SelectItem>
-                  <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                  <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
+                  <SelectItem value="madre">MADRE</SelectItem>
+                  <SelectItem value="floresta">Floresta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -900,7 +900,7 @@ export default function Patients() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as Unidades</SelectItem>
-                  <SelectItem value="madre">Madre</SelectItem>
+                  <SelectItem value="madre">MADRE</SelectItem>
                   <SelectItem value="floresta">Floresta</SelectItem>
                 </SelectContent>
               </Select>
