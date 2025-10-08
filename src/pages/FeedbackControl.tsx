@@ -77,27 +77,22 @@ export default function FeedbackControl() {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('employee_role')
+        .select('employee_role, unit')
         .eq('user_id', user.id)
         .single();
+
+      if (!profile || profile.unit !== 'floresta') {
+        setHasPermission(false);
+        return;
+      }
 
       const coordinatorRoles = ['director', 'coordinator_floresta'];
       const isCoord = profile && coordinatorRoles.includes(profile.employee_role);
       setIsCoordinator(isCoord);
       
-      // Coordenadores e funcionários com devolutivas atribuídas têm acesso
-      if (isCoord) {
-        setHasPermission(true);
-      } else {
-        // Verificar se tem alguma devolutiva atribuída
-        const { data: assignedFeedbacks } = await supabase
-          .from('client_feedback_control')
-          .select('id')
-          .eq('assigned_to', user.id)
-          .limit(1);
-        
-        setHasPermission(assignedFeedbacks && assignedFeedbacks.length > 0);
-      }
+      // Todos os funcionários da unidade Floresta têm acesso
+      // mas só coordenadores/diretores podem ver todas as devolutivas
+      setHasPermission(true);
     } catch (error) {
       console.error('Erro ao verificar permissões:', error);
       setHasPermission(false);

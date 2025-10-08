@@ -53,12 +53,14 @@ export const ROLE_LABELS: Record<EmployeeRole, string> = {
 export const useRolePermissions = () => {
   const { user } = useAuth();
   const [userRole, setUserRole] = useState<EmployeeRole | null>(null);
+  const [userUnit, setUserUnit] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserRole = async () => {
       if (!user) {
         setUserRole(null);
+        setUserUnit(null);
         setLoading(false);
         return;
       }
@@ -67,22 +69,26 @@ export const useRolePermissions = () => {
         // Usar .maybeSingle() ao invés de .single() para evitar erros
         const { data, error } = await supabase
           .from('profiles')
-          .select('employee_role, is_active')
+          .select('employee_role, unit, is_active')
           .eq('user_id', user.id)
           .maybeSingle();
 
         if (error) {
           console.error('Erro ao buscar role do usuário:', error);
           setUserRole(null);
+          setUserUnit(null);
         } else if (data && data.is_active) {
           setUserRole(data.employee_role);
+          setUserUnit(data.unit);
         } else {
           console.log('Usuário não tem perfil ativo:', data);
           setUserRole(null);
+          setUserUnit(null);
         }
       } catch (error) {
         console.error('Erro inesperado ao buscar role:', error);
         setUserRole(null);
+        setUserUnit(null);
       } finally {
         setLoading(false);
       }
@@ -287,6 +293,7 @@ export const useRolePermissions = () => {
 
   return {
     userRole,
+    userUnit,
     loading,
     hasRole,
     hasAnyRole,
