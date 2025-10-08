@@ -243,6 +243,7 @@ export default function Schedule() {
         `)
         .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
         .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
+        .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
         .order('start_time');
 
       // Aplicar filtros baseados no role do usuário para agendamentos
@@ -310,6 +311,7 @@ export default function Schedule() {
           .select(`*, clients (name)`)
           .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
           .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
+          .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
           .order('start_time');
 
         const { data: fallbackData, error: fallbackError } = await fallbackQuery;
