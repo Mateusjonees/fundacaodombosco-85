@@ -155,127 +155,88 @@ export default function CompleteAttendanceDialog({
   };
 
   const handleComplete = async () => {
-    console.log('=== INÍCIO DO PROCESSO DE CONCLUSÃO ===');
-    console.log('Schedule:', schedule);
-    console.log('User:', user);
-    
     if (!schedule || !user) {
-      console.error('❌ Schedule ou User ausente!');
       toast({
         variant: "destructive",
-        title: "Erro ao Salvar",
-        description: "Dados do agendamento ou usuário não encontrados."
+        title: "Erro",
+        description: "Dados do agendamento não encontrados."
       });
       return;
     }
     
-    console.log('✅ Iniciando salvamento do atendimento...');
     setLoading(true);
+    
     try {
-      // Buscar informações do profissional designado para o atendimento
-      console.log('📋 Buscando informações do profissional...');
-      const { data: professionalProfile, error: profError } = await supabase
+      // Buscar profissional
+      const { data: professionalProfile } = await supabase
         .from('profiles')
         .select('name, email')
         .eq('user_id', schedule.employee_id)
         .maybeSingle();
 
-      if (profError) {
-        console.error('❌ Erro ao buscar profissional:', profError);
-        throw new Error('Erro ao buscar informações do profissional');
-      }
+      const professionalName = professionalProfile?.name || professionalProfile?.email || 'Profissional';
 
-      const professionalName = professionalProfile?.name || professionalProfile?.email || 'Profissional não encontrado';
-      console.log('✅ Profissional encontrado:', professionalName);
-      
-      // Buscar informações de quem está concluindo o atendimento
-      console.log('📋 Buscando informações de quem está concluindo...');
-      const { data: completedByProfile, error: completedByError } = await supabase
+      // Buscar usuário que está concluindo
+      const { data: completedByProfile } = await supabase
         .from('profiles')
         .select('name, email')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (completedByError) {
-        console.error('❌ Erro ao buscar usuário que está concluindo:', completedByError);
-        throw new Error('Erro ao buscar informações do usuário');
-      }
+      const completedByName = completedByProfile?.name || completedByProfile?.email || user.email || 'Usuário';
 
-      const completedByName = completedByProfile?.name || completedByProfile?.email || user.email || 'Usuário não encontrado';
-      console.log('✅ Usuário encontrado:', completedByName);
-
-      // 1. Upload de arquivos
-      console.log('📤 Processando upload de arquivos...', attachedFiles.length, 'arquivos');
+      // Upload de arquivos
       const uploadedAttachments = [];
       for (const attachedFile of attachedFiles) {
         try {
           const fileName = `${user.id}/${schedule.id}/${Date.now()}_${attachedFile.file.name}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { data: uploadData } = await supabase.storage
             .from('attendance-documents')
             .upload(fileName, attachedFile.file);
 
-          if (uploadError) {
-            console.error('⚠️ Erro no upload do arquivo:', uploadError);
-            // Não bloqueia o processo, apenas registra
-          } else if (uploadData) {
+          if (uploadData) {
             uploadedAttachments.push({
               name: attachedFile.file.name,
               path: uploadData.path,
               size: attachedFile.file.size,
               type: attachedFile.file.type
             });
-            console.log('✅ Arquivo enviado:', attachedFile.file.name);
           }
-        } catch (uploadError) {
-          console.error('⚠️ Erro ao processar arquivo:', uploadError);
-          // Continua mesmo se um arquivo falhar
+        } catch (error) {
+          console.error('Erro ao fazer upload:', error);
         }
       }
-      console.log('✅ Upload concluído:', uploadedAttachments.length, 'arquivos enviados');
 
-      // 2. Processar materiais e calcular custos
-      console.log('📦 Processando materiais...', attendanceData.materialsUsed.length, 'materiais');
+      // Processar materiais
       let totalMaterialsCost = 0;
       const processedMaterials = [];
       
       for (const material of attendanceData.materialsUsed) {
-        try {
-          const { data: stockItem, error: stockError } = await supabase
-            .from('stock_items')
-            .select('current_quantity, unit_cost, name, unit')
-            .eq('id', material.stock_item_id)
-            .maybeSingle();
+        const { data: stockItem } = await supabase
+          .from('stock_items')
+          .select('current_quantity, unit_cost, name, unit')
+          .eq('id', material.stock_item_id)
+          .maybeSingle();
 
-          if (stockError) {
-            console.error('⚠️ Erro ao buscar item de estoque:', stockError);
-            continue;
-          }
+        if (stockItem && stockItem.current_quantity >= material.quantity) {
+          const unitCost = stockItem.unit_cost || 0;
+          const materialCost = unitCost * material.quantity;
+          totalMaterialsCost += materialCost;
 
-          if (stockItem && stockItem.current_quantity >= material.quantity) {
-            const unitCost = stockItem.unit_cost || 0;
-            const materialCost = unitCost * material.quantity;
-            totalMaterialsCost += materialCost;
-
-            processedMaterials.push({
-              stock_item_id: material.stock_item_id,
-              name: stockItem.name,
-              quantity: material.quantity,
-              unit: stockItem.unit,
-              unit_cost: unitCost,
-              total_cost: materialCost,
-              observation: material.observation || ''
-            });
-          }
-        } catch (materialError) {
-          console.error('⚠️ Erro ao processar material:', materialError);
-          // Continua mesmo se um material falhar
+          processedMaterials.push({
+            stock_item_id: material.stock_item_id,
+            name: stockItem.name,
+            quantity: material.quantity,
+            unit: stockItem.unit,
+            unit_cost: unitCost,
+            total_cost: materialCost,
+            observation: material.observation || ''
+          });
         }
       }
-      console.log('✅ Materiais processados:', processedMaterials.length);
 
-      // 3. Atualizar agendamento para status "pending_validation"
-      console.log('📝 Atualizando schedule para pending_validation...');
-      const { error: scheduleUpdateError } = await supabase
+      // Atualizar schedule
+      await supabase
         .from('schedules')
         .update({ 
           status: 'pending_validation',
@@ -286,16 +247,9 @@ export default function CompleteAttendanceDialog({
           completed_by: user.id
         })
         .eq('id', schedule.id);
-      
-      if (scheduleUpdateError) {
-        console.error('❌ Erro ao atualizar schedule:', scheduleUpdateError);
-        throw scheduleUpdateError;
-      }
-      console.log('✅ Schedule atualizado com sucesso!');
 
-      // 4. Criar relatórios com status "pending_validation" (sem processar estoque/financeiro ainda)
-      console.log('📄 Criando attendance_report...');
-      const { error: attendanceError } = await supabase.from('attendance_reports').insert({
+      // Criar attendance_report
+      await supabase.from('attendance_reports').insert({
         schedule_id: schedule.id,
         client_id: schedule.client_id,
         employee_id: schedule.employee_id,
@@ -318,19 +272,11 @@ export default function CompleteAttendanceDialog({
         created_by: user.id,
         completed_by: user.id,
         completed_by_name: completedByName,
-        validation_status: 'pending_validation' // Status inicial
+        validation_status: 'pending_validation'
       });
-      
-      if (attendanceError) {
-        console.error('❌ Erro ao criar attendance_report:', attendanceError);
-        throw attendanceError;
-      }
-      console.log('✅ Attendance_report criado!');
 
-      // 4. Criar/atualizar employee_report usando upsert (evita erro de duplicação)
-      console.log('📄 Criando/atualizando employee_report...');
-      
-      const { error: employeeError } = await supabase
+      // Upsert employee_report
+      await supabase
         .from('employee_reports')
         .upsert({
           employee_id: schedule.employee_id,
@@ -358,94 +304,60 @@ export default function CompleteAttendanceDialog({
           completed_by_name: completedByName,
           validation_status: 'pending_validation'
         }, {
-          onConflict: 'schedule_id',
-          ignoreDuplicates: false
+          onConflict: 'schedule_id'
         });
-      
-      if (employeeError) {
-        console.error('❌ Erro ao criar/atualizar employee_report:', employeeError);
-        throw employeeError;
-      }
-      console.log('✅ Employee_report salvo com sucesso!');
 
-      // 5. Atualizar dados do cliente com informações da sessão
-      console.log('👤 Atualizando dados do cliente...');
-      const clientUpdateData: any = {
+      // Atualizar cliente
+      const clientUpdate: any = {
         last_session_date: new Date().toISOString().split('T')[0],
         last_session_type: attendanceData.sessionType,
         last_session_notes: attendanceData.clinicalObservations,
         updated_at: new Date().toISOString()
       };
 
-      // Se houver informações sobre progresso ou sintomas, adicionar ao update
       if (attendanceData.objectivesAchieved.trim()) {
-        clientUpdateData.treatment_progress = attendanceData.objectivesAchieved;
+        clientUpdate.treatment_progress = attendanceData.objectivesAchieved;
       }
 
       if (attendanceData.patientResponse.trim()) {
-        clientUpdateData.clinical_observations = attendanceData.patientResponse;
+        clientUpdate.clinical_observations = attendanceData.patientResponse;
       }
 
-      // Atualizar o registro do cliente
-      const { error: clientUpdateError } = await supabase
+      await supabase
         .from('clients')
-        .update(clientUpdateData)
+        .update(clientUpdate)
         .eq('id', schedule.client_id);
 
-      if (clientUpdateError) {
-        console.error('⚠️ Erro ao atualizar cliente (não crítico):', clientUpdateError);
-        // Não bloqueia o fluxo, apenas registra o erro
-      } else {
-        console.log('✅ Cliente atualizado com sucesso!');
-      }
-
-      // REMOVIDO: Processamento de estoque e financeiro (será feito apenas após validação)
-
-      console.log('✅✅✅ Atendimento salvo com sucesso! ✅✅✅');
+      // Sucesso!
+      setLoading(false);
+      setAttachedFiles([]);
+      
+      toast({
+        title: "Atendimento Enviado!",
+        description: "Atendimento enviado para revisão do coordenador.",
+      });
+      
+      onClose();
+      
+      setTimeout(() => {
+        onComplete();
+      }, 300);
       
     } catch (error: any) {
-      console.error('❌❌❌ ERRO ao completar atendimento:', error);
-      console.error('❌ Tipo do erro:', typeof error);
-      console.error('❌ Mensagem:', error?.message);
-      console.error('❌ Stack:', error?.stack);
-      console.error('❌ Detalhes completos:', JSON.stringify(error, null, 2));
+      console.error('Erro ao completar atendimento:', error);
+      setLoading(false);
       
       toast({
         variant: "destructive",
         title: "Erro ao Salvar",
-        description: error?.message || "Não foi possível concluir o atendimento. Tente novamente."
+        description: error?.message || "Não foi possível concluir o atendimento."
       });
-      setLoading(false);
-      return; // Importante: retornar aqui para não executar o código de sucesso abaixo
-    } finally {
-      console.log('=== FIM DO PROCESSO DE CONCLUSÃO ===');
     }
-
-    // Código de sucesso (fora do try-catch para evitar que erros de callback mostrem toast de erro)
-    setLoading(false);
-    
-    // Mostrar toast de sucesso
-    toast({
-      title: "Atendimento Concluído!",
-      description: "Atendimento registrado com sucesso e enviado para validação do coordenador.",
-    });
-    
-    // Fechar o diálogo imediatamente
-    setAttachedFiles([]);
-    onClose();
-    
-    // Atualizar a lista de agendamentos após fechar
-    setTimeout(() => {
-      try {
-        onComplete();
-      } catch (callbackError) {
-        console.error('⚠️ Erro ao executar callback (não crítico):', callbackError);
-      }
-    }, 100);
   };
 
   const goToValidation = async () => {
-    // Validar campos obrigatórios antes de enviar
+
+      // 1. Upload de arquivos
     if (!attendanceData.sessionObjectives.trim()) {
       toast({
         variant: "destructive",
