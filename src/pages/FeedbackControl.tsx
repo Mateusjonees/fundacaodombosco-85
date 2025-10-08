@@ -31,6 +31,7 @@ interface FeedbackControl {
     cpf: string | null;
   };
   assigned_profiles?: {
+    user_id: string;
     name: string;
   };
 }
@@ -111,12 +112,13 @@ export default function FeedbackControl() {
         .from('client_feedback_control')
         .select(`
           *,
-          clients (
+          clients!client_feedback_control_client_id_fkey (
             id,
             name,
             cpf
           ),
           assigned_profiles:profiles!client_feedback_control_assigned_to_fkey (
+            user_id,
             name
           )
         `)
@@ -485,11 +487,21 @@ export default function FeedbackControl() {
                       <CardDescription>
                         {feedback.clients?.cpf && `CPF: ${feedback.clients.cpf}`}
                       </CardDescription>
-                      {feedback.assigned_profiles && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                          <User className="h-3 w-3" />
-                          <span>Responsável: {feedback.assigned_profiles.name}</span>
+                      {feedback.assigned_profiles ? (
+                        <div className="flex items-center gap-2 text-sm mt-2">
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            <span>{feedback.assigned_profiles.name}</span>
+                          </Badge>
                         </div>
+                      ) : (
+                        isCoordinator && (
+                          <div className="flex items-center gap-2 text-sm mt-2">
+                            <Badge variant="outline" className="text-orange-500 border-orange-500">
+                              Sem responsável
+                            </Badge>
+                          </div>
+                        )
                       )}
                     </div>
                     {getStatusBadge(feedback.status, remainingDays)}
@@ -572,14 +584,19 @@ export default function FeedbackControl() {
                 </div>
               </div>
               
-              {selectedFeedback.assigned_profiles && (
-                <div>
-                  <p className="text-sm font-medium">Funcionário Responsável</p>
-                  <p className="text-sm text-muted-foreground">
+              <div>
+                <p className="text-sm font-medium">Funcionário Responsável</p>
+                {selectedFeedback.assigned_profiles ? (
+                  <Badge variant="secondary" className="mt-1">
+                    <User className="h-3 w-3 mr-1" />
                     {selectedFeedback.assigned_profiles.name}
+                  </Badge>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Nenhum funcionário atribuído
                   </p>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
