@@ -69,34 +69,31 @@ export default function FeedbackControl() {
   }, [hasPermission, isCoordinator]);
 
   const checkPermissions = async () => {
-    if (!user) {
-      setHasPermission(false);
-      return;
-    }
-
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('employee_role, unit')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         setHasPermission(false);
         return;
       }
 
-      const coordinatorRoles = ['director', 'coordinator_floresta'];
-      const isCoord = profile && coordinatorRoles.includes(profile.employee_role);
-      setIsCoordinator(isCoord);
-      
-      // Diretores têm acesso total independente da unidade
-      // Outros funcionários precisam ser da unidade Floresta
-      if (profile.employee_role === 'director' || profile.unit === 'floresta') {
-        setHasPermission(true);
-      } else {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('employee_role, is_active')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile || !profile.is_active) {
         setHasPermission(false);
+        return;
       }
+
+      // Todos os funcionários ativos têm acesso à página
+      setHasPermission(true);
+      
+      // Apenas coordenadores e diretores podem adicionar clientes
+      const isManager = profile.employee_role === 'director' || 
+                       profile.employee_role === 'coordinator_floresta';
+      setIsCoordinator(isManager);
     } catch (error) {
       console.error('Erro ao verificar permissões:', error);
       setHasPermission(false);

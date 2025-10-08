@@ -111,16 +111,14 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     });
   }
   
-  // Controle de Devolutiva - diretores ou funcionários da unidade Floresta
-  if (permissions.isDirector() || permissions.userUnit === 'floresta') {
-    items.push({ 
-      id: 'feedback-control', 
-      title: 'Controle de Devolutiva', 
-      url: '/feedback-control', 
-      icon: 'FileCheck', 
-      order_index: 3.7
-    });
-  }
+  // Controle de Devolutiva - todos os funcionários autenticados
+  items.push({ 
+    id: 'feedback-control', 
+    title: 'Controle de Devolutiva', 
+    url: '/feedback-control', 
+    icon: 'FileCheck', 
+    order_index: 3.7
+  });
 
   // Agenda - baseado em permissões
   if (permissions.canViewAllSchedules() || permissions.isProfessional() || customPermissions.hasPermission('view_schedules')) {
