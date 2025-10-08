@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
-export default function PendingAttendancesNotification() {
+export function PendingAttendancesNotification() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [pendingCount, setPendingCount] = useState(0);
@@ -62,17 +62,17 @@ export default function PendingAttendancesNotification() {
   }
 
   return (
-    <button
+    <DropdownMenuItem 
       onClick={() => navigate('/attendance-validation')}
-      className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-accent rounded-md transition-colors text-left"
+      className="flex items-center justify-between cursor-pointer px-2 py-2"
     >
       <div className="flex items-center gap-2">
-        <AlertCircle className="h-4 w-4 text-yellow-600" />
-        <span className="text-sm font-medium">Atendimentos Pendentes</span>
+        <AlertCircle className="h-4 w-4 text-orange-600" />
+        <span>Atendimentos Pendentes</span>
       </div>
-      <Badge variant="destructive" className="px-2 py-0 text-xs min-w-[20px] h-[20px] flex items-center justify-center">
+      <Badge variant="destructive" className="ml-2">
         {pendingCount}
       </Badge>
-    </button>
+    </DropdownMenuItem>
   );
 }

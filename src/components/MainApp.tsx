@@ -38,8 +38,8 @@ import AttendanceValidation from '@/pages/AttendanceValidation';
 import EmployeesNew from '@/pages/EmployeesNew';
 import DirectMessages from '@/pages/DirectMessages';
 import EmployeeControl from '@/pages/EmployeeControl';
-import PendingAttendancesNotification from '@/components/PendingAttendancesNotification';
-import AppointmentNotifications from '@/components/AppointmentNotifications';
+import { PendingAttendancesNotification } from '@/components/PendingAttendancesNotification';
+import { AppointmentNotifications } from '@/components/AppointmentNotifications';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { QuickHelpCenter } from '@/components/QuickHelpCenter';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -168,32 +168,26 @@ export const MainApp = () => {
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       
-                      <div className="py-2 space-y-2">
-                        <div className="px-2">
-                          <p className="text-xs font-medium text-muted-foreground mb-2">Notificações</p>
-                          <div className="space-y-2">
-                            <div className="hover:bg-accent rounded-md transition-colors">
-                              <AppointmentNotifications />
-                            </div>
-                            <div className="hover:bg-accent rounded-md transition-colors">
-                              <PendingAttendancesNotification />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <DropdownMenuSeparator />
-                        
-                        <div className="px-2">
-                          <p className="text-xs font-medium text-muted-foreground mb-2">Configurações</p>
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <ThemeToggle />
-                          </div>
-                        </div>
+                      <div className="px-2 py-1">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Notificações</p>
+                      </div>
+                      
+                      <AppointmentNotifications />
+                      <PendingAttendancesNotification />
+                      
+                      <DropdownMenuSeparator />
+                      
+                      <div className="px-2 py-1">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Configurações</p>
+                      </div>
+                      
+                      <div className="px-2" onClick={(e) => e.stopPropagation()}>
+                        <ThemeToggle />
                       </div>
                       
                       <DropdownMenuSeparator />
                       
-                      <DropdownMenuItem asChild className="cursor-pointer mt-1">
+                      <DropdownMenuItem asChild className="cursor-pointer">
                         <Link to="/messages" className="flex items-center px-2 py-2">
                           <MessageSquare className="mr-3 h-4 w-4" />
                           <span>Mensagens</span>

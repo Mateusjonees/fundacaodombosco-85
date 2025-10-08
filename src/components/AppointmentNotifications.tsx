@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { Bell, Calendar, Clock, User, Check } from 'lucide-react';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 interface AppointmentNotification {
   id: string;
@@ -20,7 +21,7 @@ interface AppointmentNotification {
   metadata: any;
 }
 
-export default function AppointmentNotifications() {
+export function AppointmentNotifications() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<AppointmentNotification[]>([]);
@@ -146,29 +147,33 @@ export default function AppointmentNotifications() {
 
   if (loading) {
     return (
-      <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-md opacity-50" disabled>
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 animate-pulse" />
-          <span className="text-sm font-medium">Notificações</span>
-        </div>
-      </button>
+      <DropdownMenuItem disabled className="px-2 py-2">
+        <Bell className="h-4 w-4 mr-2 animate-pulse" />
+        <span>Carregando...</span>
+      </DropdownMenuItem>
     );
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-accent rounded-md transition-colors text-left">
+        <DropdownMenuItem 
+          onSelect={(e) => {
+            e.preventDefault();
+            setIsOpen(true);
+          }}
+          className="flex items-center justify-between cursor-pointer px-2 py-2"
+        >
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
-            <span className="text-sm font-medium">Notificações</span>
+            <span>Notificações</span>
           </div>
           {unreadCount > 0 && (
-            <Badge variant="destructive" className="px-2 py-0 text-xs min-w-[20px] h-[20px] flex items-center justify-center">
+            <Badge variant="default" className="ml-2">
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
-        </button>
+        </DropdownMenuItem>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh]">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0">
