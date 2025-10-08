@@ -22,6 +22,7 @@ interface FeedbackControl {
   report_attached: boolean;
   completed_at: string | null;
   notes: string | null;
+  laudo_file_path: string | null;
   clients: {
     id: string;
     name: string;
@@ -40,6 +41,9 @@ export default function FeedbackControl() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackControl | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [uploadingLaudo, setUploadingLaudo] = useState(false);
 
   useEffect(() => {
     checkPermissions();
@@ -176,6 +180,60 @@ export default function FeedbackControl() {
       return <Badge variant="secondary" className="bg-orange-500">Urgente</Badge>;
     }
     return <Badge variant="outline">Em andamento</Badge>;
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    if (!selectedFeedback) return;
+
+    const file = e.target.files[0];
+    
+    // Validar tipo de arquivo
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Formato não permitido. Use PDF, JPG ou PNG');
+      return;
+    }
+
+    // Validar tamanho (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 10MB');
+      return;
+    }
+
+    try {
+      setUploadingLaudo(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${selectedFeedback.client_id}/${Date.now()}.${fileExt}`;
+      
+      // Upload do arquivo
+      const { error: uploadError } = await supabase.storage
+        .from('laudos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Atualizar registro com o caminho do laudo
+      const { error: updateError } = await supabase
+        .from('client_feedback_control')
+        .update({ 
+          laudo_file_path: fileName,
+        })
+        .eq('id', selectedFeedback.id);
+
+      if (updateError) throw updateError;
+
+      toast.success('Laudo anexado com sucesso! Cliente movido para inativo.');
+      setShowDetailsDialog(false);
+      setSelectedFeedback(null);
+      loadFeedbacks();
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error(error.message || 'Erro ao anexar laudo');
+    } finally {
+      setUploadingLaudo(false);
+    }
   };
 
   const filteredFeedbacks = feedbacks.filter(f => 
@@ -324,7 +382,14 @@ export default function FeedbackControl() {
             const remainingDays = calculateRemainingDays(feedback.deadline_date);
             
             return (
-              <Card key={feedback.id}>
+              <Card 
+                key={feedback.id} 
+                className="cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => {
+                  setSelectedFeedback(feedback);
+                  setShowDetailsDialog(true);
+                }}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
@@ -381,6 +446,128 @@ export default function FeedbackControl() {
           })}
         </div>
       )}
+
+      {/* Dialog de Detalhes e Upload de Laudo */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Devolutiva - {selectedFeedback?.clients?.name}</DialogTitle>
+            <DialogDescription>
+              Faça o upload do laudo para concluir a devolutiva
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedFeedback && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">CPF</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedFeedback.clients?.cpf || 'Não informado'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Status</p>
+                  {getStatusBadge(
+                    selectedFeedback.status, 
+                    calculateRemainingDays(selectedFeedback.deadline_date)
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Data de Início</p>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedFeedback.started_at), "dd/MM/yyyy", { locale: ptBR })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Prazo</p>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedFeedback.deadline_date), "dd/MM/yyyy", { locale: ptBR })}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-1">Dias Restantes</p>
+                <p className={`text-lg font-semibold ${
+                  calculateRemainingDays(selectedFeedback.deadline_date) < 0 
+                    ? 'text-destructive' 
+                    : calculateRemainingDays(selectedFeedback.deadline_date) <= 3 
+                      ? 'text-orange-500' 
+                      : 'text-green-600'
+                }`}>
+                  {calculateRemainingDays(selectedFeedback.deadline_date) < 0 
+                    ? 'Vencido' 
+                    : `${calculateRemainingDays(selectedFeedback.deadline_date)} dias úteis`}
+                </p>
+              </div>
+
+              {selectedFeedback.notes && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Observações</p>
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">{selectedFeedback.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {!selectedFeedback.report_attached && (
+                <div className="border-2 border-dashed rounded-lg p-6">
+                  <div className="text-center space-y-2">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
+                    <div>
+                      <p className="text-sm font-medium">Anexar Laudo</p>
+                      <p className="text-xs text-muted-foreground">
+                        PDF, JPG ou PNG (máximo 10MB)
+                      </p>
+                    </div>
+                    <label className="cursor-pointer">
+                      <Button 
+                        variant="default" 
+                        disabled={uploadingLaudo}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          document.getElementById('laudo-upload')?.click();
+                        }}
+                      >
+                        {uploadingLaudo ? 'Enviando...' : 'Selecionar Arquivo'}
+                      </Button>
+                      <input
+                        id="laudo-upload"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {selectedFeedback.report_attached && (
+                <Alert className="bg-green-50 border-green-200">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Laudo anexado com sucesso! Cliente foi movido para inativo.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowDetailsDialog(false);
+              setSelectedFeedback(null);
+            }}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

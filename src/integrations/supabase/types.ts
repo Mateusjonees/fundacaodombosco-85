@@ -562,6 +562,7 @@ export type Database = {
           created_by: string
           deadline_date: string
           id: string
+          laudo_file_path: string | null
           notes: string | null
           report_attached: boolean | null
           started_at: string
@@ -576,6 +577,7 @@ export type Database = {
           created_by: string
           deadline_date: string
           id?: string
+          laudo_file_path?: string | null
           notes?: string | null
           report_attached?: boolean | null
           started_at?: string
@@ -590,6 +592,7 @@ export type Database = {
           created_by?: string
           deadline_date?: string
           id?: string
+          laudo_file_path?: string | null
           notes?: string | null
           report_attached?: boolean | null
           started_at?: string
