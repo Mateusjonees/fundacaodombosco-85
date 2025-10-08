@@ -555,6 +555,7 @@ export type Database = {
       }
       client_feedback_control: {
         Row: {
+          assigned_to: string | null
           client_id: string
           completed_at: string | null
           completed_by: string | null
@@ -570,6 +571,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           client_id: string
           completed_at?: string | null
           completed_by?: string | null
@@ -585,6 +587,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           client_id?: string
           completed_at?: string | null
           completed_by?: string | null

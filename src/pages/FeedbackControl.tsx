@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { AlertCircle, Calendar, Clock, FileText, Plus, Search } from 'lucide-react';
+import { AlertCircle, Calendar, Clock, FileText, Plus, Search, User } from 'lucide-react';
 import { format, differenceInBusinessDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -23,23 +24,30 @@ interface FeedbackControl {
   completed_at: string | null;
   notes: string | null;
   laudo_file_path: string | null;
+  assigned_to: string | null;
   clients: {
     id: string;
     name: string;
     cpf: string | null;
+  };
+  assigned_employee?: {
+    name: string;
   };
 }
 
 export default function FeedbackControl() {
   const { user } = useAuth();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [isCoordinator, setIsCoordinator] = useState(false);
   const [feedbacks, setFeedbacks] = useState<FeedbackControl[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackControl | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -52,9 +60,12 @@ export default function FeedbackControl() {
   useEffect(() => {
     if (hasPermission) {
       loadFeedbacks();
-      loadClients();
+      if (isCoordinator) {
+        loadClients();
+        loadEmployees();
+      }
     }
-  }, [hasPermission]);
+  }, [hasPermission, isCoordinator]);
 
   const checkPermissions = async () => {
     if (!user) {
@@ -69,8 +80,23 @@ export default function FeedbackControl() {
         .eq('user_id', user.id)
         .single();
 
-      const allowedRoles = ['director', 'coordinator_floresta'];
-      setHasPermission(profile && allowedRoles.includes(profile.employee_role));
+      const coordinatorRoles = ['director', 'coordinator_floresta'];
+      const isCoord = profile && coordinatorRoles.includes(profile.employee_role);
+      setIsCoordinator(isCoord);
+      
+      // Coordenadores e funcionários com devolutivas atribuídas têm acesso
+      if (isCoord) {
+        setHasPermission(true);
+      } else {
+        // Verificar se tem alguma devolutiva atribuída
+        const { data: assignedFeedbacks } = await supabase
+          .from('client_feedback_control')
+          .select('id')
+          .eq('assigned_to', user.id)
+          .limit(1);
+        
+        setHasPermission(assignedFeedbacks && assignedFeedbacks.length > 0);
+      }
     } catch (error) {
       console.error('Erro ao verificar permissões:', error);
       setHasPermission(false);
@@ -80,7 +106,8 @@ export default function FeedbackControl() {
   const loadFeedbacks = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('client_feedback_control')
         .select(`
           *,
@@ -88,10 +115,20 @@ export default function FeedbackControl() {
             id,
             name,
             cpf
+          ),
+          assigned_employee:assigned_to (
+            name
           )
         `)
         .neq('status', 'completed')
         .order('deadline_date', { ascending: true });
+      
+      // Se não for coordenador, mostrar apenas suas devolutivas
+      if (!isCoordinator && user) {
+        query = query.eq('assigned_to', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -105,7 +142,7 @@ export default function FeedbackControl() {
         return { ...item, status: item.status as 'pending' | 'completed' | 'overdue' };
       });
 
-      setFeedbacks(updatedData as FeedbackControl[]);
+      setFeedbacks(updatedData as any);
     } catch (error) {
       console.error('Erro ao carregar devolutivas:', error);
       toast.error('Erro ao carregar devolutivas');
@@ -133,9 +170,29 @@ export default function FeedbackControl() {
     }
   };
 
+  const loadEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar funcionários:', error);
+    }
+  };
+
   const addToFeedback = async () => {
     if (!selectedClient) {
       toast.error('Selecione um cliente');
+      return;
+    }
+
+    if (!selectedEmployee) {
+      toast.error('Selecione um funcionário responsável');
       return;
     }
 
@@ -144,6 +201,7 @@ export default function FeedbackControl() {
         .from('client_feedback_control')
         .insert([{
           client_id: selectedClient.id,
+          assigned_to: selectedEmployee,
           created_by: user?.id || '',
           notes: notes || null,
           deadline_date: new Date().toISOString().split('T')[0], // será sobrescrito pelo trigger
@@ -154,6 +212,7 @@ export default function FeedbackControl() {
       toast.success('Cliente adicionado ao controle de devolutiva');
       setShowAddDialog(false);
       setSelectedClient(null);
+      setSelectedEmployee('');
       setNotes('');
       setClientSearchTerm('');
       loadFeedbacks();
@@ -259,7 +318,7 @@ export default function FeedbackControl() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Você não tem permissão para acessar esta página. Apenas coordenadores da Floresta e diretores podem gerenciar devolutivas.
+            Você não tem permissão para acessar esta página ou não possui devolutivas atribuídas.
           </AlertDescription>
         </Alert>
       </div>
@@ -272,17 +331,21 @@ export default function FeedbackControl() {
         <div>
           <h1 className="text-3xl font-bold">Controle de Devolutiva</h1>
           <p className="text-muted-foreground">
-            Gerencie os prazos de entrega de laudos (15 dias úteis)
+            {isCoordinator 
+              ? 'Gerencie os prazos de entrega de laudos (15 dias úteis)'
+              : 'Suas devolutivas atribuídas - Anexe os laudos para concluir'
+            }
           </p>
         </div>
 
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Cliente
-            </Button>
-          </DialogTrigger>
+        {isCoordinator && (
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Cliente
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Adicionar Cliente à Devolutiva</DialogTitle>
@@ -330,6 +393,22 @@ export default function FeedbackControl() {
               </div>
 
               <div>
+                <label className="text-sm font-medium">Funcionário Responsável</label>
+                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione o funcionário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map(employee => (
+                      <SelectItem key={employee.user_id} value={employee.user_id}>
+                        {employee.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <label className="text-sm font-medium">Observações</label>
                 <Textarea
                   value={notes}
@@ -348,6 +427,7 @@ export default function FeedbackControl() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <div className="flex items-center gap-4">
@@ -398,6 +478,12 @@ export default function FeedbackControl() {
                       <CardDescription>
                         {feedback.clients?.cpf && `CPF: ${feedback.clients.cpf}`}
                       </CardDescription>
+                      {feedback.assigned_employee && (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                          <User className="h-3 w-3" />
+                          <span>Responsável: {feedback.assigned_employee.name}</span>
+                        </div>
+                      )}
                     </div>
                     {getStatusBadge(feedback.status, remainingDays)}
                   </div>
@@ -454,7 +540,10 @@ export default function FeedbackControl() {
           <DialogHeader>
             <DialogTitle>Devolutiva - {selectedFeedback?.clients?.name}</DialogTitle>
             <DialogDescription>
-              Faça o upload do laudo para concluir a devolutiva
+              {isCoordinator 
+                ? 'Faça o upload do laudo para concluir a devolutiva' 
+                : 'Anexe o laudo para concluir sua devolutiva'
+              }
             </DialogDescription>
           </DialogHeader>
 
@@ -475,6 +564,15 @@ export default function FeedbackControl() {
                   )}
                 </div>
               </div>
+              
+              {selectedFeedback.assigned_employee && (
+                <div>
+                  <p className="text-sm font-medium">Funcionário Responsável</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedFeedback.assigned_employee.name}
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
