@@ -81,7 +81,7 @@ export default function FeedbackControl() {
         .eq('user_id', user.id)
         .single();
 
-      if (!profile || profile.unit !== 'floresta') {
+      if (!profile) {
         setHasPermission(false);
         return;
       }
@@ -90,9 +90,13 @@ export default function FeedbackControl() {
       const isCoord = profile && coordinatorRoles.includes(profile.employee_role);
       setIsCoordinator(isCoord);
       
-      // Todos os funcionários da unidade Floresta têm acesso
-      // mas só coordenadores/diretores podem ver todas as devolutivas
-      setHasPermission(true);
+      // Diretores têm acesso total independente da unidade
+      // Outros funcionários precisam ser da unidade Floresta
+      if (profile.employee_role === 'director' || profile.unit === 'floresta') {
+        setHasPermission(true);
+      } else {
+        setHasPermission(false);
+      }
     } catch (error) {
       console.error('Erro ao verificar permissões:', error);
       setHasPermission(false);
