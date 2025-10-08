@@ -351,26 +351,6 @@ export default function CompleteAttendanceDialog({
 
       console.log('✅ Atendimento salvo com sucesso!');
       
-      // Fechar o diálogo imediatamente
-      setLoading(false);
-      onClose();
-      setAttachedFiles([]);
-      
-      // Mostrar toast de sucesso
-      toast({
-        title: "Atendimento Concluído!",
-        description: "Atendimento registrado com sucesso e enviado para validação do coordenador.",
-      });
-
-      // Atualizar a lista de agendamentos após fechar
-      setTimeout(() => {
-        try {
-          onComplete();
-        } catch (callbackError) {
-          console.error('⚠️ Erro ao executar callback (não crítico):', callbackError);
-        }
-      }, 100);
-      
     } catch (error) {
       console.error('❌ ERRO ao completar atendimento:', error);
       toast({
@@ -379,9 +359,36 @@ export default function CompleteAttendanceDialog({
         description: "Não foi possível concluir o atendimento. Tente novamente."
       });
       setLoading(false);
+      return; // Importante: retornar aqui para não executar o código de sucesso abaixo
     } finally {
       console.log('=== FIM DO PROCESSO DE CONCLUSÃO ===');
     }
+
+    // Código de sucesso (fora do try-catch para evitar que erros de callback mostrem toast de erro)
+    setLoading(false);
+    
+    // Fechar o diálogo
+    try {
+      onClose();
+      setAttachedFiles([]);
+    } catch (closeError) {
+      console.error('⚠️ Erro ao fechar diálogo (não crítico):', closeError);
+    }
+    
+    // Mostrar toast de sucesso
+    toast({
+      title: "Atendimento Concluído!",
+      description: "Atendimento registrado com sucesso e enviado para validação do coordenador.",
+    });
+
+    // Atualizar a lista de agendamentos
+    setTimeout(() => {
+      try {
+        onComplete();
+      } catch (callbackError) {
+        console.error('⚠️ Erro ao executar callback (não crítico):', callbackError);
+      }
+    }, 100);
   };
 
   const goToValidation = async () => {
