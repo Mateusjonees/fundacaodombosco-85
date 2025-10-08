@@ -353,23 +353,23 @@ export default function CompleteAttendanceDialog({
 
       console.log('✅ Atendimento salvo com sucesso!');
       
-      // Mostrar toast de sucesso ANTES de chamar callbacks
+      // Fechar o diálogo imediatamente
+      setLoading(false);
+      onClose();
+      setAttachedFiles([]);
+      
+      // Mostrar toast de sucesso
       toast({
         title: "Atendimento Concluído!",
         description: "Atendimento registrado com sucesso e enviado para validação do coordenador.",
       });
 
-      console.log('Chamando onComplete()...');
-      // Aguardar um pouco para garantir que o toast seja exibido
+      // Atualizar a lista de agendamentos após fechar
       setTimeout(() => {
         try {
           onComplete();
-          console.log('Chamando onClose()...');
-          onClose();
-          setAttachedFiles([]);
         } catch (callbackError) {
-          console.error('⚠️ Erro ao executar callbacks (não crítico):', callbackError);
-          // Não mostrar erro ao usuário pois o atendimento já foi salvo com sucesso
+          console.error('⚠️ Erro ao executar callback (não crítico):', callbackError);
         }
       }, 100);
       
@@ -380,8 +380,8 @@ export default function CompleteAttendanceDialog({
         title: "Erro ao Salvar",
         description: "Não foi possível concluir o atendimento. Tente novamente."
       });
-    } finally {
       setLoading(false);
+    } finally {
       console.log('=== FIM DO PROCESSO DE CONCLUSÃO ===');
     }
   };
