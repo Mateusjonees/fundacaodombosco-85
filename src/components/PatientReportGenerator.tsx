@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import logoImage from '@/assets/fundacao-dom-bosco-logo.png';
+import logoImage from '@/assets/fundacao-logo-report.png';
 
 interface Client {
   id: string;
@@ -64,6 +64,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [employeeReports, setEmployeeReports] = useState<any[]>([]);
   const [medicalRecords, setMedicalRecords] = useState<any[]>([]);
+  const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -146,6 +147,39 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
 
       if (medicalError) throw medicalError;
 
+      // Carregar pagamentos do cliente
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('client_payments')
+        .select(`
+          id,
+          description,
+          total_amount,
+          amount_paid,
+          amount_remaining,
+          status,
+          payment_type,
+          payment_method,
+          installments_total,
+          installments_paid,
+          created_at,
+          due_date,
+          notes,
+          payment_installments (
+            id,
+            installment_number,
+            amount,
+            paid_amount,
+            due_date,
+            paid_date,
+            status,
+            payment_method
+          )
+        `)
+        .eq('client_id', client.id)
+        .order('created_at', { ascending: false });
+
+      if (paymentError) throw paymentError;
+
       setAttendanceRecords((attendanceData || []).map(record => ({
         ...record,
         materials_used: Array.isArray(record.materials_used) ? record.materials_used : [],
@@ -157,6 +191,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
         attachments: Array.isArray(report.attachments) ? report.attachments : []
       })));
       setMedicalRecords(medicalData || []);
+      setPaymentRecords(paymentData || []);
 
     } catch (error) {
       console.error('Error loading attendance data:', error);
@@ -428,6 +463,146 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
               </div>
             </div>
           </div>
+
+          {/* Histórico Financeiro */}
+          {paymentRecords.length > 0 && (
+            <div className="report-section">
+              <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
+                HISTÓRICO FINANCEIRO
+              </h2>
+              <div className="space-y-4">
+                {/* Resumo Financeiro */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-3">Resumo Geral</h3>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <div className="text-gray-600">Total Cobrado:</div>
+                      <div className="text-lg font-bold text-gray-900">
+                        R$ {paymentRecords.reduce((sum, p) => sum + (p.total_amount || 0), 0).toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Total Pago:</div>
+                      <div className="text-lg font-bold text-green-600">
+                        R$ {paymentRecords.reduce((sum, p) => sum + (p.amount_paid || 0), 0).toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Total Pendente:</div>
+                      <div className="text-lg font-bold text-orange-600">
+                        R$ {paymentRecords.reduce((sum, p) => sum + (p.amount_remaining || 0), 0).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detalhamento dos Pagamentos */}
+                {paymentRecords.map((payment) => (
+                  <div key={payment.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-800">{payment.description || 'Pagamento'}</h3>
+                      <Badge variant={
+                        payment.status === 'completed' ? 'default' :
+                        payment.status === 'partial' ? 'secondary' : 'outline'
+                      }>
+                        {payment.status === 'completed' ? 'Concluído' :
+                         payment.status === 'partial' ? 'Parcial' : 'Pendente'}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-600">Valor Total:</span> R$ {payment.total_amount?.toFixed(2)}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600">Valor Pago:</span> R$ {payment.amount_paid?.toFixed(2)}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600">Tipo:</span> {payment.payment_type === 'installments' ? 'Parcelado' : payment.payment_type === 'upfront' ? 'À Vista' : payment.payment_type}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600">Método:</span> {
+                          payment.payment_method === 'credit_card' ? 'Cartão de Crédito' :
+                          payment.payment_method === 'debit_card' ? 'Cartão de Débito' :
+                          payment.payment_method === 'pix' ? 'PIX' :
+                          payment.payment_method === 'cash' ? 'Dinheiro' :
+                          payment.payment_method === 'bank_transfer' ? 'Transferência' : payment.payment_method
+                        }
+                      </div>
+                      {payment.installments_total > 1 && (
+                        <>
+                          <div>
+                            <span className="font-medium text-gray-600">Parcelas:</span> {payment.installments_paid}/{payment.installments_total}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-600">Restante:</span> R$ {payment.amount_remaining?.toFixed(2)}
+                          </div>
+                        </>
+                      )}
+                      <div>
+                        <span className="font-medium text-gray-600">Data de Cadastro:</span> {formatDate(payment.created_at)}
+                      </div>
+                      {payment.due_date && (
+                        <div>
+                          <span className="font-medium text-gray-600">Vencimento:</span> {formatDate(payment.due_date)}
+                        </div>
+                      )}
+                    </div>
+
+                    {payment.notes && (
+                      <div className="mb-3">
+                        <div className="font-medium text-gray-600 text-sm mb-1">Observações:</div>
+                        <div className="text-sm bg-gray-50 p-2 rounded">{payment.notes}</div>
+                      </div>
+                    )}
+
+                    {/* Detalhamento das Parcelas */}
+                    {payment.payment_installments && payment.payment_installments.length > 0 && (
+                      <div className="mt-4">
+                        <div className="font-medium text-gray-600 text-sm mb-2">Detalhamento das Parcelas:</div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm border border-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-3 py-2 text-left border-b">Parcela</th>
+                                <th className="px-3 py-2 text-left border-b">Valor</th>
+                                <th className="px-3 py-2 text-left border-b">Pago</th>
+                                <th className="px-3 py-2 text-left border-b">Vencimento</th>
+                                <th className="px-3 py-2 text-left border-b">Pag. em</th>
+                                <th className="px-3 py-2 text-left border-b">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {payment.payment_installments
+                                .sort((a: any, b: any) => a.installment_number - b.installment_number)
+                                .map((installment: any) => (
+                                <tr key={installment.id} className="border-b">
+                                  <td className="px-3 py-2">{installment.installment_number}</td>
+                                  <td className="px-3 py-2">R$ {installment.amount?.toFixed(2)}</td>
+                                  <td className="px-3 py-2">R$ {(installment.paid_amount || 0).toFixed(2)}</td>
+                                  <td className="px-3 py-2">{formatDate(installment.due_date)}</td>
+                                  <td className="px-3 py-2">{installment.paid_date ? formatDate(installment.paid_date) : '-'}</td>
+                                  <td className="px-3 py-2">
+                                    <Badge variant={
+                                      installment.status === 'paid' ? 'default' :
+                                      installment.status === 'overdue' ? 'destructive' : 'outline'
+                                    } className="text-[10px]">
+                                      {installment.status === 'paid' ? 'Pago' :
+                                       installment.status === 'overdue' ? 'Vencido' : 'Pendente'}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Histórico de Atendimentos Detalhados */}
           {(attendanceRecords.length > 0 || employeeReports.length > 0) && (
