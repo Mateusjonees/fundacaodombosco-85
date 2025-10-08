@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ClipboardList,
   MessageSquare,
+  FileCheck,
   LucideIcon
 } from 'lucide-react';
 
@@ -61,6 +62,7 @@ const iconMapping: Record<string, LucideIcon> = {
   Shield,
   Heart,
   MessageSquare,
+  FileCheck,
 };
 
 // Dynamic menu items based on role permissions
@@ -106,6 +108,17 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       url: '/attendance-validation', 
       icon: 'CheckSquare', 
       order_index: 3.5
+    });
+  }
+  
+  // Controle de Devolutiva - coordenadores floresta e diretores
+  if (permissions.userRole === 'director' || permissions.userRole === 'coordinator_floresta') {
+    items.push({ 
+      id: 'feedback-control', 
+      title: 'Controle de Devolutiva', 
+      url: '/feedback-control', 
+      icon: 'FileCheck', 
+      order_index: 3.7
     });
   }
 

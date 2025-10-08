@@ -38,6 +38,7 @@ import AttendanceValidation from '@/pages/AttendanceValidation';
 import EmployeesNew from '@/pages/EmployeesNew';
 import DirectMessages from '@/pages/DirectMessages';
 import EmployeeControl from '@/pages/EmployeeControl';
+import FeedbackControl from '@/pages/FeedbackControl';
 import { PendingAttendancesNotification } from '@/components/PendingAttendancesNotification';
 import { AppointmentNotifications } from '@/components/AppointmentNotifications';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -236,6 +237,12 @@ export const MainApp = () => {
                 <Route path="/attendance-validation" element={
                   <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta']}>
                     <AttendanceValidation />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/feedback-control" element={
+                  <ProtectedRoute allowedRoles={['director', 'coordinator_floresta']}>
+                    <FeedbackControl />
                   </ProtectedRoute>
                 } />
                 
