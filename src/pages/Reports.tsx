@@ -107,11 +107,22 @@ export default function Reports() {
       setSelectedUnit(coordinatorUnit);
     }
 
-    loadEmployees();
-    loadClients();
-    loadAttendanceReports();
-    loadEmployeeReports();
-  }, [selectedEmployee, selectedClient, selectedUnit, dateFrom, dateTo, selectedMonth, sessionType, roleLoading, userRole]);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          loadEmployees(),
+          loadClients(),
+          loadAttendanceReports(),
+          loadEmployeeReports()
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [selectedEmployee, selectedClient, selectedUnit, dateFrom, dateTo, selectedMonth, sessionType, roleLoading, userRole, customPermissions.loading]);
 
   const loadClients = async () => {
     try {
@@ -294,8 +305,6 @@ export default function Reports() {
         description: "Não foi possível carregar os relatórios."
       });
       setEmployeeReports([]);
-    } finally {
-      setLoading(false);
     }
   };
 
