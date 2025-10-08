@@ -228,6 +228,7 @@ export default function Schedule() {
   };
 
   const loadSchedules = async () => {
+    console.log('🔄 RECARREGANDO AGENDAMENTOS...');
     setLoading(true);
     try {
       let query = supabase
@@ -300,8 +301,9 @@ export default function Schedule() {
             }
 
       const { data, error } = await query;
+      console.log('📋 Agendamentos carregados:', data?.length || 0);
       if (error) {
-        console.error('Schedule query error:', error);
+        console.error('❌ Schedule query error:', error);
         // Fallback query sem o join de profiles se houver erro
         const fallbackQuery = supabase
           .from('schedules')
@@ -338,6 +340,7 @@ export default function Schedule() {
       }
       
       setSchedules(data || []);
+      console.log('✅ Agendamentos atualizados no state');
     } catch (error) {
       console.error('Error loading schedules:', error);
       toast({

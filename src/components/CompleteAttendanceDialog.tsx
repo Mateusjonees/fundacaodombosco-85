@@ -234,7 +234,8 @@ export default function CompleteAttendanceDialog({
       }
 
       // 3. Atualizar agendamento para status "pending_validation"
-      await supabase
+      console.log('📝 Atualizando schedule para pending_validation...');
+      const { error: scheduleUpdateError } = await supabase
         .from('schedules')
         .update({ 
           status: 'pending_validation', // Mudança: não marca como completed ainda
@@ -245,9 +246,16 @@ export default function CompleteAttendanceDialog({
           completed_by: user.id
         })
         .eq('id', schedule.id);
+      
+      if (scheduleUpdateError) {
+        console.error('❌ Erro ao atualizar schedule:', scheduleUpdateError);
+        throw scheduleUpdateError;
+      }
+      console.log('✅ Schedule atualizado com sucesso!');
 
       // 4. Criar relatórios com status "pending_validation" (sem processar estoque/financeiro ainda)
-      await supabase.from('attendance_reports').insert({
+      console.log('📄 Criando attendance_report...');
+      const { error: attendanceError } = await supabase.from('attendance_reports').insert({
         schedule_id: schedule.id,
         client_id: schedule.client_id,
         employee_id: schedule.employee_id,
@@ -272,8 +280,15 @@ export default function CompleteAttendanceDialog({
         completed_by_name: completedByName,
         validation_status: 'pending_validation' // Status inicial
       });
+      
+      if (attendanceError) {
+        console.error('❌ Erro ao criar attendance_report:', attendanceError);
+        throw attendanceError;
+      }
+      console.log('✅ Attendance_report criado!');
 
-      await supabase.from('employee_reports').insert({
+      console.log('📄 Criando employee_report...');
+      const { error: employeeError } = await supabase.from('employee_reports').insert({
         employee_id: schedule.employee_id,
         client_id: schedule.client_id,
         schedule_id: schedule.id,
@@ -299,6 +314,12 @@ export default function CompleteAttendanceDialog({
         completed_by_name: completedByName,
         validation_status: 'pending_validation' // Status inicial
       });
+      
+      if (employeeError) {
+        console.error('❌ Erro ao criar employee_report:', employeeError);
+        throw employeeError;
+      }
+      console.log('✅ Employee_report criado!');
 
       // 5. Atualizar dados do cliente com informações da sessão
       const clientUpdateData: any = {
