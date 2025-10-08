@@ -161,6 +161,11 @@ export default function CompleteAttendanceDialog({
     
     if (!schedule || !user) {
       console.error('❌ Schedule ou User ausente!');
+      toast({
+        variant: "destructive",
+        title: "Erro ao Salvar",
+        description: "Dados do agendamento ou usuário não encontrados."
+      });
       return;
     }
     
@@ -168,75 +173,112 @@ export default function CompleteAttendanceDialog({
     setLoading(true);
     try {
       // Buscar informações do profissional designado para o atendimento
-      const { data: professionalProfile } = await supabase
+      console.log('📋 Buscando informações do profissional...');
+      const { data: professionalProfile, error: profError } = await supabase
         .from('profiles')
         .select('name, email')
         .eq('user_id', schedule.employee_id)
-        .single();
+        .maybeSingle();
+
+      if (profError) {
+        console.error('❌ Erro ao buscar profissional:', profError);
+        throw new Error('Erro ao buscar informações do profissional');
+      }
 
       const professionalName = professionalProfile?.name || professionalProfile?.email || 'Profissional não encontrado';
+      console.log('✅ Profissional encontrado:', professionalName);
       
       // Buscar informações de quem está concluindo o atendimento
-      const { data: completedByProfile } = await supabase
+      console.log('📋 Buscando informações de quem está concluindo...');
+      const { data: completedByProfile, error: completedByError } = await supabase
         .from('profiles')
         .select('name, email')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      const completedByName = completedByProfile?.name || completedByProfile?.email || user.email || 'Usuário não encontrado';
-
-      // 1. Upload de arquivos
-      const uploadedAttachments = [];
-      for (const attachedFile of attachedFiles) {
-        const fileName = `${user.id}/${schedule.id}/${Date.now()}_${attachedFile.file.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('attendance-documents')
-          .upload(fileName, attachedFile.file);
-
-        if (!uploadError) {
-          uploadedAttachments.push({
-            name: attachedFile.file.name,
-            path: uploadData.path,
-            size: attachedFile.file.size,
-            type: attachedFile.file.type
-          });
-        }
+      if (completedByError) {
+        console.error('❌ Erro ao buscar usuário que está concluindo:', completedByError);
+        throw new Error('Erro ao buscar informações do usuário');
       }
 
+      const completedByName = completedByProfile?.name || completedByProfile?.email || user.email || 'Usuário não encontrado';
+      console.log('✅ Usuário encontrado:', completedByName);
+
+      // 1. Upload de arquivos
+      console.log('📤 Processando upload de arquivos...', attachedFiles.length, 'arquivos');
+      const uploadedAttachments = [];
+      for (const attachedFile of attachedFiles) {
+        try {
+          const fileName = `${user.id}/${schedule.id}/${Date.now()}_${attachedFile.file.name}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('attendance-documents')
+            .upload(fileName, attachedFile.file);
+
+          if (uploadError) {
+            console.error('⚠️ Erro no upload do arquivo:', uploadError);
+            // Não bloqueia o processo, apenas registra
+          } else if (uploadData) {
+            uploadedAttachments.push({
+              name: attachedFile.file.name,
+              path: uploadData.path,
+              size: attachedFile.file.size,
+              type: attachedFile.file.type
+            });
+            console.log('✅ Arquivo enviado:', attachedFile.file.name);
+          }
+        } catch (uploadError) {
+          console.error('⚠️ Erro ao processar arquivo:', uploadError);
+          // Continua mesmo se um arquivo falhar
+        }
+      }
+      console.log('✅ Upload concluído:', uploadedAttachments.length, 'arquivos enviados');
+
       // 2. Processar materiais e calcular custos
+      console.log('📦 Processando materiais...', attendanceData.materialsUsed.length, 'materiais');
       let totalMaterialsCost = 0;
       const processedMaterials = [];
       
       for (const material of attendanceData.materialsUsed) {
-        const { data: stockItem } = await supabase
-          .from('stock_items')
-          .select('current_quantity, unit_cost, name, unit')
-          .eq('id', material.stock_item_id)
-          .single();
+        try {
+          const { data: stockItem, error: stockError } = await supabase
+            .from('stock_items')
+            .select('current_quantity, unit_cost, name, unit')
+            .eq('id', material.stock_item_id)
+            .maybeSingle();
 
-        if (stockItem && stockItem.current_quantity >= material.quantity) {
-          const unitCost = stockItem.unit_cost || 0;
-          const materialCost = unitCost * material.quantity;
-          totalMaterialsCost += materialCost;
+          if (stockError) {
+            console.error('⚠️ Erro ao buscar item de estoque:', stockError);
+            continue;
+          }
 
-          processedMaterials.push({
-            stock_item_id: material.stock_item_id,
-            name: stockItem.name,
-            quantity: material.quantity,
-            unit: stockItem.unit,
-            unit_cost: unitCost,
-            total_cost: materialCost,
-            observation: material.observation || ''
-          });
+          if (stockItem && stockItem.current_quantity >= material.quantity) {
+            const unitCost = stockItem.unit_cost || 0;
+            const materialCost = unitCost * material.quantity;
+            totalMaterialsCost += materialCost;
+
+            processedMaterials.push({
+              stock_item_id: material.stock_item_id,
+              name: stockItem.name,
+              quantity: material.quantity,
+              unit: stockItem.unit,
+              unit_cost: unitCost,
+              total_cost: materialCost,
+              observation: material.observation || ''
+            });
+          }
+        } catch (materialError) {
+          console.error('⚠️ Erro ao processar material:', materialError);
+          // Continua mesmo se um material falhar
         }
       }
+      console.log('✅ Materiais processados:', processedMaterials.length);
 
       // 3. Atualizar agendamento para status "pending_validation"
       console.log('📝 Atualizando schedule para pending_validation...');
       const { error: scheduleUpdateError } = await supabase
         .from('schedules')
         .update({ 
-          status: 'pending_validation', // Mudança: não marca como completed ainda
+          status: 'pending_validation',
           session_notes: attendanceData.clinicalObservations,
           session_amount: attendanceData.sessionValue,
           payment_method: attendanceData.paymentMethod,
@@ -320,6 +362,7 @@ export default function CompleteAttendanceDialog({
       console.log('✅ Employee_report criado!');
 
       // 5. Atualizar dados do cliente com informações da sessão
+      console.log('👤 Atualizando dados do cliente...');
       const clientUpdateData: any = {
         last_session_date: new Date().toISOString().split('T')[0],
         last_session_type: attendanceData.sessionType,
@@ -343,20 +386,27 @@ export default function CompleteAttendanceDialog({
         .eq('id', schedule.client_id);
 
       if (clientUpdateError) {
-        console.error('Error updating client data:', clientUpdateError);
+        console.error('⚠️ Erro ao atualizar cliente (não crítico):', clientUpdateError);
         // Não bloqueia o fluxo, apenas registra o erro
+      } else {
+        console.log('✅ Cliente atualizado com sucesso!');
       }
 
       // REMOVIDO: Processamento de estoque e financeiro (será feito apenas após validação)
 
-      console.log('✅ Atendimento salvo com sucesso!');
+      console.log('✅✅✅ Atendimento salvo com sucesso! ✅✅✅');
       
-    } catch (error) {
-      console.error('❌ ERRO ao completar atendimento:', error);
+    } catch (error: any) {
+      console.error('❌❌❌ ERRO ao completar atendimento:', error);
+      console.error('❌ Tipo do erro:', typeof error);
+      console.error('❌ Mensagem:', error?.message);
+      console.error('❌ Stack:', error?.stack);
+      console.error('❌ Detalhes completos:', JSON.stringify(error, null, 2));
+      
       toast({
         variant: "destructive",
         title: "Erro ao Salvar",
-        description: "Não foi possível concluir o atendimento. Tente novamente."
+        description: error?.message || "Não foi possível concluir o atendimento. Tente novamente."
       });
       setLoading(false);
       return; // Importante: retornar aqui para não executar o código de sucesso abaixo
