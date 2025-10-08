@@ -90,6 +90,7 @@ export default function FeedbackControl() {
             cpf
           )
         `)
+        .neq('status', 'completed')
         .order('deadline_date', { ascending: true });
 
       if (error) throw error;
