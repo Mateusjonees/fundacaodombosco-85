@@ -111,8 +111,8 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     });
   }
   
-  // Controle de Devolutiva - todos os funcionários da unidade Floresta
-  if (permissions.userRole && permissions.userUnit === 'floresta') {
+  // Controle de Devolutiva - diretores ou funcionários da unidade Floresta
+  if (permissions.isDirector() || permissions.userUnit === 'floresta') {
     items.push({ 
       id: 'feedback-control', 
       title: 'Controle de Devolutiva', 
