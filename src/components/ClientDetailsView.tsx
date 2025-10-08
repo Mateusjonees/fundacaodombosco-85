@@ -926,7 +926,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Notas do Cliente
+              Evolução do Atendimento
             </CardTitle>
             <Dialog open={addNoteDialogOpen} onOpenChange={setAddNoteDialogOpen}>
               <DialogTrigger asChild>
