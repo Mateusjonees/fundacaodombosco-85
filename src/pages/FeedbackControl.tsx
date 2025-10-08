@@ -116,10 +116,6 @@ export default function FeedbackControl() {
             id,
             name,
             cpf
-          ),
-          assigned_profiles:profiles!client_feedback_control_assigned_to_fkey (
-            user_id,
-            name
           )
         `)
         .neq('status', 'completed')
@@ -134,9 +130,23 @@ export default function FeedbackControl() {
 
       if (error) throw error;
 
+      // Buscar nomes dos funcionários atribuídos
+      const feedbacksWithEmployees = await Promise.all((data || []).map(async (item) => {
+        if (item.assigned_to) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .eq('user_id', item.assigned_to)
+            .single();
+          
+          return { ...item, assigned_profiles: profile };
+        }
+        return item;
+      }));
+
       // Atualizar status se vencido
       const now = new Date();
-      const updatedData = (data || []).map(item => {
+      const updatedData = feedbacksWithEmployees.map(item => {
         const deadline = new Date(item.deadline_date);
         if (deadline < now && item.status === 'pending') {
           return { ...item, status: 'overdue' as const };
