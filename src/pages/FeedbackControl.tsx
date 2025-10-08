@@ -534,7 +534,7 @@ export default function FeedbackControl() {
                       <div>
                         <p className="text-sm font-medium">Prazo Final (15 dias úteis)</p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(feedback.deadline_date), "dd/MM/yyyy", { locale: ptBR })}
+                          {feedback.deadline_date.split('T')[0].split('-').reverse().join('/')}
                         </p>
                       </div>
                     </div>
@@ -645,7 +645,7 @@ export default function FeedbackControl() {
                 <div>
                   <p className="text-sm font-medium">Prazo Final (15 dias úteis)</p>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(selectedFeedback.deadline_date), "dd/MM/yyyy", { locale: ptBR })}
+                    {selectedFeedback.deadline_date.split('T')[0].split('-').reverse().join('/')}
                   </p>
                 </div>
               </div>
