@@ -247,31 +247,34 @@ Contratante
   };
 
   const createFinancialRecord = async () => {
-    try {
-      const contractValueNumber = parseContractValue(contractData.value);
-      
-      // Criar registro financeiro de avaliação neuropsicológica
-      const { error } = await supabase
-        .from('financial_records')
-        .insert([{
-          type: 'income',
-          category: 'evaluation',
-          description: `Avaliação Neuropsicológica - ${contractData.clientName}`,
-          amount: contractValueNumber,
-          date: contractData.contractDate,
-          payment_method: 'contract',
-          client_id: contractData.clientId,
-          created_by: user?.id,
-          notes: `Contrato gerado automaticamente - Pagamento registrado como efetuado`
-        }]);
+    const contractValueNumber = parseContractValue(contractData.value);
+    
+    console.log('📊 Criando registro financeiro:', {
+      amount: contractValueNumber,
+      clientName: contractData.clientName,
+      clientId: contractData.clientId
+    });
+    
+    const { error } = await supabase
+      .from('financial_records')
+      .insert([{
+        type: 'income',
+        category: 'evaluation',
+        description: `Avaliação Neuropsicológica - ${contractData.clientName}`,
+        amount: contractValueNumber,
+        date: contractData.contractDate,
+        payment_method: 'contract',
+        client_id: contractData.clientId,
+        created_by: user?.id,
+        notes: `Contrato gerado - Pagamento registrado`
+      }]);
 
-      if (error) throw error;
-
-      console.log('Registro financeiro criado automaticamente');
-    } catch (error) {
-      console.error('Erro ao criar registro financeiro:', error);
-      // Não mostrar erro para o usuário, apenas log
+    if (error) {
+      console.error('❌ Erro ao criar registro financeiro:', error);
+      throw error;
     }
+
+    console.log('✅ Registro financeiro criado com sucesso');
   };
 
   const handlePrintContract = async () => {
@@ -383,7 +386,16 @@ Contratante
       }
 
       // Criar registro financeiro tradicional
-      await createFinancialRecord();
+      try {
+        await createFinancialRecord();
+      } catch (error) {
+        console.error('❌ Falha ao criar registro financeiro:', error);
+        toast({
+          variant: "destructive",
+          title: "Aviso",
+          description: "Contrato gerado mas houve erro ao criar registro financeiro. Verifique o financeiro.",
+        });
+      }
 
       // Gerar contrato para impressão
       const contractContent = generateContract();
