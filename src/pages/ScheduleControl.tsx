@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -52,6 +54,10 @@ export default function ScheduleControl() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+  const [selectedScheduleForNotification, setSelectedScheduleForNotification] = useState<Schedule | null>(null);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationReason, setNotificationReason] = useState("");
 
   const handleClientClick = async (clientId: string) => {
     try {
@@ -77,10 +83,28 @@ export default function ScheduleControl() {
     }
   };
 
-  const handleNotifyProfessional = async (schedule: Schedule) => {
+  const handleOpenNotificationDialog = (schedule: Schedule) => {
+    setSelectedScheduleForNotification(schedule);
+    setNotificationMessage("");
+    setNotificationReason("");
+    setNotificationDialogOpen(true);
+  };
+
+  const handleSendNotification = async () => {
+    if (!selectedScheduleForNotification || !notificationMessage.trim()) {
+      toast({
+        title: "Mensagem obrigatória",
+        description: "Por favor, escreva uma mensagem para enviar",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!user) return;
 
     try {
+      const schedule = selectedScheduleForNotification;
+      
       // Buscar nome do diretor
       const { data: directorProfile } = await supabase
         .from('profiles')
@@ -88,40 +112,42 @@ export default function ScheduleControl() {
         .eq('user_id', user.id)
         .single();
 
-      // Buscar nome do cliente
-      const clientName = schedule.clients?.name || 'Cliente';
-
-      // Criar notificação para o profissional
       const { error } = await supabase
         .from('appointment_notifications')
         .insert({
           schedule_id: schedule.id,
           employee_id: schedule.employee_id,
           client_id: schedule.client_id,
-          title: 'Solicitação de Finalização',
-          message: `O diretor ${directorProfile?.name || 'Diretor'} solicita a finalização do atendimento de ${clientName} marcado para ${format(new Date(schedule.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}.`,
+          title: notificationReason || 'Notificação do Diretor',
+          message: notificationMessage,
           appointment_date: schedule.start_time,
           appointment_time: format(new Date(schedule.start_time), 'HH:mm'),
-          notification_type: 'completion_request',
+          notification_type: 'director_notification',
           created_by: user.id,
           metadata: {
-            requested_by: directorProfile?.name,
-            request_type: 'completion_request'
+            status: schedule.status,
+            sent_by: directorProfile?.name || 'Diretor',
+            reason: notificationReason,
           }
         });
 
       if (error) throw error;
 
       toast({
-        title: "Notificação enviada",
-        description: `${Array.isArray(schedule.profiles) ? schedule.profiles[0]?.name : schedule.profiles?.name} foi notificado para finalizar o atendimento.`,
+        title: "✅ Notificação enviada",
+        description: `Mensagem enviada para ${Array.isArray(schedule.profiles) ? schedule.profiles[0]?.name : schedule.profiles?.name}`,
       });
+
+      setNotificationDialogOpen(false);
+      setSelectedScheduleForNotification(null);
+      setNotificationMessage("");
+      setNotificationReason("");
     } catch (error) {
       console.error('Error sending notification:', error);
       toast({
+        title: "Erro ao enviar notificação",
+        description: "Tente novamente mais tarde",
         variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível enviar a notificação.",
       });
     }
   };
@@ -421,16 +447,15 @@ export default function ScheduleControl() {
                           )}
                           
                           {/* Botão de notificação para diretores */}
-                          {userProfile?.employee_role === 'director' && 
-                           (schedule.status === 'confirmed' || schedule.status === 'scheduled') && (
+                          {userProfile?.employee_role === 'director' && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleNotifyProfessional(schedule)}
+                              onClick={() => handleOpenNotificationDialog(schedule)}
                               className="gap-2"
                             >
                               <Bell className="h-3 w-3" />
-                              Notificar Finalização
+                              Notificar Profissional
                             </Button>
                           )}
                         </div>
@@ -513,17 +538,15 @@ export default function ScheduleControl() {
                                 : schedule.cancelled_by_profile?.name}
                             </div>
                           )}
-                          {(schedule.status === 'confirmed' || schedule.status === 'scheduled') && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleNotifyProfessional(schedule)}
-                              className="w-full h-6 text-[10px] gap-1 mt-1"
-                            >
-                              <Bell className="h-3 w-3" />
-                              Notificar
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleOpenNotificationDialog(schedule)}
+                            className="w-full h-6 text-[10px] gap-1 mt-1"
+                          >
+                            <Bell className="h-3 w-3" />
+                            Notificar
+                          </Button>
                         </>
                       )}
                     </div>
@@ -621,17 +644,15 @@ export default function ScheduleControl() {
                     </TableCell>
                     {userProfile?.employee_role === 'director' && (
                       <TableCell>
-                        {(schedule.status === 'confirmed' || schedule.status === 'scheduled') && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleNotifyProfessional(schedule)}
-                            className="gap-2"
-                          >
-                            <Bell className="h-3 w-3" />
-                            Notificar
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenNotificationDialog(schedule)}
+                          className="gap-2"
+                        >
+                          <Bell className="h-3 w-3" />
+                          Notificar
+                        </Button>
                       </TableCell>
                     )}
                   </TableRow>
@@ -821,6 +842,113 @@ export default function ScheduleControl() {
               }}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Notificação Personalizada */}
+      <Dialog open={notificationDialogOpen} onOpenChange={setNotificationDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Notificar Profissional</DialogTitle>
+          </DialogHeader>
+          
+          {selectedScheduleForNotification && (
+            <div className="space-y-4 py-4">
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <p className="text-sm">
+                  <span className="font-semibold">Paciente:</span> {selectedScheduleForNotification.clients?.name}
+                </p>
+                <p className="text-sm">
+                  <span className="font-semibold">Profissional:</span>{" "}
+                  {Array.isArray(selectedScheduleForNotification.profiles) 
+                    ? selectedScheduleForNotification.profiles[0]?.name 
+                    : selectedScheduleForNotification.profiles?.name}
+                </p>
+                <p className="text-sm">
+                  <span className="font-semibold">Data/Hora:</span>{" "}
+                  {format(new Date(selectedScheduleForNotification.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </p>
+                <p className="text-sm">
+                  <span className="font-semibold">Status:</span>{" "}
+                  {getStatusBadge(selectedScheduleForNotification.status)}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notification-reason">Motivo da Notificação</Label>
+                <Select value={notificationReason} onValueChange={setNotificationReason}>
+                  <SelectTrigger id="notification-reason">
+                    <SelectValue placeholder="Selecione o motivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Solicitação de Finalização">Solicitar finalização do atendimento</SelectItem>
+                    <SelectItem value="Solicitar Informações">Solicitar informações adicionais</SelectItem>
+                    <SelectItem value="Esclarecer Cancelamento">Esclarecer motivo do cancelamento</SelectItem>
+                    <SelectItem value="Confirmação de Presença">Confirmar presença do paciente</SelectItem>
+                    <SelectItem value="Atualização de Dados">Solicitar atualização de dados</SelectItem>
+                    <SelectItem value="Verificação de Status">Verificar status do atendimento</SelectItem>
+                    <SelectItem value="Outro">Outro motivo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notification-message">Mensagem *</Label>
+                <Textarea
+                  id="notification-message"
+                  placeholder="Escreva sua mensagem aqui... Seja claro sobre o que precisa que o profissional faça."
+                  value={notificationMessage}
+                  onChange={(e) => setNotificationMessage(e.target.value)}
+                  rows={6}
+                  maxLength={500}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {notificationMessage.length}/500 caracteres
+                </p>
+              </div>
+
+              {selectedScheduleForNotification.status === 'cancelled' && (
+                <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg">
+                  <p className="text-sm text-destructive font-medium">
+                    ⚠️ Atendimento Cancelado
+                  </p>
+                  {selectedScheduleForNotification.cancellation_reason && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Motivo: {selectedScheduleForNotification.cancellation_reason}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedScheduleForNotification.status === 'confirmed' && (
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-3 rounded-lg">
+                  <p className="text-sm text-green-700 dark:text-green-400 font-medium">
+                    ✓ Atendimento Confirmado
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    O profissional já confirmou este atendimento
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNotificationDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendNotification}
+              disabled={!notificationMessage.trim()}
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Enviar Notificação
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
