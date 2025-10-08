@@ -888,8 +888,10 @@ export default function Schedule() {
                                   size="sm"
                                   variant="default"
                                   onClick={() => {
+                                    console.log('🔵 Botão CONCLUIR clicado para agendamento:', schedule.id);
                                     setSelectedScheduleForAction(schedule);
                                     setCompleteDialogOpen(true);
+                                    console.log('🔵 Diálogo de conclusão aberto');
                                   }}
                                   className="h-9 gap-2 font-medium"
                                 >

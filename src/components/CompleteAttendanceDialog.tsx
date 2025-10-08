@@ -157,8 +157,16 @@ export default function CompleteAttendanceDialog({
   };
 
   const handleComplete = async () => {
-    if (!schedule || !user) return;
+    console.log('=== INÍCIO DO PROCESSO DE CONCLUSÃO ===');
+    console.log('Schedule:', schedule);
+    console.log('User:', user);
     
+    if (!schedule || !user) {
+      console.error('❌ Schedule ou User ausente!');
+      return;
+    }
+    
+    console.log('✅ Iniciando salvamento do atendimento...');
     setLoading(true);
     try {
       // Buscar informações do profissional designado para o atendimento
@@ -322,22 +330,29 @@ export default function CompleteAttendanceDialog({
 
       // REMOVIDO: Processamento de estoque e financeiro (será feito apenas após validação)
 
+      console.log('✅ Atendimento salvo com sucesso!');
+      
       toast({
         title: "Atendimento Registrado!",
         description: "Atendimento concluído e enviado para validação do coordenador.",
       });
 
+      console.log('Chamando onComplete()...');
       onComplete();
+      console.log('Chamando onClose()...');
       onClose();
       setAttachedFiles([]);
       
     } catch (error) {
-      console.error('Error completing attendance:', error);
+      console.error('❌ ERRO ao completar atendimento:', error);
       toast({
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível concluir o atendimento. Tente novamente."
       });
+    } finally {
+      setLoading(false);
+      console.log('=== FIM DO PROCESSO DE CONCLUSÃO ===');
     }
   };
 
