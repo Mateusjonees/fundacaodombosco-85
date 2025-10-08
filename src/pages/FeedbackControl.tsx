@@ -518,13 +518,13 @@ export default function FeedbackControl() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-sm font-medium">Data de Início</p>
+                        <p className="text-sm font-medium">Data de Lançamento</p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(feedback.started_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                          {format(new Date(feedback.started_at), "dd/MM/yyyy", { locale: ptBR })}
                         </p>
                       </div>
                     </div>
@@ -532,20 +532,47 @@ export default function FeedbackControl() {
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-sm font-medium">Prazo</p>
+                        <p className="text-sm font-medium">Prazo Final (15 dias úteis)</p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(feedback.deadline_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                          {format(new Date(feedback.deadline_date), "dd/MM/yyyy", { locale: ptBR })}
                         </p>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className={`h-4 w-4 ${remainingDays < 0 ? 'text-destructive' : remainingDays <= 3 ? 'text-orange-500' : 'text-muted-foreground'}`} />
-                      <div>
-                        <p className="text-sm font-medium">Dias Restantes</p>
-                        <p className={`text-sm font-semibold ${remainingDays < 0 ? 'text-destructive' : remainingDays <= 3 ? 'text-orange-500' : 'text-muted-foreground'}`}>
-                          {remainingDays < 0 ? 'Vencido' : `${remainingDays} dias úteis`}
-                        </p>
+                  {/* Contagem Regressiva em Destaque */}
+                  <div className={`p-4 rounded-lg border-2 ${
+                    remainingDays < 0 
+                      ? 'bg-red-50 border-red-300 dark:bg-red-950 dark:border-red-800' 
+                      : remainingDays <= 3 
+                        ? 'bg-orange-50 border-orange-300 dark:bg-orange-950 dark:border-orange-800'
+                        : 'bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-800'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <AlertCircle className={`h-6 w-6 ${
+                          remainingDays < 0 
+                            ? 'text-red-600 dark:text-red-400' 
+                            : remainingDays <= 3 
+                              ? 'text-orange-600 dark:text-orange-400'
+                              : 'text-blue-600 dark:text-blue-400'
+                        }`} />
+                        <div>
+                          <p className="text-sm font-medium mb-1">⏱️ Contagem Regressiva</p>
+                          <p className={`text-2xl font-bold ${
+                            remainingDays < 0 
+                              ? 'text-red-600 dark:text-red-400' 
+                              : remainingDays <= 3 
+                                ? 'text-orange-600 dark:text-orange-400'
+                                : 'text-blue-600 dark:text-blue-400'
+                          }`}>
+                            {remainingDays < 0 
+                              ? `Vencido há ${Math.abs(remainingDays)} dias úteis` 
+                              : remainingDays === 0
+                                ? 'Vence hoje!'
+                                : `${remainingDays} ${remainingDays === 1 ? 'dia útil' : 'dias úteis'}`}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -610,32 +637,53 @@ export default function FeedbackControl() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium">Data de Início</p>
+                  <p className="text-sm font-medium">Data de Lançamento</p>
                   <p className="text-sm text-muted-foreground">
                     {format(new Date(selectedFeedback.started_at), "dd/MM/yyyy", { locale: ptBR })}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Prazo</p>
+                  <p className="text-sm font-medium">Prazo Final (15 dias úteis)</p>
                   <p className="text-sm text-muted-foreground">
                     {format(new Date(selectedFeedback.deadline_date), "dd/MM/yyyy", { locale: ptBR })}
                   </p>
                 </div>
               </div>
 
-              <div>
-                <p className="text-sm font-medium mb-1">Dias Restantes</p>
-                <p className={`text-lg font-semibold ${
-                  calculateRemainingDays(selectedFeedback.deadline_date) < 0 
-                    ? 'text-destructive' 
-                    : calculateRemainingDays(selectedFeedback.deadline_date) <= 3 
-                      ? 'text-orange-500' 
-                      : 'text-green-600'
-                }`}>
-                  {calculateRemainingDays(selectedFeedback.deadline_date) < 0 
-                    ? 'Vencido' 
-                    : `${calculateRemainingDays(selectedFeedback.deadline_date)} dias úteis`}
-                </p>
+              {/* Contagem Regressiva em Destaque no Dialog */}
+              <div className={`p-6 rounded-lg border-2 ${
+                calculateRemainingDays(selectedFeedback.deadline_date) < 0 
+                  ? 'bg-red-50 border-red-300 dark:bg-red-950 dark:border-red-800' 
+                  : calculateRemainingDays(selectedFeedback.deadline_date) <= 3 
+                    ? 'bg-orange-50 border-orange-300 dark:bg-orange-950 dark:border-orange-800'
+                    : 'bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-800'
+              }`}>
+                <div className="text-center">
+                  <AlertCircle className={`h-8 w-8 mx-auto mb-3 ${
+                    calculateRemainingDays(selectedFeedback.deadline_date) < 0 
+                      ? 'text-red-600 dark:text-red-400' 
+                      : calculateRemainingDays(selectedFeedback.deadline_date) <= 3 
+                        ? 'text-orange-600 dark:text-orange-400'
+                        : 'text-blue-600 dark:text-blue-400'
+                  }`} />
+                  <p className="text-sm font-medium mb-2">⏱️ Contagem Regressiva</p>
+                  <p className={`text-3xl font-bold ${
+                    calculateRemainingDays(selectedFeedback.deadline_date) < 0 
+                      ? 'text-red-600 dark:text-red-400' 
+                      : calculateRemainingDays(selectedFeedback.deadline_date) <= 3 
+                        ? 'text-orange-600 dark:text-orange-400'
+                        : 'text-blue-600 dark:text-blue-400'
+                  }`}>
+                    {calculateRemainingDays(selectedFeedback.deadline_date) < 0 
+                      ? `Vencido há ${Math.abs(calculateRemainingDays(selectedFeedback.deadline_date))} dias úteis` 
+                      : calculateRemainingDays(selectedFeedback.deadline_date) === 0
+                        ? '🔥 Vence hoje!'
+                        : `${calculateRemainingDays(selectedFeedback.deadline_date)} ${calculateRemainingDays(selectedFeedback.deadline_date) === 1 ? 'dia útil' : 'dias úteis'}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Prazo de 15 dias úteis desde o lançamento
+                  </p>
+                </div>
               </div>
 
               {selectedFeedback.notes && (
