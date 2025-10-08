@@ -34,9 +34,7 @@ interface Schedule {
   cancelled_by?: string;
   cancellation_reason?: string;
   clients?: { name: string };
-  profiles?: { name: string } | { name: string }[];
-  created_by_profile?: { name: string } | { name: string }[];
-  cancelled_by_profile?: { name: string } | { name: string }[];
+  profiles?: { name: string };
 }
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -135,7 +133,7 @@ export default function ScheduleControl() {
 
       toast({
         title: "✅ Notificação enviada",
-        description: `Mensagem enviada para ${Array.isArray(schedule.profiles) ? schedule.profiles[0]?.name : schedule.profiles?.name}`,
+        description: `Mensagem enviada para ${schedule.profiles?.name}`,
       });
 
       setNotificationDialogOpen(false);
@@ -226,9 +224,7 @@ export default function ScheduleControl() {
         .select(`
           *,
           clients (name),
-          profiles!schedules_employee_id_fkey (name),
-          created_by_profile:profiles!schedules_created_by_fkey (name),
-          cancelled_by_profile:profiles!schedules_cancelled_by_fkey (name)
+          profiles:employee_id (name)
         `)
         .gte('start_time', startDate.toISOString())
         .lt('start_time', endDate.toISOString())
@@ -379,9 +375,7 @@ export default function ScheduleControl() {
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm font-medium">
-                              {Array.isArray(schedule.profiles) 
-                                ? schedule.profiles[0]?.name 
-                                : schedule.profiles?.name || 'Profissional não atribuído'}
+                              {schedule.profiles?.name || 'Profissional não atribuído'}
                             </span>
                           </div>
 
@@ -398,30 +392,12 @@ export default function ScheduleControl() {
                             </div>
                           )}
 
-                          {/* Informações para diretores */}
-                          {userProfile?.employee_role === 'director' && (
-                            <>
-                              {schedule.created_by_profile && (
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                                  <User className="h-3 w-3" />
-                                  <span>Agendado por: <strong>
-                                    {Array.isArray(schedule.created_by_profile) 
-                                      ? schedule.created_by_profile[0]?.name 
-                                      : schedule.created_by_profile?.name}
-                                  </strong></span>
-                                </div>
-                              )}
-                              {schedule.status === 'cancelled' && schedule.cancelled_by_profile && (
-                                <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 p-2 rounded">
-                                  <User className="h-3 w-3" />
-                                  <span>Cancelado por: <strong>
-                                    {Array.isArray(schedule.cancelled_by_profile) 
-                                      ? schedule.cancelled_by_profile[0]?.name 
-                                      : schedule.cancelled_by_profile?.name}
-                                  </strong></span>
-                                </div>
-                              )}
-                            </>
+                          {/* Observações adicionais para o diretor */}
+                          {userProfile?.employee_role === 'director' && schedule.status === 'cancelled' && (
+                            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 p-2 rounded">
+                              <AlertCircle className="h-3 w-3" />
+                              <span>Atendimento cancelado</span>
+                            </div>
                           )}
 
                           {schedule.notes && (
@@ -512,42 +488,24 @@ export default function ScheduleControl() {
                       
                       <div className="truncate text-muted-foreground flex items-center gap-1">
                         <User className="h-3 w-3" />
-                        {Array.isArray(schedule.profiles) 
-                          ? schedule.profiles[0]?.name 
-                          : schedule.profiles?.name}
+                        {schedule.profiles?.name}
                       </div>
 
                       <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-[10px]">
                         {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
                       </Badge>
                       
-                      {/* Info para diretores na visualização semanal */}
+                      {/* Ações para diretores na visualização semanal */}
                       {userProfile?.employee_role === 'director' && (
-                        <>
-                          {schedule.created_by_profile && (
-                            <div className="text-[10px] text-muted-foreground truncate">
-                              📝 {Array.isArray(schedule.created_by_profile) 
-                                ? schedule.created_by_profile[0]?.name 
-                                : schedule.created_by_profile?.name}
-                            </div>
-                          )}
-                          {schedule.status === 'cancelled' && schedule.cancelled_by_profile && (
-                            <div className="text-[10px] text-destructive truncate">
-                              ❌ {Array.isArray(schedule.cancelled_by_profile) 
-                                ? schedule.cancelled_by_profile[0]?.name 
-                                : schedule.cancelled_by_profile?.name}
-                            </div>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleOpenNotificationDialog(schedule)}
-                            className="w-full h-6 text-[10px] gap-1 mt-1"
-                          >
-                            <Bell className="h-3 w-3" />
-                            Notificar
-                          </Button>
-                        </>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleOpenNotificationDialog(schedule)}
+                          className="w-full h-6 text-[10px] gap-1 mt-1"
+                        >
+                          <Bell className="h-3 w-3" />
+                          Notificar
+                        </Button>
                       )}
                     </div>
                   ))
@@ -608,9 +566,7 @@ export default function ScheduleControl() {
                       </button>
                     </TableCell>
                     <TableCell>
-                      {Array.isArray(schedule.profiles) 
-                        ? schedule.profiles[0]?.name || 'N/A'
-                        : schedule.profiles?.name || 'N/A'}
+                      {schedule.profiles?.name || 'N/A'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'}>
@@ -625,20 +581,6 @@ export default function ScheduleControl() {
                             <CheckCircle2 className="h-3 w-3" />
                             Chegou
                           </Badge>
-                        )}
-                        {userProfile?.employee_role === 'director' && schedule.created_by_profile && (
-                          <div className="text-[10px] text-muted-foreground">
-                            Por: {Array.isArray(schedule.created_by_profile) 
-                              ? schedule.created_by_profile[0]?.name 
-                              : schedule.created_by_profile?.name}
-                          </div>
-                        )}
-                        {userProfile?.employee_role === 'director' && schedule.status === 'cancelled' && schedule.cancelled_by_profile && (
-                          <div className="text-[10px] text-destructive">
-                            Cancelado: {Array.isArray(schedule.cancelled_by_profile) 
-                              ? schedule.cancelled_by_profile[0]?.name 
-                              : schedule.cancelled_by_profile?.name}
-                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -860,9 +802,7 @@ export default function ScheduleControl() {
                 </p>
                 <p className="text-sm">
                   <span className="font-semibold">Profissional:</span>{" "}
-                  {Array.isArray(selectedScheduleForNotification.profiles) 
-                    ? selectedScheduleForNotification.profiles[0]?.name 
-                    : selectedScheduleForNotification.profiles?.name}
+                  {selectedScheduleForNotification.profiles?.name}
                 </p>
                 <p className="text-sm">
                   <span className="font-semibold">Data/Hora:</span>{" "}
