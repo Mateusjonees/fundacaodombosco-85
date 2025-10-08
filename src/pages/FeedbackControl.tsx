@@ -39,6 +39,7 @@ export default function FeedbackControl() {
   const [notes, setNotes] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
 
   useEffect(() => {
     checkPermissions();
@@ -149,6 +150,7 @@ export default function FeedbackControl() {
       setShowAddDialog(false);
       setSelectedClient(null);
       setNotes('');
+      setClientSearchTerm('');
       loadFeedbacks();
       loadClients();
     } catch (error: any) {
@@ -232,9 +234,22 @@ export default function FeedbackControl() {
 
             <div className="space-y-4">
               <div>
+                <label className="text-sm font-medium">Buscar Cliente</label>
+                <div className="relative mt-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Digite o nome ou CPF do cliente..."
+                    value={clientSearchTerm}
+                    onChange={(e) => setClientSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="text-sm font-medium">Cliente</label>
                 <select
-                  className="w-full mt-1 p-2 border rounded-md"
+                  className="w-full mt-1 p-2 border rounded-md bg-background"
                   value={selectedClient?.id || ''}
                   onChange={(e) => {
                     const client = clients.find(c => c.id === e.target.value);
@@ -242,11 +257,16 @@ export default function FeedbackControl() {
                   }}
                 >
                   <option value="">Selecione um cliente</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.name} {client.cpf ? `- CPF: ${client.cpf}` : ''}
-                    </option>
-                  ))}
+                  {clients
+                    .filter(client => 
+                      client.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+                      (client.cpf && client.cpf.includes(clientSearchTerm))
+                    )
+                    .map(client => (
+                      <option key={client.id} value={client.id}>
+                        {client.name} {client.cpf ? `- CPF: ${client.cpf}` : ''}
+                      </option>
+                    ))}
                 </select>
               </div>
 
