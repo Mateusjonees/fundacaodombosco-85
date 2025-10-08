@@ -388,6 +388,29 @@ export default function Financial() {
   });
   const totalOverdueAmount = overduePayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
 
+  // Traduzir métodos de pagamento
+  const translatePaymentMethod = (method: string | undefined): string => {
+    if (!method) return 'Não informado';
+    
+    const translations: Record<string, string> = {
+      'cash': 'Dinheiro',
+      'contract': 'Contrato',
+      'pix': 'PIX',
+      'credit_card': 'Cartão de Crédito',
+      'debit_card': 'Cartão de Débito',
+      'transfer': 'Transferência',
+      'check': 'Cheque',
+      'boleto': 'Boleto',
+      'internal': 'Interno',
+      'Manual': 'Manual',
+      'Cartão': 'Cartão de Crédito',
+      'Contrato': 'Contrato',
+      'Dinheiro': 'Dinheiro'
+    };
+    
+    return translations[method] || method;
+  };
+
   const exportToCSV = () => {
     const headers = ['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Forma de Pagamento'];
     const csvContent = [
@@ -398,7 +421,7 @@ export default function Financial() {
         record.category,
         `"${record.description || ''}"`,
         record.amount.toFixed(2),
-        record.payment_method || ''
+        translatePaymentMethod(record.payment_method)
       ].join(','))
     ].join('\n');
 
@@ -785,11 +808,11 @@ export default function Financial() {
                          <TableCell className={record.type === 'income' ? 'text-green-600' : 'text-red-600'}>
                            {record.type === 'income' ? '+' : '-'} R$ {record.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                          </TableCell>
-                         <TableCell>
-                           <Badge variant="outline">
-                             {record.payment_method}
-                           </Badge>
-                         </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {translatePaymentMethod(record.payment_method)}
+                          </Badge>
+                        </TableCell>
                          <TableCell>
                            <div className="flex items-center gap-2">
                              {record.type === 'income' && (
