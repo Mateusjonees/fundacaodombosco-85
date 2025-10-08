@@ -30,7 +30,7 @@ interface FeedbackControl {
     name: string;
     cpf: string | null;
   };
-  assigned_employee?: {
+  assigned_profiles?: {
     name: string;
   };
 }
@@ -116,7 +116,7 @@ export default function FeedbackControl() {
             name,
             cpf
           ),
-          assigned_employee:assigned_to (
+          assigned_profiles:profiles!client_feedback_control_assigned_to_fkey (
             name
           )
         `)
@@ -245,6 +245,13 @@ export default function FeedbackControl() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     if (!selectedFeedback) return;
+
+    // Verificar se é coordenador ou se é o funcionário atribuído
+    const canUpload = isCoordinator || (selectedFeedback.assigned_to === user?.id);
+    if (!canUpload) {
+      toast.error('Você não tem permissão para anexar laudos a esta devolutiva');
+      return;
+    }
 
     const file = e.target.files[0];
     
@@ -478,10 +485,10 @@ export default function FeedbackControl() {
                       <CardDescription>
                         {feedback.clients?.cpf && `CPF: ${feedback.clients.cpf}`}
                       </CardDescription>
-                      {feedback.assigned_employee && (
+                      {feedback.assigned_profiles && (
                         <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                           <User className="h-3 w-3" />
-                          <span>Responsável: {feedback.assigned_employee.name}</span>
+                          <span>Responsável: {feedback.assigned_profiles.name}</span>
                         </div>
                       )}
                     </div>
@@ -565,11 +572,11 @@ export default function FeedbackControl() {
                 </div>
               </div>
               
-              {selectedFeedback.assigned_employee && (
+              {selectedFeedback.assigned_profiles && (
                 <div>
                   <p className="text-sm font-medium">Funcionário Responsável</p>
                   <p className="text-sm text-muted-foreground">
-                    {selectedFeedback.assigned_employee.name}
+                    {selectedFeedback.assigned_profiles.name}
                   </p>
                 </div>
               )}
@@ -614,36 +621,47 @@ export default function FeedbackControl() {
               )}
 
               {!selectedFeedback.report_attached && (
-                <div className="border-2 border-dashed rounded-lg p-6">
-                  <div className="text-center space-y-2">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
-                    <div>
-                      <p className="text-sm font-medium">Anexar Laudo</p>
-                      <p className="text-xs text-muted-foreground">
-                        PDF, JPG ou PNG (máximo 10MB)
-                      </p>
+                <>
+                  {(isCoordinator || selectedFeedback.assigned_to === user?.id) ? (
+                    <div className="border-2 border-dashed rounded-lg p-6">
+                      <div className="text-center space-y-2">
+                        <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
+                        <div>
+                          <p className="text-sm font-medium">Anexar Laudo</p>
+                          <p className="text-xs text-muted-foreground">
+                            PDF, JPG ou PNG (máximo 10MB)
+                          </p>
+                        </div>
+                        <label className="cursor-pointer">
+                          <Button 
+                            variant="default" 
+                            disabled={uploadingLaudo}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              document.getElementById('laudo-upload')?.click();
+                            }}
+                          >
+                            {uploadingLaudo ? 'Enviando...' : 'Selecionar Arquivo'}
+                          </Button>
+                          <input
+                            id="laudo-upload"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
                     </div>
-                    <label className="cursor-pointer">
-                      <Button 
-                        variant="default" 
-                        disabled={uploadingLaudo}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          document.getElementById('laudo-upload')?.click();
-                        }}
-                      >
-                        {uploadingLaudo ? 'Enviando...' : 'Selecionar Arquivo'}
-                      </Button>
-                      <input
-                        id="laudo-upload"
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                </div>
+                  ) : (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Apenas o funcionário responsável ou coordenadores podem anexar o laudo.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </>
               )}
 
               {selectedFeedback.report_attached && (
