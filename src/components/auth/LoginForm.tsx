@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
-import logo from '@/assets/fundacao-dom-bosco-logo-main.png';
+import logo from '@/assets/fundacao-dom-bosco-logo-optimized.png';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -93,8 +93,11 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
           <div className="flex justify-center">
             <img 
               src={logo} 
-              alt="Fundação Dom Bosco" 
+              alt="Fundação Dom Bosco - Sistema de Gestão Clínica e Neuropsicológica" 
               className="h-32 w-auto object-contain"
+              width="168"
+              height="128"
+              fetchPriority="high"
             />
           </div>
           <div className="space-y-1">

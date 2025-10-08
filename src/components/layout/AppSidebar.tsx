@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import logo from '@/assets/fundacao-dom-bosco-logo-main.png';
+import logo from '@/assets/fundacao-dom-bosco-logo-optimized.png';
 
 import { 
   Users, 
@@ -325,6 +325,8 @@ export function AppSidebar() {
                     src={logo} 
                     alt="Fundação Dom Bosco" 
                     className="h-16 md:h-20 w-auto object-contain mx-auto"
+                    width="84"
+                    height="64"
                   />
                   <div className="hidden md:block">
                     <div className="text-xs font-semibold text-primary">
@@ -337,6 +339,8 @@ export function AppSidebar() {
                   src={logo} 
                   alt="Fundação Dom Bosco" 
                   className="h-8 w-auto object-contain"
+                  width="42"
+                  height="32"
                 />
               )}
             </div>
