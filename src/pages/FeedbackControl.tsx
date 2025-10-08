@@ -104,6 +104,19 @@ export default function FeedbackControl() {
     try {
       setLoading(true);
       
+      // Buscar user diretamente para garantir que está disponível
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      console.log('🔍 [DEBUG] User no loadFeedbacks:', currentUser?.id);
+      console.log('🔍 [DEBUG] isCoordinator:', isCoordinator);
+      
+      if (!currentUser) {
+        console.error('❌ Usuário não autenticado');
+        toast.error('Usuário não autenticado');
+        setLoading(false);
+        return;
+      }
+      
       let query = supabase
         .from('client_feedback_control')
         .select(`
@@ -118,11 +131,17 @@ export default function FeedbackControl() {
         .order('deadline_date', { ascending: true });
       
       // Se não for coordenador, mostrar apenas suas devolutivas
-      if (!isCoordinator && user) {
-        query = query.eq('assigned_to', user.id);
+      if (!isCoordinator) {
+        console.log('🔍 [DEBUG] Aplicando filtro assigned_to:', currentUser.id);
+        query = query.eq('assigned_to', currentUser.id);
+      } else {
+        console.log('🔍 [DEBUG] Coordenador - sem filtro assigned_to');
       }
 
       const { data, error } = await query;
+      
+      console.log('🔍 [DEBUG] Registros retornados:', data?.length || 0);
+      console.log('🔍 [DEBUG] Dados:', data);
 
       if (error) throw error;
 
