@@ -459,39 +459,41 @@ export default function ScheduleControl() {
           const daySchedules = groupedSchedules[dateKey] || [];
           
           return (
-            <Card key={dateKey}>
-              <CardHeader className="p-4">
-                <CardTitle className="text-sm">
+            <Card key={dateKey} className="flex flex-col">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-sm font-semibold">
                   {format(day, "EEE, dd/MM", { locale: ptBR })}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 space-y-2">
+              <CardContent className="p-3 pt-0 space-y-2 overflow-y-auto max-h-[600px]">
                 {daySchedules.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Sem agendamentos</p>
+                  <p className="text-xs text-muted-foreground text-center py-4">Sem agendamentos</p>
                 ) : (
                   daySchedules.map((schedule) => (
-                    <div key={schedule.id} className="text-xs p-3 bg-accent rounded space-y-1.5 border border-border/50 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between">
-                        <div className="font-semibold flex items-center gap-1">
+                    <div key={schedule.id} className="text-xs p-2.5 bg-accent rounded-lg space-y-1.5 border border-border/50 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="font-semibold flex items-center gap-1 shrink-0">
                           <Clock className="h-3 w-3" />
-                          {format(new Date(schedule.start_time), 'HH:mm')}
+                          <span className="text-[11px]">{format(new Date(schedule.start_time), 'HH:mm')}</span>
                         </div>
-                        {getStatusBadge(schedule.status)}
+                        <div className="shrink-0">
+                          {getStatusBadge(schedule.status)}
+                        </div>
                       </div>
                       
                       <button
                         onClick={() => handleClientClick(schedule.client_id)}
-                        className="truncate hover:text-primary hover:underline transition-colors text-left w-full font-medium"
+                        className="text-left w-full font-medium hover:text-primary hover:underline transition-colors line-clamp-2 text-[11px]"
                       >
                         {schedule.clients?.name}
                       </button>
                       
-                      <div className="truncate text-muted-foreground flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {schedule.profiles?.name}
+                      <div className="text-muted-foreground flex items-center gap-1 truncate">
+                        <User className="h-3 w-3 shrink-0" />
+                        <span className="truncate text-[10px]">{schedule.profiles?.name}</span>
                       </div>
 
-                      <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-[10px]">
+                      <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5">
                         {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
                       </Badge>
                       
@@ -501,7 +503,7 @@ export default function ScheduleControl() {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleOpenNotificationDialog(schedule)}
-                          className="w-full h-6 text-[10px] gap-1 mt-1"
+                          className="w-full h-6 text-[9px] gap-1 mt-1 px-2"
                         >
                           <Bell className="h-3 w-3" />
                           Notificar
