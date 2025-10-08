@@ -28,8 +28,13 @@ interface Schedule {
   notes?: string;
   unit?: string;
   patient_arrived?: boolean;
+  created_by?: string;
+  cancelled_by?: string;
+  cancellation_reason?: string;
   clients?: { name: string };
-  profiles?: { name: string };
+  profiles?: { name: string } | { name: string }[];
+  created_by_profile?: { name: string } | { name: string }[];
+  cancelled_by_profile?: { name: string } | { name: string }[];
 }
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -146,7 +151,9 @@ export default function ScheduleControl() {
         .select(`
           *,
           clients (name),
-          profiles!schedules_employee_id_fkey (name)
+          profiles!schedules_employee_id_fkey (name),
+          created_by_profile:profiles!schedules_created_by_fkey (name),
+          cancelled_by_profile:profiles!schedules_cancelled_by_fkey (name)
         `)
         .gte('start_time', startDate.toISOString())
         .lt('start_time', endDate.toISOString())
@@ -284,18 +291,54 @@ export default function ScheduleControl() {
 
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{schedule.profiles?.name || 'Profissional não atribuído'}</span>
+                            <span className="text-sm">
+                              {Array.isArray(schedule.profiles) 
+                                ? schedule.profiles[0]?.name 
+                                : schedule.profiles?.name || 'Profissional não atribuído'}
+                            </span>
                           </div>
 
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">
-                              {schedule.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                              {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
                             </span>
                           </div>
 
+                          {/* Informações para diretores */}
+                          {userProfile?.employee_role === 'director' && (
+                            <>
+                              {schedule.created_by_profile && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                                  <User className="h-3 w-3" />
+                                  <span>Agendado por: <strong>
+                                    {Array.isArray(schedule.created_by_profile) 
+                                      ? schedule.created_by_profile[0]?.name 
+                                      : schedule.created_by_profile?.name}
+                                  </strong></span>
+                                </div>
+                              )}
+                              {schedule.status === 'cancelled' && schedule.cancelled_by_profile && (
+                                <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                  <User className="h-3 w-3" />
+                                  <span>Cancelado por: <strong>
+                                    {Array.isArray(schedule.cancelled_by_profile) 
+                                      ? schedule.cancelled_by_profile[0]?.name 
+                                      : schedule.cancelled_by_profile?.name}
+                                  </strong></span>
+                                </div>
+                              )}
+                            </>
+                          )}
+
                           {schedule.notes && (
                             <p className="text-sm text-muted-foreground mt-2">{schedule.notes}</p>
+                          )}
+
+                          {schedule.status === 'cancelled' && schedule.cancellation_reason && (
+                            <div className="text-sm bg-destructive/10 text-destructive p-2 rounded mt-2">
+                              <strong>Motivo:</strong> {schedule.cancellation_reason}
+                            </div>
                           )}
                         </div>
 
@@ -340,20 +383,42 @@ export default function ScheduleControl() {
                   <p className="text-xs text-muted-foreground">Sem agendamentos</p>
                 ) : (
                   daySchedules.map((schedule) => (
-                    <div key={schedule.id} className="text-xs p-2 bg-accent rounded space-y-1">
+                    <div key={schedule.id} className="text-xs p-3 bg-accent rounded space-y-1.5 border border-border/50">
                       <div className="font-semibold">
                         {format(new Date(schedule.start_time), 'HH:mm')}
                       </div>
                       <button
                         onClick={() => handleClientClick(schedule.client_id)}
-                        className="truncate hover:text-primary hover:underline transition-colors text-left w-full"
+                        className="truncate hover:text-primary hover:underline transition-colors text-left w-full font-medium"
                       >
                         {schedule.clients?.name}
                       </button>
                       <div className="truncate text-muted-foreground">
-                        {schedule.profiles?.name}
+                        {Array.isArray(schedule.profiles) 
+                          ? schedule.profiles[0]?.name 
+                          : schedule.profiles?.name}
                       </div>
                       {getStatusBadge(schedule.status)}
+                      
+                      {/* Info para diretores na visualização semanal */}
+                      {userProfile?.employee_role === 'director' && (
+                        <>
+                          {schedule.created_by_profile && (
+                            <div className="text-[10px] text-muted-foreground truncate">
+                              Por: {Array.isArray(schedule.created_by_profile) 
+                                ? schedule.created_by_profile[0]?.name 
+                                : schedule.created_by_profile?.name}
+                            </div>
+                          )}
+                          {schedule.status === 'cancelled' && schedule.cancelled_by_profile && (
+                            <div className="text-[10px] text-destructive truncate">
+                              ❌ {Array.isArray(schedule.cancelled_by_profile) 
+                                ? schedule.cancelled_by_profile[0]?.name 
+                                : schedule.cancelled_by_profile?.name}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   ))
                 )}
@@ -406,11 +471,33 @@ export default function ScheduleControl() {
                         {schedule.clients?.name || 'N/A'}
                       </button>
                     </TableCell>
-                    <TableCell>{schedule.profiles?.name || 'N/A'}</TableCell>
                     <TableCell>
-                      {schedule.unit === 'madre' ? 'Madre Mazzarello' : 'Floresta'}
+                      {Array.isArray(schedule.profiles) 
+                        ? schedule.profiles[0]?.name || 'N/A'
+                        : schedule.profiles?.name || 'N/A'}
                     </TableCell>
-                    <TableCell>{getStatusBadge(schedule.status)}</TableCell>
+                    <TableCell>
+                      {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {getStatusBadge(schedule.status)}
+                        {userProfile?.employee_role === 'director' && schedule.created_by_profile && (
+                          <div className="text-[10px] text-muted-foreground">
+                            Por: {Array.isArray(schedule.created_by_profile) 
+                              ? schedule.created_by_profile[0]?.name 
+                              : schedule.created_by_profile?.name}
+                          </div>
+                        )}
+                        {userProfile?.employee_role === 'director' && schedule.status === 'cancelled' && schedule.cancelled_by_profile && (
+                          <div className="text-[10px] text-destructive">
+                            Cancelado: {Array.isArray(schedule.cancelled_by_profile) 
+                              ? schedule.cancelled_by_profile[0]?.name 
+                              : schedule.cancelled_by_profile?.name}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -492,7 +579,7 @@ export default function ScheduleControl() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as unidades</SelectItem>
-                    <SelectItem value="madre">Madre Mazzarello</SelectItem>
+                    <SelectItem value="madre">MADRE</SelectItem>
                     <SelectItem value="floresta">Floresta</SelectItem>
                   </SelectContent>
                 </Select>
@@ -502,7 +589,7 @@ export default function ScheduleControl() {
         </Card>
 
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="p-4">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
@@ -541,6 +628,17 @@ export default function ScheduleControl() {
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold">
                 {schedules.filter(s => s.status === 'completed').length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-destructive/50">
+            <CardHeader className="p-4">
+              <CardTitle className="text-sm font-medium text-destructive">Cancelados</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="text-2xl font-bold text-destructive">
+                {schedules.filter(s => s.status === 'cancelled').length}
               </div>
             </CardContent>
           </Card>
