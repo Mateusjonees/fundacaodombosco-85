@@ -327,39 +327,84 @@ export default function CompleteAttendanceDialog({
       }
       console.log('✅ Attendance_report criado!');
 
-      console.log('📄 Criando employee_report...');
-      const { error: employeeError } = await supabase.from('employee_reports').insert({
-        employee_id: schedule.employee_id,
-        client_id: schedule.client_id,
-        schedule_id: schedule.id,
-        session_date: new Date().toISOString().split('T')[0],
-        session_type: attendanceData.sessionType,
-        session_duration: attendanceData.actualDuration,
-        effort_rating: attendanceData.effortRating,
-        quality_rating: attendanceData.overallQuality,
-        patient_cooperation: attendanceData.patientCooperation,
-        goal_achievement: attendanceData.goalAchievement,
-        session_objectives: attendanceData.sessionObjectives,
-        techniques_used: attendanceData.objectivesAchieved,
-        patient_response: attendanceData.patientResponse,
-        professional_notes: attendanceData.clinicalObservations,
-        next_session_plan: attendanceData.nextSessionPlan,
-        materials_used: processedMaterials,
-        materials_cost: totalMaterialsCost,
-        attachments: uploadedAttachments,
-        session_location: 'Clínica',
-        supervision_required: attendanceData.supervisionNeeded,
-        follow_up_needed: !!attendanceData.nextSessionPlan,
-        completed_by: user.id,
-        completed_by_name: completedByName,
-        validation_status: 'pending_validation' // Status inicial
-      });
-      
-      if (employeeError) {
-        console.error('❌ Erro ao criar employee_report:', employeeError);
-        throw employeeError;
+      // Verificar se já existe um employee_report para este schedule_id
+      console.log('📄 Verificando employee_report existente...');
+      const { data: existingEmployeeReport } = await supabase
+        .from('employee_reports')
+        .select('id')
+        .eq('schedule_id', schedule.id)
+        .maybeSingle();
+
+      if (existingEmployeeReport) {
+        console.log('⚠️ Employee_report já existe, atualizando...');
+        // Atualizar o registro existente
+        const { error: employeeUpdateError } = await supabase
+          .from('employee_reports')
+          .update({
+            session_date: new Date().toISOString().split('T')[0],
+            session_type: attendanceData.sessionType,
+            session_duration: attendanceData.actualDuration,
+            effort_rating: attendanceData.effortRating,
+            quality_rating: attendanceData.overallQuality,
+            patient_cooperation: attendanceData.patientCooperation,
+            goal_achievement: attendanceData.goalAchievement,
+            session_objectives: attendanceData.sessionObjectives,
+            techniques_used: attendanceData.objectivesAchieved,
+            patient_response: attendanceData.patientResponse,
+            professional_notes: attendanceData.clinicalObservations,
+            next_session_plan: attendanceData.nextSessionPlan,
+            materials_used: processedMaterials,
+            materials_cost: totalMaterialsCost,
+            attachments: uploadedAttachments,
+            session_location: 'Clínica',
+            supervision_required: attendanceData.supervisionNeeded,
+            follow_up_needed: !!attendanceData.nextSessionPlan,
+            completed_by: user.id,
+            completed_by_name: completedByName,
+            validation_status: 'pending_validation'
+          })
+          .eq('id', existingEmployeeReport.id);
+
+        if (employeeUpdateError) {
+          console.error('❌ Erro ao atualizar employee_report:', employeeUpdateError);
+          throw employeeUpdateError;
+        }
+        console.log('✅ Employee_report atualizado!');
+      } else {
+        console.log('📄 Criando novo employee_report...');
+        const { error: employeeError } = await supabase.from('employee_reports').insert({
+          employee_id: schedule.employee_id,
+          client_id: schedule.client_id,
+          schedule_id: schedule.id,
+          session_date: new Date().toISOString().split('T')[0],
+          session_type: attendanceData.sessionType,
+          session_duration: attendanceData.actualDuration,
+          effort_rating: attendanceData.effortRating,
+          quality_rating: attendanceData.overallQuality,
+          patient_cooperation: attendanceData.patientCooperation,
+          goal_achievement: attendanceData.goalAchievement,
+          session_objectives: attendanceData.sessionObjectives,
+          techniques_used: attendanceData.objectivesAchieved,
+          patient_response: attendanceData.patientResponse,
+          professional_notes: attendanceData.clinicalObservations,
+          next_session_plan: attendanceData.nextSessionPlan,
+          materials_used: processedMaterials,
+          materials_cost: totalMaterialsCost,
+          attachments: uploadedAttachments,
+          session_location: 'Clínica',
+          supervision_required: attendanceData.supervisionNeeded,
+          follow_up_needed: !!attendanceData.nextSessionPlan,
+          completed_by: user.id,
+          completed_by_name: completedByName,
+          validation_status: 'pending_validation'
+        });
+        
+        if (employeeError) {
+          console.error('❌ Erro ao criar employee_report:', employeeError);
+          throw employeeError;
+        }
+        console.log('✅ Employee_report criado!');
       }
-      console.log('✅ Employee_report criado!');
 
       // 5. Atualizar dados do cliente com informações da sessão
       console.log('👤 Atualizando dados do cliente...');
