@@ -598,15 +598,15 @@ export default function Schedule() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusMap = {
-      'scheduled': { text: 'Agendado', variant: 'default' as const },
-      'confirmed': { text: 'Confirmado', variant: 'secondary' as const },
-      'completed': { text: 'Concluído', variant: 'outline' as const },
-      'pending_validation': { text: 'Aguardando Validação', variant: 'outline' as const, className: 'border-amber-500 text-amber-700 bg-amber-50' },
-      'cancelled': { text: 'Cancelado', variant: 'destructive' as const }
+    const statusMap: Record<string, { text: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; icon?: any; className?: string }> = {
+      'scheduled': { text: 'Agendado', variant: 'default', icon: CalendarIcon },
+      'confirmed': { text: 'Confirmado', variant: 'secondary', icon: CheckCircle },
+      'completed': { text: '✓ Concluído', variant: 'outline', icon: CheckCircle, className: 'border-green-500 text-green-700 bg-green-50 font-semibold' },
+      'pending_validation': { text: '⏳ Aguardando Validação', variant: 'outline', icon: Clock, className: 'border-amber-500 text-amber-700 bg-amber-50 font-semibold' },
+      'cancelled': { text: 'Cancelado', variant: 'destructive', icon: XCircle }
     };
     
-    return statusMap[status as keyof typeof statusMap] || { text: 'Desconhecido', variant: 'outline' as const };
+    return statusMap[status] || { text: 'Desconhecido', variant: 'outline' as const };
   };
 
   // Filtrar agendamentos
@@ -846,13 +846,16 @@ export default function Schedule() {
                         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-4 border-t border-muted">
                           <div className="flex items-center gap-3">
                             <Badge 
-                              {...getStatusBadge(schedule.status)} 
-                              className={`${
-                                schedule.patient_arrived ? 'border-emerald-500 bg-emerald-100 text-emerald-800 font-semibold' : 
-                                schedule.status === 'pending_validation' ? 'border-amber-500 bg-amber-50 text-amber-700' : ''
+                              variant={getStatusBadge(schedule.status).variant}
+                              className={`${getStatusBadge(schedule.status).className || ''} ${
+                                schedule.patient_arrived && !['pending_validation', 'completed', 'cancelled'].includes(schedule.status) 
+                                  ? 'border-emerald-500 bg-emerald-100 text-emerald-800 font-semibold' 
+                                  : ''
                               } text-sm`}
                             >
-                              {schedule.patient_arrived && schedule.status !== 'pending_validation' ? '✓ Paciente Presente' : getStatusBadge(schedule.status).text}
+                              {schedule.patient_arrived && !['pending_validation', 'completed', 'cancelled'].includes(schedule.status) 
+                                ? '✓ Paciente Presente' 
+                                : getStatusBadge(schedule.status).text}
                             </Badge>
                             {schedule.patient_arrived && schedule.arrived_at && (
                               <span className="text-xs text-muted-foreground">
