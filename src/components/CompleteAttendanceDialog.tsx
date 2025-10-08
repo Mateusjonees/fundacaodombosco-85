@@ -425,21 +425,17 @@ export default function CompleteAttendanceDialog({
     // Código de sucesso (fora do try-catch para evitar que erros de callback mostrem toast de erro)
     setLoading(false);
     
-    // Fechar o diálogo
-    try {
-      onClose();
-      setAttachedFiles([]);
-    } catch (closeError) {
-      console.error('⚠️ Erro ao fechar diálogo (não crítico):', closeError);
-    }
-    
     // Mostrar toast de sucesso
     toast({
       title: "Atendimento Concluído!",
       description: "Atendimento registrado com sucesso e enviado para validação do coordenador.",
     });
-
-    // Atualizar a lista de agendamentos
+    
+    // Fechar o diálogo imediatamente
+    setAttachedFiles([]);
+    onClose();
+    
+    // Atualizar a lista de agendamentos após fechar
     setTimeout(() => {
       try {
         onComplete();
