@@ -103,37 +103,83 @@ export default function ScheduleControl() {
     try {
       const schedule = selectedScheduleForNotification;
       
-      // Buscar nome do diretor
-      const { data: directorProfile } = await supabase
+      // Buscar informações do remetente (diretor ou coordenador)
+      const { data: senderProfile } = await supabase
         .from('profiles')
-        .select('name')
+        .select('name, employee_role')
         .eq('user_id', user.id)
         .single();
 
-      const { error } = await supabase
+      const isDirector = senderProfile?.employee_role === 'director';
+      const notificationType = isDirector ? 'director_notification' : 'coordinator_notification';
+
+      // Inserir notificação
+      const { data: notificationData, error: notificationError } = await supabase
         .from('appointment_notifications')
         .insert({
           schedule_id: schedule.id,
           employee_id: schedule.employee_id,
           client_id: schedule.client_id,
-          title: notificationReason || 'Notificação do Diretor',
+          title: notificationReason || 'Notificação da Coordenação',
           message: notificationMessage,
           appointment_date: schedule.start_time,
           appointment_time: format(new Date(schedule.start_time), 'HH:mm'),
-          notification_type: 'director_notification',
+          notification_type: notificationType,
           created_by: user.id,
           metadata: {
             status: schedule.status,
-            sent_by: directorProfile?.name || 'Diretor',
+            sent_by: senderProfile?.name || 'Gestão',
+            sender_role: senderProfile?.employee_role,
             reason: notificationReason,
+          }
+        })
+        .select()
+        .single();
+
+      if (notificationError) throw notificationError;
+
+      // Criar mensagem interna automaticamente
+      const messageBody = `🔔 **Notificação de Agendamento**
+
+**Motivo:** ${notificationReason || 'Aviso sobre agendamento'}
+
+**Paciente:** ${schedule.clients?.name || 'Não identificado'}
+**Data/Hora:** ${format(new Date(schedule.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+**Status:** ${schedule.status === 'scheduled' ? 'Agendado' : schedule.status === 'confirmed' ? 'Confirmado' : schedule.status === 'cancelled' ? 'Cancelado' : 'Pendente'}
+**Unidade:** ${schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+
+**Mensagem:**
+${notificationMessage}
+
+---
+📅 Referência: Agendamento #${schedule.id.slice(0, 8)}
+📧 Enviado por: ${senderProfile?.name}`;
+
+      const { error: messageError } = await supabase
+        .from('internal_messages')
+        .insert({
+          sender_id: user.id,
+          recipient_id: schedule.employee_id,
+          subject: notificationReason || 'Notificação sobre Agendamento',
+          message_body: messageBody,
+          message_type: 'appointment_notification',
+          priority: 'high',
+          metadata: {
+            schedule_id: schedule.id,
+            notification_id: notificationData?.id,
+            appointment_date: schedule.start_time,
+            client_name: schedule.clients?.name,
           }
         });
 
-      if (error) throw error;
+      if (messageError) {
+        console.error('Erro ao criar mensagem interna:', messageError);
+        // Não bloqueia o fluxo principal
+      }
 
       toast({
         title: "✅ Notificação enviada",
-        description: `Mensagem enviada para ${schedule.profiles?.name}`,
+        description: `Mensagem enviada para ${schedule.profiles?.name} e salva em Mensagens Diretas`,
       });
 
       setNotificationDialogOpen(false);
@@ -422,8 +468,10 @@ export default function ScheduleControl() {
                             </Badge>
                           )}
                           
-                          {/* Botão de notificação para diretores */}
-                          {userProfile?.employee_role === 'director' && (
+                          {/* Botão de notificação para diretores e coordenadores */}
+                          {(userProfile?.employee_role === 'director' || 
+                            userProfile?.employee_role === 'coordinator_madre' || 
+                            userProfile?.employee_role === 'coordinator_floresta') && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -535,7 +583,9 @@ export default function ScheduleControl() {
                 <TableHead>Profissional</TableHead>
                 <TableHead>Unidade</TableHead>
                 <TableHead>Status</TableHead>
-                {userProfile?.employee_role === 'director' && (
+                {(userProfile?.employee_role === 'director' || 
+                  userProfile?.employee_role === 'coordinator_madre' || 
+                  userProfile?.employee_role === 'coordinator_floresta') && (
                   <TableHead>Ações</TableHead>
                 )}
               </TableRow>
@@ -543,7 +593,9 @@ export default function ScheduleControl() {
             <TableBody>
               {schedules.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={userProfile?.employee_role === 'director' ? 7 : 6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={(userProfile?.employee_role === 'director' || 
+                                      userProfile?.employee_role === 'coordinator_madre' || 
+                                      userProfile?.employee_role === 'coordinator_floresta') ? 7 : 6} className="text-center text-muted-foreground">
                     Nenhum agendamento encontrado para este mês.
                   </TableCell>
                 </TableRow>
@@ -586,7 +638,9 @@ export default function ScheduleControl() {
                         )}
                       </div>
                     </TableCell>
-                    {userProfile?.employee_role === 'director' && (
+                    {(userProfile?.employee_role === 'director' || 
+                      userProfile?.employee_role === 'coordinator_madre' || 
+                      userProfile?.employee_role === 'coordinator_floresta') && (
                       <TableCell>
                         <Button
                           size="sm"

@@ -23,9 +23,13 @@ interface Message {
   id: string;
   sender_id: string;
   recipient_id: string;
+  subject?: string;
   message_body: string;
+  message_type?: string;
+  priority?: string;
   created_at: string;
   is_read: boolean;
+  metadata?: any;
   sender?: User;
 }
 
@@ -382,13 +386,20 @@ export default function DirectMessages() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-left">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <p className="font-medium">{conv.user.name}</p>
-                          {conv.unreadCount > 0 && (
-                            <Badge variant="destructive" className="ml-2">
-                              {conv.unreadCount}
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {conv.lastMessage?.message_type === 'appointment_notification' && (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400">
+                                🔔
+                              </Badge>
+                            )}
+                            {conv.unreadCount > 0 && (
+                              <Badge variant="destructive">
+                                {conv.unreadCount}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">
                           {conv.lastMessage?.message_body}
@@ -465,23 +476,50 @@ export default function DirectMessages() {
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isOwn = msg.sender_id === user?.id;
+                        const isNotification = msg.message_type === 'appointment_notification';
+                        
                         return (
                           <div
                             key={msg.id}
                             className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                           >
-                            <div
-                              className={`max-w-[70%] rounded-lg p-3 ${
-                                isOwn
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
-                              }`}
-                            >
-                              <p className="text-sm">{msg.message_body}</p>
-                              <p className="text-xs mt-1 opacity-70">
-                                {format(new Date(msg.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </p>
-                            </div>
+                            {isNotification && !isOwn ? (
+                              // Mensagem de notificação especial
+                              <div className="max-w-[85%] rounded-lg border-2 border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/30 p-4 shadow-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge variant="default" className="bg-blue-600">
+                                    🔔 Notificação de Agendamento
+                                  </Badge>
+                                  {msg.priority === 'high' && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Importante
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                  <pre className="whitespace-pre-wrap font-sans text-sm bg-white/50 dark:bg-black/20 p-3 rounded">
+                                    {msg.message_body}
+                                  </pre>
+                                </div>
+                                <p className="text-xs mt-2 text-muted-foreground">
+                                  {format(new Date(msg.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                </p>
+                              </div>
+                            ) : (
+                              // Mensagem normal
+                              <div
+                                className={`max-w-[70%] rounded-lg p-3 ${
+                                  isOwn
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted'
+                                }`}
+                              >
+                                <p className="text-sm whitespace-pre-wrap">{msg.message_body}</p>
+                                <p className="text-xs mt-1 opacity-70">
+                                  {format(new Date(msg.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
