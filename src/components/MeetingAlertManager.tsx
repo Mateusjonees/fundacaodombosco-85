@@ -97,11 +97,7 @@ export const MeetingAlertManager = () => {
     try {
       let query = supabase
         .from('meeting_alerts')
-        .select(`
-          *,
-          clients!meeting_alerts_client_id_fkey (name),
-          profiles!meeting_alerts_created_by_fkey (name)
-        `)
+        .select('*')
         .eq('is_active', true);
 
       if (filterStatus !== 'all') {
