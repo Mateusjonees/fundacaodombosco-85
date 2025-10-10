@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
 import { Bell, Calendar, Users, X } from 'lucide-react';
 
 interface Notification {
@@ -28,6 +29,7 @@ interface MeetingAlert {
 
 export const NotificationBell = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [meetingAlerts, setMeetingAlerts] = useState<MeetingAlert[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -36,6 +38,62 @@ export const NotificationBell = () => {
     if (user) {
       loadNotifications();
       loadMeetingAlerts();
+      
+      // Configurar realtime para novas reuniões
+      const meetingChannel = supabase
+        .channel('meeting_alerts_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'meeting_alerts'
+          },
+          (payload) => {
+            const newMeeting = payload.new as MeetingAlert;
+            
+            // Verificar se o usuário está nos participantes
+            if (newMeeting.participants?.includes(user.id)) {
+              // Adicionar à lista
+              setMeetingAlerts(prev => [newMeeting, ...prev]);
+              
+              // Mostrar toast
+              toast({
+                title: "Nova Reunião Agendada",
+                description: `${newMeeting.title} - ${formatMeetingDate(newMeeting.meeting_date)}`,
+                duration: 5000,
+              });
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'meeting_alerts'
+          },
+          (payload) => {
+            const updatedMeeting = payload.new as MeetingAlert;
+            
+            // Atualizar na lista se o usuário é participante
+            if (updatedMeeting.participants?.includes(user.id)) {
+              setMeetingAlerts(prev => 
+                prev.map(m => m.id === updatedMeeting.id ? updatedMeeting : m)
+              );
+            } else {
+              // Remover da lista se o usuário foi removido
+              setMeetingAlerts(prev => 
+                prev.filter(m => m.id !== updatedMeeting.id)
+              );
+            }
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(meetingChannel);
+      };
     }
   }, [user]);
 
