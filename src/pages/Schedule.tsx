@@ -637,31 +637,49 @@ export default function Schedule() {
       <PatientArrivedNotification />
       <ScheduleAlerts />
       
+      {/* Cabeçalho principal */}
+      <div className="animate-fade-in">
+        <div className="relative mb-6">
+          <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 rounded-full" />
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent">
+            Agenda de Atendimentos
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie seus compromissos e visualize os horários disponíveis
+          </p>
+        </div>
+      </div>
+      
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar esquerda com calendário e controles */}
         <div className="lg:w-80">
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5" />
-                  Calendário
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-blue-500/5 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent pointer-events-none" />
+              <CardHeader className="relative">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg">
+                    <CalendarIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent font-bold">
+                    Calendário
+                  </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={(date) => date && setSelectedDate(date)}
                   locale={ptBR}
-                  className="rounded-md border w-full"
+                  className="rounded-lg border-blue-500/20 w-full pointer-events-auto"
                 />
               </CardContent>
             </Card>
 
             {/* Botão Novo Agendamento - Versão Desktop */}
             <Button 
-              className="w-full py-4 md:py-6 text-base md:text-lg" 
+              className="w-full py-6 text-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
               onClick={() => {
                 setEditingSchedule(null);
                 // Para profissionais comuns, pré-selecionar eles mesmos
@@ -679,17 +697,21 @@ export default function Schedule() {
                 setIsDialogOpen(true);
               }}
             >
-              <Plus className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+              <Plus className="h-5 w-5 mr-2" />
               Novo Agendamento
             </Button>
 
             {/* Filtros para Administradores */}
             {isAdmin && (
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-purple-500/5">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Filter className="h-5 w-5" />
-                    Filtros
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg">
+                      <Filter className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <span className="bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent font-bold">
+                      Filtros
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -751,10 +773,10 @@ export default function Schedule() {
 
                   {/* Info da unidade atual para Coordenadores e Recepcionistas */}
                   {(userRole === 'coordinator_madre' || userRole === 'coordinator_floresta' || userRole === 'receptionist') && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm font-medium">Unidade Atual:</p>
-                      <p className="text-lg font-bold">
-                        {userRole === 'coordinator_madre' ? 'MADRE' : 
+                    <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-lg">
+                      <p className="text-sm font-medium text-muted-foreground">Unidade Atual:</p>
+                      <p className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+                        🏥 {userRole === 'coordinator_madre' ? 'MADRE' : 
                          userRole === 'coordinator_floresta' ? 'FLORESTA' : 
                          userProfile?.unit === 'madre' ? 'MADRE' : 'FLORESTA'}
                       </p>
@@ -770,95 +792,135 @@ export default function Schedule() {
         <div className="flex-1">
           <div className="space-y-6">
             {/* Lista de Agendamentos */}
-            <Card>
-               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Agenda do Dia - {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-green-500/5">
+               <CardHeader className="border-b border-gradient-to-r from-transparent via-green-500/20 to-transparent">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-lg">
+                    <Clock className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <span className="bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent font-bold">
+                      Agenda do Dia
+                    </span>
+                    <p className="text-sm font-normal text-muted-foreground mt-1">
+                      {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    </p>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <p className="text-muted-foreground text-center py-8">Carregando agendamentos...</p>
+                  <div className="text-center py-12">
+                    <div className="inline-block p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-full mb-4">
+                      <Clock className="h-12 w-12 text-blue-500 animate-spin" />
+                    </div>
+                    <p className="text-muted-foreground font-medium">Carregando agendamentos...</p>
+                  </div>
                 ) : todaySchedules.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nenhum agendamento para esta data.
-                  </p>
+                  <div className="text-center py-12">
+                    <div className="inline-block p-6 bg-gradient-to-br from-gray-500/10 to-gray-600/10 rounded-full mb-4">
+                      <CalendarIcon className="h-16 w-16 text-gray-400" />
+                    </div>
+                    <p className="text-xl font-bold bg-gradient-to-r from-gray-600 to-gray-500 bg-clip-text text-transparent">
+                      Nenhum agendamento para esta data
+                    </p>
+                    <p className="text-muted-foreground mt-2">
+                      Clique em "Novo Agendamento" para adicionar compromissos
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                      {todaySchedules.map((schedule) => (
                        <div 
                          key={schedule.id} 
-                         className={`p-6 border rounded-xl gap-6 transition-all duration-300 hover:shadow-lg ${
+                         className={`group relative overflow-hidden p-6 border rounded-xl gap-6 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 ${
                            schedule.patient_arrived 
-                             ? 'border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-green-50/60 shadow-md border-2' 
-                             : 'border-border hover:border-primary/30 bg-card'
+                             ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-50/50 shadow-lg' 
+                             : 'border-border hover:border-blue-500/30 bg-gradient-to-br from-card to-blue-500/5'
                          }`}
                        >
+                         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                         {/* Header com horário e tipo */}
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="relative flex items-center justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                              <Clock className="h-5 w-5 text-primary" />
-                              {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
+                            <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-lg">
+                              <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+                                {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
+                              </span>
                             </div>
-                            <Badge variant="secondary" className="text-sm font-medium">
+                            <Badge className="text-sm font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
                               {schedule.title}
                             </Badge>
                           </div>
-                          <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-sm font-medium">
-                            {schedule.unit === 'madre' ? 'MADRE' : 'FLORESTA'}
+                          <Badge 
+                            className={`text-sm font-semibold ${
+                              schedule.unit === 'madre' 
+                                ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' 
+                                : 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                            }`}
+                          >
+                            🏥 {schedule.unit === 'madre' ? 'MADRE' : 'FLORESTA'}
                           </Badge>
                         </div>
 
                         {/* Informações principais */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-foreground">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-muted-foreground">Paciente:</span>
-                              <span className="font-semibold">{schedule.clients?.name || 'N/A'}</span>
+                            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-500/5 to-transparent rounded-lg border border-green-500/10">
+                              <div className="p-1.5 bg-green-500/10 rounded-md">
+                                <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-medium text-muted-foreground">Paciente</span>
+                                <span className="font-bold text-foreground">{schedule.clients?.name || 'N/A'}</span>
+                              </div>
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-foreground">
-                              <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-muted-foreground">Profissional:</span>
-                               <span className="font-semibold">
-                                 {schedule.profiles?.name || employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
-                               </span>
+                            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-500/5 to-transparent rounded-lg border border-blue-500/10">
+                              <div className="p-1.5 bg-blue-500/10 rounded-md">
+                                <Stethoscope className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-medium text-muted-foreground">Profissional</span>
+                                <span className="font-bold text-foreground">
+                                  {schedule.profiles?.name || employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         {/* Status e observações */}
-                        <div className="flex flex-col gap-3">
+                        <div className="relative flex flex-col gap-3">
                           {schedule.notes && (
-                            <div className="p-3 bg-muted/50 rounded-lg border border-muted">
-                              <p className="text-sm text-muted-foreground">
-                                <span className="font-medium">Observações:</span> {schedule.notes}
+                            <div className="p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20">
+                              <p className="text-sm">
+                                <span className="font-bold text-yellow-700 dark:text-yellow-400">💭 Observações:</span>
+                                <span className="ml-2 text-foreground">{schedule.notes}</span>
                               </p>
                             </div>
                           )}
                         </div>
 
                         {/* Actions footer */}
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-4 border-t border-muted">
+                        <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-4 border-t border-gradient-to-r from-transparent via-border to-transparent">
                           <div className="flex items-center gap-3">
                             <Badge 
                               variant={getStatusBadge(schedule.status).variant}
                               className={`${getStatusBadge(schedule.status).className || ''} ${
                                 schedule.patient_arrived && !['pending_validation', 'completed', 'cancelled'].includes(schedule.status) 
-                                  ? 'border-emerald-500 bg-emerald-100 text-emerald-800 font-semibold' 
+                                  ? 'border-emerald-500 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 font-bold shadow-md' 
                                   : ''
-                              } text-sm`}
+                              } text-sm px-3 py-1.5`}
                             >
                               {schedule.patient_arrived && !['pending_validation', 'completed', 'cancelled'].includes(schedule.status) 
                                 ? '✓ Paciente Presente' 
                                 : getStatusBadge(schedule.status).text}
                             </Badge>
                             {schedule.patient_arrived && schedule.arrived_at && (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-xs font-medium px-2 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-md border border-emerald-500/20">
                                 Chegou às {format(new Date(schedule.arrived_at), 'HH:mm', { locale: ptBR })}
                               </span>
                             )}
@@ -887,7 +949,7 @@ export default function Schedule() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleEditSchedule(schedule)}
-                              className="h-9 gap-2 font-medium"
+                              className="h-9 gap-2 font-medium hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
                             >
                               <Edit className="h-4 w-4" />
                               Editar
@@ -898,14 +960,13 @@ export default function Schedule() {
                               <>
                                 <Button
                                   size="sm"
-                                  variant="default"
                                   onClick={() => {
                                     console.log('🔵 Botão CONCLUIR clicado para agendamento:', schedule.id);
                                     setSelectedScheduleForAction(schedule);
                                     setCompleteDialogOpen(true);
                                     console.log('🔵 Diálogo de conclusão aberto');
                                   }}
-                                  className="h-9 gap-2 font-medium"
+                                  className="h-9 gap-2 font-medium bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-md hover:shadow-lg transition-all duration-300"
                                 >
                                   <CheckCircle className="h-4 w-4" />
                                   Concluir
@@ -918,7 +979,7 @@ export default function Schedule() {
                                     setSelectedScheduleForAction(schedule);
                                     setCancelDialogOpen(true);
                                   }}
-                                  className="h-9 gap-2 font-medium"
+                                  className="h-9 gap-2 font-medium shadow-md hover:shadow-lg transition-all duration-300"
                                 >
                                   <XCircle className="h-4 w-4" />
                                   Cancelar
@@ -937,7 +998,7 @@ export default function Schedule() {
                             {isAdmin && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button size="sm" variant="secondary" className="h-9 gap-2 font-medium">
+                                  <Button size="sm" variant="outline" className="h-9 gap-2 font-medium hover:bg-purple-500/10 hover:text-purple-600 hover:border-purple-500/50 transition-all duration-300">
                                     <ArrowRightLeft className="h-4 w-4" />
                                     Redirecionar
                                   </Button>
@@ -984,7 +1045,7 @@ export default function Schedule() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90 animate-pulse-gentle"
+              className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-50 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 hover:scale-110 transition-all duration-300"
               onClick={() => {
                 setEditingSchedule(null);
                 const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
@@ -1000,7 +1061,7 @@ export default function Schedule() {
                 });
               }}
             >
-              <Plus className="h-6 w-6" />
+              <Plus className="h-7 w-7" />
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
