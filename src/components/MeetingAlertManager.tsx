@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Bell, Plus, Calendar, MapPin, Users, Clock, Trash2 } from 'lucide-react';
+import { Bell, Plus, Calendar, MapPin, Users, Clock, Trash2, Edit, Eye, CheckCircle, XCircle, Filter } from 'lucide-react';
 
 interface MeetingAlert {
   id: string;
@@ -26,6 +26,7 @@ interface MeetingAlert {
   created_at: string;
   participants: string[];
   is_active: boolean;
+  status: 'scheduled' | 'completed' | 'cancelled';
   clients?: { name: string };
   profiles?: { name: string };
 }
@@ -52,6 +53,11 @@ export const MeetingAlertManager = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState<MeetingAlert | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterDate, setFilterDate] = useState<string>('');
 
   const [newAlert, setNewAlert] = useState({
     title: '',
@@ -68,7 +74,7 @@ export const MeetingAlertManager = () => {
     if (canManageMeetings) {
       loadData();
     }
-  }, [canManageMeetings]);
+  }, [canManageMeetings, filterStatus, filterDate]);
 
   const loadData = async () => {
     setLoading(true);
@@ -85,15 +91,30 @@ export const MeetingAlertManager = () => {
 
   const loadAlerts = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('meeting_alerts')
         .select(`
           *,
           clients!meeting_alerts_client_id_fkey (name),
           profiles!meeting_alerts_created_by_fkey (name)
         `)
-        .eq('is_active', true)
-        .order('meeting_date', { ascending: true });
+        .eq('is_active', true);
+
+      // Apply filters
+      if (filterStatus !== 'all') {
+        query = query.eq('status', filterStatus);
+      }
+      if (filterDate) {
+        const startOfDay = new Date(filterDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(filterDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        query = query.gte('meeting_date', startOfDay.toISOString()).lte('meeting_date', endOfDay.toISOString());
+      }
+
+      query = query.order('meeting_date', { ascending: true });
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setAlerts((data as any) || []);
@@ -192,6 +213,79 @@ export const MeetingAlertManager = () => {
     }
   };
 
+  const handleUpdateAlert = async () => {
+    if (!selectedAlert) return;
+    if (!newAlert.title || !newAlert.message || !newAlert.meeting_date || !newAlert.meeting_time) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios.",
+      });
+      return;
+    }
+
+    try {
+      const meetingDateTime = new Date(`${newAlert.meeting_date}T${newAlert.meeting_time}`).toISOString();
+      
+      const { error } = await supabase
+        .from('meeting_alerts')
+        .update({
+          title: newAlert.title,
+          message: newAlert.message,
+          meeting_date: meetingDateTime,
+          meeting_location: newAlert.meeting_location,
+          meeting_room: newAlert.meeting_room,
+          client_id: newAlert.client_id === 'none' ? null : newAlert.client_id,
+          participants: newAlert.participants
+        })
+        .eq('id', selectedAlert.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Reunião atualizada com sucesso!",
+      });
+
+      setIsEditDialogOpen(false);
+      setSelectedAlert(null);
+      resetForm();
+      loadAlerts();
+    } catch (error) {
+      console.error('Error updating alert:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar a reunião.",
+      });
+    }
+  };
+
+  const handleChangeStatus = async (alertId: string, newStatus: 'scheduled' | 'completed' | 'cancelled') => {
+    try {
+      const { error } = await supabase
+        .from('meeting_alerts')
+        .update({ status: newStatus })
+        .eq('id', alertId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Status alterado para ${newStatus === 'scheduled' ? 'Agendada' : newStatus === 'completed' ? 'Realizada' : 'Cancelada'}!`,
+      });
+
+      loadAlerts();
+    } catch (error) {
+      console.error('Error changing status:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível alterar o status.",
+      });
+    }
+  };
+
   const handleDeleteAlert = async (alertId: string) => {
     if (!confirm('Tem certeza que deseja excluir este alerta?')) return;
 
@@ -219,6 +313,27 @@ export const MeetingAlertManager = () => {
     }
   };
 
+  const openEditDialog = (alert: MeetingAlert) => {
+    setSelectedAlert(alert);
+    const date = new Date(alert.meeting_date);
+    setNewAlert({
+      title: alert.title,
+      message: alert.message,
+      meeting_date: date.toISOString().split('T')[0],
+      meeting_time: date.toTimeString().slice(0, 5),
+      meeting_location: alert.meeting_location || '',
+      meeting_room: alert.meeting_room || '',
+      client_id: alert.client_id || 'none',
+      participants: alert.participants || []
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openDetailsDialog = (alert: MeetingAlert) => {
+    setSelectedAlert(alert);
+    setIsDetailsDialogOpen(true);
+  };
+
   const resetForm = () => {
     setNewAlert({
       title: '',
@@ -227,9 +342,26 @@ export const MeetingAlertManager = () => {
       meeting_time: '',
       meeting_location: '',
       meeting_room: '',
-      client_id: '',
+      client_id: 'none',
       participants: []
     });
+    setSelectedAlert(null);
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      scheduled: { label: 'Agendada', variant: 'default' as const, icon: Calendar },
+      completed: { label: 'Realizada', variant: 'default' as const, icon: CheckCircle },
+      cancelled: { label: 'Cancelada', variant: 'destructive' as const, icon: XCircle }
+    };
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
+    const Icon = config.icon;
+    return (
+      <Badge variant={config.variant} className="gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
   };
 
   const toggleParticipant = (employeeId: string) => {
@@ -382,6 +514,46 @@ export const MeetingAlertManager = () => {
         </Dialog>
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <Label>Status</Label>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="scheduled">Agendadas</SelectItem>
+                  <SelectItem value="completed">Realizadas</SelectItem>
+                  <SelectItem value="cancelled">Canceladas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <Label>Data</Label>
+              <Input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+              />
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setFilterStatus('all');
+                setFilterDate('');
+              }}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Limpar Filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -414,7 +586,7 @@ export const MeetingAlertManager = () => {
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
               {alerts.filter(alert => 
-                new Date(alert.meeting_date) > new Date()
+                new Date(alert.meeting_date) > new Date() && alert.status === 'scheduled'
               ).length}
             </div>
           </CardContent>
@@ -441,10 +613,11 @@ export const MeetingAlertManager = () => {
                 <TableRow>
                   <TableHead>Título</TableHead>
                   <TableHead>Data/Hora</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Local</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Participantes</TableHead>
-                  <TableHead>Ações</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -461,6 +634,9 @@ export const MeetingAlertManager = () => {
                           })}
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(alert.status)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -480,14 +656,33 @@ export const MeetingAlertManager = () => {
                         {alert.participants.length} pessoas
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteAlert(alert.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openDetailsDialog(alert)}
+                          title="Ver detalhes"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(alert)}
+                          title="Editar"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteAlert(alert.id)}
+                          title="Excluir"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -496,6 +691,217 @@ export const MeetingAlertManager = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Reunião</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Título da Reunião *</Label>
+                <Input
+                  value={newAlert.title}
+                  onChange={(e) => setNewAlert({ ...newAlert, title: e.target.value })}
+                  placeholder="Ex: Reunião de Equipe"
+                />
+              </div>
+              <div>
+                <Label>Paciente (Opcional)</Label>
+                <Select value={newAlert.client_id} onValueChange={(value) => setNewAlert({ ...newAlert, client_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar paciente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum paciente</SelectItem>
+                    {clients.map(client => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Data da Reunião *</Label>
+                <Input
+                  type="date"
+                  value={newAlert.meeting_date}
+                  onChange={(e) => setNewAlert({ ...newAlert, meeting_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Horário *</Label>
+                <Input
+                  type="time"
+                  value={newAlert.meeting_time}
+                  onChange={(e) => setNewAlert({ ...newAlert, meeting_time: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Local</Label>
+                <Input
+                  value={newAlert.meeting_location}
+                  onChange={(e) => setNewAlert({ ...newAlert, meeting_location: e.target.value })}
+                  placeholder="Ex: Sala de Reuniões"
+                />
+              </div>
+              <div>
+                <Label>Sala</Label>
+                <Input
+                  value={newAlert.meeting_room}
+                  onChange={(e) => setNewAlert({ ...newAlert, meeting_room: e.target.value })}
+                  placeholder="Ex: Sala 101"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label>Descrição/Agenda *</Label>
+              <Textarea
+                value={newAlert.message}
+                onChange={(e) => setNewAlert({ ...newAlert, message: e.target.value })}
+                placeholder="Descreva a agenda da reunião..."
+              />
+            </div>
+
+            <div>
+              <Label>Participantes</Label>
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                {employees.map(employee => (
+                  <div key={employee.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newAlert.participants.includes(employee.user_id)}
+                      onChange={() => toggleParticipant(employee.user_id)}
+                      className="rounded"
+                    />
+                    <span className="text-sm">{employee.name}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {newAlert.participants.length} participantes selecionados
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => {
+                setIsEditDialogOpen(false);
+                resetForm();
+              }}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateAlert} disabled={loading}>
+                <Edit className="h-4 w-4 mr-2" />
+                Salvar Alterações
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Reunião</DialogTitle>
+          </DialogHeader>
+          {selectedAlert && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Título</Label>
+                  <p className="font-medium">{selectedAlert.title}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Status</Label>
+                  <div className="mt-1">{getStatusBadge(selectedAlert.status)}</div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Data</Label>
+                  <p>{new Date(selectedAlert.meeting_date).toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Horário</Label>
+                  <p>{new Date(selectedAlert.meeting_date).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Local</Label>
+                  <p>{selectedAlert.meeting_location || 'Não informado'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Sala</Label>
+                  <p>{selectedAlert.meeting_room || 'Não informado'}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Cliente</Label>
+                  <p>{selectedAlert.clients?.name || 'Nenhum'}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground">Descrição/Agenda</Label>
+                <p className="whitespace-pre-wrap">{selectedAlert.message}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground">Participantes ({selectedAlert.participants.length})</Label>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {employees
+                    .filter(emp => selectedAlert.participants.includes(emp.user_id))
+                    .map(emp => (
+                      <Badge key={emp.id} variant="secondary">
+                        <Users className="h-3 w-3 mr-1" />
+                        {emp.name}
+                      </Badge>
+                    ))
+                  }
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-4 border-t">
+                <div className="flex gap-2">
+                  {selectedAlert.status === 'scheduled' && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          handleChangeStatus(selectedAlert.id, 'completed');
+                          setIsDetailsDialogOpen(false);
+                        }}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Marcar como Realizada
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          handleChangeStatus(selectedAlert.id, 'cancelled');
+                          setIsDetailsDialogOpen(false);
+                        }}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Cancelar Reunião
+                      </Button>
+                    </>
+                  )}
+                </div>
+                <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

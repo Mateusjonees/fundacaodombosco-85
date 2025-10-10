@@ -1522,6 +1522,7 @@ export type Database = {
           meeting_room: string | null
           message: string
           participants: string[] | null
+          status: string
           title: string
         }
         Insert: {
@@ -1535,6 +1536,7 @@ export type Database = {
           meeting_room?: string | null
           message: string
           participants?: string[] | null
+          status?: string
           title: string
         }
         Update: {
@@ -1548,6 +1550,7 @@ export type Database = {
           meeting_room?: string | null
           message?: string
           participants?: string[] | null
+          status?: string
           title?: string
         }
         Relationships: [
