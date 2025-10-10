@@ -26,8 +26,11 @@ import {
   Share,
   Tag,
   Calendar,
-  HardDrive
+  HardDrive,
+  UserPlus,
+  X
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface UserFile {
   id: string;
@@ -50,6 +53,14 @@ interface FileUpload {
   description: string;
   tags: string[];
   is_private: boolean;
+  shared_with: string[];
+}
+
+interface Employee {
+  id: string;
+  user_id: string;
+  name: string;
+  employee_role: string;
 }
 
 export default function FileManager() {
@@ -58,19 +69,22 @@ export default function FileManager() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [files, setFiles] = useState<UserFile[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<UserFile | null>(null);
+  const [shareDialogFile, setShareDialogFile] = useState<UserFile | null>(null);
   const [storageStats, setStorageStats] = useState({ total: 0, used: 0 });
 
   const [uploadData, setUploadData] = useState<Partial<FileUpload>>({
     category: 'document',
     description: '',
     tags: [],
-    is_private: true
+    is_private: true,
+    shared_with: []
   });
 
   const categories = [
@@ -85,7 +99,24 @@ export default function FileManager() {
   useEffect(() => {
     loadFiles();
     loadStorageStats();
+    loadEmployees();
   }, [user]);
+
+  const loadEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, user_id, name, employee_role')
+        .eq('is_active', true)
+        .neq('user_id', user?.id) // Não mostrar o próprio usuário
+        .order('name');
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    }
+  };
 
   const loadFiles = async () => {
     if (!user) return;
@@ -155,7 +186,7 @@ export default function FileManager() {
       if (storageError) throw storageError;
 
       // Save file metadata to database
-      const { error: dbError } = await supabase
+      const { data: fileData, error: dbError } = await supabase
         .from('user_files')
         .insert({
           user_id: user.id,
@@ -168,9 +199,34 @@ export default function FileManager() {
           description: uploadData.description,
           is_private: uploadData.is_private ?? true,
           tags: uploadData.tags || []
-        });
+        })
+        .select()
+        .single();
 
       if (dbError) throw dbError;
+
+      // Criar compartilhamentos se houver pessoas selecionadas
+      if (uploadData.shared_with && uploadData.shared_with.length > 0 && fileData) {
+        const shares = uploadData.shared_with.map(userId => ({
+          file_id: fileData.id,
+          shared_by: user.id,
+          shared_with: userId,
+          permission_level: 'read'
+        }));
+
+        const { error: shareError } = await supabase
+          .from('file_shares')
+          .insert(shares);
+
+        if (shareError) {
+          console.error('Error creating file shares:', shareError);
+          toast({
+            variant: "destructive",
+            title: "Aviso",
+            description: "Arquivo enviado, mas houve erro ao compartilhar.",
+          });
+        }
+      }
 
       toast({
         title: "Sucesso",
@@ -182,7 +238,8 @@ export default function FileManager() {
         category: 'document',
         description: '',
         tags: [],
-        is_private: true
+        is_private: true,
+        shared_with: []
       });
       loadFiles();
       loadStorageStats();
@@ -393,6 +450,54 @@ export default function FileManager() {
                 />
                 <Label htmlFor="private">Arquivo privado</Label>
               </div>
+
+              {!uploadData.is_private && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Compartilhar com:
+                  </Label>
+                  <div className="border rounded-lg p-4 max-h-60 overflow-y-auto space-y-2 bg-muted/30">
+                    {employees.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Nenhum funcionário disponível
+                      </p>
+                    ) : (
+                      employees.map((employee) => (
+                        <div key={employee.user_id} className="flex items-center space-x-3 hover:bg-muted/50 p-2 rounded-md transition-colors">
+                          <Checkbox
+                            id={`share-${employee.user_id}`}
+                            checked={uploadData.shared_with?.includes(employee.user_id)}
+                            onCheckedChange={(checked) => {
+                              const currentShared = uploadData.shared_with || [];
+                              setUploadData({
+                                ...uploadData,
+                                shared_with: checked
+                                  ? [...currentShared, employee.user_id]
+                                  : currentShared.filter(id => id !== employee.user_id)
+                              });
+                            }}
+                          />
+                          <Label 
+                            htmlFor={`share-${employee.user_id}`}
+                            className="flex-1 cursor-pointer text-sm"
+                          >
+                            <span className="font-medium">{employee.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              ({employee.employee_role})
+                            </span>
+                          </Label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {uploadData.shared_with && uploadData.shared_with.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      ✓ {uploadData.shared_with.length} pessoa(s) selecionada(s)
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
@@ -562,6 +667,14 @@ export default function FileManager() {
                           <Button 
                             variant="ghost" 
                             size="sm"
+                            onClick={() => setShareDialogFile(file)}
+                            title="Compartilhar"
+                          >
+                            <Share className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
                             onClick={() => handleFileDelete(file)}
                             title="Excluir"
                           >
@@ -645,6 +758,192 @@ export default function FileManager() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Share File Dialog */}
+      {shareDialogFile && (
+        <ShareFileDialog 
+          file={shareDialogFile}
+          employees={employees}
+          onClose={() => setShareDialogFile(null)}
+          onSuccess={() => {
+            setShareDialogFile(null);
+            toast({
+              title: "Compartilhado com sucesso",
+              description: "O arquivo foi compartilhado com as pessoas selecionadas.",
+            });
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+// Share File Dialog Component
+function ShareFileDialog({ 
+  file, 
+  employees, 
+  onClose, 
+  onSuccess 
+}: { 
+  file: UserFile; 
+  employees: Employee[]; 
+  onClose: () => void; 
+  onSuccess: () => void;
+}) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [currentShares, setCurrentShares] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadCurrentShares();
+  }, [file.id]);
+
+  const loadCurrentShares = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('file_shares')
+        .select(`
+          id,
+          shared_with,
+          permission_level,
+          created_at,
+          profiles!file_shares_shared_with_fkey(name, employee_role)
+        `)
+        .eq('file_id', file.id);
+
+      if (error) throw error;
+      setCurrentShares(data || []);
+      setSelectedUsers(data?.map(s => s.shared_with) || []);
+    } catch (error) {
+      console.error('Error loading shares:', error);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      // Remover compartilhamentos antigos
+      const { error: deleteError } = await supabase
+        .from('file_shares')
+        .delete()
+        .eq('file_id', file.id);
+
+      if (deleteError) throw deleteError;
+
+      // Criar novos compartilhamentos
+      if (selectedUsers.length > 0) {
+        const shares = selectedUsers.map(userId => ({
+          file_id: file.id,
+          shared_by: user.id,
+          shared_with: userId,
+          permission_level: 'read'
+        }));
+
+        const { error: insertError } = await supabase
+          .from('file_shares')
+          .insert(shares);
+
+        if (insertError) throw insertError;
+      }
+
+      onSuccess();
+    } catch (error) {
+      console.error('Error sharing file:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível compartilhar o arquivo.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleUser = (userId: string) => {
+    setSelectedUsers(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Share className="h-5 w-5" />
+            Compartilhar: {file.file_name}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-y-auto space-y-4 py-4">
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold">
+              Selecione as pessoas que podem visualizar este arquivo:
+            </Label>
+            <div className="border rounded-lg p-4 space-y-2 bg-muted/30">
+              {employees.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum funcionário disponível
+                </p>
+              ) : (
+                employees.map((employee) => (
+                  <div 
+                    key={employee.user_id} 
+                    className="flex items-center space-x-3 hover:bg-muted/50 p-3 rounded-md transition-colors group"
+                  >
+                    <Checkbox
+                      id={`employee-${employee.user_id}`}
+                      checked={selectedUsers.includes(employee.user_id)}
+                      onCheckedChange={() => toggleUser(employee.user_id)}
+                    />
+                    <Label 
+                      htmlFor={`employee-${employee.user_id}`}
+                      className="flex-1 cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium">{employee.name}</span>
+                          <span className="text-xs text-muted-foreground ml-2">
+                            ({employee.employee_role})
+                          </span>
+                        </div>
+                        {selectedUsers.includes(employee.user_id) && (
+                          <Badge variant="secondary" className="text-xs">
+                            ✓ Selecionado
+                          </Badge>
+                        )}
+                      </div>
+                    </Label>
+                  </div>
+                ))
+              )}
+            </div>
+            {selectedUsers.length > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <UserPlus className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium text-primary">
+                  {selectedUsers.length} pessoa(s) selecionada(s) para visualizar este arquivo
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button onClick={handleShare} disabled={loading}>
+            {loading ? 'Compartilhando...' : 'Compartilhar'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
