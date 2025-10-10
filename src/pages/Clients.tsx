@@ -486,22 +486,27 @@ export default function Patients() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Gerenciar Pacientes</h1>
-          <p className="text-muted-foreground">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-1.5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent">
+              Gerenciar Pacientes
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground ml-5 flex items-center gap-2">
             {isGodMode() 
-              ? '🔑 Modo Deus Ativo - Acesso total aos pacientes' 
+              ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium">🔑 Modo Diretor</span> Acesso total aos pacientes</> 
               : isCoordinatorOrDirector() 
-                ? 'Visualizando todos os pacientes' 
-                : 'Visualizando apenas pacientes vinculados a você'
+                ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">✓</span> Visualizando todos os pacientes</> 
+                : <><span className="inline-flex items-center px-2 py-1 rounded-md bg-green-500/10 text-green-600 text-xs font-medium">👤</span> Pacientes vinculados a você</>
             }
           </p>
         </div>
         <div className="flex items-center gap-2">
           {isGodMode() && (
-            <Badge variant="default" className="bg-yellow-600 text-white">
+            <Badge variant="default" className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg">
               🔑 Diretor
             </Badge>
           )}
@@ -513,8 +518,8 @@ export default function Patients() {
             }
           }}>
             <DialogTrigger asChild>
-              <Button className="gap-2 w-full md:w-auto">
-                <Plus className="h-4 w-4" />
+              <Button className="gap-2 w-full md:w-auto bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0">
+                <Plus className="h-5 w-5" />
                 Cadastrar Paciente
               </Button>
             </DialogTrigger>
@@ -710,11 +715,15 @@ export default function Patients() {
       </div>
 
       {/* Filters Section */}
-      <Card className="bg-muted/50 border-muted">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium text-foreground">Filtros</CardTitle>
+      <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-primary/5 via-card to-primary/10">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <CardHeader className="relative">
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base font-semibold">Filtros de Busca</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 relative">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">Unidade:</Label>
@@ -773,36 +782,52 @@ export default function Patients() {
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Pacientes</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Total de Pacientes</CardTitle>
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <Users className="h-6 w-6 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredClients.length}</div>
+          <CardContent className="relative">
+            <div className="text-4xl font-extrabold bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent mb-1">
+              {filteredClients.length}
+            </div>
+            <p className="text-xs text-muted-foreground font-medium">Registrados no sistema</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ativos</CardTitle>
-            <Users className="h-4 w-4 text-green-600" />
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Pacientes Ativos</CardTitle>
+            <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <Users className="h-6 w-6 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+          <CardContent className="relative">
+            <div className="text-4xl font-extrabold bg-gradient-to-br from-green-600 to-green-400 bg-clip-text text-transparent mb-1">
               {filteredClients.filter(c => c.is_active).length}
             </div>
+            <p className="text-xs text-muted-foreground font-medium">Em tratamento ativo</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inativos</CardTitle>
-            <Users className="h-4 w-4 text-gray-500" />
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-gray-500/10 via-card to-gray-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Pacientes Inativos</CardTitle>
+            <div className="p-3 bg-gradient-to-br from-gray-500 to-gray-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <Users className="h-6 w-6 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-500">
+          <CardContent className="relative">
+            <div className="text-4xl font-extrabold bg-gradient-to-br from-gray-600 to-gray-400 bg-clip-text text-transparent mb-1">
               {filteredClients.filter(c => !c.is_active).length}
             </div>
+            <p className="text-xs text-muted-foreground font-medium">Fora de tratamento</p>
           </CardContent>
         </Card>
       </div>
@@ -816,80 +841,22 @@ export default function Patients() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
-          {/* Filters Section */}
-          <Card className="bg-muted/50 border-muted">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium text-foreground">Filtros</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">Unidade:</Label>
-                  <Select value={unitFilter} onValueChange={setUnitFilter}>
-                    <SelectTrigger className="bg-background border-border">
-                      <SelectValue placeholder="Todas as Unidades" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as Unidades</SelectItem>
-                      <SelectItem value="madre">Clínica Social (Madre)</SelectItem>
-                      <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">Idade:</Label>
-                  <Select value={ageFilter} onValueChange={setAgeFilter}>
-                    <SelectTrigger className="bg-background border-border">
-                      <SelectValue placeholder="Todas as Idades" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as Idades</SelectItem>
-                      <SelectItem value="minor">Menor de Idade</SelectItem>
-                      <SelectItem value="adult">Maior de Idade</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {isCoordinatorOrDirector() && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-foreground">Profissional:</Label>
-                    <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
-                      <SelectTrigger className="bg-background border-border">
-                        <SelectValue placeholder="Todos os Profissionais" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os Profissionais</SelectItem>
-                        {employees.map(employee => {
-                          const assignedCount = clientAssignments.filter(assignment => 
-                            assignment.employee_id === employee.user_id && assignment.is_active
-                          ).length;
-                          
-                          return (
-                            <SelectItem key={employee.id} value={employee.id}>
-                              {employee.name} ({assignedCount} pacientes)
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Pacientes</CardTitle>
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-primary/5">
+        <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 to-transparent">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <CardTitle className="text-xl">Lista de Pacientes</CardTitle>
+          </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex items-center space-x-2 flex-1">
-              <Search className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center space-x-2 flex-1 relative">
+              <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
-                placeholder="Buscar por ID, nome, CPF, telefone..."
+                placeholder="🔍 Buscar por ID, nome, CPF, telefone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
+                className="flex-1 pl-10 border-primary/20 focus:border-primary/40 bg-background/50"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -931,55 +898,78 @@ export default function Patients() {
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell>{client.phone || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {client.unit === 'madre' ? 'Madre' : 'Floresta'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={client.is_active ? "default" : "secondary"}>
-                        {client.is_active ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
+                     <TableCell>
+                       <Badge 
+                         variant="outline" 
+                         className={client.unit === 'madre' 
+                           ? 'border-blue-500/50 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20' 
+                           : 'border-green-500/50 bg-green-500/10 text-green-600 hover:bg-green-500/20'
+                         }
+                       >
+                         {client.unit === 'madre' ? '🏥 Madre' : '🧠 Floresta'}
+                       </Badge>
+                     </TableCell>
+                     <TableCell>
+                       <Badge 
+                         variant={client.is_active ? "default" : "secondary"}
+                         className={client.is_active 
+                           ? 'bg-green-500/90 hover:bg-green-500 border-0' 
+                           : 'bg-gray-400/90 hover:bg-gray-400 border-0'
+                         }
+                       >
+                         {client.is_active ? '✓ Ativo' : '⏸ Inativo'}
+                       </Badge>
+                     </TableCell>
                     <TableCell>
                       {new Date(client.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setSelectedClient(client)}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          {isCoordinatorOrDirector() && (
-                            <>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => openEditDialog(client)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setReportClient(client)}
-                              >
-                                <FileText className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant={client.is_active ? "destructive" : "default"}
-                                size="sm"
-                                onClick={() => handleToggleClientStatus(client.id, client.is_active)}
-                              >
-                                <Power className="h-3 w-3" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex gap-2">
+                           <Button 
+                             variant="outline" 
+                             size="sm"
+                             onClick={() => setSelectedClient(client)}
+                             className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all"
+                             title="Visualizar"
+                           >
+                             <Eye className="h-4 w-4" />
+                           </Button>
+                           {isCoordinatorOrDirector() && (
+                             <>
+                               <Button 
+                                 variant="outline" 
+                                 size="sm"
+                                 onClick={() => openEditDialog(client)}
+                                 className="hover:bg-orange-500/10 hover:text-orange-600 hover:border-orange-500/50 transition-all"
+                                 title="Editar"
+                               >
+                                 <Edit className="h-4 w-4" />
+                               </Button>
+                               <Button 
+                                 variant="outline" 
+                                 size="sm"
+                                 onClick={() => setReportClient(client)}
+                                 className="hover:bg-purple-500/10 hover:text-purple-600 hover:border-purple-500/50 transition-all"
+                                 title="Gerar Relatório"
+                               >
+                                 <FileText className="h-4 w-4" />
+                               </Button>
+                               <Button 
+                                 variant={client.is_active ? "outline" : "outline"}
+                                 size="sm"
+                                 onClick={() => handleToggleClientStatus(client.id, client.is_active)}
+                                 className={client.is_active 
+                                   ? "hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/50 transition-all" 
+                                   : "hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/50 transition-all"
+                                 }
+                                 title={client.is_active ? "Desativar" : "Ativar"}
+                               >
+                                 <Power className="h-4 w-4" />
+                               </Button>
+                             </>
+                           )}
+                         </div>
+                       </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
