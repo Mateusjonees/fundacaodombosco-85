@@ -34,11 +34,15 @@ import StockManager from '@/pages/StockManager';
 import Reports from '@/pages/Reports';
 import Dashboard from '@/pages/Dashboard';
 import MyPatients from '@/pages/MyPatients';
+import MedicalRecords from '@/pages/MedicalRecords';
 import AttendanceValidation from '@/pages/AttendanceValidation';
 import EmployeesNew from '@/pages/EmployeesNew';
 import DirectMessages from '@/pages/DirectMessages';
 import EmployeeControl from '@/pages/EmployeeControl';
 import FeedbackControl from '@/pages/FeedbackControl';
+import MyFiles from '@/pages/MyFiles';
+import Timesheet from '@/pages/Timesheet';
+import MeetingAlerts from '@/pages/MeetingAlerts';
 import { PendingAttendancesNotification } from '@/components/PendingAttendancesNotification';
 import { AppointmentNotifications } from '@/components/AppointmentNotifications';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -274,6 +278,12 @@ export const MainApp = () => {
                   <MyPatients />
                 } />
                 
+                <Route path="/medical-records" element={
+                  <ProtectedRoute requiredPermission="view_medical_records">
+                    <MedicalRecords />
+                  </ProtectedRoute>
+                } />
+                
                 <Route path="/employees-new" element={
                   <ProtectedRoute requiredPermission="view_employees">
                     <EmployeesNew />
@@ -294,6 +304,24 @@ export const MainApp = () => {
                 
                 <Route path="/messages" element={
                   <DirectMessages />
+                } />
+                
+                <Route path="/my-files" element={
+                  <ProtectedRoute requiredPermission="view_files">
+                    <MyFiles />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/timesheet" element={
+                  <ProtectedRoute requiredPermission="view_timesheet">
+                    <Timesheet />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/meeting-alerts" element={
+                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta']}>
+                    <MeetingAlerts />
+                  </ProtectedRoute>
                 } />
                 
                 <Route path="*" element={<Navigate to="/" replace />} />
