@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { TimeClock } from '@/components/TimeClock';
 import { Users, Calendar, DollarSign, UserPlus } from 'lucide-react';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 interface DashboardStats {
   totalClients: number;
@@ -31,117 +33,44 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalClients: 0,
-    todayAppointments: 0,
-    monthlyRevenue: 0,
-    totalEmployees: 0
-  });
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  
+  // Usar React Query para cache automático e otimização com batch queries
+  const { data: stats, isLoading } = useDashboardStats(currentUserProfile);
 
+  // Carregar perfil do usuário
   useEffect(() => {
     if (user) {
-      loadDashboardData();
+      loadUserProfile();
     }
   }, [user]);
 
-  const loadDashboardData = async () => {
+  const loadUserProfile = async () => {
+    if (!user) return;
+
     try {
-      // Load user profile
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .single();
 
-      if (profileError) {
-        console.error('Error loading profile:', profileError);
-      } else {
-        setCurrentUserProfile(profile);
-      }
-
-      // Load stats based on user role
-      const isDirector = profile?.employee_role === 'director';
-      const isCoordinator = ['coordinator_madre', 'coordinator_floresta'].includes(profile?.employee_role);
-
-      // Load clients count
-      let clientsQuery = supabase.from('clients').select('id', { count: 'exact' });
-      
-      if (!isDirector && !isCoordinator) {
-        // Staff only sees assigned clients
-        const { data: assignments } = await supabase
-          .from('client_assignments')
-          .select('client_id')
-          .eq('employee_id', user?.id)
-          .eq('is_active', true);
-
-        const clientIds = assignments?.map(a => a.client_id) || [];
-        if (clientIds.length > 0) {
-          clientsQuery = clientsQuery.in('id', clientIds);
-        } else {
-          clientsQuery = clientsQuery.eq('id', 'no-match'); // Force empty result
-        }
-      }
-
-      const { count: clientsCount } = await clientsQuery;
-      
-      // Load today's appointments
-      const today = new Date().toISOString().split('T')[0];
-      let schedulesQuery = supabase
-        .from('schedules')
-        .select('id', { count: 'exact' })
-        .gte('start_time', `${today}T00:00:00`)
-        .lte('start_time', `${today}T23:59:59`);
-
-      if (!isDirector && !isCoordinator) {
-        schedulesQuery = schedulesQuery.eq('employee_id', user?.id);
-      }
-
-      const { count: appointmentsCount } = await schedulesQuery;
-
-      // Load monthly revenue (only for directors/coordinators)
-      let monthlyRevenue = 0;
-      if (isDirector || isCoordinator) {
-        const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-        const { data: revenueData } = await supabase
-          .from('financial_records')
-          .select('amount')
-          .eq('type', 'income')
-          .gte('date', `${currentMonth}-01`)
-          .lte('date', `${currentMonth}-31`);
-
-        monthlyRevenue = revenueData?.reduce((sum, record) => sum + Number(record.amount), 0) || 0;
-      }
-
-      // Load employees count (only for directors/coordinators)
-      let employeesCount = 0;
-      if (isDirector || isCoordinator) {
-        const { count } = await supabase
-          .from('profiles')
-          .select('id', { count: 'exact' })
-          .not('employee_role', 'is', null);
-        employeesCount = count || 0;
-      }
-
-      setStats({
-        totalClients: clientsCount || 0,
-        todayAppointments: appointmentsCount || 0,
-        monthlyRevenue,
-        totalEmployees: employeesCount
-      });
+      setCurrentUserProfile(profile);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error loading user profile:', error);
     }
   };
 
-  if (loading) {
+  if (isLoading || !stats) {
     return (
-      <div className="space-y-6">
-      <h2 className="text-3xl font-bold">Painel</h2>
-        <div className="text-center py-8">Carregando...</div>
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-32 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
       </div>
     );
   }

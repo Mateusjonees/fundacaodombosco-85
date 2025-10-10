@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,8 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Edit, Eye, ArrowLeft, Users, Filter, Power, Upload, Database, FileDown, FileText } from 'lucide-react';
+import { useClients } from '@/hooks/useClients';
+import { useDebouncedValue } from '@/hooks/useDebounce';
 import ClientDetailsView from '@/components/ClientDetailsView';
 import { BulkImportClientsDialog } from '@/components/BulkImportClientsDialog';
 import { AutoImportClientsDialog } from '@/components/AutoImportClientsDialog';
@@ -53,15 +56,21 @@ export default function Patients() {
   const { user } = useAuth();
   const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
   const customPermissions = useCustomPermissions();
-  const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [clientAssignments, setClientAssignments] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [unitFilter, setUnitFilter] = useState('all');
   const [ageFilter, setAgeFilter] = useState('all');
   const [professionalFilter, setProfessionalFilter] = useState('all');
+  
+  // Debounce da busca para evitar queries excessivas durante digitação
+  const debouncedSearch = useDebouncedValue(searchTerm, 400);
+
+  // Usar React Query com cache e filtros otimizados
+  const { data: clients = [], isLoading } = useClients({
+    searchTerm: debouncedSearch || undefined,
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -123,12 +132,7 @@ export default function Patients() {
     loadClientAssignments();
   }, [user]);
 
-  // Separate useEffect to load clients after userProfile is available
-  useEffect(() => {
-    if (userProfile) {
-      loadClients();
-    }
-  }, [userProfile, user]);
+  // React Query carrega automaticamente os clientes
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -182,31 +186,7 @@ export default function Patients() {
     }
   };
 
-  const loadClients = async () => {
-    if (!userProfile) return;
-
-    setLoading(true);
-    try {
-      // A política RLS (Row Level Security) cuida automaticamente do filtro de acesso
-      // Diretores veem todos, coordenadores veem sua unidade, funcionários veem apenas pacientes vinculados
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      setClients(data || []);
-    } catch (error) {
-      console.error('Error loading clients:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível carregar os pacientes.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // loadClients removido - agora usamos React Query com useClients hook
 
   const handleCreateClient = async () => {
     try {
@@ -226,8 +206,8 @@ export default function Patients() {
 
       setIsDialogOpen(false);
       resetForm();
-      loadClients();
-      loadClientAssignments(); // Reload assignments after creating client
+      window.location.reload(); // Recarrega para atualizar cache
+      loadClientAssignments();
     } catch (error) {
       console.error('Error creating client:', error);
       toast({
@@ -257,8 +237,8 @@ export default function Patients() {
       setIsDialogOpen(false);
       setEditingClient(null);
       resetForm();
-      loadClients();
-      loadClientAssignments(); // Reload assignments after updating client
+      window.location.reload();
+      loadClientAssignments();
     } catch (error) {
       console.error('Error updating client:', error);
       toast({
@@ -283,7 +263,7 @@ export default function Patients() {
         description: `Paciente ${currentStatus ? 'desativado' : 'ativado'} com sucesso!`,
       });
 
-      loadClients();
+      window.location.reload();
     } catch (error) {
       console.error('Error toggling client status:', error);
       toast({
@@ -327,7 +307,7 @@ export default function Patients() {
           title: "Importação concluída",
           description: `${result.success} pacientes importados com sucesso.`,
         });
-        loadClients();
+        window.location.reload();
       }
       
       if (result.errors.length > 0) {
@@ -385,14 +365,9 @@ export default function Patients() {
     setIsDialogOpen(true);
   };
 
-  const filteredClients = clients.filter(client => {
-    // Enhanced search filter - ID, CPF, Name, Phone
-    const matchesSearch = searchTerm === '' || 
-      client.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.cpf?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone?.toLowerCase().includes(searchTerm.toLowerCase());
-
+  // Filtros aplicados no frontend (unit, age, professional)
+  // O searchTerm já é aplicado via React Query com debounce
+  const filteredClients = useMemo(() => clients.filter(client => {
     const matchesUnit = unitFilter === 'all' || client.unit === unitFilter;
 
     const matchesAge = ageFilter === 'all' || (() => {
@@ -435,8 +410,8 @@ export default function Patients() {
       return true;
     })();
 
-    return matchesSearch && matchesUnit && matchesAge && matchesProfessional;
-  });
+    return matchesUnit && matchesAge && matchesProfessional;
+  }), [clients, unitFilter, ageFilter, professionalFilter, clientAssignments, employees, isCoordinatorOrDirector]);
 
   if (selectedClient) {
     return (
@@ -455,7 +430,7 @@ export default function Patients() {
             setSelectedClient(null);
             openEditDialog(selectedClient);
           }}
-          onRefresh={loadClients}
+          onRefresh={() => window.location.reload()}
         />
       </div>
     );
@@ -851,7 +826,7 @@ export default function Patients() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <p className="text-muted-foreground text-center py-8">Carregando pacientes...</p>
           ) : filteredClients.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
@@ -966,8 +941,7 @@ export default function Patients() {
         isOpen={isBulkImportOpen}
         onClose={() => setIsBulkImportOpen(false)}
         onImportComplete={() => {
-          loadClients();
-          setIsBulkImportOpen(false);
+          window.location.reload();
         }}
       />
       
@@ -975,8 +949,7 @@ export default function Patients() {
         isOpen={isAutoImportOpen}
         onClose={() => setIsAutoImportOpen(false)}
         onImportComplete={() => {
-          loadClients();
-          setIsAutoImportOpen(false);
+          window.location.reload();
         }}
       />
 
