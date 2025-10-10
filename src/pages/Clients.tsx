@@ -187,39 +187,15 @@ export default function Patients() {
 
     setLoading(true);
     try {
-      // Check if user is coordinator or director within the function
-      const isCoordOrDir = isCoordinatorOrDirector();
+      // A política RLS (Row Level Security) cuida automaticamente do filtro de acesso
+      // Diretores veem todos, coordenadores veem sua unidade, funcionários veem apenas pacientes vinculados
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('name');
 
-      // Load all clients for directors and coordinators, filtered for others
-      if (isCoordOrDir) {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('*')
-          .order('name');
-
-        if (error) throw error;
-        setClients(data || []);
-      } else {
-        // For staff, only show assigned clients through client_assignments
-        const { data, error } = await supabase
-          .from('client_assignments')
-          .select(`
-            client_id,
-            clients (*)
-          `)
-          .eq('employee_id', user?.id)
-          .eq('is_active', true)
-          .eq('clients.is_active', true);
-
-        if (error) throw error;
-        
-        const clientsData = (data || [])
-          .filter(assignment => assignment.clients)
-          .map(assignment => assignment.clients)
-          .filter(Boolean) as Client[];
-
-        setClients(clientsData);
-      }
+      if (error) throw error;
+      setClients(data || []);
     } catch (error) {
       console.error('Error loading clients:', error);
       toast({
@@ -499,8 +475,8 @@ export default function Patients() {
             {isGodMode() 
               ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium">🔑 Modo Diretor</span> Acesso total aos pacientes</> 
               : isCoordinatorOrDirector() 
-                ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">✓</span> Visualizando todos os pacientes</> 
-                : <><span className="inline-flex items-center px-2 py-1 rounded-md bg-green-500/10 text-green-600 text-xs font-medium">👤</span> Pacientes vinculados a você</>
+                ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">📋</span> Gerenciando pacientes da sua unidade</> 
+                : <><span className="inline-flex items-center px-2 py-1 rounded-md bg-green-500/10 text-green-600 text-xs font-medium">👥</span> Visualizando apenas pacientes vinculados a você</>
             }
           </p>
         </div>
