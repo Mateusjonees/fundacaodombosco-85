@@ -1517,6 +1517,8 @@ export type Database = {
           created_by: string
           id: string
           is_active: boolean | null
+          is_open_enrollment: boolean | null
+          max_participants: number | null
           meeting_date: string
           meeting_location: string | null
           meeting_room: string | null
@@ -1531,6 +1533,8 @@ export type Database = {
           created_by: string
           id?: string
           is_active?: boolean | null
+          is_open_enrollment?: boolean | null
+          max_participants?: number | null
           meeting_date: string
           meeting_location?: string | null
           meeting_room?: string | null
@@ -1545,6 +1549,8 @@ export type Database = {
           created_by?: string
           id?: string
           is_active?: boolean | null
+          is_open_enrollment?: boolean | null
+          max_participants?: number | null
           meeting_date?: string
           meeting_location?: string | null
           meeting_room?: string | null
