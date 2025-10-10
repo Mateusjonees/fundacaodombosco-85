@@ -22,10 +22,6 @@ import {
   ClipboardList,
   MessageSquare,
   FileCheck,
-  FileText,
-  Folder,
-  Clock,
-  Bell,
   LucideIcon
 } from 'lucide-react';
 
@@ -67,10 +63,6 @@ const iconMapping: Record<string, LucideIcon> = {
   Heart,
   MessageSquare,
   FileCheck,
-  FileText,
-  Folder,
-  Clock,
-  Bell,
 };
 
 // Dynamic menu items based on role permissions
@@ -105,17 +97,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       url: '/my-patients', 
       icon: 'Heart', 
       order_index: 2 
-    });
-  }
-
-  // Prontuários - profissionais, coordenadores e diretores
-  if (permissions.isProfessional() || permissions.isCoordinator() || permissions.isDirector()) {
-    items.push({ 
-      id: 'medical-records', 
-      title: 'Prontuários', 
-      url: '/medical-records', 
-      icon: 'FileText', 
-      order_index: 2.5
     });
   }
 
@@ -158,17 +139,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       url: '/schedule-control', 
       icon: 'ClipboardList', 
       order_index: 4.5
-    });
-  }
-
-  // Alertas de Reunião - coordenadores e diretores
-  if (permissions.isDirector() || permissions.isCoordinator()) {
-    items.push({ 
-      id: 'meeting-alerts', 
-      title: 'Alertas de Reunião', 
-      url: '/meeting-alerts', 
-      icon: 'Bell', 
-      order_index: 4.7
     });
   }
 
@@ -267,24 +237,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     url: '/messages', 
     icon: 'MessageSquare', 
     order_index: 11 
-  });
-
-  // Meus Arquivos - todos os usuários autenticados
-  items.push({ 
-    id: 'my-files', 
-    title: 'Meus Arquivos', 
-    url: '/my-files', 
-    icon: 'Folder', 
-    order_index: 12 
-  });
-
-  // Ponto Eletrônico - todos os usuários autenticados
-  items.push({ 
-    id: 'timesheet', 
-    title: 'Ponto Eletrônico', 
-    url: '/timesheet', 
-    icon: 'Clock', 
-    order_index: 13 
   });
 
   return items.sort((a, b) => a.order_index - b.order_index);
