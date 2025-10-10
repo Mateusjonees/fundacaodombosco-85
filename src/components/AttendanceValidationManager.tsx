@@ -59,6 +59,9 @@ export default function AttendanceValidationManager() {
   const [professionalAmount, setProfessionalAmount] = useState<string>('');
   const [foundationAmount, setFoundationAmount] = useState<string>('');
   const [totalAmount, setTotalAmount] = useState<string>('');
+  
+  // Estados para edição dos campos do atendimento
+  const [editedAttendance, setEditedAttendance] = useState<Partial<PendingAttendance>>({});
 
   useEffect(() => {
     if (user) {
@@ -148,13 +151,31 @@ export default function AttendanceValidationManager() {
 
     setProcessing(true);
     try {
+      // Atualizar dados do atendimento se houver edições
+      if (validationAction === 'validate' && Object.keys(editedAttendance).length > 0) {
+        const { error: updateError } = await supabase
+          .from('attendance_reports')
+          .update({
+            attendance_type: editedAttendance.attendance_type,
+            session_duration: editedAttendance.session_duration,
+            amount_charged: editedAttendance.amount_charged,
+            techniques_used: editedAttendance.techniques_used,
+            patient_response: editedAttendance.patient_response,
+            observations: editedAttendance.observations,
+            next_session_plan: editedAttendance.next_session_plan,
+          })
+          .eq('id', selectedAttendance.id);
+
+        if (updateError) throw updateError;
+      }
+
       const { error } = await supabase.rpc('validate_attendance_report', {
         p_attendance_report_id: selectedAttendance.id,
         p_action: validationAction,
         p_rejection_reason: validationAction === 'reject' ? rejectionReason : null,
         p_professional_amount: validationAction === 'validate' && professionalAmount ? parseFloat(professionalAmount) : 0,
         p_foundation_amount: validationAction === 'validate' && foundationAmount ? parseFloat(foundationAmount) : 0,
-        p_total_amount: validationAction === 'validate' && totalAmount ? parseFloat(totalAmount) : selectedAttendance?.amount_charged || 0
+        p_total_amount: validationAction === 'validate' && totalAmount ? parseFloat(totalAmount) : editedAttendance.amount_charged || selectedAttendance?.amount_charged || 0
       });
 
       if (error) throw error;
@@ -176,6 +197,7 @@ export default function AttendanceValidationManager() {
       setProfessionalAmount('');
       setFoundationAmount('');
       setTotalAmount('');
+      setEditedAttendance({});
       
     } catch (error) {
       console.error('Error processing validation:', error);
@@ -392,7 +414,10 @@ export default function AttendanceValidationManager() {
       )}
 
       {/* Dialog de Revisão Detalhada */}
-      <Dialog open={!!selectedAttendance && !validationAction} onOpenChange={() => setSelectedAttendance(null)}>
+      <Dialog open={!!selectedAttendance && !validationAction} onOpenChange={() => {
+        setSelectedAttendance(null);
+        setEditedAttendance({});
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Revisão Detalhada do Atendimento</DialogTitle>
@@ -408,27 +433,45 @@ export default function AttendanceValidationManager() {
                 <CardContent className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Paciente</Label>
-                    <p>{selectedAttendance.patient_name}</p>
+                    <p className="font-medium">{selectedAttendance.patient_name}</p>
                   </div>
                   <div>
                     <Label>Profissional</Label>
-                    <p>{selectedAttendance.professional_name}</p>
+                    <p className="font-medium">{selectedAttendance.professional_name}</p>
                   </div>
                   <div>
-                    <Label>Tipo de Atendimento</Label>
-                    <p>{selectedAttendance.attendance_type}</p>
+                    <Label htmlFor="edit-attendance-type">Tipo de Atendimento</Label>
+                    <Input
+                      id="edit-attendance-type"
+                      value={editedAttendance.attendance_type ?? selectedAttendance.attendance_type}
+                      onChange={(e) => setEditedAttendance({...editedAttendance, attendance_type: e.target.value})}
+                      className="mt-1"
+                    />
                   </div>
                   <div>
-                    <Label>Duração</Label>
-                    <p>{selectedAttendance.session_duration} minutos</p>
+                    <Label htmlFor="edit-duration">Duração (minutos)</Label>
+                    <Input
+                      id="edit-duration"
+                      type="number"
+                      value={editedAttendance.session_duration ?? selectedAttendance.session_duration}
+                      onChange={(e) => setEditedAttendance({...editedAttendance, session_duration: parseInt(e.target.value)})}
+                      className="mt-1"
+                    />
                   </div>
                   <div>
                     <Label>Horário</Label>
-                    <p>{formatTime(selectedAttendance.start_time)} - {formatTime(selectedAttendance.end_time)}</p>
+                    <p className="font-medium">{formatTime(selectedAttendance.start_time)} - {formatTime(selectedAttendance.end_time)}</p>
                   </div>
                   <div>
-                    <Label>Valor Cobrado</Label>
-                    <p>R$ {selectedAttendance.amount_charged.toFixed(2)}</p>
+                    <Label htmlFor="edit-amount">Valor Cobrado (R$)</Label>
+                    <Input
+                      id="edit-amount"
+                      type="number"
+                      step="0.01"
+                      value={editedAttendance.amount_charged ?? selectedAttendance.amount_charged}
+                      onChange={(e) => setEditedAttendance({...editedAttendance, amount_charged: parseFloat(e.target.value)})}
+                      className="mt-1"
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -440,28 +483,48 @@ export default function AttendanceValidationManager() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label>Objetivos da Sessão</Label>
-                    <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">
-                      {selectedAttendance.techniques_used || 'Não informado'}
-                    </p>
+                    <Label htmlFor="edit-objectives">Objetivos da Sessão</Label>
+                    <Textarea
+                      id="edit-objectives"
+                      value={editedAttendance.techniques_used ?? selectedAttendance.techniques_used ?? ''}
+                      onChange={(e) => setEditedAttendance({...editedAttendance, techniques_used: e.target.value})}
+                      placeholder="Não informado"
+                      rows={3}
+                      className="mt-1"
+                    />
                   </div>
                   <div>
-                    <Label>Resposta do Paciente</Label>
-                    <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">
-                      {selectedAttendance.patient_response || 'Não informado'}
-                    </p>
+                    <Label htmlFor="edit-patient-response">Resposta do Paciente</Label>
+                    <Textarea
+                      id="edit-patient-response"
+                      value={editedAttendance.patient_response ?? selectedAttendance.patient_response ?? ''}
+                      onChange={(e) => setEditedAttendance({...editedAttendance, patient_response: e.target.value})}
+                      placeholder="Não informado"
+                      rows={3}
+                      className="mt-1"
+                    />
                   </div>
                   <div>
-                    <Label>Observações Clínicas</Label>
-                    <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">
-                      {selectedAttendance.observations || 'Não informado'}
-                    </p>
+                    <Label htmlFor="edit-observations">Observações Clínicas</Label>
+                    <Textarea
+                      id="edit-observations"
+                      value={editedAttendance.observations ?? selectedAttendance.observations ?? ''}
+                      onChange={(e) => setEditedAttendance({...editedAttendance, observations: e.target.value})}
+                      placeholder="Não informado"
+                      rows={3}
+                      className="mt-1"
+                    />
                   </div>
                   <div>
-                    <Label>Plano para Próxima Sessão</Label>
-                    <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">
-                      {selectedAttendance.next_session_plan || 'Não informado'}
-                    </p>
+                    <Label htmlFor="edit-next-plan">Plano para Próxima Sessão</Label>
+                    <Textarea
+                      id="edit-next-plan"
+                      value={editedAttendance.next_session_plan ?? selectedAttendance.next_session_plan ?? ''}
+                      onChange={(e) => setEditedAttendance({...editedAttendance, next_session_plan: e.target.value})}
+                      placeholder="Não informado"
+                      rows={3}
+                      className="mt-1"
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -527,7 +590,10 @@ export default function AttendanceValidationManager() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedAttendance(null)}>
+            <Button variant="outline" onClick={() => {
+              setSelectedAttendance(null);
+              setEditedAttendance({});
+            }}>
               Fechar
             </Button>
             <Button 
@@ -558,6 +624,7 @@ export default function AttendanceValidationManager() {
         setProfessionalAmount('');
         setFoundationAmount('');
         setTotalAmount('');
+        setEditedAttendance({});
       }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -652,6 +719,7 @@ export default function AttendanceValidationManager() {
                 setProfessionalAmount('');
                 setFoundationAmount('');
                 setTotalAmount('');
+                setEditedAttendance({});
               }}
               disabled={processing}
             >
