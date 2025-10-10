@@ -276,40 +276,59 @@ const MyPatients: React.FC = () => {
       ) : (
         <>
           {/* Cabeçalho */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-primary">Meus Pacientes</h1>
-              <p className="text-muted-foreground">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-fade-in">
+            <div className="relative">
+              <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 rounded-full" />
+              <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent">
+                Meus Pacientes
+              </h1>
+              <p className="text-muted-foreground mt-2">
                 Gerencie seus pacientes e visualize a agenda da semana
               </p>
             </div>
-            <Badge variant="secondary" className="text-lg px-4 py-2 w-fit">
+            <Badge className="text-lg px-6 py-3 w-fit bg-gradient-to-r from-green-500/10 to-green-600/10 text-green-700 dark:text-green-400 border-green-500/20 hover:from-green-500/20 hover:to-green-600/20 transition-all duration-300">
+              <Heart className="h-4 w-4 mr-2" />
               {filteredClients.length} paciente{filteredClients.length !== 1 ? 's' : ''}
             </Badge>
           </div>
 
           {/* Agenda Semanal */}
-          <Card>
-            <CardHeader>
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-blue-500/5 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent pointer-events-none" />
+            <CardHeader className="relative border-b border-gradient-to-r from-transparent via-blue-500/20 to-transparent">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5" />
-                  Agenda da Semana
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg">
+                    <CalendarIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent font-bold">
+                    Agenda da Semana
+                  </span>
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => navigateWeek('prev')}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigateWeek('prev')}
+                    className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
+                  >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="font-medium min-w-[200px] text-center">
+                  <span className="font-semibold min-w-[200px] text-center bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
                     {format(currentWeekStart, "dd/MM", { locale: ptBR })} - {format(addDays(currentWeekStart, 6), "dd/MM/yyyy", { locale: ptBR })}
                   </span>
-                  <Button variant="outline" size="sm" onClick={() => navigateWeek('next')}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigateWeek('next')}
+                    className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
+                  >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative">
               <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
                 {getWeekDays().map((day) => {
                   const daySchedules = getDaySchedules(day);
@@ -318,37 +337,48 @@ const MyPatients: React.FC = () => {
                   return (
                     <div 
                       key={day.toDateString()} 
-                      className={`p-3 border rounded-lg ${isToday ? 'bg-primary/5 border-primary' : 'bg-background'}`}
+                      className={`group p-4 border rounded-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                        isToday 
+                          ? 'bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border-blue-500/40 shadow-md' 
+                          : 'bg-gradient-to-br from-background to-muted/20 hover:border-blue-500/20'
+                      }`}
                     >
                       <div className="text-center mb-3">
-                        <div className={`font-medium ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                        <div className={`font-semibold text-sm uppercase tracking-wider ${
+                          isToday ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
+                        }`}>
                           {format(day, 'EEE', { locale: ptBR })}
                         </div>
-                        <div className={`text-2xl font-bold ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <div className={`text-3xl font-extrabold ${
+                          isToday 
+                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 bg-clip-text text-transparent' 
+                            : 'text-foreground'
+                        }`}>
                           {format(day, 'dd', { locale: ptBR })}
                         </div>
                       </div>
                       
                       <div className="space-y-2">
                         {daySchedules.length === 0 ? (
-                          <div className="text-xs text-muted-foreground text-center py-2">
+                          <div className="text-xs text-muted-foreground text-center py-4 bg-muted/30 rounded-lg">
                             Nenhum agendamento
                           </div>
                         ) : (
                           daySchedules.map((schedule) => (
                             <div 
                               key={schedule.id} 
-                              className="p-2 bg-background border rounded text-xs"
+                              className="group/schedule p-3 bg-gradient-to-br from-background to-muted/30 border rounded-lg text-xs hover:shadow-md hover:border-blue-500/30 transition-all duration-200"
                             >
-                              <div className="font-medium text-primary">
+                              <div className="font-bold text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
                                 {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })}
                               </div>
-                              <div className="text-foreground truncate">
+                              <div className="text-foreground truncate font-medium mt-1">
                                 {schedule.clients?.name || 'Cliente N/A'}
                               </div>
                               <Badge 
                                 variant={getStatusColor(schedule.status)} 
-                                className="text-xs mt-1"
+                                className="text-xs mt-2"
                               >
                                 {getStatusLabel(schedule.status)}
                               </Badge>
@@ -364,15 +394,15 @@ const MyPatients: React.FC = () => {
           </Card>
 
           {/* Barra de Pesquisa */}
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-blue-500/5">
             <CardContent className="pt-6">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500 h-5 w-5" />
                 <Input
-                  placeholder="Pesquisar por nome do paciente ou responsável..."
+                  placeholder="🔍 Pesquisar por nome do paciente ou responsável..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-12 h-12 bg-background/50 border-blue-500/20 focus:border-blue-500 transition-all duration-300"
                 />
               </div>
             </CardContent>
@@ -380,14 +410,16 @@ const MyPatients: React.FC = () => {
 
           {/* Lista de Pacientes */}
           {filteredClients.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-muted/20">
+              <CardContent className="pt-8 pb-8">
                 <div className="text-center">
-                  <Heart className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-lg font-semibold">
+                  <div className="inline-block p-6 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-full mb-4">
+                    <Heart className="h-16 w-16 text-blue-500" />
+                  </div>
+                  <h3 className="mt-4 text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
                     {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente vinculado'}
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground mt-2">
                     {searchTerm 
                       ? 'Tente ajustar os termos de pesquisa.'
                       : 'Entre em contato com a coordenação para vincular pacientes.'
@@ -404,33 +436,44 @@ const MyPatients: React.FC = () => {
                 const isMinor = age !== null && age < 18;
 
                 return (
-                  <Card key={client.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{client.name}</CardTitle>
+                  <Card 
+                    key={client.id} 
+                    className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-gradient-to-br from-card via-card to-blue-500/5 cursor-pointer"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <CardHeader className="relative pb-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+                          {client.name}
+                        </CardTitle>
                         <Badge 
-                          variant={client.unit === 'madre' ? 'default' : 'secondary'}
-                          className="text-xs"
+                          className={`text-xs font-semibold ${
+                            client.unit === 'madre' 
+                              ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' 
+                              : 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                          }`}
                         >
-                          {client.unit === 'madre' ? 'Madre' : 'Floresta'}
+                          🏥 {client.unit === 'madre' ? 'Madre' : 'Floresta'}
                         </Badge>
                       </div>
                       {age !== null && (
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 bg-gradient-to-r from-muted/50 to-transparent px-3 py-1.5 rounded-lg">
+                          <User className="h-4 w-4 text-blue-500" />
+                          <span className="text-sm font-medium">
                             {age} anos {isMinor && '(Menor)'}
                           </span>
                         </div>
                       )}
                     </CardHeader>
                     
-                    <CardContent className="space-y-3">
+                    <CardContent className="relative space-y-3">
                       {/* Contato */}
                       {(client.phone || client.responsible_phone) && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
+                        <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-blue-500/5 to-transparent rounded-lg">
+                          <div className="p-1.5 bg-blue-500/10 rounded-md">
+                            <Phone className="h-4 w-4 text-blue-500" />
+                          </div>
+                          <span className="text-sm font-medium">
                             {isMinor && client.responsible_phone 
                               ? client.responsible_phone 
                               : client.phone || 'Não informado'
@@ -441,16 +484,20 @@ const MyPatients: React.FC = () => {
 
                       {/* Responsável (apenas para menores) */}
                       {isMinor && client.responsible_name && (
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Resp.: {client.responsible_name}</span>
+                        <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-green-500/5 to-transparent rounded-lg">
+                          <div className="p-1.5 bg-green-500/10 rounded-md">
+                            <User className="h-4 w-4 text-green-500" />
+                          </div>
+                          <span className="text-sm font-medium">Resp.: {client.responsible_name}</span>
                         </div>
                       )}
 
                       {/* Endereço */}
                       {client.address && (
-                        <div className="flex items-start gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div className="flex items-start gap-3 p-2 bg-gradient-to-r from-purple-500/5 to-transparent rounded-lg">
+                          <div className="p-1.5 bg-purple-500/10 rounded-md mt-0.5">
+                            <MapPin className="h-4 w-4 text-purple-500" />
+                          </div>
                           <span className="text-sm text-muted-foreground line-clamp-2">
                             {client.address}
                           </span>
@@ -459,19 +506,21 @@ const MyPatients: React.FC = () => {
 
                       {/* Última sessão */}
                       {client.last_session_date && daysSince !== null && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
+                        <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-orange-500/5 to-transparent rounded-lg">
+                          <div className="p-1.5 bg-orange-500/10 rounded-md">
+                            <Clock className="h-4 w-4 text-orange-500" />
+                          </div>
+                          <span className="text-sm font-medium">
                             Última sessão: {daysSince} dia{daysSince !== 1 ? 's' : ''} atrás
                           </span>
                         </div>
                       )}
 
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex gap-2 pt-3">
                         <Button 
                           size="sm" 
                           onClick={() => setSelectedClient(client)}
-                          className="flex-1"
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-md hover:shadow-lg transition-all duration-300"
                         >
                           Ver Detalhes
                         </Button>
@@ -482,6 +531,7 @@ const MyPatients: React.FC = () => {
                             // Navegar para agendamento
                             window.location.href = `/schedule?client=${client.id}`;
                           }}
+                          className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
                         >
                           <CalendarIcon className="h-4 w-4" />
                         </Button>
