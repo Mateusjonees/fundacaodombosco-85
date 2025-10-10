@@ -81,9 +81,8 @@ export default function Financial() {
   useEffect(() => {
     if (roleLoading || customPermissions.loading) return;
     
-    // Verificar permissão: diretor, financeiro OU permissão customizada
+    // Verificar permissão: apenas diretor
     const hasAccess = userRole === 'director' || 
-                      userRole === 'financeiro' || 
                       customPermissions.hasPermission('view_financial');
     
     if (!hasAccess) {
@@ -461,7 +460,6 @@ export default function Financial() {
   }
 
   const hasAccess = userRole === 'director' || 
-                    userRole === 'financeiro' || 
                     customPermissions.hasPermission('view_financial');
 
   if (!hasAccess) {
@@ -469,7 +467,7 @@ export default function Financial() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Acesso restrito a diretores e área financeira</p>
+          <p className="text-muted-foreground">Acesso restrito a diretores</p>
         </div>
       </div>
     );

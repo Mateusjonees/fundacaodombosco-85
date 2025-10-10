@@ -118,7 +118,7 @@ export const useRolePermissions = () => {
   };
 
   const canAccessFinancial = (): boolean => {
-    return isGodMode() || hasAnyRole(ROLE_GROUPS.DIRECTOR_OR_FINANCE);
+    return isGodMode(); // Apenas diretores
   };
 
   const canManageStock = (): boolean => {

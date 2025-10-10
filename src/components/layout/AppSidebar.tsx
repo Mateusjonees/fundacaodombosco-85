@@ -173,8 +173,8 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     });
   }
 
-  // 💰 FINANCEIRO
-  if (permissions.canAccessFinancial() || customPermissions.hasPermission('view_financial')) {
+  // 💰 FINANCEIRO - Apenas diretores
+  if (permissions.isDirector() || customPermissions.hasPermission('view_financial')) {
     items.push({ 
       id: 'financial', 
       title: 'Financeiro', 
