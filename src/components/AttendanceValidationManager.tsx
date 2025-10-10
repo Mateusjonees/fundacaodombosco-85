@@ -413,14 +413,17 @@ export default function AttendanceValidationManager() {
         </div>
       )}
 
-      {/* Dialog de Revisão Detalhada */}
+      {/* Dialog de Revisão Detalhada - EDITÁVEL */}
       <Dialog open={!!selectedAttendance && !validationAction} onOpenChange={() => {
         setSelectedAttendance(null);
         setEditedAttendance({});
       }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Revisão Detalhada do Atendimento</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Revisão Detalhada do Atendimento
+              <Badge variant="secondary" className="text-xs">Editável</Badge>
+            </DialogTitle>
           </DialogHeader>
           
           {selectedAttendance && (
@@ -428,49 +431,56 @@ export default function AttendanceValidationManager() {
               {/* Informações Básicas */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Informações da Sessão</CardTitle>
+                  <CardTitle className="text-lg">Informações da Sessão</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Paciente</Label>
-                    <p className="font-medium">{selectedAttendance.patient_name}</p>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Paciente</Label>
+                    <p className="text-sm p-2 bg-muted rounded">{selectedAttendance.patient_name}</p>
                   </div>
-                  <div>
-                    <Label>Profissional</Label>
-                    <p className="font-medium">{selectedAttendance.professional_name}</p>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Profissional</Label>
+                    <p className="text-sm p-2 bg-muted rounded">{selectedAttendance.professional_name}</p>
                   </div>
-                  <div>
-                    <Label htmlFor="edit-attendance-type">Tipo de Atendimento</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-attendance-type" className="text-sm font-medium">
+                      Tipo de Atendimento *
+                    </Label>
                     <Input
                       id="edit-attendance-type"
                       value={editedAttendance.attendance_type ?? selectedAttendance.attendance_type}
                       onChange={(e) => setEditedAttendance({...editedAttendance, attendance_type: e.target.value})}
-                      className="mt-1"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="edit-duration">Duração (minutos)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-duration" className="text-sm font-medium">
+                      Duração (minutos) *
+                    </Label>
                     <Input
                       id="edit-duration"
                       type="number"
+                      min="0"
                       value={editedAttendance.session_duration ?? selectedAttendance.session_duration}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, session_duration: parseInt(e.target.value)})}
-                      className="mt-1"
+                      onChange={(e) => setEditedAttendance({...editedAttendance, session_duration: parseInt(e.target.value) || 0})}
                     />
                   </div>
-                  <div>
-                    <Label>Horário</Label>
-                    <p className="font-medium">{formatTime(selectedAttendance.start_time)} - {formatTime(selectedAttendance.end_time)}</p>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Horário</Label>
+                    <p className="text-sm p-2 bg-muted rounded">
+                      {formatTime(selectedAttendance.start_time)} - {formatTime(selectedAttendance.end_time)}
+                    </p>
                   </div>
-                  <div>
-                    <Label htmlFor="edit-amount">Valor Cobrado (R$)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-amount" className="text-sm font-medium">
+                      Valor Cobrado (R$) *
+                    </Label>
                     <Input
                       id="edit-amount"
                       type="number"
                       step="0.01"
+                      min="0"
                       value={editedAttendance.amount_charged ?? selectedAttendance.amount_charged}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, amount_charged: parseFloat(e.target.value)})}
-                      className="mt-1"
+                      onChange={(e) => setEditedAttendance({...editedAttendance, amount_charged: parseFloat(e.target.value) || 0})}
                     />
                   </div>
                 </CardContent>
@@ -479,51 +489,55 @@ export default function AttendanceValidationManager() {
               {/* Observações */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Objetivos e Observações</CardTitle>
+                  <CardTitle className="text-lg">Objetivos e Observações</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="edit-objectives">Objetivos da Sessão</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-objectives" className="text-sm font-medium">
+                      Objetivos da Sessão
+                    </Label>
                     <Textarea
                       id="edit-objectives"
                       value={editedAttendance.techniques_used ?? selectedAttendance.techniques_used ?? ''}
                       onChange={(e) => setEditedAttendance({...editedAttendance, techniques_used: e.target.value})}
-                      placeholder="Não informado"
+                      placeholder="Descreva os objetivos trabalhados na sessão..."
                       rows={3}
-                      className="mt-1"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="edit-patient-response">Resposta do Paciente</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-patient-response" className="text-sm font-medium">
+                      Resposta do Paciente
+                    </Label>
                     <Textarea
                       id="edit-patient-response"
                       value={editedAttendance.patient_response ?? selectedAttendance.patient_response ?? ''}
                       onChange={(e) => setEditedAttendance({...editedAttendance, patient_response: e.target.value})}
-                      placeholder="Não informado"
+                      placeholder="Como o paciente respondeu durante a sessão..."
                       rows={3}
-                      className="mt-1"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="edit-observations">Observações Clínicas</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-observations" className="text-sm font-medium">
+                      Observações Clínicas
+                    </Label>
                     <Textarea
                       id="edit-observations"
                       value={editedAttendance.observations ?? selectedAttendance.observations ?? ''}
                       onChange={(e) => setEditedAttendance({...editedAttendance, observations: e.target.value})}
-                      placeholder="Não informado"
+                      placeholder="Observações clínicas importantes..."
                       rows={3}
-                      className="mt-1"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="edit-next-plan">Plano para Próxima Sessão</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-next-plan" className="text-sm font-medium">
+                      Plano para Próxima Sessão
+                    </Label>
                     <Textarea
                       id="edit-next-plan"
                       value={editedAttendance.next_session_plan ?? selectedAttendance.next_session_plan ?? ''}
                       onChange={(e) => setEditedAttendance({...editedAttendance, next_session_plan: e.target.value})}
-                      placeholder="Não informado"
+                      placeholder="Planejamento para a próxima sessão..."
                       rows={3}
-                      className="mt-1"
                     />
                   </div>
                 </CardContent>
