@@ -1,17 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { EmployeeManager } from '@/components/EmployeeManager';
-import { LogOut, Users, Calendar, FileText, DollarSign, UserPlus, Shield, Package, Menu, User } from 'lucide-react';
+import { LogOut, Menu, User } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import {
@@ -22,27 +19,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-// Import page components
-import Clients from '@/pages/Clients';
-import Schedule from '@/pages/Schedule';
-import ScheduleControl from '@/pages/ScheduleControl';
-import Financial from '@/pages/Financial';
-import Contracts from '@/pages/Contracts';
-import UserManagement from '@/pages/UserManagement';
-import StockManager from '@/pages/StockManager';
-import Reports from '@/pages/Reports';
-import Dashboard from '@/pages/Dashboard';
-import MyPatients from '@/pages/MyPatients';
-import MedicalRecords from '@/pages/MedicalRecords';
-import AttendanceValidation from '@/pages/AttendanceValidation';
-import EmployeesNew from '@/pages/EmployeesNew';
-import DirectMessages from '@/pages/DirectMessages';
-import EmployeeControl from '@/pages/EmployeeControl';
-import FeedbackControl from '@/pages/FeedbackControl';
-import MyFiles from '@/pages/MyFiles';
-import Timesheet from '@/pages/Timesheet';
-import MeetingAlerts from '@/pages/MeetingAlerts';
 import { PendingAttendancesNotification } from '@/components/PendingAttendancesNotification';
 import { AppointmentNotifications } from '@/components/AppointmentNotifications';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -50,6 +26,28 @@ import { QuickHelpCenter } from '@/components/QuickHelpCenter';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
+import { PageSkeleton } from '@/components/ui/page-skeleton';
+
+// Lazy load page components
+const Clients = lazy(() => import('@/pages/Clients'));
+const Schedule = lazy(() => import('@/pages/Schedule'));
+const ScheduleControl = lazy(() => import('@/pages/ScheduleControl'));
+const Financial = lazy(() => import('@/pages/Financial'));
+const Contracts = lazy(() => import('@/pages/Contracts'));
+const UserManagement = lazy(() => import('@/pages/UserManagement'));
+const StockManager = lazy(() => import('@/pages/StockManager'));
+const Reports = lazy(() => import('@/pages/Reports'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const MyPatients = lazy(() => import('@/pages/MyPatients'));
+const MedicalRecords = lazy(() => import('@/pages/MedicalRecords'));
+const AttendanceValidation = lazy(() => import('@/pages/AttendanceValidation'));
+const EmployeesNew = lazy(() => import('@/pages/EmployeesNew'));
+const DirectMessages = lazy(() => import('@/pages/DirectMessages'));
+const EmployeeControl = lazy(() => import('@/pages/EmployeeControl'));
+const FeedbackControl = lazy(() => import('@/pages/FeedbackControl'));
+const MyFiles = lazy(() => import('@/pages/MyFiles'));
+const Timesheet = lazy(() => import('@/pages/Timesheet'));
+const MeetingAlerts = lazy(() => import('@/pages/MeetingAlerts'));
 
 interface Profile {
   id: string;
@@ -213,12 +211,13 @@ export const MainApp = () => {
 
             {/* Main Content */}
             <main className="flex-1 p-4 lg:p-6">
-              <Routes>
-                <Route path="/" element={
-                  <ProtectedRoute requiredPermission="view_dashboard">
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
+              <Suspense fallback={<PageSkeleton />}>
+                <Routes>
+                  <Route path="/" element={
+                    <ProtectedRoute requiredPermission="view_dashboard">
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
                 
                 <Route path="/clients" element={
                   <ProtectedRoute requiredPermission="view_clients">
@@ -323,9 +322,10 @@ export const MainApp = () => {
                     <MeetingAlerts />
                   </ProtectedRoute>
                 } />
-                
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
             </main>
           </div>
         </div>
