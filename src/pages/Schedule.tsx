@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +23,10 @@ import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocompl
 import { ProfessionalCommandAutocomplete } from '@/components/ProfessionalCommandAutocomplete';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
 import PatientArrivedNotification from '@/components/PatientArrivedNotification';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useClients } from '@/hooks/useClients';
+import { useSchedules, useCreateSchedule, useUpdateSchedule } from '@/hooks/useSchedules';
 
 interface Schedule {
   id: string;
@@ -42,11 +47,7 @@ interface Schedule {
 
 export default function Schedule() {
   const { user } = useAuth();
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -55,19 +56,28 @@ export default function Schedule() {
   const { toast } = useToast();
 
   // Filtros
-  const [filterRole, setFilterRole] = useState('all');
   const [filterEmployee, setFilterEmployee] = useState('all');
   const [filterUnit, setFilterUnit] = useState('all');
 
-  // Verificar se o usuário tem permissões administrativas
-  const [userProfile, setUserProfile] = useState<any>(null);
+  // React Query hooks
+  const { data: userProfile, isLoading: loadingProfile } = useUserProfile(user?.id);
+  const { data: employees = [], isLoading: loadingEmployees } = useEmployees(userProfile);
+  const { data: clients = [], isLoading: loadingClients } = useClients({ isActive: true });
+  const { data: schedules = [], isLoading: loadingSchedules, refetch: refetchSchedules } = useSchedules(
+    selectedDate, 
+    userProfile,
+    {
+      employeeId: filterEmployee !== 'all' ? filterEmployee : undefined,
+    }
+  );
+  const createSchedule = useCreateSchedule();
+  const updateSchedule = useUpdateSchedule();
+
   const userRole = userProfile?.employee_role;
   const isAdmin = userRole === 'director' || 
                   userRole === 'coordinator_madre' || 
                   userRole === 'coordinator_floresta' ||
                   userRole === 'receptionist';
-
-  console.log('User profile:', userProfile); // Debug log
 
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
@@ -103,26 +113,18 @@ export default function Schedule() {
   }, [userProfile]);
 
   useEffect(() => {
-    loadUserProfile();
-    loadEmployees();
-    loadClients();
-    loadSchedules();
-    
     // Verificar se há parâmetros na URL para pré-preencher o formulário
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = urlParams.get('client_id') || urlParams.get('client');
-    const clientName = urlParams.get('client_name');
     
     if (clientId) {
       setNewAppointment(prev => ({
         ...prev,
         client_id: clientId
       }));
-      
-      // Se tem ID do paciente, abrir o diálogo de agendamento
       setIsDialogOpen(true);
     }
-  }, [selectedDate, filterRole, filterEmployee, filterUnit]);
+  }, []);
 
   // Auto-selecionar o profissional para usuários não-administrativos
   useEffect(() => {
@@ -134,226 +136,8 @@ export default function Schedule() {
     }
   }, [userProfile, isAdmin]);
 
-  const loadUserProfile = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error) throw error;
-      setUserProfile(data);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    }
-  };
-
-  const loadEmployees = async () => {
-    try {
-      let query = supabase
-        .from('profiles')
-        .select('user_id, id, name, employee_role, department, unit')
-        .eq('is_active', true)
-        .not('employee_role', 'is', null)
-        .order('name');
-
-      // Aplicar filtros baseados no role do usuário para funcionários
-      if (userProfile) {
-        if (userProfile.employee_role === 'coordinator_madre') {
-          // Coordenador Madre pode ver todos os profissionais exceto os específicos do floresta
-          query = query.not('employee_role', 'eq', 'coordinator_floresta');
-        } else if (userProfile.employee_role === 'coordinator_floresta') {
-          // Coordenador Floresta pode ver todos os profissionais exceto os específicos da madre
-          query = query.not('employee_role', 'eq', 'coordinator_madre');
-        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
-          // Para outros profissionais, só mostrar eles mesmos
-          query = query.eq('user_id', user?.id);
-        }
-        // Diretores e recepcionistas veem todos os funcionários (sem filtro adicional)
-      }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      setEmployees(data || []);
-    } catch (error) {
-      console.error('Error loading employees:', error);
-    }
-  };
-
-  const loadClients = async () => {
-    try {
-      let query = supabase
-        .from('clients')
-        .select('id, name, unit')
-        .eq('is_active', true)
-        .order('name');
-
-      // Aplicar filtros baseados no role do usuário
-      if (userProfile) {
-        if (userProfile.employee_role === 'coordinator_madre') {
-          // Coordenador Madre vê apenas clientes da unidade madre ou sem unidade definida
-          query = query.or('unit.eq.madre,unit.is.null');
-        } else if (userProfile.employee_role === 'coordinator_floresta') {
-          // Coordenador Floresta vê apenas clientes da unidade floresta
-          query = query.eq('unit', 'floresta');
-        } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
-          // Para outros profissionais, mostrar apenas pacientes vinculados
-          const { data: assignments } = await supabase
-            .from('client_assignments')
-            .select('client_id')
-            .eq('employee_id', userProfile.id)
-            .eq('is_active', true);
-          
-          const clientIds = [...new Set(assignments?.map(a => a.client_id) || [])];
-          if (clientIds.length > 0) {
-            query = query.in('id', clientIds);
-          } else {
-            // Se não há pacientes vinculados, não mostrar nenhum
-            setClients([]);
-            return;
-          }
-        }
-        // Diretores e recepcionistas veem todos os clientes (sem filtro adicional)
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setClients(data || []);
-    } catch (error) {
-      console.error('Error loading clients:', error);
-    }
-  };
-
-  const loadSchedules = async () => {
-    console.log('🔄 RECARREGANDO AGENDAMENTOS...');
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('schedules')
-        .select(`
-          *,
-          patient_arrived,
-          arrived_at,
-          arrived_confirmed_by,
-          clients (name),
-          profiles!schedules_employee_id_fkey (name)
-        `)
-        .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
-        .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
-        .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
-        .order('start_time');
-
-      // Aplicar filtros baseados no role do usuário para agendamentos
-      if (userProfile) {
-        if (userProfile.employee_role === 'coordinator_madre') {
-          // Coordenador Madre vê agendamentos de clientes da unidade madre
-          const { data: clientsInUnit } = await supabase
-            .from('clients')
-            .select('id')
-            .or('unit.eq.madre,unit.is.null')
-            .eq('is_active', true);
-          
-          const clientIds = clientsInUnit?.map(c => c.id) || [];
-          if (clientIds.length > 0) {
-            query = query.in('client_id', clientIds);
-          }
-        } else if (userProfile.employee_role === 'coordinator_floresta') {
-          // Coordenador Floresta vê agendamentos de clientes da unidade floresta
-          const { data: clientsInUnit } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('unit', 'floresta')
-            .eq('is_active', true);
-          
-          const clientIds = clientsInUnit?.map(c => c.id) || [];
-          if (clientIds.length > 0) {
-            query = query.in('client_id', clientIds);
-          }
-        } else if (userProfile.employee_role === 'receptionist') {
-          // Recepcionista vê agendamentos apenas da sua unidade
-          const userUnit = userProfile.unit || 'madre';
-          const { data: clientsInUnit } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('unit', userUnit)
-            .eq('is_active', true);
-          
-          const clientIds = clientsInUnit?.map(c => c.id) || [];
-          if (clientIds.length > 0) {
-            query = query.in('client_id', clientIds);
-          }
-        } else if (userProfile.employee_role !== 'director') {
-          // Para outros profissionais, mostrar apenas seus próprios agendamentos
-          query = query.eq('employee_id', userProfile.id);
-        }
-        // Diretores veem todos os agendamentos (sem filtro adicional)
-      }
-
-            // Filtros adicionais para administradores
-            if (filterEmployee !== 'all') {
-              query = query.eq('employee_id', filterEmployee);
-            }
-            
-            if (filterUnit !== 'all') {
-              query = query.eq('unit', filterUnit);
-            }
-
-      const { data, error } = await query;
-      console.log('📋 Agendamentos carregados:', data?.length || 0);
-      if (error) {
-        console.error('❌ Schedule query error:', error);
-        // Fallback query sem o join de profiles se houver erro
-        const fallbackQuery = supabase
-          .from('schedules')
-          .select(`*, clients (name)`)
-          .gte('start_time', format(selectedDate, 'yyyy-MM-dd'))
-          .lt('start_time', format(new Date(selectedDate.getTime() + 24*60*60*1000), 'yyyy-MM-dd'))
-          .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
-          .order('start_time');
-
-        const { data: fallbackData, error: fallbackError } = await fallbackQuery;
-        if (fallbackError) throw fallbackError;
-        
-        // Buscar nomes dos profissionais manualmente
-        const schedulesWithProfiles = await Promise.all((fallbackData || []).map(async (schedule) => {
-          if (schedule.employee_id) {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('name')
-              .eq('user_id', schedule.employee_id)
-              .single();
-            
-            return {
-              ...schedule,
-              profiles: { name: profileData?.name || 'Nome não encontrado' }
-            };
-          }
-          return {
-            ...schedule,
-            profiles: { name: 'Não atribuído' }
-          };
-        }));
-        
-        setSchedules(schedulesWithProfiles);
-        return;
-      }
-      
-      setSchedules(data || []);
-      console.log('✅ Agendamentos atualizados no state');
-    } catch (error) {
-      console.error('Error loading schedules:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível carregar os agendamentos.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Loading state
+  const loading = loadingProfile || loadingEmployees || loadingClients || loadingSchedules;
 
   // Função para verificar sobreposição de horários
   const checkScheduleConflict = async (employeeId: string, startTime: string, endTime: string, excludeId?: string) => {
@@ -387,10 +171,8 @@ export default function Schedule() {
 
   const handleCreateAppointment = async () => {
     try {
-      // Convert datetime-local format to ISO string maintaining local time
       const convertToISOString = (dateTimeLocal: string) => {
         if (!dateTimeLocal) return '';
-        // Create date object from local datetime input and convert to ISO
         const date = new Date(dateTimeLocal);
         return date.toISOString();
       };
@@ -407,7 +189,6 @@ export default function Schedule() {
       };
 
       if (editingSchedule) {
-        // Para edição, verificar conflito excluindo o próprio agendamento
         const hasConflict = await checkScheduleConflict(
           appointmentData.employee_id,
           appointmentData.start_time,
@@ -424,19 +205,16 @@ export default function Schedule() {
           return;
         }
 
-        const { error } = await supabase
-          .from('schedules')
-          .update(appointmentData)
-          .eq('id', editingSchedule.id);
-        
-        if (error) throw error;
+        await updateSchedule.mutateAsync({
+          id: editingSchedule.id,
+          data: appointmentData
+        });
         
         toast({
           title: "Sucesso",
           description: "Agendamento atualizado com sucesso!",
         });
       } else {
-        // Para criação de múltiplas sessões
         const sessionCount = newAppointment.sessionCount || 1;
         const appointmentsToCreate = [];
         let conflictFound = false;
@@ -445,14 +223,12 @@ export default function Schedule() {
           const sessionDate = new Date(appointmentData.start_time);
           const sessionEndDate = new Date(appointmentData.end_time);
           
-          // Adicionar i semanas à data (recorrência semanal)
           sessionDate.setDate(sessionDate.getDate() + (i * 7));
           sessionEndDate.setDate(sessionEndDate.getDate() + (i * 7));
           
           const sessionStartTime = sessionDate.toISOString();
           const sessionEndTime = sessionEndDate.toISOString();
           
-          // Verificar conflito para cada sessão
           const hasConflict = await checkScheduleConflict(
             appointmentData.employee_id,
             sessionStartTime,
@@ -508,7 +284,7 @@ export default function Schedule() {
         unit: 'madre',
         sessionCount: 1
       });
-      loadSchedules();
+      refetchSchedules();
     } catch (error) {
       console.error('Error saving appointment:', error);
       toast({
@@ -558,7 +334,7 @@ export default function Schedule() {
         description: "Agendamento redirecionado com sucesso!",
       });
       
-      loadSchedules();
+      refetchSchedules();
     } catch (error) {
       console.error('Error redirecting appointment:', error);
       toast({
@@ -586,7 +362,7 @@ export default function Schedule() {
         description: "Agendamento cancelado!",
       });
       
-      loadSchedules();
+      refetchSchedules();
     } catch (error) {
       console.error('Error cancelling appointment:', error);
       toast({
@@ -611,13 +387,6 @@ export default function Schedule() {
 
   // Filtrar agendamentos
   const todaySchedules = schedules.filter(schedule => {
-    if (filterRole !== 'all') {
-      const employee = employees.find(emp => emp.user_id === schedule.employee_id);
-      if (employee && employee.employee_role !== filterRole) {
-        return false;
-      }
-    }
-
     if (filterEmployee !== 'all' && schedule.employee_id !== filterEmployee) {
       return false;
     }
@@ -715,27 +484,6 @@ export default function Schedule() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Filtro de Função - Apenas para Diretores */}
-                  {userRole === 'director' && (
-                    <div>
-                      <Label htmlFor="filterRole">Função</Label>
-                      <Select value={filterRole} onValueChange={setFilterRole}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todas as funções" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as funções</SelectItem>
-                          <SelectItem value="psychologist">Psicólogos</SelectItem>
-                          <SelectItem value="speech_therapist">Fonoaudiólogos</SelectItem>
-                          <SelectItem value="occupational_therapist">Terapeutas Ocupacionais</SelectItem>
-                          <SelectItem value="physiotherapist">Fisioterapeutas</SelectItem>
-                          <SelectItem value="nutritionist">Nutricionistas</SelectItem>
-                          <SelectItem value="neuropsychologist">Neuropsicólogos</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
                   {/* Filtro de Funcionário */}
                   <div>
                     <Label htmlFor="filterEmployee">Profissional</Label>
@@ -810,11 +558,31 @@ export default function Schedule() {
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-full mb-4">
-                      <Clock className="h-12 w-12 text-blue-500 animate-spin" />
-                    </div>
-                    <p className="text-muted-foreground font-medium">Carregando agendamentos...</p>
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i} className="border-0 shadow-lg">
+                        <CardContent className="p-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <Skeleton className="h-10 w-32" />
+                              <Skeleton className="h-6 w-20" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <Skeleton className="h-16 w-full" />
+                              <Skeleton className="h-16 w-full" />
+                            </div>
+                            <Skeleton className="h-12 w-full" />
+                            <div className="flex justify-between">
+                              <Skeleton className="h-8 w-24" />
+                              <div className="flex gap-2">
+                                <Skeleton className="h-9 w-20" />
+                                <Skeleton className="h-9 w-24" />
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 ) : todaySchedules.length === 0 ? (
                   <div className="text-center py-12">
@@ -884,9 +652,9 @@ export default function Schedule() {
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-xs font-medium text-muted-foreground">Profissional</span>
-                                <span className="font-bold text-foreground">
-                                  {schedule.profiles?.name || employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
-                                </span>
+                                 <span className="font-bold text-foreground">
+                                   {employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
+                                 </span>
                               </div>
                             </div>
                           </div>
@@ -935,7 +703,7 @@ export default function Schedule() {
                 employeeId={schedule.employee_id}
                 patientArrived={schedule.patient_arrived || false}
                 arrivedAt={schedule.arrived_at}
-                onPresenceUpdate={loadSchedules}
+                onPresenceUpdate={refetchSchedules}
               />
             )}
             
@@ -1214,7 +982,7 @@ export default function Schedule() {
           schedule={selectedScheduleForAction}
           isOpen={completeDialogOpen}
           onClose={() => setCompleteDialogOpen(false)}
-          onComplete={loadSchedules}
+          onComplete={refetchSchedules}
         />
 
         <CancelAppointmentDialog
