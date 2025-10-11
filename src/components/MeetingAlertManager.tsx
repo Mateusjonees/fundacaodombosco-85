@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Bell, Plus, Calendar, MapPin, Users, Clock, Trash2, Edit, Eye, CheckCircle, XCircle, Filter, UserPlus, UserMinus } from 'lucide-react';
+import { Bell, Plus, Calendar, MapPin, Users, Clock, Trash2, Edit, Eye, CheckCircle, XCircle, Filter, UserPlus, UserMinus, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface MeetingAlert {
@@ -23,6 +23,7 @@ interface MeetingAlert {
   meeting_date: string;
   meeting_location?: string;
   meeting_room?: string;
+  virtual_link?: string;
   client_id?: string;
   created_by: string;
   created_at: string;
@@ -70,6 +71,7 @@ export const MeetingAlertManager = () => {
     meeting_time: '',
     meeting_location: '',
     meeting_room: '',
+    virtual_link: '',
     client_id: 'none',
     participants: [] as string[],
     max_participants: null as number | null,
@@ -182,6 +184,7 @@ export const MeetingAlertManager = () => {
           meeting_date: meetingDateTime,
           meeting_location: newAlert.meeting_location,
           meeting_room: newAlert.meeting_room,
+          virtual_link: newAlert.virtual_link || null,
           client_id: newAlert.client_id === 'none' ? null : newAlert.client_id,
           created_by: user?.id,
           participants: newAlert.participants,
@@ -249,6 +252,7 @@ export const MeetingAlertManager = () => {
           meeting_date: meetingDateTime,
           meeting_location: newAlert.meeting_location,
           meeting_room: newAlert.meeting_room,
+          virtual_link: newAlert.virtual_link || null,
           client_id: newAlert.client_id === 'none' ? null : newAlert.client_id,
           participants: newAlert.participants,
           max_participants: newAlert.max_participants,
@@ -423,6 +427,7 @@ export const MeetingAlertManager = () => {
       meeting_time: date.toTimeString().slice(0, 5),
       meeting_location: alert.meeting_location || '',
       meeting_room: alert.meeting_room || '',
+      virtual_link: alert.virtual_link || '',
       client_id: alert.client_id || 'none',
       participants: alert.participants || [],
       max_participants: alert.max_participants || null,
@@ -444,6 +449,7 @@ export const MeetingAlertManager = () => {
       meeting_time: '',
       meeting_location: '',
       meeting_room: '',
+      virtual_link: '',
       client_id: 'none',
       participants: [],
       max_participants: null,
@@ -558,6 +564,19 @@ export const MeetingAlertManager = () => {
                       placeholder="Ex: Sala de Reuniões"
                     />
                   </div>
+                </div>
+                
+                <div>
+                  <Label>Link Virtual (opcional)</Label>
+                  <Input
+                    type="url"
+                    value={newAlert.virtual_link}
+                    onChange={(e) => setNewAlert({ ...newAlert, virtual_link: e.target.value })}
+                    placeholder="https://meet.google.com/..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Para reuniões online (Zoom, Google Meet, Teams, etc.)
+                  </p>
                 </div>
                 
                 <div>
@@ -787,6 +806,18 @@ export const MeetingAlertManager = () => {
                       <TableCell>{getStatusBadge(alert.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1 flex-wrap">
+                          {/* Link virtual se disponível */}
+                          {alert.virtual_link && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => window.open(alert.virtual_link, '_blank')}
+                              title="Abrir link da reunião virtual"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          )}
+                          
                           {/* Botões de inscrição para funcionários */}
                           {alert.is_open_enrollment && alert.status === 'scheduled' && (
                             <>
