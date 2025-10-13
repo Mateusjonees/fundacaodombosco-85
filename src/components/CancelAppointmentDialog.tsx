@@ -82,54 +82,54 @@ export function CancelAppointmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl text-destructive">
-            <XCircle className="h-6 w-6" />
+          <DialogTitle className="flex items-center gap-2 text-lg text-destructive">
+            <XCircle className="h-5 w-5" />
             Cancelar Agendamento
           </DialogTitle>
         </DialogHeader>
 
         {schedule && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Warning */}
-            <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+            <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-semibold text-destructive">Atenção</h4>
-                <p className="text-sm text-destructive/80">
+                <h4 className="font-semibold text-sm text-destructive">Atenção</h4>
+                <p className="text-xs text-destructive/80">
                   Esta ação cancelará permanentemente o agendamento. O paciente será notificado automaticamente via email sobre o cancelamento.
                 </p>
               </div>
             </div>
 
             {/* Appointment Details */}
-            <Card className="gradient-card shadow-professional">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
                   Detalhes do Agendamento
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Paciente</Label>
-                    <p className="font-medium">{schedule.clients?.name}</p>
+                    <Label className="text-xs font-medium text-muted-foreground">Paciente</Label>
+                    <p className="text-sm font-medium">{schedule.clients?.name}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Profissional</Label>
-                    <p className="font-medium">{schedule.profiles?.name}</p>
+                    <Label className="text-xs font-medium text-muted-foreground">Profissional</Label>
+                    <p className="text-sm font-medium">{schedule.profiles?.name}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Tipo de Atendimento</Label>
-                    <p className="font-medium">{schedule.title}</p>
+                    <Label className="text-xs font-medium text-muted-foreground">Tipo de Atendimento</Label>
+                    <p className="text-sm font-medium">{schedule.title}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Horário</Label>
-                    <p className="font-medium">
+                    <Label className="text-xs font-medium text-muted-foreground">Horário</Label>
+                    <p className="text-sm font-medium">
                       {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} às{' '}
                       {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
                     </p>
@@ -139,13 +139,13 @@ export function CancelAppointmentDialog({
             </Card>
 
             {/* Cancellation Form */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <Label htmlFor="category" className="text-base font-semibold text-destructive">
+                <Label htmlFor="category" className="text-sm font-semibold text-destructive">
                   Categoria do Cancelamento *
                 </Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="mt-1.5">
                     <SelectValue placeholder="Selecione a categoria do cancelamento" />
                   </SelectTrigger>
                   <SelectContent>
@@ -159,7 +159,7 @@ export function CancelAppointmentDialog({
               </div>
 
               <div>
-                <Label htmlFor="reason" className="text-base font-semibold text-destructive">
+                <Label htmlFor="reason" className="text-sm font-semibold text-destructive">
                   Motivo do Cancelamento *
                 </Label>
                 <Textarea
@@ -167,45 +167,35 @@ export function CancelAppointmentDialog({
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="Descreva detalhadamente o motivo do cancelamento (mínimo 10 caracteres)"
-                  rows={4}
-                  className="resize-none mt-2"
+                  rows={3}
+                  className="resize-none mt-1.5"
                   required
                 />
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {reason.length}/10 caracteres mínimos
                 </p>
               </div>
-
-              {!isFormValid && (reason.length > 0 || category) && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <p className="text-sm text-destructive">
-                    {!category && "Selecione uma categoria para o cancelamento."}
-                    {!reason.trim() && category && "O motivo é obrigatório."}
-                    {reason.trim().length < 10 && reason.length > 0 && "O motivo deve ter pelo menos 10 caracteres."}
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={handleClose} disabled={loading}>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={handleClose} disabled={loading} size="sm">
                 Voltar
               </Button>
               <Button 
                 onClick={handleCancel} 
                 disabled={loading || !isFormValid}
                 variant="destructive"
-                className="shadow-professional"
+                size="sm"
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2" />
                     Cancelando...
                   </>
                 ) : (
                   <>
-                    <XCircle className="h-4 w-4 mr-2" />
+                    <XCircle className="h-3 w-3 mr-2" />
                     Confirmar Cancelamento
                   </>
                 )}
