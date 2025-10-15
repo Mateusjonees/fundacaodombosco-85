@@ -504,14 +504,13 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
                 
                 <h2 className="text-lg font-bold mb-4">1. DAS PARTES</h2>
                 <p className="text-justify mb-4">
-                  A pessoa jurídica FUNDAÇÃO DOM BOSCO, registrada no CNPJ sob o n° 17.278.904/0001-86, com endereço 
+                  A pessoa jurídica FUNDAÇÃO DOM BOSCO, registrada no CNPJ sob o n∘ 17.278.904/0001-86, com endereço 
                   comercial à Rua Urucuia, 18- Bairro Floresta, Belo Horizonte - MG, denominada neste como 
-                  CONTRATADA, e a pessoa física <span className="underline">{contractData.contratante || '____________________________________'}</span>, registrada no CPF 
-                  sob o n° <span className="underline">{contractData.contratanteCpf || '____________________________________'}</span>, denominada neste como CONTRATANTE, 
-                  responsável legal ou financeiro por <span className="underline">{contractData.beneficiario || '____________________________________'}</span>, inscrito no CPF sob o 
-                  n°<span className="underline">{contractData.beneficiarioCpf || '____________________________________'}</span>, denominado neste como beneficiário do serviço, 
-                  residente à <span className="underline">{contractData.endereco || '______________________________________________________________'}</span> 
-                  firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as 
+                  CONTRATADA , e a pessoa física {contractData.contratante}, registrada no CPF 
+                  sob o n∘ {contractData.contratanteCpf}, denominada neste como CONTRATANTE, 
+                  responsável legal ou financeiro por _______, inscrito no CPF sob o 
+                  n∘ _____________, denominado neste como beneficiário do serviço, 
+                  residente _______________ - CEP: ____________ - _________ firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as 
                   cláusulas abaixo.
                 </p>
 
