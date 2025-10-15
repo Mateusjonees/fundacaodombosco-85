@@ -537,7 +537,9 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
 
                 <h3 className="font-bold mb-2">2.1.3.</h3>
                 <p className="text-justify mb-4">
-                  O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em acordo com o CONTRATANTE durante a Sessão de Devolutiva.
+                  O Laudo Neuropsicológico será entregue em data a ser definida pelo profissional em acordo com o 
+                  CONTRATANTE durante a Sessão de Devolutiva com duração de 1 (uma) hora, podendo ser no formato 
+                  online ou presencial, a ser definido pelo neuropsicólogo.
                 </p>
 
                 <h3 className="font-bold mb-2">2.1.4.</h3>
@@ -578,7 +580,8 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
                 <h3 className="font-bold mb-2">2.3.3.</h3>
                 <p className="text-justify mb-4">
                   Caso o paciente a ser avaliado seja estudante e/ou esteja em acompanhamento terapêutico, será 
-                  realizada entrevista com a equipe escolar.
+                  realizada entrevista com a equipe escolar e multidisciplinar como parte integrante da avaliação, 
+                  conforme for possível e necessário, através de questionários e/ou vídeo conferência.
                 </p>
 
                 <h3 className="font-bold mb-2">2.3.4.</h3>
