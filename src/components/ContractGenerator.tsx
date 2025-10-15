@@ -83,13 +83,30 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 1600.00;
   };
 
+  const getContractDate = (): string => {
+    // Converte a data do contrato (dia, mês por extenso, ano) para formato ISO (YYYY-MM-DD)
+    const monthMap: { [key: string]: string } = {
+      'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04',
+      'maio': '05', 'junho': '06', 'julho': '07', 'agosto': '08',
+      'setembro': '09', 'outubro': '10', 'novembro': '11', 'dezembro': '12'
+    };
+    
+    const day = contractData.data.padStart(2, '0');
+    const month = monthMap[contractData.mes.toLowerCase()] || '01';
+    const year = contractData.ano;
+    
+    return `${year}-${month}-${day}`;
+  };
+
   const createFinancialRecord = async () => {
     const contractValueNumber = parseContractValue(contractData.valorTotal);
+    const contractDate = getContractDate();
     
     console.log('📊 Criando registro financeiro do contrato:', {
       amount: contractValueNumber,
       beneficiario: contractData.beneficiario,
-      clientId: client.id
+      clientId: client.id,
+      date: contractDate
     });
     
     const { error } = await supabase
@@ -99,7 +116,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
         category: 'evaluation',
         description: `Avaliação Neuropsicológica - ${contractData.beneficiario}`,
         amount: contractValueNumber,
-        date: new Date().toISOString().split('T')[0],
+        date: contractDate,
         payment_method: 'contract',
         client_id: client.id,
         created_by: user?.id,
@@ -180,6 +197,8 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
 
       const userName = currentUser?.name || 'Usuário não identificado';
       const contractValueNumber = parseContractValue(contractData.valorTotal);
+      const contractDate = getContractDate();
+      const contractDateTime = `${contractDate}T10:00:00Z`; // Data do contrato às 10h
       
       // Criar registro no attendance_reports
       const { data: attendanceReport, error: attendanceError } = await supabase
@@ -190,8 +209,8 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           patient_name: contractData.beneficiario || client.name,
           professional_name: userName,
           attendance_type: 'Avaliação Neuropsicológica',
-          start_time: new Date().toISOString(),
-          end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hora depois
+          start_time: contractDateTime,
+          end_time: `${contractDate}T11:00:00Z`, // 1 hora depois
           session_duration: 60,
           amount_charged: contractValueNumber,
           professional_amount: 0, // Pode ser definido depois
@@ -204,7 +223,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           completed_by_name: userName,
           validated_by: user?.id,
           validated_by_name: userName,
-          validated_at: new Date().toISOString()
+          validated_at: contractDateTime
         }])
         .select()
         .single();
@@ -252,11 +271,13 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           attendance_report_id: attendanceReport?.id,
           created_by: user?.id,
           created_by_name: userName,
+          payment_date: contractDateTime,
           metadata: {
             contract_data: JSON.parse(JSON.stringify(contractData)),
             printed_by: userName,
-            printed_at: new Date().toISOString(),
-            contract_type: 'Avaliação Neuropsicológica'
+            printed_at: contractDateTime,
+            contract_type: 'Avaliação Neuropsicológica',
+            contract_date: contractDate
           } as any
         }]);
 
