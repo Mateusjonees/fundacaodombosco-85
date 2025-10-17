@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { supabase } from '@/integrations/supabase/client';
+import contractLogo from '@/assets/contract-page5-logo.png';
 
 interface Client {
   id: string;
@@ -150,15 +151,21 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
       let heightLeft = imgHeight;
 
       let position = 0;
+      let pageNumber = 0;
 
+      // Adicionar logo na primeira página
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(contractLogo, 'PNG', 10, 10, 30, 15); // Logo no topo esquerdo
       heightLeft -= pageHeight;
+      pageNumber++;
 
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(contractLogo, 'PNG', 10, 10, 30, 15); // Logo em todas as páginas
         heightLeft -= pageHeight;
+        pageNumber++;
       }
       
       pdf.save(`Contrato_${contractData.beneficiario || 'Neuropsicologia'}.pdf`);
