@@ -12,7 +12,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer } from 'lucide-react';
+import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer, X, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Client {
@@ -26,6 +26,12 @@ interface Client {
   phone?: string;
   birth_date?: string;
   unit?: string;
+}
+
+interface PaymentMethod {
+  method: string;
+  amount: number;
+  notes?: string;
 }
 
 interface ContractData {
@@ -45,6 +51,8 @@ interface ContractData {
   downPaymentMethod: string;
   isManualCombination: boolean;
   paymentNotes: string;
+  paymentCombination: PaymentMethod[];
+  useCombinedPayment: boolean;
 }
 
 export default function Contracts() {
@@ -74,8 +82,46 @@ export default function Contracts() {
     downPaymentAmount: '',
     downPaymentMethod: 'Dinheiro',
     isManualCombination: false,
-    paymentNotes: ''
+    paymentNotes: '',
+    paymentCombination: [],
+    useCombinedPayment: false
   });
+
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
+    { method: 'cash', amount: 0, notes: '' }
+  ]);
+
+  const addPaymentMethod = () => {
+    setPaymentMethods([...paymentMethods, { method: 'cash', amount: 0, notes: '' }]);
+  };
+
+  const removePaymentMethod = (index: number) => {
+    setPaymentMethods(paymentMethods.filter((_, i) => i !== index));
+  };
+
+  const updatePaymentMethod = (index: number, field: keyof PaymentMethod, value: any) => {
+    const updated = [...paymentMethods];
+    updated[index] = { ...updated[index], [field]: value };
+    setPaymentMethods(updated);
+  };
+
+  const getTotalFromCombinedPayments = () => {
+    return paymentMethods.reduce((sum, pm) => sum + (parseFloat(String(pm.amount)) || 0), 0);
+  };
+
+  const translatePaymentMethodCode = (code: string): string => {
+    const translations: Record<string, string> = {
+      'cash': 'Dinheiro',
+      'credit_card': 'Cartão de Crédito',
+      'debit_card': 'Cartão de Débito',
+      'pix': 'PIX',
+      'bank_transfer': 'Transferência',
+      'bank_slip': 'Boleto',
+      'credit': 'Crédito (Fiado)',
+      'check': 'Cheque'
+    };
+    return translations[code] || code;
+  };
 
   useEffect(() => {
     if (roleLoading || customPermissions.loading) {
@@ -167,6 +213,21 @@ export default function Contracts() {
       case 'Transferência':
         return `(X) R$ ${contractData.value} via Transferência Bancária.`;
       
+      case 'Combinado':
+        if (contractData.useCombinedPayment && contractData.paymentCombination.length > 0) {
+          let detalhes = `(X) Pagamento Combinado:\n`;
+          contractData.paymentCombination.forEach((pm, index) => {
+            detalhes += `    ${index + 1}. R$ ${pm.amount.toFixed(2).replace('.', ',')} via ${translatePaymentMethodCode(pm.method)}`;
+            if (pm.notes) {
+              detalhes += ` (${pm.notes})`;
+            }
+            detalhes += '\n';
+          });
+          detalhes += `    TOTAL: R$ ${contractData.value}`;
+          return detalhes;
+        }
+        return `(X) Pagamento conforme acordado`;
+
       case 'Manual':
         let detalhes = '';
         if (contractData.downPaymentAmount) {
@@ -292,19 +353,28 @@ Contratante
       clientId: contractData.clientId
     });
     
+    const recordData: any = {
+      type: 'income',
+      category: 'evaluation',
+      description: `Avaliação Neuropsicológica - ${contractData.clientName}`,
+      amount: contractValueNumber,
+      date: contractData.contractDate,
+      client_id: contractData.clientId,
+      created_by: user?.id,
+      notes: `Contrato gerado - Pagamento registrado`
+    };
+
+    // Se for pagamento combinado
+    if (contractData.useCombinedPayment && contractData.paymentCombination.length > 0) {
+      recordData.payment_method = 'combined';
+      recordData.payment_combination = contractData.paymentCombination;
+    } else {
+      recordData.payment_method = 'contract';
+    }
+
     const { error } = await supabase
       .from('financial_records')
-      .insert([{
-        type: 'income',
-        category: 'evaluation',
-        description: `Avaliação Neuropsicológica - ${contractData.clientName}`,
-        amount: contractValueNumber,
-        date: contractData.contractDate,
-        payment_method: 'contract',
-        client_id: contractData.clientId,
-        created_by: user?.id,
-        notes: `Contrato gerado - Pagamento registrado`
-      }]);
+      .insert([recordData]);
 
     if (error) {
       console.error('❌ Erro ao criar registro financeiro:', error);
@@ -330,6 +400,28 @@ Contratante
 
       const userName = currentUser?.name || 'Usuário não identificado';
       const contractValueNumber = parseContractValue(contractData.value);
+      
+      // Validar pagamento combinado
+      if (contractData.paymentMethod === 'Combinado' && contractData.useCombinedPayment) {
+        const combinedTotal = getTotalFromCombinedPayments();
+        const contractValue = parseContractValue(contractData.value);
+        
+        if (Math.abs(combinedTotal - contractValue) > 0.01) {
+          toast({
+            variant: "destructive",
+            title: "Erro de Validação",
+            description: `O total dos métodos de pagamento (R$ ${combinedTotal.toFixed(2)}) não corresponde ao valor do contrato (R$ ${contractValue.toFixed(2)}).`,
+          });
+          setIsGenerating(false);
+          return;
+        }
+        
+        // Atualizar contractData com a combinação
+        setContractData(prev => ({
+          ...prev,
+          paymentCombination: paymentMethods.filter(pm => pm.amount > 0)
+        }));
+      }
       
       // Criar registro no attendance_reports
       const { data: attendanceReport, error: attendanceError } = await supabase
@@ -477,7 +569,9 @@ Contratante
       toast({
         title: "Contrato processado com sucesso!",
         description: `Contrato impresso por ${userName}. ${
-          contractData.paymentMethod === 'Manual' 
+          contractData.paymentMethod === 'Combinado' && contractData.useCombinedPayment
+            ? `Pagamento combinado (${contractData.paymentCombination.length} formas) registrado.`
+            : contractData.paymentMethod === 'Manual' 
             ? `Entrada de R$ ${contractData.downPaymentAmount || '0,00'} registrada.` 
             : contractData.paymentMethod === 'Cartão'
             ? `Pagamento em ${contractData.creditCardInstallments}x registrado.`
@@ -518,8 +612,11 @@ Contratante
       downPaymentAmount: '',
       downPaymentMethod: 'Dinheiro',
       isManualCombination: false,
-      paymentNotes: ''
+      paymentNotes: '',
+      paymentCombination: [],
+      useCombinedPayment: false
     });
+    setPaymentMethods([{ method: 'cash', amount: 0, notes: '' }]);
   };
 
   const filteredClients = clients.filter(client => 
@@ -722,7 +819,9 @@ Contratante
                           <SelectItem value="Cartão">Cartão de Crédito</SelectItem>
                           <SelectItem value="Boleto">Boleto Bancário</SelectItem>
                           <SelectItem value="Transferência">Transferência Bancária</SelectItem>
-                          <SelectItem value="Manual">Pagamento Manual/Combinado</SelectItem>
+                          <SelectItem value="Crédito">Crédito (Fiado)</SelectItem>
+                          <SelectItem value="Combinado">Pagamento Combinado</SelectItem>
+                          <SelectItem value="Manual">Pagamento Manual</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -760,7 +859,139 @@ Contratante
                     </div>
                   )}
 
-                  {/* Modo Manual/Combinado */}
+                  {/* Pagamento Combinado */}
+                  {contractData.paymentMethod === 'Combinado' && (
+                    <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold">Configuração de Pagamento Combinado</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Configure múltiplas formas de pagamento para o mesmo contrato
+                        </p>
+                      </div>
+
+                      <div className="flex items-center space-x-2 mb-4">
+                        <input
+                          type="checkbox"
+                          id="useCombined"
+                          checked={contractData.useCombinedPayment}
+                          onChange={(e) => {
+                            setContractData({ ...contractData, useCombinedPayment: e.target.checked });
+                            if (!e.target.checked) {
+                              setPaymentMethods([{ method: 'cash', amount: 0, notes: '' }]);
+                            }
+                          }}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor="useCombined">Usar múltiplas formas de pagamento</Label>
+                      </div>
+
+                      {contractData.useCombinedPayment && (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <Label className="text-base font-semibold">Formas de Pagamento</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={addPaymentMethod}
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Adicionar
+                            </Button>
+                          </div>
+
+                          {paymentMethods.map((pm, index) => (
+                            <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                              {/* Forma de Pagamento */}
+                              <div className="col-span-5 space-y-2">
+                                <Label>Método {index + 1}</Label>
+                                <Select 
+                                  value={pm.method} 
+                                  onValueChange={(value) => updatePaymentMethod(index, 'method', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="cash">Dinheiro</SelectItem>
+                                    <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                                    <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                                    <SelectItem value="pix">PIX</SelectItem>
+                                    <SelectItem value="bank_transfer">Transferência</SelectItem>
+                                    <SelectItem value="bank_slip">Boleto</SelectItem>
+                                    <SelectItem value="check">Cheque</SelectItem>
+                                    <SelectItem value="credit">Crédito (Fiado)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Valor */}
+                              <div className="col-span-3 space-y-2">
+                                <Label>Valor (R$)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={pm.amount}
+                                  onChange={(e) => updatePaymentMethod(index, 'amount', parseFloat(e.target.value) || 0)}
+                                  placeholder="0,00"
+                                />
+                              </div>
+
+                              {/* Observação */}
+                              <div className="col-span-3 space-y-2">
+                                <Label>Obs.</Label>
+                                <Input
+                                  type="text"
+                                  value={pm.notes || ''}
+                                  onChange={(e) => updatePaymentMethod(index, 'notes', e.target.value)}
+                                  placeholder="Opcional"
+                                />
+                              </div>
+
+                              {/* Botão Remover */}
+                              <div className="col-span-1">
+                                {paymentMethods.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removePaymentMethod(index)}
+                                    className="text-destructive"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Mostrar total calculado */}
+                          <div className="flex justify-between items-center pt-2 border-t">
+                            <span className="text-sm text-muted-foreground">Total Combinado:</span>
+                            <span className="text-lg font-bold">
+                              R$ {getTotalFromCombinedPayments().toFixed(2).replace('.', ',')}
+                            </span>
+                          </div>
+
+                          {/* Validação: checar se o total bate */}
+                          {Math.abs(getTotalFromCombinedPayments() - parseContractValue(contractData.value)) > 0.01 && (
+                            <div className="flex items-center gap-2 text-sm text-destructive">
+                              <AlertTriangle className="h-4 w-4" />
+                              Valor total não corresponde à soma dos métodos de pagamento
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {!contractData.useCombinedPayment && (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          Marque a opção acima para configurar múltiplas formas de pagamento
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Modo Manual */}
                   {contractData.paymentMethod === 'Manual' && (
                     <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                       <div className="space-y-2">
