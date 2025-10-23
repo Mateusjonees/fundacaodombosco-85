@@ -12,6 +12,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { Check, X, Eye, Clock, User, Calendar, Package, Filter, DollarSign } from 'lucide-react';
 
 interface PendingAttendance {
@@ -46,6 +47,7 @@ interface Employee {
 export default function AttendanceValidationManager() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logAction } = useAuditLog();
   const [pendingAttendances, setPendingAttendances] = useState<PendingAttendance[]>([]);
   const [allAttendances, setAllAttendances] = useState<PendingAttendance[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -59,6 +61,7 @@ export default function AttendanceValidationManager() {
   const [professionalAmount, setProfessionalAmount] = useState<string>('');
   const [foundationAmount, setFoundationAmount] = useState<string>('');
   const [totalAmount, setTotalAmount] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<string>('dinheiro');
   
   // Estados para edição dos campos do atendimento
   const [editedAttendance, setEditedAttendance] = useState<Partial<PendingAttendance>>({});
@@ -180,6 +183,23 @@ export default function AttendanceValidationManager() {
 
       if (error) throw error;
 
+      // Registrar auditoria da validação
+      await logAction({
+        entityType: 'attendance_report',
+        entityId: selectedAttendance.id,
+        action: validationAction === 'validate' ? 'validate_attendance' : 'reject_attendance',
+        metadata: {
+          patient_name: selectedAttendance.patient_name,
+          professional_name: selectedAttendance.professional_name,
+          attendance_type: selectedAttendance.attendance_type,
+          payment_method: paymentMethod,
+          total_amount: validationAction === 'validate' && totalAmount ? parseFloat(totalAmount) : selectedAttendance?.amount_charged || 0,
+          professional_amount: validationAction === 'validate' && professionalAmount ? parseFloat(professionalAmount) : 0,
+          foundation_amount: validationAction === 'validate' && foundationAmount ? parseFloat(foundationAmount) : 0,
+          rejection_reason: validationAction === 'reject' ? rejectionReason : null,
+        }
+      });
+
       toast({
         title: validationAction === 'validate' ? "Atendimento Validado!" : "Atendimento Rejeitado",
         description: validationAction === 'validate' 
@@ -197,6 +217,7 @@ export default function AttendanceValidationManager() {
       setProfessionalAmount('');
       setFoundationAmount('');
       setTotalAmount('');
+      setPaymentMethod('dinheiro');
       setEditedAttendance({});
       
     } catch (error) {
@@ -638,6 +659,7 @@ export default function AttendanceValidationManager() {
         setProfessionalAmount('');
         setFoundationAmount('');
         setTotalAmount('');
+        setPaymentMethod('dinheiro');
         setEditedAttendance({});
       }}>
         <DialogContent className="max-w-md">
@@ -672,6 +694,21 @@ export default function AttendanceValidationManager() {
                        onChange={(e) => setTotalAmount(e.target.value)}
                        placeholder="0.00"
                      />
+                   </div>
+                   <div>
+                     <Label htmlFor="payment-method">Método de Pagamento</Label>
+                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                       <SelectTrigger id="payment-method">
+                         <SelectValue placeholder="Selecione o método" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                         <SelectItem value="pix">PIX</SelectItem>
+                         <SelectItem value="cartao">Cartão</SelectItem>
+                         <SelectItem value="prazo">Prazo</SelectItem>
+                         <SelectItem value="dividido">Dividido</SelectItem>
+                       </SelectContent>
+                     </Select>
                    </div>
                    <div>
                      <Label htmlFor="professional-amount" className="flex items-center gap-2">
@@ -733,6 +770,7 @@ export default function AttendanceValidationManager() {
                 setProfessionalAmount('');
                 setFoundationAmount('');
                 setTotalAmount('');
+                setPaymentMethod('dinheiro');
                 setEditedAttendance({});
               }}
               disabled={processing}
