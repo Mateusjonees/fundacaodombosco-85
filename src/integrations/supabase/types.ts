@@ -1311,6 +1311,7 @@ export type Database = {
           invoice_number: string | null
           is_recurring: boolean | null
           notes: string | null
+          payment_combination: Json | null
           payment_method: string | null
           recurring_frequency: string | null
           type: string
@@ -1329,6 +1330,7 @@ export type Database = {
           invoice_number?: string | null
           is_recurring?: boolean | null
           notes?: string | null
+          payment_combination?: Json | null
           payment_method?: string | null
           recurring_frequency?: string | null
           type: string
@@ -1347,6 +1349,7 @@ export type Database = {
           invoice_number?: string | null
           is_recurring?: boolean | null
           notes?: string | null
+          payment_combination?: Json | null
           payment_method?: string | null
           recurring_frequency?: string | null
           type?: string
