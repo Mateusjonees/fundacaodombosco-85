@@ -414,6 +414,27 @@ export default function Financial() {
     return translations[method] || method;
   };
 
+  const translateCategory = (category: string): string => {
+    const translations: Record<string, string> = {
+      // Receitas
+      'consultation': 'Consulta',
+      'therapy': 'Terapia',
+      'evaluation': 'Avaliação',
+      'foundation_revenue': 'Receita da Fundação',
+      'other_income': 'Outras Receitas',
+      
+      // Despesas
+      'supplies': 'Materiais',
+      'equipment': 'Equipamentos',
+      'maintenance': 'Manutenção',
+      'salary': 'Salário',
+      'utilities': 'Utilidades',
+      'professional_payment': 'Pagamento Profissional',
+      'other_expense': 'Outras Despesas'
+    };
+    return translations[category] || category;
+  };
+
   const exportToCSV = () => {
     const headers = ['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Forma de Pagamento'];
     const csvContent = [
@@ -421,7 +442,7 @@ export default function Financial() {
       ...filteredRecords.map(record => [
         record.date,
         record.type === 'income' ? 'Receita' : 'Despesa',
-        record.category,
+        translateCategory(record.category),
         `"${record.description || ''}"`,
         record.amount.toFixed(2),
         translatePaymentMethod(record.payment_method)
@@ -818,7 +839,7 @@ export default function Financial() {
                             {record.type === 'income' ? 'Receita' : 'Despesa'}
                           </Badge>
                         </TableCell>
-                        <TableCell>{record.category}</TableCell>
+                        <TableCell>{translateCategory(record.category)}</TableCell>
                         <TableCell className="max-w-xs truncate">
                           {record.description || '-'}
                         </TableCell>
@@ -893,7 +914,7 @@ export default function Financial() {
                       <TableCell>
                         {new Date(record.date).toLocaleDateString('pt-BR')}
                       </TableCell>
-                      <TableCell>{record.category}</TableCell>
+                      <TableCell>{translateCategory(record.category)}</TableCell>
                       <TableCell>{record.clients?.name || '-'}</TableCell>
                       <TableCell>{record.description || '-'}</TableCell>
                       <TableCell className="text-green-600 font-medium">
@@ -928,7 +949,7 @@ export default function Financial() {
                       <TableCell>
                         {new Date(record.date).toLocaleDateString('pt-BR')}
                       </TableCell>
-                      <TableCell>{record.category}</TableCell>
+                      <TableCell>{translateCategory(record.category)}</TableCell>
                       <TableCell>{record.description || '-'}</TableCell>
                       <TableCell className="text-red-600 font-medium">
                         - R$ {record.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

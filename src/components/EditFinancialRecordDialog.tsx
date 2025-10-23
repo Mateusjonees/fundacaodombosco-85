@@ -143,17 +143,18 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
                     <SelectItem value="consultation">Consulta</SelectItem>
                     <SelectItem value="therapy">Terapia</SelectItem>
                     <SelectItem value="evaluation">Avaliação</SelectItem>
-                    <SelectItem value="foundation_revenue">Receita Fundação</SelectItem>
-                    <SelectItem value="other_income">Outros</SelectItem>
+                    <SelectItem value="foundation_revenue">Receita da Fundação</SelectItem>
+                    <SelectItem value="other_income">Outras Receitas</SelectItem>
                   </>
                 ) : (
                   <>
-                    <SelectItem value="supplies">Material Médico</SelectItem>
-                    <SelectItem value="equipment">Equipamento</SelectItem>
+                    <SelectItem value="supplies">Materiais</SelectItem>
+                    <SelectItem value="equipment">Equipamentos</SelectItem>
                     <SelectItem value="maintenance">Manutenção</SelectItem>
                     <SelectItem value="professional_payment">Pagamento Profissional</SelectItem>
                     <SelectItem value="utilities">Utilidades</SelectItem>
-                    <SelectItem value="other_expense">Outros</SelectItem>
+                    <SelectItem value="salary">Salário</SelectItem>
+                    <SelectItem value="other_expense">Outras Despesas</SelectItem>
                   </>
                 )}
               </SelectContent>
