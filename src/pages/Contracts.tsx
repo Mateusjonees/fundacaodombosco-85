@@ -75,8 +75,8 @@ export default function Contracts() {
     responsibleCpf: '',
     address: '',
     paymentMethod: 'PIX',
-    value: '1.600,00',
-    valueInWords: 'mil e seiscentos reais',
+    value: '',
+    valueInWords: '',
     contractDate: new Date().toISOString().split('T')[0],
     creditCardInstallments: 1,
     downPaymentAmount: '',
@@ -387,6 +387,27 @@ Contratante
   const handlePrintContract = async () => {
     setIsGenerating(true);
     try {
+      // ✅ VALIDAÇÕES OBRIGATÓRIAS
+      if (!contractData.value || !contractData.valueInWords) {
+        toast({
+          variant: "destructive",
+          title: "Campos obrigatórios",
+          description: "Por favor, preencha o valor do contrato e o valor por extenso.",
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      if (!contractData.clientId) {
+        toast({
+          variant: "destructive",
+          title: "Cliente não selecionado",
+          description: "Por favor, selecione um cliente antes de gerar o contrato.",
+        });
+        setIsGenerating(false);
+        return;
+      }
+
       // Buscar dados do usuário atual para registrar quem imprimiu
       const { data: currentUser, error: userError } = await supabase
         .from('profiles')
@@ -401,7 +422,7 @@ Contratante
       const userName = currentUser?.name || 'Usuário não identificado';
       const contractValueNumber = parseContractValue(contractData.value);
       
-      // Validar pagamento combinado
+      // ✅ VALIDAÇÃO PAGAMENTO COMBINADO
       if (contractData.paymentMethod === 'Combinado' && contractData.useCombinedPayment) {
         const combinedTotal = getTotalFromCombinedPayments();
         const contractValue = parseContractValue(contractData.value);
@@ -605,8 +626,8 @@ Contratante
       responsibleCpf: '',
       address: '',
       paymentMethod: 'PIX',
-      value: '1.600,00',
-      valueInWords: 'mil e seiscentos reais',
+      value: '',
+      valueInWords: '',
       contractDate: new Date().toISOString().split('T')[0],
       creditCardInstallments: 1,
       downPaymentAmount: '',
@@ -645,7 +666,7 @@ Contratante
         <div>
           <h1 className="text-3xl font-bold">Geração de Contratos - Unidade Floresta</h1>
           <p className="text-muted-foreground">
-            Crie contratos de avaliação neuropsicológica (R$ 1.600,00 cada)
+            Crie contratos de avaliação neuropsicológica com valores personalizados
           </p>
         </div>
         <div className="flex gap-2">
@@ -794,47 +815,76 @@ Contratante
                       placeholder="Endereço completo do beneficiário"
                     />
                   </div>
+                </CardContent>
+              </Card>
 
+              {/* Dados Financeiros */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">3. Dados Financeiros</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="value">Valor do Serviço (R$)</Label>
+                      <Label htmlFor="value">Valor do Contrato (R$) *</Label>
                       <Input
                         id="value"
                         value={contractData.value}
                         onChange={(e) => setContractData(prev => ({ ...prev, value: e.target.value }))}
                         placeholder="1.600,00"
+                        required
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Use formato: 1.600,00 ou 800,00
+                      </p>
                     </div>
+                    
                     <div className="space-y-2">
-                      <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
-                      <Select
-                        value={contractData.paymentMethod}
-                        onValueChange={(value) => setContractData(prev => ({ ...prev, paymentMethod: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="PIX">PIX</SelectItem>
-                          <SelectItem value="Cartão">Cartão de Crédito</SelectItem>
-                          <SelectItem value="Boleto">Boleto Bancário</SelectItem>
-                          <SelectItem value="Transferência">Transferência Bancária</SelectItem>
-                          <SelectItem value="Crédito">Crédito (Fiado)</SelectItem>
-                          <SelectItem value="Combinado">Pagamento Combinado</SelectItem>
-                          <SelectItem value="Manual">Pagamento Manual</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="valueInWords">Valor por Extenso *</Label>
+                      <Input
+                        id="valueInWords"
+                        value={contractData.valueInWords}
+                        onChange={(e) => setContractData(prev => ({ ...prev, valueInWords: e.target.value }))}
+                        placeholder="mil e seiscentos reais"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Ex: oitocentos reais
+                      </p>
                     </div>
                   </div>
+                  
+                  {/* Preview do valor */}
+                  {contractData.value && contractData.valueInWords && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
+                      <div className="text-sm text-blue-700 dark:text-blue-300">
+                        <div className="font-semibold">Valor Total do Contrato:</div>
+                        <div className="text-lg font-bold mt-1">
+                          R$ {contractData.value} ({contractData.valueInWords})
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="valueInWords">Valor por Extenso</Label>
-                    <Input
-                      id="valueInWords"
-                      value={contractData.valueInWords}
-                      onChange={(e) => setContractData(prev => ({ ...prev, valueInWords: e.target.value }))}
-                      placeholder="mil e seiscentos reais"
-                    />
+                    <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
+                    <Select
+                      value={contractData.paymentMethod}
+                      onValueChange={(value) => setContractData(prev => ({ ...prev, paymentMethod: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PIX">PIX</SelectItem>
+                        <SelectItem value="Cartão">Cartão de Crédito</SelectItem>
+                        <SelectItem value="Boleto">Boleto Bancário</SelectItem>
+                        <SelectItem value="Transferência">Transferência Bancária</SelectItem>
+                        <SelectItem value="Crédito">Crédito (Fiado)</SelectItem>
+                        <SelectItem value="Combinado">Pagamento Combinado</SelectItem>
+                        <SelectItem value="Manual">Pagamento Manual</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Parcelas para Cartão de Crédito */}
@@ -974,10 +1024,17 @@ Contratante
                           </div>
 
                           {/* Validação: checar se o total bate */}
-                          {Math.abs(getTotalFromCombinedPayments() - parseContractValue(contractData.value)) > 0.01 && (
-                            <div className="flex items-center gap-2 text-sm text-destructive">
-                              <AlertTriangle className="h-4 w-4" />
-                              Valor total não corresponde à soma dos métodos de pagamento
+                          {Math.abs(getTotalFromCombinedPayments() - parseContractValue(contractData.value)) > 0.01 && contractData.value && (
+                            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded">
+                              <AlertTriangle className="h-4 w-4 text-destructive" />
+                              <div className="flex-1 text-sm text-destructive">
+                                <div className="font-semibold">Atenção: Valores não conferem</div>
+                                <div className="text-xs mt-1">
+                                  Total do contrato: R$ {parseContractValue(contractData.value).toFixed(2)} | 
+                                  Soma dos métodos: R$ {getTotalFromCombinedPayments().toFixed(2)} | 
+                                  Diferença: R$ {Math.abs(getTotalFromCombinedPayments() - parseContractValue(contractData.value)).toFixed(2)}
+                                </div>
+                              </div>
                             </div>
                           )}
                         </>
@@ -1060,10 +1117,15 @@ Contratante
                   <Button
                     onClick={handlePrintContract}
                     className="gap-2"
-                    disabled={!contractData.clientId || isGenerating}
+                    disabled={!contractData.clientId || !contractData.value || !contractData.valueInWords || isGenerating}
                   >
                     <Printer className="h-4 w-4" />
-                    {isGenerating ? 'Processando...' : `Imprimir + Registrar R$ ${contractData.value}`}
+                    {isGenerating 
+                      ? 'Processando...' 
+                      : contractData.value 
+                        ? `Imprimir + Registrar R$ ${contractData.value}` 
+                        : 'Preencha os dados do contrato'
+                    }
                   </Button>
               </div>
             </div>
