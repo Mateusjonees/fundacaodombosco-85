@@ -666,9 +666,9 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
                 </p>
 
                 <div className="ml-6 mb-4 space-y-2">
-                  <p>( ) R$ ______________ à vista pagos na data da anamnese.</p>
-                  <p>( ) R$ ______________ parcelado no Boleto Uma parcela no dia da anamnese no valor de R$ ______________ e outra(s) parcela(s) no valor de R$ ______________ nas datas: [ ______________ ]</p>
-                  <p>( ) R$ ______________ no Cartão de crédito, parcelado de ______________ vezes</p>
+                  <p>({contractData.formaPagamento === 'vista' ? 'X' : ' '}) R$ {contractData.valorTotal || '______________'} à vista pagos na data da anamnese.</p>
+                  <p>({contractData.formaPagamento === 'parcelado' ? 'X' : ' '}) R$ {contractData.valorTotal || '______________'} parcelado no Boleto{contractData.numeroParcelas ? ` - ${contractData.numeroParcelas} parcelas de R$ ${contractData.valorParcela || '___'}` : ''}{contractData.datasPagamento ? ` nas datas: ${contractData.datasPagamento}` : ''}</p>
+                  <p>({contractData.cartaoCredito ? 'X' : ' '}) R$ {contractData.cartaoCredito?.valor || '______________'} no Cartão de crédito, parcelado em {contractData.cartaoCredito?.parcelas || '___'} vezes</p>
                 </div>
 
                 <h3 className="font-bold mb-2">2.6.3.</h3>

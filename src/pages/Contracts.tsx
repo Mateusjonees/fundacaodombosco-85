@@ -38,6 +38,7 @@ interface ContractData {
   address: string;
   paymentMethod: string;
   value: string;
+  valueInWords: string;
   contractDate: string;
   creditCardInstallments: number;
   downPaymentAmount: string;
@@ -67,6 +68,7 @@ export default function Contracts() {
     address: '',
     paymentMethod: 'PIX',
     value: '1.600,00',
+    valueInWords: 'mil e seiscentos reais',
     contractDate: new Date().toISOString().split('T')[0],
     creditCardInstallments: 1,
     downPaymentAmount: '',
@@ -148,6 +150,44 @@ export default function Contracts() {
     }
   };
 
+  const generatePaymentDetails = (): string => {
+    const valorNum = parseContractValue(contractData.value);
+    
+    switch(contractData.paymentMethod) {
+      case 'PIX':
+        return `(X) R$ ${contractData.value} à vista via PIX na data da anamnese.`;
+      
+      case 'Cartão':
+        const valorParcela = (valorNum / contractData.creditCardInstallments).toFixed(2).replace('.', ',');
+        return `(X) R$ ${contractData.value} no Cartão de crédito, parcelado em ${contractData.creditCardInstallments}x de R$ ${valorParcela}`;
+      
+      case 'Boleto':
+        return `(X) R$ ${contractData.value} parcelado no Boleto conforme acordado.`;
+      
+      case 'Transferência':
+        return `(X) R$ ${contractData.value} via Transferência Bancária.`;
+      
+      case 'Manual':
+        let detalhes = '';
+        if (contractData.downPaymentAmount) {
+          const entrada = contractData.downPaymentAmount;
+          const restante = (valorNum - parseFloat(contractData.downPaymentAmount.replace(',', '.') || '0')).toFixed(2).replace('.', ',');
+          detalhes = `(X) Pagamento Manual:\n`;
+          detalhes += `    • Entrada: R$ ${entrada} (${contractData.downPaymentMethod}) na data da anamnese\n`;
+          detalhes += `    • Saldo restante: R$ ${restante}\n`;
+          if (contractData.paymentNotes) {
+            detalhes += `    • Observações: ${contractData.paymentNotes}`;
+          }
+        } else {
+          detalhes = `(X) Pagamento Manual conforme combinado: ${contractData.paymentNotes || 'A definir'}`;
+        }
+        return detalhes;
+      
+      default:
+        return `( ) R$ ______________ à vista pagos na data da anamnese.\n( ) R$ ______________ parcelado no Boleto\n( ) R$ ______________ no Cartão de crédito`;
+    }
+  };
+
   const generateContract = () => {
     const contractContent = `
 Contrato de Prestação de Serviços
@@ -199,14 +239,11 @@ A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904
 
 2.6.1. A forma de pagamento deverá ser definida e devidamente registrada neste contrato durante a primeira sessão de avaliação (anamnese).
 
-2.6.2. O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado será no total de R$ ${contractData.value || '______________________'} (${contractData.value || '______________________________________________'})
+2.6.2. O valor referente à prestação de serviço de Avaliação Neuropsicológica à vista ou parcelado será no total de R$ ${contractData.value || '______________________'} (${contractData.valueInWords || '______________________________________________'})
 
 O pagamento dos honorários referentes ao serviço de Avaliação Neuropsicológica será efetuado:
 
-(  ) R$ _________________ à vista pagos na data da anamnese.
-(  ) R$ _________________ parcelado no Boleto
-Uma parcela no dia da anamnese no valor de R$ _____________ e outra(s) _________ parcela(s) no valor R$ _________________ nas datas: ___________________________________.
-( ) R$ _________________ no Cartão de crédito, parcelado de ___________ vezes.
+${generatePaymentDetails()}
 
 2.6.3. O laudo será entregue SOMENTE após a quitação do valor total da avaliação.
 
@@ -475,6 +512,7 @@ Contratante
       address: '',
       paymentMethod: 'PIX',
       value: '1.600,00',
+      valueInWords: 'mil e seiscentos reais',
       contractDate: new Date().toISOString().split('T')[0],
       creditCardInstallments: 1,
       downPaymentAmount: '',
@@ -688,6 +726,16 @@ Contratante
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="valueInWords">Valor por Extenso</Label>
+                    <Input
+                      id="valueInWords"
+                      value={contractData.valueInWords}
+                      onChange={(e) => setContractData(prev => ({ ...prev, valueInWords: e.target.value }))}
+                      placeholder="mil e seiscentos reais"
+                    />
                   </div>
 
                   {/* Parcelas para Cartão de Crédito */}
