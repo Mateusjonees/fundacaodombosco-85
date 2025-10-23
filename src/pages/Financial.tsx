@@ -57,6 +57,7 @@ export default function Financial() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
+  const [unitFilter, setUnitFilter] = useState('all');
   const { toast } = useToast();
   const { user } = useAuth();
   const { userRole, loading: roleLoading } = useRolePermissions();
@@ -106,7 +107,7 @@ export default function Financial() {
         .from('financial_records')
         .select(`
           *,
-          clients (name)
+          clients (name, unit)
         `)
         .order('date', { ascending: false });
 
@@ -358,7 +359,10 @@ export default function Financial() {
     const matchesAmount = (!amountFilter.min || record.amount >= parseFloat(amountFilter.min)) &&
       (!amountFilter.max || record.amount <= parseFloat(amountFilter.max));
     
-    return matchesSearch && matchesDateRange && matchesType && matchesCategory && matchesAmount;
+    const matchesUnit = unitFilter === 'all' || 
+      (record.clients && 'unit' in record.clients && record.clients.unit === unitFilter);
+    
+    return matchesSearch && matchesDateRange && matchesType && matchesCategory && matchesAmount && matchesUnit;
   });
 
   const incomeRecords = filteredRecords.filter(r => r.type === 'income');
@@ -445,6 +449,7 @@ export default function Financial() {
     setTypeFilter('all');
     setCategoryFilter('all');
     setAmountFilter({ min: '', max: '' });
+    setUnitFilter('all');
     setSearchTerm('');
   };
 
@@ -687,7 +692,7 @@ export default function Financial() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dateStart">Data Início</Label>
               <Input
@@ -716,6 +721,19 @@ export default function Financial() {
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="income">Receitas</SelectItem>
                   <SelectItem value="expense">Despesas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="unitFilter">Unidade</Label>
+              <Select value={unitFilter} onValueChange={setUnitFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="madre">Madre</SelectItem>
+                  <SelectItem value="floresta">Floresta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
