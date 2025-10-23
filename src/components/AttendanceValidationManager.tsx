@@ -178,7 +178,8 @@ export default function AttendanceValidationManager() {
         p_rejection_reason: validationAction === 'reject' ? rejectionReason : null,
         p_professional_amount: validationAction === 'validate' && professionalAmount ? parseFloat(professionalAmount) : 0,
         p_foundation_amount: validationAction === 'validate' && foundationAmount ? parseFloat(foundationAmount) : 0,
-        p_total_amount: validationAction === 'validate' && totalAmount ? parseFloat(totalAmount) : editedAttendance.amount_charged || selectedAttendance?.amount_charged || 0
+        p_total_amount: validationAction === 'validate' && totalAmount ? parseFloat(totalAmount) : editedAttendance.amount_charged || selectedAttendance?.amount_charged || 0,
+        p_payment_method: validationAction === 'validate' ? paymentMethod : 'dinheiro'
       });
 
       if (error) throw error;

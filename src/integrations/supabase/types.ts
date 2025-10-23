@@ -1760,7 +1760,7 @@ export type Database = {
           changed_by: string | null
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_value: Json | null
           old_value: Json | null
           permission: Database["public"]["Enums"]["permission_action"] | null
@@ -1774,7 +1774,7 @@ export type Database = {
           changed_by?: string | null
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_value?: Json | null
           old_value?: Json | null
           permission?: Database["public"]["Enums"]["permission_action"] | null
@@ -1788,7 +1788,7 @@ export type Database = {
           changed_by?: string | null
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_value?: Json | null
           old_value?: Json | null
           permission?: Database["public"]["Enums"]["permission_action"] | null
@@ -2612,30 +2612,12 @@ export type Database = {
         Args: { start_date: string }
         Returns: string
       }
-      can_access_financial: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_access_reports: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_configure_reports: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_manage_employees: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_manage_stock: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_view_all_clients: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      can_access_financial: { Args: never; Returns: boolean }
+      can_access_reports: { Args: never; Returns: boolean }
+      can_configure_reports: { Args: never; Returns: boolean }
+      can_manage_employees: { Args: never; Returns: boolean }
+      can_manage_stock: { Args: never; Returns: boolean }
+      can_view_all_clients: { Args: never; Returns: boolean }
       create_appointment_notification: {
         Args: {
           p_appointment_date: string
@@ -2647,10 +2629,7 @@ export type Database = {
         }
         Returns: string
       }
-      create_director_user: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      create_director_user: { Args: never; Returns: Json }
       create_payment_installments: {
         Args: {
           p_client_payment_id: string
@@ -2672,7 +2651,7 @@ export type Database = {
         Returns: string
       }
       debug_my_permissions: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           can_access_reports: boolean
           can_configure_reports: boolean
@@ -2685,7 +2664,7 @@ export type Database = {
         }[]
       }
       debug_user_permissions: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           can_access_reports: boolean
           employee_role: Database["public"]["Enums"]["employee_role"]
@@ -2694,12 +2673,9 @@ export type Database = {
           user_id: string
         }[]
       }
-      director_has_god_mode: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      director_has_god_mode: { Args: never; Returns: boolean }
       get_accessible_employee_details: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           address: string
           birth_date: string
@@ -2726,20 +2702,14 @@ export type Database = {
           work_schedule: Json
         }[]
       }
-      get_client_name: {
-        Args: { client_uuid: string }
-        Returns: string
-      }
+      get_client_name: { Args: { client_uuid: string }; Returns: string }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["employee_role"]
       }
-      get_employee_name: {
-        Args: { employee_uuid: string }
-        Returns: string
-      }
+      get_employee_name: { Args: { employee_uuid: string }; Returns: string }
       get_secure_employee_details: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           address: string
           birth_date: string
@@ -2767,7 +2737,7 @@ export type Database = {
         }[]
       }
       get_stock_movements_with_details: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           attendance_id: string
           client_id: string
@@ -2792,16 +2762,23 @@ export type Database = {
           unit_cost: number
         }[]
       }
-      get_user_permissions: {
-        Args: Record<PropertyKey, never> | { user_uuid?: string }
-        Returns: {
-          granted: boolean
-          permission: Database["public"]["Enums"]["permission_action"]
-          source: string
-        }[]
-      }
+      get_user_permissions:
+        | {
+            Args: { user_uuid?: string }
+            Returns: {
+              granted: boolean
+              permission: Database["public"]["Enums"]["permission_action"]
+              source: string
+            }[]
+          }
+        | {
+            Args: never
+            Returns: {
+              permission: Database["public"]["Enums"]["permission_type"]
+            }[]
+          }
       get_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["employee_role"]
       }
       has_role: {
@@ -2811,26 +2788,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_coordinator: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_director: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_god_mode_director: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_manager: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_receptionist: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_coordinator: { Args: never; Returns: boolean }
+      is_director: { Args: never; Returns: boolean }
+      is_god_mode_director: { Args: never; Returns: boolean }
+      is_manager: { Args: never; Returns: boolean }
+      is_receptionist: { Args: never; Returns: boolean }
       log_sensitive_access: {
         Args: {
           p_action: string
@@ -2860,31 +2822,45 @@ export type Database = {
         Args: { allowed_roles: Database["public"]["Enums"]["employee_role"][] }
         Returns: boolean
       }
-      user_has_permission: {
-        Args:
-          | {
+      user_has_permission:
+        | {
+            Args: {
               required_permission: Database["public"]["Enums"]["permission_action"]
               user_uuid: string
             }
-          | {
+            Returns: boolean
+          }
+        | {
+            Args: {
               required_permission: Database["public"]["Enums"]["permission_type"]
             }
-        Returns: boolean
-      }
+            Returns: boolean
+          }
       user_has_role: {
         Args: { allowed_roles: Database["public"]["Enums"]["employee_role"][] }
         Returns: boolean
       }
-      validate_attendance_report: {
-        Args:
-          | {
+      validate_attendance_report:
+        | {
+            Args: {
+              p_action: string
+              p_attendance_report_id: string
+              p_rejection_reason?: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
               p_action: string
               p_attendance_report_id: string
               p_foundation_amount?: number
               p_professional_amount?: number
               p_rejection_reason?: string
             }
-          | {
+            Returns: boolean
+          }
+        | {
+            Args: {
               p_action: string
               p_attendance_report_id: string
               p_foundation_amount?: number
@@ -2892,13 +2868,20 @@ export type Database = {
               p_rejection_reason?: string
               p_total_amount?: number
             }
-          | {
+            Returns: boolean
+          }
+        | {
+            Args: {
               p_action: string
               p_attendance_report_id: string
+              p_foundation_amount?: number
+              p_payment_method?: string
+              p_professional_amount?: number
               p_rejection_reason?: string
+              p_total_amount?: number
             }
-        Returns: boolean
-      }
+            Returns: boolean
+          }
     }
     Enums: {
       app_role:
