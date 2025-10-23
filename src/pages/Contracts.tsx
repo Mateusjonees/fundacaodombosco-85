@@ -341,7 +341,9 @@ Contratante
 
   const parseContractValue = (value: string): number => {
     // Converte valores como "1.600,00" para 1600.00
-    return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 1600.00;
+    if (!value || value.trim() === '') return 0;
+    const cleaned = value.replace(/\./g, '').replace(',', '.');
+    return parseFloat(cleaned) || 0;
   };
 
   const createFinancialRecord = async () => {
@@ -427,11 +429,19 @@ Contratante
         const combinedTotal = getTotalFromCombinedPayments();
         const contractValue = parseContractValue(contractData.value);
         
+        console.log('🔍 Validação de pagamento combinado:', {
+          combinedTotal,
+          contractValue,
+          difference: Math.abs(combinedTotal - contractValue),
+          paymentMethods
+        });
+        
+        // Tolerância de 0.01 para lidar com arredondamentos
         if (Math.abs(combinedTotal - contractValue) > 0.01) {
           toast({
             variant: "destructive",
             title: "Erro de Validação",
-            description: `O total dos métodos de pagamento (R$ ${combinedTotal.toFixed(2)}) não corresponde ao valor do contrato (R$ ${contractValue.toFixed(2)}).`,
+            description: `O total dos métodos de pagamento (R$ ${combinedTotal.toFixed(2).replace('.', ',')}) não corresponde ao valor do contrato (R$ ${contractValue.toFixed(2).replace('.', ',')}).`,
           });
           setIsGenerating(false);
           return;
