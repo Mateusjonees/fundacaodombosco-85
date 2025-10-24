@@ -113,6 +113,16 @@ export default function ScheduleControl() {
       const isDirector = senderProfile?.employee_role === 'director';
       const notificationType = isDirector ? 'director_notification' : 'coordinator_notification';
 
+      // Verificar se o usuário tem permissão
+      if (!['director', 'coordinator_madre', 'coordinator_floresta'].includes(senderProfile?.employee_role || '')) {
+        toast({
+          title: "Sem permissão",
+          description: "Apenas diretores e coordenadores podem enviar notificações",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Inserir notificação
       const { data: notificationData, error: notificationError } = await supabase
         .from('appointment_notifications')
@@ -136,7 +146,10 @@ export default function ScheduleControl() {
         .select()
         .single();
 
-      if (notificationError) throw notificationError;
+      if (notificationError) {
+        console.error('Erro ao criar notificação:', notificationError);
+        throw new Error(`Falha ao criar notificação: ${notificationError.message || 'Erro desconhecido'}`);
+      }
 
       // Criar mensagem interna automaticamente
       const messageBody = `🔔 **Notificação de Agendamento**
@@ -188,9 +201,10 @@ ${notificationMessage}
       setNotificationReason("");
     } catch (error) {
       console.error('Error sending notification:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: "Erro ao enviar notificação",
-        description: "Tente novamente mais tarde",
+        description: errorMessage,
         variant: "destructive",
       });
     }
