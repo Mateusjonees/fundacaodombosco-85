@@ -395,14 +395,15 @@ ${notificationMessage}
       }
 
       if (viewMode === 'week') {
-        // Layout Semanal - Visualização Horizontal
+        // Layout Semanal - Visualização Horizontal com Paginação
         const weekStart = startOfWeek(selectedDate, { locale: ptBR });
         const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
         const workDays = weekDays.slice(1, 6); // Segunda a Sexta
         
         const colWidth = (pageWidth - 30) / 5;
-        const startY = filterInfo.length > 0 ? 35 : 32;
+        const headerHeight = 10;
         const cardHeight = 25;
+        const cardSpacing = 2;
         const maxY = pageHeight - 35;
         
         // Função auxiliar para desenhar cabeçalho
@@ -410,7 +411,7 @@ ${notificationMessage}
           workDays.forEach((day, index) => {
             const x = 15 + (index * colWidth);
             doc.setFillColor(59, 130, 246);
-            doc.rect(x, yPosition, colWidth, 10, 'F');
+            doc.rect(x, yPosition, colWidth, headerHeight, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
@@ -422,9 +423,6 @@ ${notificationMessage}
           });
         };
         
-        // Desenhar cabeçalho inicial
-        drawWeekHeader(startY);
-        
         // Agrupar agendamentos por dia
         const schedulesPerDay = workDays.map(day => ({
           day,
@@ -433,78 +431,93 @@ ${notificationMessage}
           ).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
         }));
         
-        // Encontrar o número máximo de agendamentos
-        const maxSchedules = Math.max(...schedulesPerDay.map(d => d.schedules.length), 1);
-        
-        // Renderizar agendamentos
-        for (let schedIndex = 0; schedIndex < maxSchedules; schedIndex++) {
-          let currentY = startY + 12 + (schedIndex * (cardHeight + 2));
-          
-          // Verificar se precisa de nova página
-          if (currentY + cardHeight > maxY) {
-            doc.addPage();
-            drawWeekHeader(15);
-            currentY = 27;
-            schedIndex = schedIndex; // Continuar do mesmo índice
+        // Função para desenhar um card de agendamento
+        const drawScheduleCard = (schedule: any, x: number, y: number) => {
+          // Cor de fundo baseada no status
+          if (schedule.status === 'completed') {
+            doc.setFillColor(220, 252, 231);
+          } else if (schedule.status === 'cancelled') {
+            doc.setFillColor(254, 226, 226);
+          } else if (schedule.status === 'confirmed') {
+            doc.setFillColor(219, 234, 254);
+          } else {
+            doc.setFillColor(250, 250, 250);
           }
           
+          doc.rect(x + 1, y, colWidth - 2, cardHeight, 'F');
+          doc.setDrawColor(200, 200, 200);
+          doc.rect(x + 1, y, colWidth - 2, cardHeight, 'S');
+          
+          // Conteúdo do card
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(
+            `${format(new Date(schedule.start_time), 'HH:mm')}`,
+            x + 3,
+            y + 5
+          );
+          
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          
+          const patientName = schedule.clients?.name || 'N/A';
+          const truncatedName = patientName.length > 18 ? patientName.substring(0, 18) + '...' : patientName;
+          doc.text(truncatedName, x + 3, y + 10);
+          
+          const profName = schedule.profiles?.name || 'N/A';
+          const truncatedProf = profName.length > 18 ? profName.substring(0, 18) + '...' : profName;
+          doc.text(truncatedProf, x + 3, y + 15);
+          
+          doc.setFontSize(7);
+          const statusText = 
+            schedule.status === 'scheduled' ? 'Agendado' : 
+            schedule.status === 'confirmed' ? 'Confirmado' : 
+            schedule.status === 'completed' ? 'Concluído' : 
+            schedule.status === 'cancelled' ? 'Cancelado' : 'Pendente';
+          doc.text(statusText, x + 3, y + 20);
+        };
+        
+        // Inicializar primeira página
+        const startY = filterInfo.length > 0 ? 35 : 32;
+        drawWeekHeader(startY);
+        
+        // Encontrar o número máximo de agendamentos em qualquer dia
+        const maxSchedules = Math.max(...schedulesPerDay.map(d => d.schedules.length), 1);
+        
+        // Renderizar agendamentos linha por linha
+        let currentPageY = startY + headerHeight + 2;
+        
+        for (let rowIndex = 0; rowIndex < maxSchedules; rowIndex++) {
+          // Verificar se precisa de nova página
+          if (currentPageY + cardHeight > maxY) {
+            doc.addPage();
+            drawWeekHeader(15);
+            currentPageY = 15 + headerHeight + 2;
+          }
+          
+          // Desenhar agendamentos desta linha para cada dia
+          let hasAnySchedule = false;
           schedulesPerDay.forEach((dayData, dayIndex) => {
             const x = 15 + (dayIndex * colWidth);
-            const schedule = dayData.schedules[schedIndex];
+            const schedule = dayData.schedules[rowIndex];
             
-            if (!schedule) {
-              if (schedIndex === 0 && dayData.schedules.length === 0) {
-                doc.setFontSize(8);
-                doc.setTextColor(150, 150, 150);
-                doc.text('Sem agendamentos', x + colWidth / 2, currentY + 5, { align: 'center' });
-              }
-              return;
+            if (schedule) {
+              drawScheduleCard(schedule, x, currentPageY);
+              hasAnySchedule = true;
+            } else if (rowIndex === 0 && dayData.schedules.length === 0) {
+              // Mostrar "Sem agendamentos" apenas na primeira linha se não houver nenhum
+              doc.setFontSize(8);
+              doc.setTextColor(150, 150, 150);
+              doc.text('Sem agendamentos', x + colWidth / 2, currentPageY + 5, { align: 'center' });
+              doc.setTextColor(0, 0, 0);
             }
-            
-            // Cor de fundo baseada no status
-            if (schedule.status === 'completed') {
-              doc.setFillColor(220, 252, 231);
-            } else if (schedule.status === 'cancelled') {
-              doc.setFillColor(254, 226, 226);
-            } else if (schedule.status === 'confirmed') {
-              doc.setFillColor(219, 234, 254);
-            } else {
-              doc.setFillColor(250, 250, 250);
-            }
-            
-            doc.rect(x + 1, currentY, colWidth - 2, cardHeight, 'F');
-            doc.setDrawColor(200, 200, 200);
-            doc.rect(x + 1, currentY, colWidth - 2, cardHeight, 'S');
-            
-            // Conteúdo do card
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            doc.text(
-              `${format(new Date(schedule.start_time), 'HH:mm')}`,
-              x + 3,
-              currentY + 5
-            );
-            
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            
-            const patientName = schedule.clients?.name || 'N/A';
-            const truncatedName = patientName.length > 18 ? patientName.substring(0, 18) + '...' : patientName;
-            doc.text(truncatedName, x + 3, currentY + 10);
-            
-            const profName = schedule.profiles?.name || 'N/A';
-            const truncatedProf = profName.length > 18 ? profName.substring(0, 18) + '...' : profName;
-            doc.text(truncatedProf, x + 3, currentY + 15);
-            
-            doc.setFontSize(7);
-            const statusText = 
-              schedule.status === 'scheduled' ? 'Agendado' : 
-              schedule.status === 'confirmed' ? 'Confirmado' : 
-              schedule.status === 'completed' ? 'Concluído' : 
-              schedule.status === 'cancelled' ? 'Cancelado' : 'Pendente';
-            doc.text(statusText, x + 3, currentY + 20);
           });
+          
+          // Avançar para a próxima linha somente se houver algum agendamento
+          if (hasAnySchedule || rowIndex === 0) {
+            currentPageY += cardHeight + cardSpacing;
+          }
         }
         
       } else if (viewMode === 'month') {
