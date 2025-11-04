@@ -402,100 +402,110 @@ ${notificationMessage}
         
         const colWidth = (pageWidth - 30) / 5;
         const startY = filterInfo.length > 0 ? 35 : 32;
+        const cardHeight = 25;
+        const maxY = pageHeight - 35;
         
-        // Desenhar cabeçalho dos dias
-        workDays.forEach((day, index) => {
-          const x = 15 + (index * colWidth);
-          
-          // Fundo do cabeçalho
-          doc.setFillColor(59, 130, 246);
-          doc.rect(x, startY, colWidth, 10, 'F');
-          
-          // Texto do dia
-          doc.setTextColor(255, 255, 255);
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'bold');
-          const dayText = format(day, 'EEEE', { locale: ptBR });
-          const dateText = format(day, 'dd/MM');
-          doc.text(dayText.toUpperCase(), x + colWidth / 2, startY + 4, { align: 'center' });
-          doc.setFontSize(8);
-          doc.text(dateText, x + colWidth / 2, startY + 8, { align: 'center' });
-        });
+        // Função auxiliar para desenhar cabeçalho
+        const drawWeekHeader = (yPosition: number) => {
+          workDays.forEach((day, index) => {
+            const x = 15 + (index * colWidth);
+            doc.setFillColor(59, 130, 246);
+            doc.rect(x, yPosition, colWidth, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            const dayText = format(day, 'EEEE', { locale: ptBR });
+            const dateText = format(day, 'dd/MM');
+            doc.text(dayText.toUpperCase(), x + colWidth / 2, yPosition + 4, { align: 'center' });
+            doc.setFontSize(8);
+            doc.text(dateText, x + colWidth / 2, yPosition + 8, { align: 'center' });
+          });
+        };
+        
+        // Desenhar cabeçalho inicial
+        drawWeekHeader(startY);
         
         // Agrupar agendamentos por dia
-        let currentY = startY + 12;
-        doc.setTextColor(0, 0, 0);
-        
-        workDays.forEach((day, index) => {
-          const x = 15 + (index * colWidth);
-          const daySchedules = schedules.filter(s => 
+        const schedulesPerDay = workDays.map(day => ({
+          day,
+          schedules: schedules.filter(s => 
             isSameDay(new Date(s.start_time), day)
-          ).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+          ).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        }));
+        
+        // Encontrar o número máximo de agendamentos
+        const maxSchedules = Math.max(...schedulesPerDay.map(d => d.schedules.length), 1);
+        
+        // Renderizar agendamentos
+        for (let schedIndex = 0; schedIndex < maxSchedules; schedIndex++) {
+          let currentY = startY + 12 + (schedIndex * (cardHeight + 2));
           
-          let y = currentY;
-          
-          if (daySchedules.length === 0) {
-            doc.setFontSize(8);
-            doc.setTextColor(150, 150, 150);
-            doc.text('Sem agendamentos', x + colWidth / 2, y + 5, { align: 'center' });
-          } else {
-            daySchedules.forEach((schedule, schedIndex) => {
-              if (y > pageHeight - 40) return; // Evitar ultrapassar a página
-              
-              // Card do agendamento
-              const cardHeight = 25;
-              
-              // Cor de fundo baseada no status
-              if (schedule.status === 'completed') {
-                doc.setFillColor(220, 252, 231);
-              } else if (schedule.status === 'cancelled') {
-                doc.setFillColor(254, 226, 226);
-              } else if (schedule.status === 'confirmed') {
-                doc.setFillColor(219, 234, 254);
-              } else {
-                doc.setFillColor(250, 250, 250);
-              }
-              
-              doc.rect(x + 1, y, colWidth - 2, cardHeight, 'F');
-              doc.setDrawColor(200, 200, 200);
-              doc.rect(x + 1, y, colWidth - 2, cardHeight, 'S');
-              
-              // Conteúdo do card
-              doc.setFontSize(9);
-              doc.setFont('helvetica', 'bold');
-              doc.setTextColor(0, 0, 0);
-              doc.text(
-                `${format(new Date(schedule.start_time), 'HH:mm')}`,
-                x + 3,
-                y + 5
-              );
-              
-              doc.setFontSize(8);
-              doc.setFont('helvetica', 'normal');
-              
-              // Nome do paciente (truncar se muito longo)
-              const patientName = schedule.clients?.name || 'N/A';
-              const truncatedName = patientName.length > 18 ? patientName.substring(0, 18) + '...' : patientName;
-              doc.text(truncatedName, x + 3, y + 10);
-              
-              // Profissional (truncar se muito longo)
-              const profName = schedule.profiles?.name || 'N/A';
-              const truncatedProf = profName.length > 18 ? profName.substring(0, 18) + '...' : profName;
-              doc.text(truncatedProf, x + 3, y + 15);
-              
-              // Status
-              doc.setFontSize(7);
-              const statusText = 
-                schedule.status === 'scheduled' ? 'Agendado' : 
-                schedule.status === 'confirmed' ? 'Confirmado' : 
-                schedule.status === 'completed' ? 'Concluído' : 
-                schedule.status === 'cancelled' ? 'Cancelado' : 'Pendente';
-              doc.text(statusText, x + 3, y + 20);
-              
-              y += cardHeight + 2;
-            });
+          // Verificar se precisa de nova página
+          if (currentY + cardHeight > maxY) {
+            doc.addPage();
+            drawWeekHeader(15);
+            currentY = 27;
+            schedIndex = schedIndex; // Continuar do mesmo índice
           }
-        });
+          
+          schedulesPerDay.forEach((dayData, dayIndex) => {
+            const x = 15 + (dayIndex * colWidth);
+            const schedule = dayData.schedules[schedIndex];
+            
+            if (!schedule) {
+              if (schedIndex === 0 && dayData.schedules.length === 0) {
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Sem agendamentos', x + colWidth / 2, currentY + 5, { align: 'center' });
+              }
+              return;
+            }
+            
+            // Cor de fundo baseada no status
+            if (schedule.status === 'completed') {
+              doc.setFillColor(220, 252, 231);
+            } else if (schedule.status === 'cancelled') {
+              doc.setFillColor(254, 226, 226);
+            } else if (schedule.status === 'confirmed') {
+              doc.setFillColor(219, 234, 254);
+            } else {
+              doc.setFillColor(250, 250, 250);
+            }
+            
+            doc.rect(x + 1, currentY, colWidth - 2, cardHeight, 'F');
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(x + 1, currentY, colWidth - 2, cardHeight, 'S');
+            
+            // Conteúdo do card
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text(
+              `${format(new Date(schedule.start_time), 'HH:mm')}`,
+              x + 3,
+              currentY + 5
+            );
+            
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            
+            const patientName = schedule.clients?.name || 'N/A';
+            const truncatedName = patientName.length > 18 ? patientName.substring(0, 18) + '...' : patientName;
+            doc.text(truncatedName, x + 3, currentY + 10);
+            
+            const profName = schedule.profiles?.name || 'N/A';
+            const truncatedProf = profName.length > 18 ? profName.substring(0, 18) + '...' : profName;
+            doc.text(truncatedProf, x + 3, currentY + 15);
+            
+            doc.setFontSize(7);
+            const statusText = 
+              schedule.status === 'scheduled' ? 'Agendado' : 
+              schedule.status === 'confirmed' ? 'Confirmado' : 
+              schedule.status === 'completed' ? 'Concluído' : 
+              schedule.status === 'cancelled' ? 'Cancelado' : 'Pendente';
+            doc.text(statusText, x + 3, currentY + 20);
+          });
+        }
         
       } else if (viewMode === 'month') {
         // Layout Mensal - Calendário Visual
@@ -532,27 +542,22 @@ ${notificationMessage}
             const x = 15 + (day * cellWidth);
             const y = currentY;
             
-            // Borda da célula
             doc.setDrawColor(200, 200, 200);
             doc.rect(x, y, cellWidth, cellHeight, 'S');
             
-            // Verificar se é do mês atual
             const isCurrentMonth = isSameMonth(currentDay, selectedDate);
             
-            // Número do dia
             doc.setTextColor(isCurrentMonth ? 0 : 150);
             doc.setFontSize(8);
             doc.setFont('helvetica', 'bold');
             doc.text(format(currentDay, 'd'), x + 2, y + 5);
             
-            // Agendamentos do dia
             const daySchedules = schedules.filter(s => 
               isSameDay(new Date(s.start_time), currentDay)
             ).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
             
             let schedY = y + 8;
             daySchedules.slice(0, 4).forEach((schedule) => {
-              // Bolinha de status
               let statusColor: [number, number, number] = [200, 200, 200];
               if (schedule.status === 'completed') statusColor = [34, 197, 94];
               else if (schedule.status === 'cancelled') statusColor = [239, 68, 68];
@@ -580,6 +585,47 @@ ${notificationMessage}
             currentDay = addDays(currentDay, 1);
           }
           currentY += cellHeight;
+        }
+        
+        // Adicionar página com lista completa de agendamentos
+        if (schedules.length > 0) {
+          doc.addPage();
+          doc.setFontSize(14);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Lista Completa de Agendamentos', pageWidth / 2, 15, { align: 'center' });
+          
+          const tableData = schedules
+            .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+            .map(schedule => [
+              format(new Date(schedule.start_time), 'dd/MM/yyyy', { locale: ptBR }),
+              `${format(new Date(schedule.start_time), 'HH:mm')} - ${format(new Date(schedule.end_time), 'HH:mm')}`,
+              schedule.clients?.name || 'N/A',
+              schedule.profiles?.name || 'N/A',
+              schedule.unit === 'madre' ? 'MADRE' : 'Floresta',
+              schedule.status === 'scheduled' ? 'Agendado' : 
+              schedule.status === 'confirmed' ? 'Confirmado' : 
+              schedule.status === 'completed' ? 'Concluído' : 
+              schedule.status === 'cancelled' ? 'Cancelado' : 'Pendente'
+            ]);
+          
+          autoTable(doc, {
+            startY: 22,
+            head: [['Data', 'Horário', 'Paciente', 'Profissional', 'Unidade', 'Status']],
+            body: tableData,
+            styles: { 
+              fontSize: 8,
+              cellPadding: 2.5
+            },
+            headStyles: { 
+              fillColor: [59, 130, 246],
+              textColor: 255,
+              fontStyle: 'bold'
+            },
+            alternateRowStyles: {
+              fillColor: [245, 245, 245]
+            },
+            margin: { left: 15, right: 15 }
+          });
         }
         
       } else {
