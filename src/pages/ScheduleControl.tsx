@@ -15,9 +15,11 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ClientDetailsView from '@/components/ClientDetailsView';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface Schedule {
   id: string;
@@ -359,6 +361,123 @@ ${notificationMessage}
         return `${format(weekStart, 'dd/MM', { locale: ptBR })} - ${format(weekEnd, 'dd/MM/yyyy', { locale: ptBR })}`;
       case 'month':
         return format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR });
+    }
+  };
+
+  const generatePDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Título
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório de Agendamentos', pageWidth / 2, 20, { align: 'center' });
+      
+      // Subtítulo com filtros
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      const filterText = `Período: ${getDateRangeText()} | Visualização: ${viewMode === 'day' ? 'Diária' : viewMode === 'week' ? 'Semanal' : 'Mensal'}`;
+      doc.text(filterText, pageWidth / 2, 28, { align: 'center' });
+      
+      // Informações de filtro
+      let filterInfo = [];
+      if (selectedEmployee !== 'all') {
+        const emp = employees.find(e => e.user_id === selectedEmployee);
+        filterInfo.push(`Profissional: ${emp?.name || 'N/A'}`);
+      }
+      if (selectedUnit !== 'all') {
+        filterInfo.push(`Unidade: ${selectedUnit === 'madre' ? 'MADRE' : 'Floresta'}`);
+      }
+      
+      if (filterInfo.length > 0) {
+        doc.setFontSize(9);
+        doc.text(filterInfo.join(' | '), pageWidth / 2, 34, { align: 'center' });
+      }
+      
+      // Estatísticas
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resumo:', 14, 44);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      
+      const stats = [
+        `Total: ${schedules.length}`,
+        `Agendados: ${schedules.filter(s => s.status === 'scheduled').length}`,
+        `Confirmados: ${schedules.filter(s => s.status === 'confirmed').length}`,
+        `Concluídos: ${schedules.filter(s => s.status === 'completed').length}`,
+        `Cancelados: ${schedules.filter(s => s.status === 'cancelled').length}`
+      ];
+      doc.text(stats.join('  |  '), 14, 50);
+      
+      // Preparar dados da tabela
+      const tableData = schedules.map(schedule => [
+        format(new Date(schedule.start_time), 'dd/MM/yyyy', { locale: ptBR }),
+        `${format(new Date(schedule.start_time), 'HH:mm')} - ${format(new Date(schedule.end_time), 'HH:mm')}`,
+        schedule.clients?.name || 'N/A',
+        schedule.profiles?.name || 'N/A',
+        schedule.unit === 'madre' ? 'MADRE' : 'Floresta',
+        schedule.status === 'scheduled' ? 'Agendado' : 
+        schedule.status === 'confirmed' ? 'Confirmado' : 
+        schedule.status === 'completed' ? 'Concluído' : 
+        schedule.status === 'cancelled' ? 'Cancelado' : 'Pendente'
+      ]);
+      
+      // Gerar tabela
+      (doc as any).autoTable({
+        startY: 56,
+        head: [['Data', 'Horário', 'Paciente', 'Profissional', 'Unidade', 'Status']],
+        body: tableData,
+        styles: { 
+          fontSize: 8,
+          cellPadding: 2
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        margin: { top: 56, left: 14, right: 14 }
+      });
+      
+      // Rodapé
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128);
+        doc.text(
+          `Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`,
+          14,
+          doc.internal.pageSize.getHeight() - 10
+        );
+        doc.text(
+          `Página ${i} de ${pageCount}`,
+          pageWidth - 14,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'right' }
+        );
+      }
+      
+      // Salvar PDF
+      const fileName = `Relatorio_Agendamentos_${format(selectedDate, 'yyyy-MM-dd')}_${viewMode}.pdf`;
+      doc.save(fileName);
+      
+      toast({
+        title: "PDF gerado com sucesso",
+        description: `Relatório baixado: ${fileName}`,
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível gerar o relatório. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -752,6 +871,16 @@ ${notificationMessage}
                     <SelectItem value="floresta">Floresta</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Button
+                  onClick={generatePDF}
+                  variant="outline"
+                  className="gap-2"
+                  disabled={schedules.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                  Baixar PDF
+                </Button>
               </div>
             </div>
           </CardContent>
