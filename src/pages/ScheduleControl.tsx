@@ -58,6 +58,9 @@ export default function ScheduleControl() {
   const [selectedScheduleForNotification, setSelectedScheduleForNotification] = useState<Schedule | null>(null);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationReason, setNotificationReason] = useState("");
+  const [pdfConfigDialogOpen, setPdfConfigDialogOpen] = useState(false);
+  const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [pdfUnit, setPdfUnit] = useState<'madre' | 'floresta'>('madre');
 
   const handleClientClick = async (clientId: string) => {
     try {
@@ -364,16 +367,25 @@ ${notificationMessage}
     }
   };
 
-  const generatePDF = () => {
+  const generatePDF = (orientation: 'portrait' | 'landscape' = 'landscape', unitFilter: 'madre' | 'floresta' | 'all' = 'all') => {
     try {
-      const doc = new jsPDF('landscape');
+      const doc = new jsPDF(orientation);
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       
       // Cabeçalho comum
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
-      doc.text('Relatório de Agendamentos', pageWidth / 2, 15, { align: 'center' });
+      
+      // Título baseado na unidade
+      let title = 'Relatório de Agendamentos';
+      if (unitFilter === 'madre') {
+        title = 'Relatório de Agendamentos - Clínica Social MADRE';
+      } else if (unitFilter === 'floresta') {
+        title = 'Relatório de Agendamentos - Neuro Avaliação Floresta';
+      }
+      
+      doc.text(title, pageWidth / 2, 15, { align: 'center' });
       
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
@@ -1105,7 +1117,7 @@ ${notificationMessage}
                 </Select>
 
                 <Button
-                  onClick={generatePDF}
+                  onClick={() => setPdfConfigDialogOpen(true)}
                   variant="outline"
                   className="gap-2"
                   disabled={schedules.length === 0}
@@ -1318,6 +1330,69 @@ ${notificationMessage}
             >
               <Bell className="h-4 w-4 mr-2" />
               Enviar Notificação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Configuração do PDF */}
+      <Dialog open={pdfConfigDialogOpen} onOpenChange={setPdfConfigDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configurar Relatório PDF</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Orientação do PDF</Label>
+              <Select value={pdfOrientation} onValueChange={(value: 'portrait' | 'landscape') => setPdfOrientation(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="landscape">Paisagem (Horizontal)</SelectItem>
+                  <SelectItem value="portrait">Retrato (Vertical)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Unidade</Label>
+              <Select value={pdfUnit} onValueChange={(value: 'madre' | 'floresta') => setPdfUnit(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="madre">Clínica Social - MADRE</SelectItem>
+                  <SelectItem value="floresta">Neuro Avaliação - Floresta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+              <p className="font-medium mb-1">Preview:</p>
+              <p>• Orientação: {pdfOrientation === 'landscape' ? 'Paisagem' : 'Retrato'}</p>
+              <p>• Unidade: {pdfUnit === 'madre' ? 'MADRE' : 'Floresta'}</p>
+              <p>• Total de agendamentos: {schedules.length}</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPdfConfigDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                generatePDF(pdfOrientation, pdfUnit);
+                setPdfConfigDialogOpen(false);
+              }}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Gerar PDF
             </Button>
           </DialogFooter>
         </DialogContent>
