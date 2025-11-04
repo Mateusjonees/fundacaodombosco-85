@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import ClientDetailsView from '@/components/ClientDetailsView';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logoImage from '@/assets/fundacao-dom-bosco-logo.png';
 
 interface Schedule {
   id: string;
@@ -60,7 +61,7 @@ export default function ScheduleControl() {
   const [notificationReason, setNotificationReason] = useState("");
   const [pdfConfigDialogOpen, setPdfConfigDialogOpen] = useState(false);
   const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('landscape');
-  const [pdfUnit, setPdfUnit] = useState<'madre' | 'floresta'>('madre');
+  const [pdfUnit, setPdfUnit] = useState<'madre' | 'floresta' | 'all'>('all');
 
   const handleClientClick = async (clientId: string) => {
     try {
@@ -373,24 +374,50 @@ ${notificationMessage}
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       
-      // Cabeçalho comum
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      
-      // Título baseado na unidade
-      let title = 'Relatório de Agendamentos';
-      if (unitFilter === 'madre') {
-        title = 'Relatório de Agendamentos - Clínica Social MADRE';
-      } else if (unitFilter === 'floresta') {
-        title = 'Relatório de Agendamentos - Neuro Avaliação Floresta';
+      // Adicionar logo no cabeçalho
+      try {
+        // Converter logo para base64 e adicionar ao PDF
+        const logoWidth = 30;
+        const logoHeight = 18;
+        doc.addImage(logoImage, 'PNG', 15, 5, logoWidth, logoHeight);
+      } catch (error) {
+        console.log('Erro ao carregar logo:', error);
       }
       
-      doc.text(title, pageWidth / 2, 15, { align: 'center' });
+      // Título baseado na unidade
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
       
-      doc.setFontSize(11);
+      let title = 'Relatório de Agendamentos';
+      if (unitFilter === 'madre') {
+        title = 'Relatório de Agendamentos';
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Clínica Social - MADRE', pageWidth / 2, 18, { align: 'center' });
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+      } else if (unitFilter === 'floresta') {
+        title = 'Relatório de Agendamentos';
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Neuro Avaliação - Floresta', pageWidth / 2, 18, { align: 'center' });
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+      } else if (unitFilter === 'all') {
+        title = 'Relatório de Agendamentos';
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Todas as Unidades', pageWidth / 2, 18, { align: 'center' });
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+      }
+      
+      doc.text(title, pageWidth / 2, 12, { align: 'center' });
+      
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       const filterText = `Período: ${getDateRangeText()} | Visualização: ${viewMode === 'day' ? 'Diária' : viewMode === 'week' ? 'Semanal' : 'Mensal'}`;
-      doc.text(filterText, pageWidth / 2, 22, { align: 'center' });
+      doc.text(filterText, pageWidth / 2, 25, { align: 'center' });
       
       // Informações de filtro
       let filterInfo = [];
@@ -403,7 +430,7 @@ ${notificationMessage}
       }
       if (filterInfo.length > 0) {
         doc.setFontSize(9);
-        doc.text(filterInfo.join(' | '), pageWidth / 2, 28, { align: 'center' });
+        doc.text(filterInfo.join(' | '), pageWidth / 2, 31, { align: 'center' });
       }
 
       if (viewMode === 'week') {
@@ -417,6 +444,7 @@ ${notificationMessage}
         const cardHeight = 25;
         const cardSpacing = 2;
         const maxY = pageHeight - 35;
+        const startY = filterInfo.length > 0 ? 38 : 32;
         
         // Função auxiliar para desenhar cabeçalho
         const drawWeekHeader = (yPosition: number) => {
@@ -491,7 +519,6 @@ ${notificationMessage}
         };
         
         // Inicializar primeira página
-        const startY = filterInfo.length > 0 ? 35 : 32;
         drawWeekHeader(startY);
         
         // Encontrar o número máximo de agendamentos em qualquer dia
@@ -544,23 +571,23 @@ ${notificationMessage}
         
         const cellWidth = (pageWidth - 30) / 7;
         const cellHeight = (pageHeight - 70) / weeks;
-        const startY = filterInfo.length > 0 ? 35 : 32;
+        const monthStartY = filterInfo.length > 0 ? 38 : 32;
         
         // Cabeçalho dos dias da semana
         const weekDaysNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         weekDaysNames.forEach((dayName, index) => {
           const x = 15 + (index * cellWidth);
           doc.setFillColor(59, 130, 246);
-          doc.rect(x, startY, cellWidth, 8, 'F');
+          doc.rect(x, monthStartY, cellWidth, 8, 'F');
           doc.setTextColor(255, 255, 255);
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
-          doc.text(dayName, x + cellWidth / 2, startY + 6, { align: 'center' });
+          doc.text(dayName, x + cellWidth / 2, monthStartY + 6, { align: 'center' });
         });
         
         // Desenhar calendário
         let currentDay = calendarStart;
-        let currentY = startY + 8;
+        let currentY = monthStartY + 8;
         
         for (let week = 0; week < weeks; week++) {
           for (let day = 0; day < 7; day++) {
@@ -655,7 +682,7 @@ ${notificationMessage}
         
       } else {
         // Layout Diário - Tabela tradicional
-        const startY = filterInfo.length > 0 ? 35 : 32;
+        const dayStartY = filterInfo.length > 0 ? 38 : 32;
         
         const tableData = schedules.map(schedule => [
           `${format(new Date(schedule.start_time), 'HH:mm')} - ${format(new Date(schedule.end_time), 'HH:mm')}`,
@@ -669,7 +696,7 @@ ${notificationMessage}
         ]);
         
         autoTable(doc, {
-          startY: startY,
+          startY: dayStartY,
           head: [['Horário', 'Paciente', 'Profissional', 'Unidade', 'Status']],
           body: tableData,
           styles: { 
@@ -684,7 +711,7 @@ ${notificationMessage}
           alternateRowStyles: {
             fillColor: [245, 245, 245]
           },
-          margin: { top: startY, left: 15, right: 15 }
+          margin: { top: dayStartY, left: 15, right: 15 }
         });
       }
       
@@ -1358,11 +1385,12 @@ ${notificationMessage}
 
             <div className="space-y-2">
               <Label>Unidade</Label>
-              <Select value={pdfUnit} onValueChange={(value: 'madre' | 'floresta') => setPdfUnit(value)}>
+              <Select value={pdfUnit} onValueChange={(value: 'madre' | 'floresta' | 'all') => setPdfUnit(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">Todas as Unidades</SelectItem>
                   <SelectItem value="madre">Clínica Social - MADRE</SelectItem>
                   <SelectItem value="floresta">Neuro Avaliação - Floresta</SelectItem>
                 </SelectContent>
@@ -1372,7 +1400,7 @@ ${notificationMessage}
             <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
               <p className="font-medium mb-1">Preview:</p>
               <p>• Orientação: {pdfOrientation === 'landscape' ? 'Paisagem' : 'Retrato'}</p>
-              <p>• Unidade: {pdfUnit === 'madre' ? 'MADRE' : 'Floresta'}</p>
+              <p>• Unidade: {pdfUnit === 'all' ? 'Todas' : pdfUnit === 'madre' ? 'MADRE' : 'Floresta'}</p>
               <p>• Total de agendamentos: {schedules.length}</p>
             </div>
           </div>
