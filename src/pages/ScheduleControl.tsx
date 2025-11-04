@@ -61,7 +61,6 @@ export default function ScheduleControl() {
   const [notificationReason, setNotificationReason] = useState("");
   const [pdfConfigDialogOpen, setPdfConfigDialogOpen] = useState(false);
   const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('landscape');
-  const [pdfUnit, setPdfUnit] = useState<'madre' | 'floresta' | 'all'>('all');
 
   const handleClientClick = async (clientId: string) => {
     try {
@@ -368,7 +367,7 @@ ${notificationMessage}
     }
   };
 
-  const generatePDF = (orientation: 'portrait' | 'landscape' = 'landscape', unitFilter: 'madre' | 'floresta' | 'all' = 'all') => {
+  const generatePDF = (orientation: 'portrait' | 'landscape' = 'landscape') => {
     try {
       const doc = new jsPDF(orientation);
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -384,35 +383,10 @@ ${notificationMessage}
         console.log('Erro ao carregar logo:', error);
       }
       
-      // Título baseado na unidade
+      // Título
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      
-      let title = 'Relatório de Agendamentos';
-      if (unitFilter === 'madre') {
-        title = 'Relatório de Agendamentos';
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Clínica Social - MADRE', pageWidth / 2, 18, { align: 'center' });
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-      } else if (unitFilter === 'floresta') {
-        title = 'Relatório de Agendamentos';
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Neuro Avaliação - Floresta', pageWidth / 2, 18, { align: 'center' });
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-      } else if (unitFilter === 'all') {
-        title = 'Relatório de Agendamentos';
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Todas as Unidades', pageWidth / 2, 18, { align: 'center' });
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-      }
-      
-      doc.text(title, pageWidth / 2, 12, { align: 'center' });
+      doc.text('Relatório de Agendamentos', pageWidth / 2, 12, { align: 'center' });
       
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
@@ -1383,24 +1357,9 @@ ${notificationMessage}
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Unidade</Label>
-              <Select value={pdfUnit} onValueChange={(value: 'madre' | 'floresta' | 'all') => setPdfUnit(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Unidades</SelectItem>
-                  <SelectItem value="madre">Clínica Social - MADRE</SelectItem>
-                  <SelectItem value="floresta">Neuro Avaliação - Floresta</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
               <p className="font-medium mb-1">Preview:</p>
               <p>• Orientação: {pdfOrientation === 'landscape' ? 'Paisagem' : 'Retrato'}</p>
-              <p>• Unidade: {pdfUnit === 'all' ? 'Todas' : pdfUnit === 'madre' ? 'MADRE' : 'Floresta'}</p>
               <p>• Total de agendamentos: {schedules.length}</p>
             </div>
           </div>
@@ -1414,7 +1373,7 @@ ${notificationMessage}
             </Button>
             <Button
               onClick={() => {
-                generatePDF(pdfOrientation, pdfUnit);
+                generatePDF(pdfOrientation);
                 setPdfConfigDialogOpen(false);
               }}
               className="gap-2"
