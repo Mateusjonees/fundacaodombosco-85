@@ -794,7 +794,9 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
     try {
       // Upload file to Supabase Storage
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Date.now()}_${selectedFile.name}`;
+      // Sanitizar nome do arquivo removendo caracteres inválidos
+      const sanitizedName = selectedFile.name.replace(/[{}[\]<>]/g, '').replace(/\s+/g, '_');
+      const fileName = `${Date.now()}_${sanitizedName}`;
       const filePath = `client-documents/${client.id}/${fileName}`;
 
       console.log('Uploading to storage:', filePath);
