@@ -28,13 +28,13 @@ import {
   Upload,
   History,
   ArrowLeft,
+  Download,
+  Eye,
   UserX,
   RotateCcw,
   AlertTriangle,
   UserPlus,
-  Minus,
-  Download,
-  Eye
+  Minus
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
@@ -72,6 +72,7 @@ interface ClientDocument {
   id: string;
   document_name: string;
   document_type: string;
+  file_path: string;
   uploaded_at: string;
   profiles?: { name: string };
 }
@@ -285,6 +286,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
           id,
           document_name,
           document_type,
+          file_path,
           uploaded_at,
           profiles:uploaded_by (name)
         `)
@@ -848,6 +850,58 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
     }
   };
 
+  const handleDownloadDocument = async (doc: ClientDocument) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('user-documents')
+        .download(doc.file_path);
+
+      if (error) throw error;
+
+      // Criar URL do blob e fazer download
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.document_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download concluído",
+        description: "O documento foi baixado com sucesso!",
+      });
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível baixar o documento.",
+      });
+    }
+  };
+
+  const handleViewDocument = async (doc: ClientDocument) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('user-documents')
+        .createSignedUrl(doc.file_path, 3600); // URL válida por 1 hora
+
+      if (error) throw error;
+
+      // Abrir em nova aba
+      window.open(data.signedUrl, '_blank');
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível visualizar o documento.",
+      });
+    }
+  };
+
   const getUnitLabel = (unit: string) => {
     switch (unit) {
       case 'madre': return 'MADRE';
@@ -1126,13 +1180,31 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
             <div className="space-y-3">
               {documents.map((doc) => (
                 <div key={doc.id} className="flex items-center justify-between p-3 border rounded">
-                  <div>
+                  <div className="flex-1">
                     <div className="font-medium">{doc.document_name}</div>
                     <div className="text-sm text-muted-foreground">
                       Enviado por {doc.profiles?.name || 'Usuário'} em {formatDateTime(doc.uploaded_at)}
                     </div>
                   </div>
-                  <Badge variant="outline">{doc.document_type || 'Documento'}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{doc.document_type || 'pdf'}</Badge>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleViewDocument(doc)}
+                      title="Visualizar documento"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDownloadDocument(doc)}
+                      title="Baixar documento"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
