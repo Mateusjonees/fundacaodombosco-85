@@ -25,7 +25,6 @@ import { PatientReportGenerator } from '@/components/PatientReportGenerator';
 import { ClientAssignmentManager } from '@/components/ClientAssignmentManager';
 import { importClientsFromFile } from '@/utils/importClients';
 import { executeDirectImport } from '@/utils/directImport';
-
 interface Client {
   id: string;
   name: string;
@@ -47,14 +46,20 @@ interface Client {
   is_active: boolean;
   created_at: string;
 }
-
 interface UserProfile {
   employee_role: string;
 }
-
 export default function Patients() {
-  const { user } = useAuth();
-  const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
+  const {
+    user
+  } = useAuth();
+  const {
+    canViewAllClients,
+    canCreateClients,
+    canEditClients,
+    canDeleteClients,
+    isGodMode
+  } = useRolePermissions();
   const customPermissions = useCustomPermissions();
   const [employees, setEmployees] = useState<any[]>([]);
   const [clientAssignments, setClientAssignments] = useState<any[]>([]);
@@ -63,27 +68,29 @@ export default function Patients() {
   const [unitFilter, setUnitFilter] = useState('all');
   const [ageFilter, setAgeFilter] = useState('all');
   const [professionalFilter, setProfessionalFilter] = useState('all');
-  
+
   // Debounce da busca para evitar queries excessivas durante digitação
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
 
   // Usar React Query com cache e filtros otimizados
-  const { data: clients = [], isLoading } = useClients({
-    searchTerm: debouncedSearch || undefined,
+  const {
+    data: clients = [],
+    isLoading
+  } = useClients({
+    searchTerm: debouncedSearch || undefined
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [reportClient, setReportClient] = useState<Client | null>(null);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
 
   // Helper function to check if user is coordinator or director
   const isCoordinatorOrDirector = () => {
-    return userProfile?.employee_role === 'director' || 
-           userProfile?.employee_role === 'coordinator_madre' || 
-           userProfile?.employee_role === 'coordinator_floresta';
+    return userProfile?.employee_role === 'director' || userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta';
   };
-
   const [newClient, setNewClient] = useState({
     name: '',
     phone: '',
@@ -107,25 +114,21 @@ export default function Patients() {
   useEffect(() => {
     if (userProfile) {
       let defaultUnit = 'madre';
-      
       if (userProfile.employee_role === 'coordinator_floresta') {
         defaultUnit = 'floresta';
       } else if (userProfile.employee_role === 'coordinator_madre') {
         defaultUnit = 'madre';
       }
-      
       setNewClient(prev => ({
         ...prev,
         unit: defaultUnit
       }));
     }
   }, [userProfile]);
-
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-
   useEffect(() => {
     loadUserProfile();
     loadEmployees();
@@ -136,49 +139,41 @@ export default function Patients() {
 
   const loadUserProfile = async () => {
     if (!user) return;
-
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('employee_role')
-        .eq('user_id', user.id)
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('profiles').select('employee_role').eq('user_id', user.id).single();
       if (error) throw error;
       setUserProfile(data);
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
   };
-
   const loadEmployees = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, employee_role, user_id')
-        .eq('is_active', true)
-        .order('name');
-
+      const {
+        data,
+        error
+      } = await supabase.from('profiles').select('id, name, employee_role, user_id').eq('is_active', true).order('name');
       if (error) throw error;
       setEmployees(data || []);
     } catch (error) {
       console.error('Error loading employees:', error);
     }
   };
-
   const loadClientAssignments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('client_assignments')
-        .select(`
+      const {
+        data,
+        error
+      } = await supabase.from('client_assignments').select(`
           client_id,
           employee_id,
           is_active,
           clients (id, name),
           profiles!client_assignments_employee_id_fkey (id, name, user_id)
-        `)
-        .eq('is_active', true);
-
+        `).eq('is_active', true);
       if (error) throw error;
       setClientAssignments(data || []);
     } catch (error) {
@@ -190,20 +185,17 @@ export default function Patients() {
 
   const handleCreateClient = async () => {
     try {
-      const { error } = await supabase
-        .from('clients')
-        .insert({
-          ...newClient,
-          created_by: user?.id
-        });
-
+      const {
+        error
+      } = await supabase.from('clients').insert({
+        ...newClient,
+        created_by: user?.id
+      });
       if (error) throw error;
-
       toast({
         title: "Paciente cadastrado",
-        description: "Paciente cadastrado com sucesso!",
+        description: "Paciente cadastrado com sucesso!"
       });
-
       setIsDialogOpen(false);
       resetForm();
       window.location.reload(); // Recarrega para atualizar cache
@@ -213,27 +205,21 @@ export default function Patients() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível cadastrar o paciente.",
+        description: "Não foi possível cadastrar o paciente."
       });
     }
   };
-
   const handleUpdateClient = async () => {
     if (!editingClient) return;
-
     try {
-      const { error } = await supabase
-        .from('clients')
-        .update(newClient)
-        .eq('id', editingClient.id);
-
+      const {
+        error
+      } = await supabase.from('clients').update(newClient).eq('id', editingClient.id);
       if (error) throw error;
-
       toast({
         title: "Paciente atualizado",
-        description: "Dados atualizados com sucesso!",
+        description: "Dados atualizados com sucesso!"
       });
-
       setIsDialogOpen(false);
       setEditingClient(null);
       resetForm();
@@ -244,39 +230,34 @@ export default function Patients() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar o paciente.",
+        description: "Não foi possível atualizar o paciente."
       });
     }
   };
-
   const handleToggleClientStatus = async (clientId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('clients')
-        .update({ is_active: !currentStatus })
-        .eq('id', clientId);
-
+      const {
+        error
+      } = await supabase.from('clients').update({
+        is_active: !currentStatus
+      }).eq('id', clientId);
       if (error) throw error;
-
       toast({
         title: currentStatus ? "Paciente desativado" : "Paciente ativado",
-        description: `Paciente ${currentStatus ? 'desativado' : 'ativado'} com sucesso!`,
+        description: `Paciente ${currentStatus ? 'desativado' : 'ativado'} com sucesso!`
       });
-
       window.location.reload();
     } catch (error) {
       console.error('Error toggling client status:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível alterar o status do paciente.",
+        description: "Não foi possível alterar o status do paciente."
       });
     }
   };
-
   const resetForm = () => {
     const defaultUnit = userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' : 'madre';
-    
     setNewClient({
       name: '',
       phone: '',
@@ -296,25 +277,22 @@ export default function Patients() {
       clinical_observations: ''
     });
   };
-
   const handleDirectImport = async () => {
     setIsImporting(true);
     try {
       const result = await executeDirectImport();
-      
       if (result.success > 0) {
         toast({
           title: "Importação concluída",
-          description: `${result.success} pacientes importados com sucesso.`,
+          description: `${result.success} pacientes importados com sucesso.`
         });
         window.location.reload();
       }
-      
       if (result.errors.length > 0) {
         toast({
           variant: "destructive",
           title: "Alguns erros ocorreram",
-          description: `${result.errors.length} erro(s) encontrado(s). Verifique o console para detalhes.`,
+          description: `${result.errors.length} erro(s) encontrado(s). Verifique o console para detalhes.`
         });
         console.error('Erros na importação:', result.errors);
       }
@@ -322,7 +300,7 @@ export default function Patients() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível importar os pacientes.",
+        description: "Não foi possível importar os pacientes."
       });
       console.error('Erro na importação:', error);
     } finally {
@@ -369,17 +347,15 @@ export default function Patients() {
   // O searchTerm já é aplicado via React Query com debounce
   const filteredClients = useMemo(() => clients.filter(client => {
     const matchesUnit = unitFilter === 'all' || client.unit === unitFilter;
-
     const matchesAge = ageFilter === 'all' || (() => {
       if (!client.birth_date) return true;
       const birthDate = new Date(client.birth_date);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      if (monthDiff < 0 || monthDiff === 0 && today.getDate() < birthDate.getDate()) {
         age--;
       }
-      
       if (ageFilter === 'minor') return age < 18;
       if (ageFilter === 'adult') return age >= 18;
       return true;
@@ -388,17 +364,13 @@ export default function Patients() {
     // Professional filter - only show if coordinator/director
     const matchesProfessional = !isCoordinatorOrDirector() || professionalFilter === 'all' || (() => {
       // Find assignments for this client
-      const clientAssignment = clientAssignments.find(assignment => 
-        assignment.client_id === client.id && 
-        assignment.is_active
-      );
-      
+      const clientAssignment = clientAssignments.find(assignment => assignment.client_id === client.id && assignment.is_active);
+
       // If professional filter is selected, check if client is assigned to that professional
       if (professionalFilter !== 'all') {
         // The professionalFilter contains the employee.id (profile id), 
         // but we need to compare with user_id in assignments
         const selectedEmployee = employees.find(emp => emp.id === professionalFilter);
-        
         if (selectedEmployee && clientAssignment) {
           const matches = clientAssignment.employee_id === selectedEmployee.user_id;
           return matches;
@@ -406,38 +378,23 @@ export default function Patients() {
         // If no assignment found and filtering by professional, don't show this client
         return false;
       }
-      
       return true;
     })();
-
     return matchesUnit && matchesAge && matchesProfessional;
   }), [clients, unitFilter, ageFilter, professionalFilter, clientAssignments, employees, isCoordinatorOrDirector]);
-
   if (selectedClient) {
-    return (
-      <div className="space-y-6">
-        <Button 
-          variant="outline" 
-          onClick={() => setSelectedClient(null)}
-          className="gap-2"
-        >
+    return <div className="space-y-6">
+        <Button variant="outline" onClick={() => setSelectedClient(null)} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Voltar para Lista
         </Button>
-        <ClientDetailsView 
-          client={selectedClient} 
-          onEdit={() => {
-            setSelectedClient(null);
-            openEditDialog(selectedClient);
-          }}
-          onRefresh={() => window.location.reload()}
-        />
-      </div>
-    );
+        <ClientDetailsView client={selectedClient} onEdit={() => {
+        setSelectedClient(null);
+        openEditDialog(selectedClient);
+      }} onRefresh={() => window.location.reload()} />
+      </div>;
   }
-
-  return (
-    <div className="space-y-8 animate-fade-in">
+  return <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
@@ -447,27 +404,20 @@ export default function Patients() {
             </h1>
           </div>
           <p className="text-sm text-muted-foreground ml-5 flex items-center gap-2">
-            {isGodMode() 
-              ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium">🔑 Modo Diretor</span> Acesso total aos pacientes</> 
-              : isCoordinatorOrDirector() 
-                ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">📋</span> Gerenciando pacientes da sua unidade</> 
-                : <><span className="inline-flex items-center px-2 py-1 rounded-md bg-green-500/10 text-green-600 text-xs font-medium">👥</span> Visualizando apenas pacientes vinculados a você</>
-            }
+            {isGodMode() ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium">🔑 Modo Diretor</span> Acesso total aos pacientes</> : isCoordinatorOrDirector() ? <><span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">📋</span> Gerenciando pacientes da sua unidade</> : <><span className="inline-flex items-center px-2 py-1 rounded-md bg-green-500/10 text-green-600 text-xs font-medium">👥</span> Visualizando apenas pacientes vinculados a você</>}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isGodMode() && (
-            <Badge variant="default" className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg">
+          {isGodMode() && <Badge variant="default" className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg">
               🔑 Diretor
-            </Badge>
-          )}
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) {
-              setEditingClient(null);
-              resetForm();
-            }
-          }}>
+            </Badge>}
+          <Dialog open={isDialogOpen} onOpenChange={open => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setEditingClient(null);
+            resetForm();
+          }
+        }}>
             <DialogTrigger asChild>
               <Button className="gap-2 w-full md:w-auto bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0">
                 <Plus className="h-5 w-5" />
@@ -483,180 +433,137 @@ export default function Patients() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome Completo *</Label>
-                  <Input
-                    id="name"
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                    placeholder="Digite o nome completo"
-                  />
+                  <Input id="name" value={newClient.name} onChange={e => setNewClient({
+                  ...newClient,
+                  name: e.target.value
+                })} placeholder="Digite o nome completo" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    value={newClient.phone}
-                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                  />
+                  <Input id="phone" value={newClient.phone} onChange={e => setNewClient({
+                  ...newClient,
+                  phone: e.target.value
+                })} placeholder="(00) 00000-0000" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newClient.email}
-                    onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                    placeholder="email@exemplo.com"
-                  />
+                  <Input id="email" type="email" value={newClient.email} onChange={e => setNewClient({
+                  ...newClient,
+                  email: e.target.value
+                })} placeholder="email@exemplo.com" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="birth_date">Data de Nascimento</Label>
-                  <Input
-                    id="birth_date"
-                    type="date"
-                    value={newClient.birth_date}
-                    onChange={(e) => setNewClient({ ...newClient, birth_date: e.target.value })}
-                  />
+                  <Input id="birth_date" type="date" value={newClient.birth_date} onChange={e => setNewClient({
+                  ...newClient,
+                  birth_date: e.target.value
+                })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cpf">CPF</Label>
-                  <Input
-                    id="cpf"
-                    value={newClient.cpf}
-                    onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
-                    placeholder="000.000.000-00"
-                  />
+                  <Input id="cpf" value={newClient.cpf} onChange={e => setNewClient({
+                  ...newClient,
+                  cpf: e.target.value
+                })} placeholder="000.000.000-00" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="unit">Unidade</Label>
-                  <Select 
-                    value={newClient.unit} 
-                    onValueChange={(value) => setNewClient({ ...newClient, unit: value })}
-                    disabled={userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta'}
-                  >
+                  <Select value={newClient.unit} onValueChange={value => setNewClient({
+                  ...newClient,
+                  unit: value
+                })} disabled={userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta'}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'receptionist') && (
-                        <>
+                      {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'receptionist') && <>
                           <SelectItem value="madre">MADRE</SelectItem>
                           <SelectItem value="floresta">Floresta</SelectItem>
-                        </>
-                      )}
-                      {userProfile?.employee_role === 'coordinator_madre' && (
-                        <SelectItem value="madre">MADRE</SelectItem>
-                      )}
-                      {userProfile?.employee_role === 'coordinator_floresta' && (
-                        <SelectItem value="floresta">Neuro (Floresta)</SelectItem>
-                      )}
+                        </>}
+                      {userProfile?.employee_role === 'coordinator_madre' && <SelectItem value="madre">MADRE</SelectItem>}
+                      {userProfile?.employee_role === 'coordinator_floresta' && <SelectItem value="floresta">Neuro (Floresta)</SelectItem>}
                     </SelectContent>
                   </Select>
-                  {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && (
-                    <p className="text-sm text-muted-foreground">
+                  {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && <p className="text-sm text-muted-foreground">
                       Você só pode cadastrar clientes para sua unidade.
-                    </p>
-                  )}
+                    </p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="responsible_name">Nome do Responsável</Label>
-                  <Input
-                    id="responsible_name"
-                    value={newClient.responsible_name}
-                    onChange={(e) => setNewClient({ ...newClient, responsible_name: e.target.value })}
-                    placeholder="Nome completo do responsável"
-                  />
+                  <Input id="responsible_name" value={newClient.responsible_name} onChange={e => setNewClient({
+                  ...newClient,
+                  responsible_name: e.target.value
+                })} placeholder="Nome completo do responsável" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="responsible_phone">Telefone do Responsável</Label>
-                  <Input
-                    id="responsible_phone"
-                    value={newClient.responsible_phone}
-                    onChange={(e) => setNewClient({ ...newClient, responsible_phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                  />
+                  <Input id="responsible_phone" value={newClient.responsible_phone} onChange={e => setNewClient({
+                  ...newClient,
+                  responsible_phone: e.target.value
+                })} placeholder="(00) 00000-0000" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="emergency_contact">Contato de Emergência</Label>
-                  <Input
-                    id="emergency_contact"
-                    value={newClient.emergency_contact}
-                    onChange={(e) => setNewClient({ ...newClient, emergency_contact: e.target.value })}
-                    placeholder="Nome do contato de emergência"
-                  />
+                  <Input id="emergency_contact" value={newClient.emergency_contact} onChange={e => setNewClient({
+                  ...newClient,
+                  emergency_contact: e.target.value
+                })} placeholder="Nome do contato de emergência" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="emergency_phone">Telefone de Emergência</Label>
-                  <Input
-                    id="emergency_phone"
-                    value={newClient.emergency_phone}
-                    onChange={(e) => setNewClient({ ...newClient, emergency_phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                  />
+                  <Input id="emergency_phone" value={newClient.emergency_phone} onChange={e => setNewClient({
+                  ...newClient,
+                  emergency_phone: e.target.value
+                })} placeholder="(00) 00000-0000" />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <Label htmlFor="address">Endereço Completo</Label>
-                  <Textarea
-                    id="address"
-                    value={newClient.address}
-                    onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
-                    placeholder="Rua, número, bairro, cidade, CEP"
-                  />
+                  <Textarea id="address" value={newClient.address} onChange={e => setNewClient({
+                  ...newClient,
+                  address: e.target.value
+                })} placeholder="Rua, número, bairro, cidade, CEP" />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <Label htmlFor="medical_history">Histórico Médico</Label>
-                  <Textarea
-                    id="medical_history"
-                    value={newClient.medical_history}
-                    onChange={(e) => setNewClient({ ...newClient, medical_history: e.target.value })}
-                    placeholder="Histórico médico relevante, medicações em uso, alergias..."
-                  />
+                  <Textarea id="medical_history" value={newClient.medical_history} onChange={e => setNewClient({
+                  ...newClient,
+                  medical_history: e.target.value
+                })} placeholder="Histórico médico relevante, medicações em uso, alergias..." />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <Label htmlFor="diagnosis">Diagnóstico</Label>
-                  <Textarea
-                    id="diagnosis"
-                    value={newClient.diagnosis}
-                    onChange={(e) => setNewClient({ ...newClient, diagnosis: e.target.value })}
-                    placeholder="Diagnóstico médico ou hipótese diagnóstica"
-                  />
+                  <Textarea id="diagnosis" value={newClient.diagnosis} onChange={e => setNewClient({
+                  ...newClient,
+                  diagnosis: e.target.value
+                })} placeholder="Diagnóstico médico ou hipótese diagnóstica" />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <Label htmlFor="neuropsych_complaint">Queixa Neuropsicológica</Label>
-                  <Textarea
-                    id="neuropsych_complaint"
-                    value={newClient.neuropsych_complaint}
-                    onChange={(e) => setNewClient({ ...newClient, neuropsych_complaint: e.target.value })}
-                    placeholder="Queixa principal relacionada à neuropsicologia"
-                  />
+                  <Textarea id="neuropsych_complaint" value={newClient.neuropsych_complaint} onChange={e => setNewClient({
+                  ...newClient,
+                  neuropsych_complaint: e.target.value
+                })} placeholder="Queixa principal relacionada à neuropsicologia" />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <Label htmlFor="treatment_expectations">Expectativas do Tratamento</Label>
-                  <Textarea
-                    id="treatment_expectations"
-                    value={newClient.treatment_expectations}
-                    onChange={(e) => setNewClient({ ...newClient, treatment_expectations: e.target.value })}
-                    placeholder="O que o paciente/família espera do tratamento"
-                  />
+                  <Textarea id="treatment_expectations" value={newClient.treatment_expectations} onChange={e => setNewClient({
+                  ...newClient,
+                  treatment_expectations: e.target.value
+                })} placeholder="O que o paciente/família espera do tratamento" />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
                   <Label htmlFor="clinical_observations">Observações Clínicas</Label>
-                  <Textarea
-                    id="clinical_observations"
-                    value={newClient.clinical_observations}
-                    onChange={(e) => setNewClient({ ...newClient, clinical_observations: e.target.value })}
-                    placeholder="Observações gerais sobre o paciente"
-                  />
+                  <Textarea id="clinical_observations" value={newClient.clinical_observations} onChange={e => setNewClient({
+                  ...newClient,
+                  clinical_observations: e.target.value
+                })} placeholder="Observações gerais sobre o paciente" />
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button 
-                  onClick={editingClient ? handleUpdateClient : handleCreateClient} 
-                  disabled={!newClient.name}
-                >
+                <Button onClick={editingClient ? handleUpdateClient : handleCreateClient} disabled={!newClient.name}>
                   {editingClient ? 'Atualizar' : 'Cadastrar'}
                 </Button>
               </div>
@@ -704,8 +611,7 @@ export default function Patients() {
               </Select>
             </div>
             
-            {isCoordinatorOrDirector() && (
-              <div className="space-y-2">
+            {isCoordinatorOrDirector() && <div className="space-y-2">
                 <Label className="text-sm font-medium text-foreground">Profissional:</Label>
                 <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
                   <SelectTrigger className="bg-background border-border">
@@ -714,21 +620,15 @@ export default function Patients() {
                   <SelectContent>
                     <SelectItem value="all">Todos os Profissionais</SelectItem>
                     {employees.map(employee => {
-                      // Count how many clients this professional has assigned
-                      const assignedCount = clientAssignments.filter(assignment => 
-                        assignment.employee_id === employee.user_id && assignment.is_active
-                      ).length;
-                      
-                      return (
-                        <SelectItem key={employee.id} value={employee.id}>
+                  // Count how many clients this professional has assigned
+                  const assignedCount = clientAssignments.filter(assignment => assignment.employee_id === employee.user_id && assignment.is_active).length;
+                  return <SelectItem key={employee.id} value={employee.id}>
                           {employee.name} ({assignedCount} pacientes)
-                        </SelectItem>
-                      );
-                    })}
+                        </SelectItem>;
+                })}
                   </SelectContent>
                 </Select>
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
       </Card>
@@ -784,11 +684,11 @@ export default function Patients() {
       </div>
 
       <Tabs defaultValue="list" className="space-y-6">
-        <TabsList className="grid w-full max-w-md" style={{ gridTemplateColumns: isCoordinatorOrDirector() ? '1fr 1fr' : '1fr' }}>
+        <TabsList className="grid w-full max-w-md" style={{
+        gridTemplateColumns: isCoordinatorOrDirector() ? '1fr 1fr' : '1fr'
+      }}>
           <TabsTrigger value="list">Lista de Pacientes</TabsTrigger>
-          {isCoordinatorOrDirector() && (
-            <TabsTrigger value="assignments">Gerenciar Vinculações</TabsTrigger>
-          )}
+          {isCoordinatorOrDirector() && <TabsTrigger value="assignments">Gerenciar Vinculações</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
@@ -803,12 +703,7 @@ export default function Patients() {
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex items-center space-x-2 flex-1 relative">
               <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder="🔍 Buscar por ID, nome, CPF, telefone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 pl-10 border-primary/20 focus:border-primary/40 bg-background/50"
-              />
+              <Input placeholder="🔍 Buscar por ID, nome, CPF, telefone..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="flex-1 pl-10 border-primary/20 focus:border-primary/40 bg-background/50" />
             </div>
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
@@ -826,48 +721,31 @@ export default function Patients() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-muted-foreground text-center py-8">Carregando pacientes...</p>
-          ) : filteredClients.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
+          {isLoading ? <p className="text-muted-foreground text-center py-8">Carregando pacientes...</p> : filteredClients.length === 0 ? <p className="text-muted-foreground text-center py-8">
               {searchTerm ? 'Nenhum paciente encontrado com o termo de busca.' : 'Nenhum paciente cadastrado.'}
-            </p>
-          ) : (
-            <Table>
+            </p> : <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Telefone</TableHead>
-                  <TableHead>Unidade</TableHead>
+                  <TableHead>Area
+                  </TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data de Cadastro</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredClients.map((client) => (
-                  <TableRow key={client.id}>
+                {filteredClients.map(client => <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell>{client.phone || '-'}</TableCell>
                      <TableCell>
-                       <Badge 
-                         variant="outline" 
-                         className={client.unit === 'madre' 
-                           ? 'border-blue-500/50 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20' 
-                           : 'border-green-500/50 bg-green-500/10 text-green-600 hover:bg-green-500/20'
-                         }
-                       >
+                       <Badge variant="outline" className={client.unit === 'madre' ? 'border-blue-500/50 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20' : 'border-green-500/50 bg-green-500/10 text-green-600 hover:bg-green-500/20'}>
                          {client.unit === 'madre' ? '🏥 Madre' : '🧠 Floresta'}
                        </Badge>
                      </TableCell>
                      <TableCell>
-                       <Badge 
-                         variant={client.is_active ? "default" : "secondary"}
-                         className={client.is_active 
-                           ? 'bg-green-500/90 hover:bg-green-500 border-0' 
-                           : 'bg-gray-400/90 hover:bg-gray-400 border-0'
-                         }
-                       >
+                       <Badge variant={client.is_active ? "default" : "secondary"} className={client.is_active ? 'bg-green-500/90 hover:bg-green-500 border-0' : 'bg-gray-400/90 hover:bg-gray-400 border-0'}>
                          {client.is_active ? '✓ Ativo' : '⏸ Inativo'}
                        </Badge>
                      </TableCell>
@@ -876,90 +754,42 @@ export default function Patients() {
                     </TableCell>
                        <TableCell>
                          <div className="flex gap-2">
-                           <Button 
-                             variant="outline" 
-                             size="sm"
-                             onClick={() => setSelectedClient(client)}
-                             className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all"
-                             title="Visualizar"
-                           >
+                           <Button variant="outline" size="sm" onClick={() => setSelectedClient(client)} className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all" title="Visualizar">
                              <Eye className="h-4 w-4" />
                            </Button>
-                           {isCoordinatorOrDirector() && (
-                             <>
-                               <Button 
-                                 variant="outline" 
-                                 size="sm"
-                                 onClick={() => openEditDialog(client)}
-                                 className="hover:bg-orange-500/10 hover:text-orange-600 hover:border-orange-500/50 transition-all"
-                                 title="Editar"
-                               >
+                           {isCoordinatorOrDirector() && <>
+                               <Button variant="outline" size="sm" onClick={() => openEditDialog(client)} className="hover:bg-orange-500/10 hover:text-orange-600 hover:border-orange-500/50 transition-all" title="Editar">
                                  <Edit className="h-4 w-4" />
                                </Button>
-                               <Button 
-                                 variant="outline" 
-                                 size="sm"
-                                 onClick={() => setReportClient(client)}
-                                 className="hover:bg-purple-500/10 hover:text-purple-600 hover:border-purple-500/50 transition-all"
-                                 title="Gerar Relatório"
-                               >
+                               <Button variant="outline" size="sm" onClick={() => setReportClient(client)} className="hover:bg-purple-500/10 hover:text-purple-600 hover:border-purple-500/50 transition-all" title="Gerar Relatório">
                                  <FileText className="h-4 w-4" />
                                </Button>
-                               <Button 
-                                 variant={client.is_active ? "outline" : "outline"}
-                                 size="sm"
-                                 onClick={() => handleToggleClientStatus(client.id, client.is_active)}
-                                 className={client.is_active 
-                                   ? "hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/50 transition-all" 
-                                   : "hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/50 transition-all"
-                                 }
-                                 title={client.is_active ? "Desativar" : "Ativar"}
-                               >
+                               <Button variant={client.is_active ? "outline" : "outline"} size="sm" onClick={() => handleToggleClientStatus(client.id, client.is_active)} className={client.is_active ? "hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/50 transition-all" : "hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/50 transition-all"} title={client.is_active ? "Desativar" : "Ativar"}>
                                  <Power className="h-4 w-4" />
                                </Button>
-                             </>
-                           )}
+                             </>}
                          </div>
                        </TableCell>
-                  </TableRow>
-                ))}
+                  </TableRow>)}
               </TableBody>
-            </Table>
-          )}
+            </Table>}
         </CardContent>
       </Card>
         </TabsContent>
 
-        {isCoordinatorOrDirector() && (
-          <TabsContent value="assignments">
+        {isCoordinatorOrDirector() && <TabsContent value="assignments">
             <ClientAssignmentManager />
-          </TabsContent>
-        )}
+          </TabsContent>}
       </Tabs>
       
-      <BulkImportClientsDialog 
-        isOpen={isBulkImportOpen}
-        onClose={() => setIsBulkImportOpen(false)}
-        onImportComplete={() => {
-          window.location.reload();
-        }}
-      />
+      <BulkImportClientsDialog isOpen={isBulkImportOpen} onClose={() => setIsBulkImportOpen(false)} onImportComplete={() => {
+      window.location.reload();
+    }} />
       
-      <AutoImportClientsDialog 
-        isOpen={isAutoImportOpen}
-        onClose={() => setIsAutoImportOpen(false)}
-        onImportComplete={() => {
-          window.location.reload();
-        }}
-      />
+      <AutoImportClientsDialog isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} onImportComplete={() => {
+      window.location.reload();
+    }} />
 
-      {reportClient && (
-        <PatientReportGenerator
-          client={reportClient}
-          isOpen={!!reportClient}
-          onClose={() => setReportClient(null)}
-        />
-      )}
-    </div>
-  );
+      {reportClient && <PatientReportGenerator client={reportClient} isOpen={!!reportClient} onClose={() => setReportClient(null)} />}
+    </div>;
 }
