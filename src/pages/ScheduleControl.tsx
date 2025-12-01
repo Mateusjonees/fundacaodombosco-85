@@ -400,7 +400,7 @@ ${notificationMessage}
         filterInfo.push(`Profissional: ${emp?.name || 'N/A'}`);
       }
       if (selectedUnit !== 'all') {
-        filterInfo.push(`Unidade: ${selectedUnit === 'madre' ? 'MADRE' : 'Floresta'}`);
+        filterInfo.push(`Unidade: ${selectedUnit === 'madre' ? 'MADRE' : selectedUnit === 'floresta' ? 'Floresta' : selectedUnit === 'atendimento_floresta' ? 'Atendimento Floresta' : selectedUnit}`);
       }
       if (filterInfo.length > 0) {
         doc.setFontSize(9);
@@ -1133,8 +1133,9 @@ ${notificationMessage}
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as unidades</SelectItem>
-                    <SelectItem value="madre">MADRE</SelectItem>
-                    <SelectItem value="floresta">Floresta</SelectItem>
+                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                   </SelectContent>
                 </Select>
 

@@ -361,10 +361,11 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma unidade" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="madre">MADRE</SelectItem>
-                <SelectItem value="floresta">Floresta</SelectItem>
-              </SelectContent>
+                  <SelectContent>
+                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
+                  </SelectContent>
             </Select>
           </div>
 
