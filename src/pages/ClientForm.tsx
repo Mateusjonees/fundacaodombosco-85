@@ -454,8 +454,9 @@ export default function ClientForm() {
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-md z-50">
-                    <SelectItem value="madre">MADRE</SelectItem>
-                    <SelectItem value="floresta">Floresta</SelectItem>
+                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                   </SelectContent>
                 </Select>
                 {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && (

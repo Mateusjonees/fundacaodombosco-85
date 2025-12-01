@@ -164,7 +164,7 @@ export default function ScheduleControl() {
 **Paciente:** ${schedule.clients?.name || 'Não identificado'}
 **Data/Hora:** ${format(new Date(schedule.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
 **Status:** ${schedule.status === 'scheduled' ? 'Agendado' : schedule.status === 'confirmed' ? 'Confirmado' : schedule.status === 'cancelled' ? 'Cancelado' : 'Pendente'}
-**Unidade:** ${schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+**Unidade:** ${schedule.unit === 'madre' ? 'MADRE' : schedule.unit === 'floresta' ? 'Floresta' : schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' : schedule.unit}
 
 **Mensagem:**
 ${notificationMessage}
@@ -627,7 +627,7 @@ ${notificationMessage}
               `${format(new Date(schedule.start_time), 'HH:mm')} - ${format(new Date(schedule.end_time), 'HH:mm')}`,
               schedule.clients?.name || 'N/A',
               schedule.profiles?.name || 'N/A',
-              schedule.unit === 'madre' ? 'MADRE' : 'Floresta',
+              schedule.unit === 'madre' ? 'MADRE' : schedule.unit === 'floresta' ? 'Floresta' : schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' : schedule.unit,
               schedule.status === 'scheduled' ? 'Agendado' : 
               schedule.status === 'confirmed' ? 'Confirmado' : 
               schedule.status === 'completed' ? 'Concluído' : 
@@ -662,7 +662,7 @@ ${notificationMessage}
           `${format(new Date(schedule.start_time), 'HH:mm')} - ${format(new Date(schedule.end_time), 'HH:mm')}`,
           schedule.clients?.name || 'N/A',
           schedule.profiles?.name || 'N/A',
-          schedule.unit === 'madre' ? 'MADRE' : 'Floresta',
+          schedule.unit === 'madre' ? 'MADRE' : schedule.unit === 'floresta' ? 'Floresta' : schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' : schedule.unit,
           schedule.status === 'scheduled' ? 'Agendado' : 
           schedule.status === 'confirmed' ? 'Confirmado' : 
           schedule.status === 'completed' ? 'Concluído' : 
@@ -805,8 +805,15 @@ ${notificationMessage}
 
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'}>
-                              {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+                            <Badge variant={
+                              schedule.unit === 'madre' ? 'default' : 
+                              schedule.unit === 'floresta' ? 'secondary' :
+                              'outline'
+                            }>
+                              {schedule.unit === 'madre' ? 'MADRE' : 
+                               schedule.unit === 'floresta' ? 'Floresta' :
+                               schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
+                               schedule.unit || 'N/A'}
                             </Badge>
                           </div>
 
@@ -919,8 +926,15 @@ ${notificationMessage}
                         <span className="truncate text-[10px]">{schedule.profiles?.name}</span>
                       </div>
 
-                      <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'} className="text-[9px] px-1.5 py-0.5">
-                        {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+                      <Badge variant={
+                        schedule.unit === 'madre' ? 'default' : 
+                        schedule.unit === 'floresta' ? 'secondary' :
+                        'outline'
+                      } className="text-[9px] px-1.5 py-0.5">
+                        {schedule.unit === 'madre' ? 'MADRE' : 
+                         schedule.unit === 'floresta' ? 'Floresta' :
+                         schedule.unit === 'atendimento_floresta' ? 'Atend. Floresta' :
+                         schedule.unit || 'N/A'}
                       </Badge>
                       
                       {/* Ações para diretores na visualização semanal */}
@@ -1001,8 +1015,15 @@ ${notificationMessage}
                       {schedule.profiles?.name || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={schedule.unit === 'madre' ? 'default' : 'secondary'}>
-                        {schedule.unit === 'madre' ? 'MADRE' : 'Floresta'}
+                      <Badge variant={
+                        schedule.unit === 'madre' ? 'default' : 
+                        schedule.unit === 'floresta' ? 'secondary' :
+                        'outline'
+                      }>
+                        {schedule.unit === 'madre' ? 'MADRE' : 
+                         schedule.unit === 'floresta' ? 'Floresta' :
+                         schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
+                         schedule.unit || 'N/A'}
                       </Badge>
                     </TableCell>
                     <TableCell>

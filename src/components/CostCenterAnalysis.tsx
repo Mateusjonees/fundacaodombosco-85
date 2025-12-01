@@ -62,7 +62,7 @@ export const CostCenterAnalysis = () => {
       const units: UnitData[] = [];
       const categories: Record<string, number> = {};
 
-      for (const unit of ['madre', 'floresta']) {
+      for (const unit of ['madre', 'floresta', 'atendimento_floresta']) {
         // 1. Buscar clientes da unidade
         const { data: clientsInUnit } = await supabase
           .from('clients')

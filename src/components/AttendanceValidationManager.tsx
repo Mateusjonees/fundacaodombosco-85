@@ -300,8 +300,9 @@ export default function AttendanceValidationManager() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as unidades</SelectItem>
-                  <SelectItem value="madre">MADRE</SelectItem>
-                  <SelectItem value="floresta">Floresta</SelectItem>
+                  <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                  <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                  <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -363,7 +364,10 @@ export default function AttendanceValidationManager() {
                   <div>
                     <Label className="font-medium text-xs sm:text-sm">Unidade</Label>
                     <p className="text-muted-foreground text-xs sm:text-sm">
-                      {attendance.unit === 'madre' ? 'Madre' : 'Floresta'}
+                      {attendance.unit === 'madre' ? 'MADRE' : 
+                       attendance.unit === 'floresta' ? 'Floresta' :
+                       attendance.unit === 'atendimento_floresta' ? 'Atendimento Floresta' : 
+                       attendance.unit || 'N/A'}
                     </p>
                   </div>
                   <div>

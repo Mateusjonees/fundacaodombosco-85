@@ -753,8 +753,9 @@ export default function Financial() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="madre">Madre</SelectItem>
-                  <SelectItem value="floresta">Floresta</SelectItem>
+                  <SelectItem value="madre">Madre (Clínica Social)</SelectItem>
+                  <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                  <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                 </SelectContent>
               </Select>
             </div>

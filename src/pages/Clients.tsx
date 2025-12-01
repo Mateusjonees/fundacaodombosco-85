@@ -759,8 +759,9 @@ export default function Patients() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as Unidades</SelectItem>
-                  <SelectItem value="madre">MADRE</SelectItem>
-                  <SelectItem value="floresta">Floresta</SelectItem>
+                  <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                  <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                  <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -895,8 +896,9 @@ export default function Patients() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas as Unidades</SelectItem>
-                      <SelectItem value="madre">MADRE</SelectItem>
-                      <SelectItem value="floresta">Floresta</SelectItem>
+                      <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                      <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                      <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
