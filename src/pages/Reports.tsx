@@ -497,8 +497,9 @@ export default function Reports() {
                   </SelectTrigger>
                   <SelectContent>
                     {!coordinatorUnit && <SelectItem value="all">Todas as unidades</SelectItem>}
-                    <SelectItem value="madre">MADRE</SelectItem>
-                    <SelectItem value="floresta">Floresta</SelectItem>
+                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -512,8 +512,9 @@ export default function Schedule() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Todas as unidades</SelectItem>
-                          <SelectItem value="madre">MADRE</SelectItem>
-                          <SelectItem value="floresta">FLORESTA</SelectItem>
+                          <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                          <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                          <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -526,7 +527,10 @@ export default function Schedule() {
                       <p className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
                         🏥 {userRole === 'coordinator_madre' ? 'MADRE' : 
                          userRole === 'coordinator_floresta' ? 'FLORESTA' : 
-                         userProfile?.unit === 'madre' ? 'MADRE' : 'FLORESTA'}
+                         userProfile?.unit === 'madre' ? 'MADRE' : 
+                         userProfile?.unit === 'floresta' ? 'FLORESTA' :
+                         userProfile?.unit === 'atendimento_floresta' ? 'ATENDIMENTO FLORESTA' :
+                         'N/A'}
                       </p>
                     </div>
                   )}

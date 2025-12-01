@@ -147,7 +147,7 @@ export const CostCenterAnalysis = () => {
           .lte('date', end);
 
         const stockTotal = stockExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-        totalDespesa += (stockTotal / 2); // Divide entre as 2 unidades
+        totalDespesa += (stockTotal / 3); // Divide entre as 3 unidades
 
         // 7. DESPESAS - Pagamentos automáticos a profissionais
         if (clientIds.length > 0) {

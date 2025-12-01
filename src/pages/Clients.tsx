@@ -569,8 +569,9 @@ export default function Patients() {
                     <SelectContent>
                       {(userProfile?.employee_role === "director" || userProfile?.employee_role === "receptionist") && (
                         <>
-                          <SelectItem value="madre">MADRE</SelectItem>
-                          <SelectItem value="floresta">Floresta</SelectItem>
+                          <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                          <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                          <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                         </>
                       )}
                       {userProfile?.employee_role === "coordinator_madre" && (
@@ -937,7 +938,10 @@ export default function Patients() {
                                 : "border-green-500/50 bg-green-500/10 text-green-600 hover:bg-green-500/20"
                             }
                           >
-                            {client.unit === "madre" ? "🏥 Clinica Social" : "🧠 Neuro"}
+                            {client.unit === "madre" ? "🏥 Clinica Social" : 
+                             client.unit === "floresta" ? "🧠 Neuro" :
+                             client.unit === "atendimento_floresta" ? "🩺 Atend. Floresta" :
+                             client.unit || "N/A"}
                           </Badge>
                         </TableCell>
                         <TableCell>

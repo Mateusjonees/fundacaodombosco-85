@@ -91,6 +91,9 @@ export function ProfessionalCommandAutocomplete({
         } else if (unitFilter === 'floresta') {
           // Floresta: excluir apenas coordenador da madre
           query = query.not('employee_role', 'eq', 'coordinator_madre');
+        } else if (unitFilter === 'atendimento_floresta') {
+          // Atendimento Floresta: permitir todos
+          // Não exclui nenhum coordenador específico
         }
       }
 
