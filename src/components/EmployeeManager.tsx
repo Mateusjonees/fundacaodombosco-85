@@ -350,6 +350,7 @@ export const EmployeeManager = () => {
                     <TableCell>
                        {employee.unit === 'madre' ? 'MADRE' : 
                        employee.unit === 'floresta' ? 'Floresta' : 
+                       employee.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
                        employee.unit || '-'}
                     </TableCell>
                     <TableCell>{employee.phone || '-'}</TableCell>
@@ -455,6 +456,7 @@ export const EmployeeManager = () => {
                   <p className="text-sm text-muted-foreground">
                      {selectedEmployee.unit === 'madre' ? 'MADRE' : 
                      selectedEmployee.unit === 'floresta' ? 'Floresta' : 
+                     selectedEmployee.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
                      selectedEmployee.unit || '-'}
                   </p>
                 </div>
@@ -575,11 +577,12 @@ export const EmployeeManager = () => {
                    <SelectTrigger>
                      <SelectValue placeholder="Selecione uma unidade" />
                    </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="">Nenhuma unidade</SelectItem>
-                     <SelectItem value="madre">MADRE</SelectItem>
-                     <SelectItem value="floresta">Floresta</SelectItem>
-                   </SelectContent>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma unidade</SelectItem>
+                      <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                      <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                      <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
+                    </SelectContent>
                  </Select>
                </div>
               <div>

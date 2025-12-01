@@ -447,13 +447,23 @@ const MyPatients: React.FC = () => {
                           {client.name}
                         </CardTitle>
                         <Badge 
+                          variant={
+                            client.unit === 'madre' ? 'default' : 
+                            client.unit === 'floresta' ? 'secondary' :
+                            'outline'
+                          }
                           className={`text-xs font-semibold ${
                             client.unit === 'madre' 
                               ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' 
-                              : 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                              : client.unit === 'floresta'
+                              ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                              : 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20'
                           }`}
                         >
-                          🏥 {client.unit === 'madre' ? 'Madre' : 'Floresta'}
+                          🏥 {client.unit === 'madre' ? 'Madre' : 
+                              client.unit === 'floresta' ? 'Floresta' :
+                              client.unit === 'atendimento_floresta' ? 'Atend. Floresta' :
+                              client.unit || 'N/A'}
                         </Badge>
                       </div>
                       {age !== null && (

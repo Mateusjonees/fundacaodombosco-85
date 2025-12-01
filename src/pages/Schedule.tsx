@@ -622,13 +622,23 @@ export default function Schedule() {
                             </Badge>
                           </div>
                           <Badge 
+                            variant={
+                              schedule.unit === 'madre' ? 'default' : 
+                              schedule.unit === 'floresta' ? 'secondary' :
+                              'outline'
+                            }
                             className={`text-sm font-semibold ${
                               schedule.unit === 'madre' 
                                 ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' 
-                                : 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                                : schedule.unit === 'floresta'
+                                ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                                : 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20'
                             }`}
                           >
-                            🏥 {schedule.unit === 'madre' ? 'MADRE' : 'FLORESTA'}
+                            🏥 {schedule.unit === 'madre' ? 'MADRE' : 
+                                schedule.unit === 'floresta' ? 'FLORESTA' :
+                                schedule.unit === 'atendimento_floresta' ? 'ATEND. FLORESTA' :
+                                schedule.unit || 'N/A'}
                           </Badge>
                         </div>
 

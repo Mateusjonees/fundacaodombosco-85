@@ -1297,8 +1297,15 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                   
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">Unidade:</span>
-                    <Badge variant={client.unit === 'madre' ? 'default' : 'secondary'}>
-                      {client.unit === 'madre' ? 'MADRE' : 'Floresta'}
+                    <Badge variant={
+                      client.unit === 'madre' ? 'default' : 
+                      client.unit === 'floresta' ? 'secondary' :
+                      'outline'
+                    }>
+                      {client.unit === 'madre' ? 'MADRE' : 
+                       client.unit === 'floresta' ? 'Floresta' :
+                       client.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
+                       client.unit || 'N/A'}
                     </Badge>
                   </div>
                 </div>

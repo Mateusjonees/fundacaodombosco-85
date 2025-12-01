@@ -572,7 +572,10 @@ export default function Reports() {
                 )}
                 {selectedUnit !== 'all' && (
                   <Badge variant="outline">
-                    Unidade: {selectedUnit === 'madre' ? 'MADRE' : 'Floresta'}
+                    Unidade: {selectedUnit === 'madre' ? 'MADRE' : 
+                             selectedUnit === 'floresta' ? 'Floresta' :
+                             selectedUnit === 'atendimento_floresta' ? 'Atendimento Floresta' :
+                             selectedUnit}
                   </Badge>
                 )}
                 {sessionType !== 'all' && (
