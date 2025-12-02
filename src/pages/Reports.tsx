@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X } from 'lucide-react';
+import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -20,6 +20,7 @@ import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Combobox } from '@/components/ui/combobox';
 import { DeleteFinancialRecordsDialog } from '@/components/DeleteFinancialRecordsDialog';
+import jsPDF from 'jspdf';
 
 interface EmployeeReport {
   id: string;
@@ -339,6 +340,291 @@ export default function Reports() {
     window.URL.revokeObjectURL(url);
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    let yPos = margin;
+    const lineHeight = 6;
+    const sectionSpacing = 10;
+
+    const addNewPage = () => {
+      doc.addPage();
+      yPos = margin;
+      addFooter();
+    };
+
+    const checkPageBreak = (requiredSpace: number) => {
+      if (yPos + requiredSpace > pageHeight - 25) {
+        addNewPage();
+      }
+    };
+
+    const addFooter = () => {
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Página ${i} de ${totalPages} - Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+    };
+
+    const wrapText = (text: string, maxWidth: number): string[] => {
+      if (!text) return [];
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+
+      words.forEach(word => {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const testWidth = doc.getTextWidth(testLine);
+        if (testWidth > maxWidth) {
+          if (currentLine) lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      });
+      if (currentLine) lines.push(currentLine);
+      return lines;
+    };
+
+    // Título do Relatório
+    doc.setFontSize(18);
+    doc.setTextColor(33, 33, 33);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Atendimentos', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+
+    // Informações do Filtro
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+
+    const filterInfo: string[] = [];
+    if (selectedEmployee !== 'all') {
+      filterInfo.push(`Funcionário: ${employees.find(e => e.user_id === selectedEmployee)?.name || '-'}`);
+    }
+    if (selectedClient !== 'all') {
+      filterInfo.push(`Paciente: ${clients.find(c => c.id === selectedClient)?.name || '-'}`);
+    }
+    if (selectedUnit !== 'all') {
+      const unitName = selectedUnit === 'madre' ? 'MADRE' : 
+                       selectedUnit === 'floresta' ? 'Floresta' : 
+                       selectedUnit === 'atendimento_floresta' ? 'Atendimento Floresta' : selectedUnit;
+      filterInfo.push(`Unidade: ${unitName}`);
+    }
+    if (sessionType !== 'all') {
+      filterInfo.push(`Tipo: ${sessionType}`);
+    }
+    if (dateFrom) {
+      filterInfo.push(`De: ${format(new Date(dateFrom), 'dd/MM/yyyy')}`);
+    }
+    if (dateTo) {
+      filterInfo.push(`Até: ${format(new Date(dateTo), 'dd/MM/yyyy')}`);
+    }
+    if (!dateFrom && !dateTo && selectedMonth) {
+      filterInfo.push(`Mês: ${format(parseISO(selectedMonth + '-01'), 'MMMM/yyyy', { locale: ptBR })}`);
+    }
+
+    if (filterInfo.length > 0) {
+      doc.text(`Filtros: ${filterInfo.join(' | ')}`, margin, yPos);
+      yPos += lineHeight;
+    }
+
+    doc.text(`Total de atendimentos: ${attendanceReports.length}`, margin, yPos);
+    yPos += lineHeight;
+    doc.text(`Receita total: R$ ${getTotalRevenue().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, yPos);
+    yPos += sectionSpacing;
+
+    // Linha separadora
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += sectionSpacing;
+
+    // Iterar sobre cada atendimento
+    attendanceReports.forEach((report, index) => {
+      checkPageBreak(80);
+
+      // Cabeçalho do atendimento
+      doc.setFillColor(240, 240, 240);
+      doc.rect(margin, yPos - 2, pageWidth - margin * 2, 8, 'F');
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(33, 33, 33);
+      doc.text(
+        `${index + 1}. ${report.clients?.name || report.patient_name || 'Paciente N/A'} - ${format(new Date(report.start_time), 'dd/MM/yyyy', { locale: ptBR })}`,
+        margin + 2,
+        yPos + 3
+      );
+      yPos += 10;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(66, 66, 66);
+
+      // Informações básicas
+      const basicInfo = [
+        `Funcionário: ${report.profiles?.name || report.professional_name || 'N/A'}`,
+        `Horário: ${format(new Date(report.start_time), 'HH:mm')} - ${format(new Date(report.end_time), 'HH:mm')}`,
+        `Duração: ${report.session_duration ? `${report.session_duration} min` : 'N/A'}`,
+        `Tipo: ${report.attendance_type || 'N/A'}`,
+        `Status: ${report.validation_status === 'validated' ? 'Validado' : report.validation_status === 'pending_validation' ? 'Pendente' : report.validation_status || 'N/A'}`,
+      ];
+
+      basicInfo.forEach(info => {
+        doc.text(info, margin, yPos);
+        yPos += lineHeight - 1;
+      });
+
+      yPos += 2;
+
+      // Técnicas/Objetivos
+      if (report.techniques_used) {
+        checkPageBreak(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Técnicas/Objetivos:', margin, yPos);
+        yPos += lineHeight - 1;
+        doc.setFont('helvetica', 'normal');
+        const lines = wrapText(report.techniques_used, pageWidth - margin * 2);
+        lines.forEach(line => {
+          checkPageBreak(lineHeight);
+          doc.text(line, margin, yPos);
+          yPos += lineHeight - 1;
+        });
+        yPos += 2;
+      }
+
+      // Resposta do Paciente
+      if (report.patient_response) {
+        checkPageBreak(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Resposta do Paciente:', margin, yPos);
+        yPos += lineHeight - 1;
+        doc.setFont('helvetica', 'normal');
+        const lines = wrapText(report.patient_response, pageWidth - margin * 2);
+        lines.forEach(line => {
+          checkPageBreak(lineHeight);
+          doc.text(line, margin, yPos);
+          yPos += lineHeight - 1;
+        });
+        yPos += 2;
+      }
+
+      // Notas da Sessão
+      if (report.session_notes) {
+        checkPageBreak(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Notas da Sessão:', margin, yPos);
+        yPos += lineHeight - 1;
+        doc.setFont('helvetica', 'normal');
+        const lines = wrapText(report.session_notes, pageWidth - margin * 2);
+        lines.forEach(line => {
+          checkPageBreak(lineHeight);
+          doc.text(line, margin, yPos);
+          yPos += lineHeight - 1;
+        });
+        yPos += 2;
+      }
+
+      // Plano próxima sessão
+      if (report.next_session_plan) {
+        checkPageBreak(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Plano Próxima Sessão:', margin, yPos);
+        yPos += lineHeight - 1;
+        doc.setFont('helvetica', 'normal');
+        const lines = wrapText(report.next_session_plan, pageWidth - margin * 2);
+        lines.forEach(line => {
+          checkPageBreak(lineHeight);
+          doc.text(line, margin, yPos);
+          yPos += lineHeight - 1;
+        });
+        yPos += 2;
+      }
+
+      // Observações
+      if (report.observations) {
+        checkPageBreak(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Observações:', margin, yPos);
+        yPos += lineHeight - 1;
+        doc.setFont('helvetica', 'normal');
+        const lines = wrapText(report.observations, pageWidth - margin * 2);
+        lines.forEach(line => {
+          checkPageBreak(lineHeight);
+          doc.text(line, margin, yPos);
+          yPos += lineHeight - 1;
+        });
+        yPos += 2;
+      }
+
+      // Materiais utilizados
+      if (Array.isArray(report.materials_used) && report.materials_used.length > 0) {
+        checkPageBreak(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Materiais Utilizados:', margin, yPos);
+        yPos += lineHeight - 1;
+        doc.setFont('helvetica', 'normal');
+        report.materials_used.forEach((material: any) => {
+          checkPageBreak(lineHeight);
+          const materialText = `• ${material.name} - Qtd: ${material.quantity}${material.total_cost ? ` - R$ ${material.total_cost.toFixed(2)}` : ''}`;
+          doc.text(materialText, margin + 2, yPos);
+          yPos += lineHeight - 1;
+        });
+        yPos += 2;
+      }
+
+      // Valores Financeiros
+      checkPageBreak(15);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 128, 0);
+      doc.text(
+        `Valor Total: R$ ${(report.amount_charged || 0).toFixed(2)} | Profissional: R$ ${(report.professional_amount || 0).toFixed(2)} | Instituição: R$ ${(report.institution_amount || 0).toFixed(2)}`,
+        margin,
+        yPos
+      );
+      yPos += lineHeight;
+
+      // Validação
+      if (report.validated_by_name || report.completed_by_name) {
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(100, 100, 100);
+        const validationText = [];
+        if (report.completed_by_name) validationText.push(`Completado por: ${report.completed_by_name}`);
+        if (report.validated_by_name) validationText.push(`Validado por: ${report.validated_by_name}`);
+        doc.text(validationText.join(' | '), margin, yPos);
+        yPos += lineHeight;
+      }
+
+      // Linha separadora entre atendimentos
+      doc.setTextColor(66, 66, 66);
+      yPos += 3;
+      doc.setDrawColor(220, 220, 220);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += sectionSpacing;
+    });
+
+    // Adicionar rodapé em todas as páginas
+    addFooter();
+
+    // Salvar o PDF
+    const fileName = `relatorio_atendimentos_${format(new Date(), 'yyyy-MM-dd_HHmm')}.pdf`;
+    doc.save(fileName);
+
+    toast({
+      title: "PDF Exportado",
+      description: `Relatório salvo como ${fileName}`,
+    });
+  };
+
   const clearFilters = () => {
     setSelectedEmployee('all');
     setSelectedClient('all');
@@ -422,9 +708,13 @@ export default function Reports() {
               Limpar Filtros
             </Button>
           )}
-          <Button onClick={exportToCSV} disabled={attendanceReports.length === 0}>
+          <Button onClick={exportToCSV} disabled={attendanceReports.length === 0} variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Exportar CSV
+          </Button>
+          <Button onClick={exportToPDF} disabled={attendanceReports.length === 0}>
+            <FileDown className="h-4 w-4 mr-2" />
+            Exportar PDF
           </Button>
         </div>
       </div>
