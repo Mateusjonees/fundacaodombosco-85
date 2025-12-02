@@ -12,7 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2 } from 'lucide-react';
+import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Combobox } from '@/components/ui/combobox';
@@ -59,6 +62,8 @@ export default function Reports() {
   const [sessionType, setSessionType] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const { user } = useAuth();
   const { 
     canViewReports, 
@@ -681,14 +686,14 @@ export default function Reports() {
                       <TableHead>Paciente</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Duração</TableHead>
-                      <TableHead>Objetivos</TableHead>
-                      <TableHead>Materiais</TableHead>
+                      <TableHead>Técnicas/Objetivos</TableHead>
                       <TableHead>Valor</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {attendanceReports.map((report) => (
-                      <TableRow key={report.id}>
+                      <TableRow key={report.id} className="cursor-pointer hover:bg-muted/50">
                         <TableCell>
                           <div className="text-sm">
                             <div className="font-medium">
@@ -701,10 +706,20 @@ export default function Reports() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{report.profiles?.name || 'N/A'}</div>
+                          <button
+                            onClick={() => setSelectedEmployee(report.employee_id)}
+                            className="font-medium text-primary hover:underline text-left"
+                          >
+                            {report.profiles?.name || 'N/A'}
+                          </button>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{report.clients?.name || 'N/A'}</div>
+                          <button
+                            onClick={() => setSelectedClient(report.client_id)}
+                            className="font-medium text-primary hover:underline text-left"
+                          >
+                            {report.clients?.name || 'N/A'}
+                          </button>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">{report.attendance_type}</Badge>
@@ -721,29 +736,22 @@ export default function Reports() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm">
-                            {Array.isArray(report.materials_used) && report.materials_used.length > 0 ? (
-                              <div className="space-y-1">
-                                {report.materials_used.slice(0, 2).map((material: any, idx: number) => (
-                                  <div key={idx} className="text-xs">
-                                    {material.name} ({material.quantity})
-                                  </div>
-                                ))}
-                                {report.materials_used.length > 2 && (
-                                  <div className="text-xs text-muted-foreground">
-                                    +{report.materials_used.length - 2} mais
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              '-'
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
                           <div className="font-semibold text-green-600">
                             {report.amount_charged ? `R$ ${report.amount_charged.toFixed(2)}` : '-'}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedReport(report);
+                              setIsDetailDialogOpen(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver Tudo
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1246,6 +1254,243 @@ export default function Reports() {
         open={isDeleteFinancialDialogOpen}
         onClose={() => setIsDeleteFinancialDialogOpen(false)}
       />
+
+      {/* Dialog de Detalhes do Atendimento */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Detalhes Completos do Atendimento
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedReport && (
+            <ScrollArea className="max-h-[70vh] pr-4">
+              <div className="space-y-6">
+                {/* Informações Básicas */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Data/Hora</Label>
+                    <p className="font-medium">
+                      {format(new Date(selectedReport.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {' - '}
+                      {format(new Date(selectedReport.end_time), 'HH:mm', { locale: ptBR })}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Duração</Label>
+                    <p className="font-medium">
+                      {selectedReport.session_duration ? `${selectedReport.session_duration} minutos` : 'Não informada'}
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Funcionário e Paciente */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Funcionário</Label>
+                    <button
+                      onClick={() => {
+                        setSelectedEmployee(selectedReport.employee_id);
+                        setIsDetailDialogOpen(false);
+                      }}
+                      className="font-medium text-primary hover:underline text-left block"
+                    >
+                      {selectedReport.profiles?.name || selectedReport.professional_name || 'N/A'}
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Paciente</Label>
+                    <button
+                      onClick={() => {
+                        setSelectedClient(selectedReport.client_id);
+                        setIsDetailDialogOpen(false);
+                      }}
+                      className="font-medium text-primary hover:underline text-left block"
+                    >
+                      {selectedReport.clients?.name || selectedReport.patient_name || 'N/A'}
+                    </button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Tipo e Status */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Tipo de Atendimento</Label>
+                    <Badge variant="outline">{selectedReport.attendance_type}</Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Status</Label>
+                    <Badge variant={selectedReport.validation_status === 'validated' ? 'default' : 'secondary'}>
+                      {selectedReport.validation_status === 'validated' ? 'Validado' : 
+                       selectedReport.validation_status === 'pending_validation' ? 'Pendente' : 
+                       selectedReport.validation_status || 'N/A'}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Valor Cobrado</Label>
+                    <p className="font-semibold text-green-600">
+                      {selectedReport.amount_charged ? `R$ ${selectedReport.amount_charged.toFixed(2)}` : 'Não informado'}
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Técnicas/Objetivos */}
+                {selectedReport.techniques_used && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Técnicas/Objetivos Utilizados</Label>
+                    <p className="text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">
+                      {selectedReport.techniques_used}
+                    </p>
+                  </div>
+                )}
+
+                {/* Resposta do Paciente */}
+                {selectedReport.patient_response && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Resposta do Paciente</Label>
+                    <p className="text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">
+                      {selectedReport.patient_response}
+                    </p>
+                  </div>
+                )}
+
+                {/* Notas da Sessão */}
+                {selectedReport.session_notes && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Notas da Sessão</Label>
+                    <p className="text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">
+                      {selectedReport.session_notes}
+                    </p>
+                  </div>
+                )}
+
+                {/* Plano para Próxima Sessão */}
+                {selectedReport.next_session_plan && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Plano para Próxima Sessão</Label>
+                    <p className="text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">
+                      {selectedReport.next_session_plan}
+                    </p>
+                  </div>
+                )}
+
+                {/* Observações */}
+                {selectedReport.observations && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Observações</Label>
+                    <p className="text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">
+                      {selectedReport.observations}
+                    </p>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Materiais Utilizados */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Materiais Utilizados</Label>
+                  {Array.isArray(selectedReport.materials_used) && selectedReport.materials_used.length > 0 ? (
+                    <div className="bg-muted p-3 rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Material</TableHead>
+                            <TableHead>Quantidade</TableHead>
+                            <TableHead>Custo Unit.</TableHead>
+                            <TableHead>Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedReport.materials_used.map((material: any, idx: number) => (
+                            <TableRow key={idx}>
+                              <TableCell>{material.name}</TableCell>
+                              <TableCell>{material.quantity}</TableCell>
+                              <TableCell>
+                                {material.unit_cost ? `R$ ${material.unit_cost.toFixed(2)}` : '-'}
+                              </TableCell>
+                              <TableCell>
+                                {material.total_cost ? `R$ ${material.total_cost.toFixed(2)}` : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nenhum material utilizado</p>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Valores Financeiros */}
+                <div className="grid grid-cols-3 gap-4 bg-muted/50 p-4 rounded-md">
+                  <div className="space-y-1 text-center">
+                    <Label className="text-xs text-muted-foreground">Valor Total</Label>
+                    <p className="font-bold text-lg text-green-600">
+                      R$ {(selectedReport.amount_charged || 0).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <Label className="text-xs text-muted-foreground">Profissional</Label>
+                    <p className="font-semibold">
+                      R$ {(selectedReport.professional_amount || 0).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <Label className="text-xs text-muted-foreground">Instituição</Label>
+                    <p className="font-semibold">
+                      R$ {(selectedReport.institution_amount || 0).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Informações de Validação */}
+                {(selectedReport.validated_by_name || selectedReport.completed_by_name) && (
+                  <>
+                    <Separator />
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {selectedReport.completed_by_name && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Completado por</Label>
+                          <p>{selectedReport.completed_by_name}</p>
+                        </div>
+                      )}
+                      {selectedReport.validated_by_name && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Validado por</Label>
+                          <p>{selectedReport.validated_by_name}</p>
+                          {selectedReport.validated_at && (
+                            <p className="text-xs text-muted-foreground">
+                              em {format(new Date(selectedReport.validated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Motivo de Rejeição (se houver) */}
+                {selectedReport.rejection_reason && (
+                  <div className="space-y-2 bg-destructive/10 p-3 rounded-md">
+                    <Label className="text-xs text-destructive">Motivo da Rejeição</Label>
+                    <p className="text-sm">{selectedReport.rejection_reason}</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
