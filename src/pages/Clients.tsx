@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,6 +65,7 @@ interface UserProfile {
 }
 export default function Patients() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
   const customPermissions = useCustomPermissions();
   const [employees, setEmployees] = useState<any[]>([]);
@@ -138,6 +140,20 @@ export default function Patients() {
     loadEmployees();
     loadClientAssignments();
   }, [user]);
+
+  // Abrir cliente via URL se clientId estiver presente
+  useEffect(() => {
+    const clientId = searchParams.get('clientId');
+    if (clientId && clients.length > 0) {
+      const clientToOpen = clients.find(c => c.id === clientId);
+      if (clientToOpen) {
+        setSelectedClient(clientToOpen);
+        // Limpar o parâmetro da URL após selecionar
+        searchParams.delete('clientId');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, clients]);
 
   // React Query carrega automaticamente os clientes
 
