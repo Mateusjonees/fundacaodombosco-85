@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +18,8 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  Search
+  Search,
+  ExternalLink
 } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { format, differenceInMinutes, differenceInHours } from 'date-fns';
@@ -76,12 +78,18 @@ interface TimesheetEntry {
 
 export default function EmployeeControl() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState<EmployeeData[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [attendances, setAttendances] = useState<AttendanceReport[]>([]);
   const [timesheet, setTimesheet] = useState<TimesheetEntry[]>([]);
+
+  // Função para navegar para a página do paciente
+  const handlePatientClick = (clientId: string) => {
+    navigate(`/clients?clientId=${clientId}`);
+  };
 
   useEffect(() => {
     loadEmployees();
@@ -511,7 +519,13 @@ export default function EmployeeControl() {
                               <div key={client.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                                 <div className="flex justify-between items-start mb-3">
                                   <div className="flex-1">
-                                    <p className="font-medium text-lg">{client.name}</p>
+                                    <button 
+                                      onClick={() => handlePatientClick(client.id)}
+                                      className="font-medium text-lg text-primary hover:underline text-left flex items-center gap-1"
+                                    >
+                                      {client.name}
+                                      <ExternalLink className="h-3 w-3" />
+                                    </button>
                                     {client.clientData && (
                                       <div className="text-sm text-muted-foreground space-y-1 mt-2">
                                         {client.clientData.phone && (
@@ -583,7 +597,15 @@ export default function EmployeeControl() {
                                   <TableCell>
                                     {format(new Date(attendance.session_date), 'dd/MM/yyyy')}
                                   </TableCell>
-                                  <TableCell>{attendance.patient_name}</TableCell>
+                                  <TableCell>
+                                    <button
+                                      onClick={() => handlePatientClick(attendance.client_id)}
+                                      className="text-primary hover:underline text-left flex items-center gap-1"
+                                    >
+                                      {attendance.patient_name}
+                                      <ExternalLink className="h-3 w-3" />
+                                    </button>
+                                  </TableCell>
                                   <TableCell>{attendance.attendance_type}</TableCell>
                                   <TableCell>{attendance.session_duration || 0} min</TableCell>
                                   <TableCell>
