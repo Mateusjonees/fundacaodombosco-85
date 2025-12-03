@@ -5,6 +5,7 @@ type EmployeeRole =
   | 'director' 
   | 'coordinator_madre' 
   | 'coordinator_floresta' 
+  | 'coordinator_atendimento_floresta'
   | 'staff' 
   | 'intern' 
   | 'terapeuta_ocupacional'
@@ -129,6 +130,7 @@ export class PermissionService {
       { value: 'director', label: 'Diretor(a)' },
       { value: 'coordinator_madre', label: 'Coordenador(a) Madre' },
       { value: 'coordinator_floresta', label: 'Coordenador(a) Floresta' },
+      { value: 'coordinator_atendimento_floresta', label: 'Coordenador(a) Atendimento Floresta' },
       { value: 'staff', label: 'Funcionário(a) Geral' },
       { value: 'intern', label: 'Estagiário(a)' },
       { value: 'terapeuta_ocupacional', label: 'Terapeuta Ocupacional' },

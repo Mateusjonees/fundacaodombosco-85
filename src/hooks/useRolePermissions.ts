@@ -6,6 +6,7 @@ export type EmployeeRole =
   | 'director'
   | 'coordinator_madre'
   | 'coordinator_floresta'
+  | 'coordinator_atendimento_floresta'
   | 'staff'
   | 'receptionist'
   | 'psychologist'
@@ -24,11 +25,11 @@ export const ROLE_GROUPS = {
   DIRECTOR_ONLY: ['director'] as EmployeeRole[],
   FINANCE_ONLY: ['financeiro'] as EmployeeRole[],
   DIRECTOR_OR_FINANCE: ['director', 'financeiro'] as EmployeeRole[],
-  STOCK_MANAGERS: ['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta'] as EmployeeRole[],
-  COORDINATOR_AND_HIGHER: ['director', 'coordinator_madre', 'coordinator_floresta'] as EmployeeRole[],
-  NON_FINANCE_ACCESS: ['director', 'coordinator_madre', 'coordinator_floresta', 'staff', 'intern', 'terapeuta_ocupacional', 'advogada', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
+  STOCK_MANAGERS: ['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'] as EmployeeRole[],
+  COORDINATOR_AND_HIGHER: ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'] as EmployeeRole[],
+  NON_FINANCE_ACCESS: ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'staff', 'intern', 'terapeuta_ocupacional', 'advogada', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
   PROFESSIONAL_ROLES: ['staff', 'intern', 'terapeuta_ocupacional', 'advogada', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
-  ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES: ['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist'] as EmployeeRole[]
+  ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES: ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist'] as EmployeeRole[]
 };
 
 // Labels para exibição dos cargos
@@ -36,6 +37,7 @@ export const ROLE_LABELS: Record<EmployeeRole, string> = {
   director: 'Diretoria',
   coordinator_madre: 'Coordenador(a) Madre',
   coordinator_floresta: 'Coordenador(a) Floresta',
+  coordinator_atendimento_floresta: 'Coordenador(a) Atendimento Floresta',
   staff: 'Funcionário(a) Geral',
   receptionist: 'Recepcionista',
   psychologist: 'Psicólogo(a)',
@@ -149,7 +151,7 @@ export const useRolePermissions = () => {
     if (isGodMode()) return true;
     
     // Se é coordenador, sempre pode ver relatórios
-    if (hasAnyRole(['coordinator_madre', 'coordinator_floresta'])) return true;
+    if (hasAnyRole(['coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'])) return true;
     
     // Para outros roles, verificar a lista
     return hasAnyRole([
@@ -169,7 +171,7 @@ export const useRolePermissions = () => {
   };
 
   const canConfigureReports = (): boolean => {
-    return isGodMode() || hasAnyRole(['coordinator_madre', 'coordinator_floresta']);
+    return isGodMode() || hasAnyRole(['coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']);
   };
 
   const canExportData = (): boolean => {
@@ -185,7 +187,7 @@ export const useRolePermissions = () => {
   };
 
   const isCoordinator = (): boolean => {
-    return hasAnyRole(['coordinator_madre', 'coordinator_floresta']);
+    return hasAnyRole(['coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']);
   };
 
   // Verificação para aba "Meus Pacientes"
