@@ -2916,6 +2916,9 @@ export type Database = {
         | "terapeuta_ocupacional"
         | "advogada"
         | "coordinator_atendimento_floresta"
+        | "terapeuta_ocupacional_integracao"
+        | "psiquiatra"
+        | "neuropediatra"
       permission_action:
         | "view_dashboard"
         | "view_clients"
@@ -3172,6 +3175,9 @@ export const Constants = {
         "terapeuta_ocupacional",
         "advogada",
         "coordinator_atendimento_floresta",
+        "terapeuta_ocupacional_integracao",
+        "psiquiatra",
+        "neuropediatra",
       ],
       permission_action: [
         "view_dashboard",
