@@ -68,7 +68,7 @@ export class PermissionService {
       const { data, error } = await supabase
         .from('role_permissions')
         .select('permission, granted')
-        .eq('employee_role', role);
+        .eq('employee_role', role as any);
 
       if (error) {
         console.error('Erro ao buscar permissões do cargo:', error);
@@ -97,14 +97,14 @@ export class PermissionService {
       await supabase
         .from('role_permissions')
         .delete()
-        .eq('employee_role', role);
+        .eq('employee_role', role as any);
 
       // Insere as novas permissões
       const { error } = await supabase
         .from('role_permissions')
         .insert(
           permissions.map(p => ({
-            employee_role: role,
+            employee_role: role as any,
             permission: p.permission,
             granted: p.granted
           }))
