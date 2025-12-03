@@ -16,7 +16,7 @@ import { CreateEmployeeForm } from './CreateEmployeeForm';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { UserPlus, Edit, Trash2, Eye, Calendar, MapPin, Building2, CreditCard, Key } from 'lucide-react';
 
-type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
+type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'coordinator_atendimento_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'terapeuta_ocupacional_integracao' | 'psiquiatra' | 'neuropediatra' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
 
 interface Profile {
   id: string;
@@ -55,6 +55,7 @@ const ROLE_LABELS: Record<string, string> = {
   director: 'Diretor(a)',
   coordinator_madre: 'Coordenador(a) Madre',
   coordinator_floresta: 'Coordenador(a) Floresta',
+  coordinator_atendimento_floresta: 'Coordenador(a) Atendimento Floresta',
   staff: 'Funcionário(a) Geral',
   intern: 'Estagiário(a)',
   musictherapist: 'Musicoterapeuta',
@@ -64,7 +65,12 @@ const ROLE_LABELS: Record<string, string> = {
   psychopedagogue: 'Psicopedagogo(a)',
   speech_therapist: 'Fonoaudiólogo(a)',
   nutritionist: 'Nutricionista',
-  physiotherapist: 'Fisioterapeuta'
+  physiotherapist: 'Fisioterapeuta',
+  terapeuta_ocupacional: 'Terapeuta Ocupacional',
+  terapeuta_ocupacional_integracao: 'Terapeuta Ocupacional - Integração Sensorial',
+  psiquiatra: 'Psiquiatra',
+  neuropediatra: 'Neuropediatra',
+  advogada: 'Advogada'
 };
 
 const EMPLOYEE_ROLES = Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }));

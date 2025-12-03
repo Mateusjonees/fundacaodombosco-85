@@ -9,6 +9,9 @@ type EmployeeRole =
   | 'staff' 
   | 'intern' 
   | 'terapeuta_ocupacional'
+  | 'terapeuta_ocupacional_integracao'
+  | 'psiquiatra'
+  | 'neuropediatra'
   | 'advogada'
   | 'musictherapist' 
   | 'financeiro' 
@@ -134,6 +137,9 @@ export class PermissionService {
       { value: 'staff', label: 'Funcionário(a) Geral' },
       { value: 'intern', label: 'Estagiário(a)' },
       { value: 'terapeuta_ocupacional', label: 'Terapeuta Ocupacional' },
+      { value: 'terapeuta_ocupacional_integracao', label: 'Terapeuta Ocupacional - Integração Sensorial' },
+      { value: 'psiquiatra', label: 'Psiquiatra' },
+      { value: 'neuropediatra', label: 'Neuropediatra' },
       { value: 'advogada', label: 'Advogada' },
       { value: 'musictherapist', label: 'Musicoterapeuta' },
       { value: 'financeiro', label: 'Financeiro' },
