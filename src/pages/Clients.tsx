@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
@@ -29,6 +30,7 @@ import {
   Database,
   FileDown,
   FileText,
+  CheckSquare,
 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useDebouncedValue } from "@/hooks/useDebounce";
@@ -36,6 +38,7 @@ import ClientDetailsView from "@/components/ClientDetailsView";
 import { BulkImportClientsDialog } from "@/components/BulkImportClientsDialog";
 import { AutoImportClientsDialog } from "@/components/AutoImportClientsDialog";
 import { PatientReportGenerator } from "@/components/PatientReportGenerator";
+import { MultiPatientReportGenerator } from "@/components/MultiPatientReportGenerator";
 import { ClientAssignmentManager } from "@/components/ClientAssignmentManager";
 import { importClientsFromFile } from "@/utils/importClients";
 import { executeDirectImport } from "@/utils/directImport";
@@ -137,6 +140,8 @@ export default function Patients() {
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [isMultiReportOpen, setIsMultiReportOpen] = useState(false);
   useEffect(() => {
     loadUserProfile();
     loadEmployees();
@@ -297,6 +302,40 @@ export default function Patients() {
       clinical_observations: "",
     });
   };
+
+  // Funções de seleção múltipla
+  const toggleClientSelection = (clientId: string) => {
+    setSelectedClients(prev => 
+      prev.includes(clientId) 
+        ? prev.filter(id => id !== clientId)
+        : [...prev, clientId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedClients.length === filteredClients.length) {
+      setSelectedClients([]);
+    } else {
+      setSelectedClients(filteredClients.map(c => c.id));
+    }
+  };
+
+  const getSelectedClientsData = () => {
+    return filteredClients.filter(c => selectedClients.includes(c.id));
+  };
+
+  const handleGenerateMultiReport = () => {
+    if (selectedClients.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Nenhum paciente selecionado",
+        description: "Selecione pelo menos um paciente para gerar o relatório.",
+      });
+      return;
+    }
+    setIsMultiReportOpen(true);
+  };
+
   const handleDirectImport = async () => {
     setIsImporting(true);
     try {
@@ -941,6 +980,35 @@ export default function Patients() {
               </div>
             </CardHeader>
             <CardContent>
+              {/* Barra de seleção e ações em lote */}
+              {isCoordinatorOrDirector() && filteredClients.length > 0 && (
+                <div className="flex items-center justify-between mb-4 p-3 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedClients.length === filteredClients.length && filteredClients.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                      id="select-all"
+                    />
+                    <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                      {selectedClients.length > 0 
+                        ? `${selectedClients.length} paciente(s) selecionado(s)`
+                        : 'Selecionar todos'}
+                    </label>
+                  </div>
+                  {selectedClients.length > 0 && (
+                    <Button 
+                      onClick={handleGenerateMultiReport}
+                      variant="default"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Gerar Relatório PDF ({selectedClients.length})
+                    </Button>
+                  )}
+                </div>
+              )}
+              
               {isLoading ? (
                 <p className="text-muted-foreground text-center py-8">Carregando pacientes...</p>
               ) : filteredClients.length === 0 ? (
@@ -951,6 +1019,14 @@ export default function Patients() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {isCoordinatorOrDirector() && (
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedClients.length === filteredClients.length && filteredClients.length > 0}
+                            onCheckedChange={toggleSelectAll}
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>Nome</TableHead>
                       <TableHead>Telefone</TableHead>
                       <TableHead>Area</TableHead>
@@ -961,7 +1037,18 @@ export default function Patients() {
                   </TableHeader>
                   <TableBody>
                     {filteredClients.map((client) => (
-                      <TableRow key={client.id}>
+                      <TableRow 
+                        key={client.id}
+                        className={selectedClients.includes(client.id) ? "bg-primary/5" : ""}
+                      >
+                        {isCoordinatorOrDirector() && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedClients.includes(client.id)}
+                              onCheckedChange={() => toggleClientSelection(client.id)}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="font-medium">{client.name}</TableCell>
                         <TableCell>{client.phone || "-"}</TableCell>
                         <TableCell>
@@ -1075,6 +1162,15 @@ export default function Patients() {
       {reportClient && (
         <PatientReportGenerator client={reportClient} isOpen={!!reportClient} onClose={() => setReportClient(null)} />
       )}
+
+      <MultiPatientReportGenerator 
+        clients={getSelectedClientsData()} 
+        isOpen={isMultiReportOpen} 
+        onClose={() => {
+          setIsMultiReportOpen(false);
+          setSelectedClients([]);
+        }} 
+      />
     </div>
   );
 }
