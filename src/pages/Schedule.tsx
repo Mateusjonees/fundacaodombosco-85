@@ -13,11 +13,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
+import { DeleteAppointmentDialog } from '@/components/DeleteAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocomplete';
 import { ProfessionalCommandAutocomplete } from '@/components/ProfessionalCommandAutocomplete';
@@ -52,6 +53,7 @@ export default function Schedule() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedScheduleForAction, setSelectedScheduleForAction] = useState<Schedule | null>(null);
   const { toast } = useToast();
 
@@ -86,6 +88,12 @@ export default function Schedule() {
                              userRole === 'coordinator_floresta' ||
                              userRole === 'coordinator_atendimento_floresta' ||
                              userRole === 'receptionist';
+
+  // Verificar se pode excluir agendamentos (apenas coordenadores e diretor, não recepcionista)
+  const canDeleteSchedules = userRole === 'director' || 
+                             userRole === 'coordinator_madre' || 
+                             userRole === 'coordinator_floresta' ||
+                             userRole === 'coordinator_atendimento_floresta';
 
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
@@ -412,6 +420,58 @@ export default function Schedule() {
         variant: "destructive",
         title: "Erro",
         description: "Erro ao cancelar agendamentos.",
+      });
+    }
+  };
+
+  // Excluir um agendamento
+  const handleDeleteAppointment = async (scheduleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .delete()
+        .eq('id', scheduleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Atendimento excluído!",
+      });
+      
+      refetchSchedules();
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao excluir atendimento.",
+      });
+    }
+  };
+
+  // Excluir múltiplos agendamentos
+  const handleDeleteMultipleAppointments = async (scheduleIds: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .delete()
+        .in('id', scheduleIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `${scheduleIds.length} atendimento(s) excluído(s)!`,
+      });
+      
+      refetchSchedules();
+    } catch (error) {
+      console.error('Error deleting multiple appointments:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao excluir atendimentos.",
       });
     }
   };
@@ -811,6 +871,21 @@ export default function Schedule() {
                                     Cancelar
                                   </Button>
                                 )}
+
+                                {canDeleteSchedules && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedScheduleForAction(schedule);
+                                      setDeleteDialogOpen(true);
+                                    }}
+                                    className="h-9 gap-2 font-medium text-destructive hover:bg-destructive/10 hover:border-destructive/50 transition-all duration-300"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Excluir
+                                  </Button>
+                                )}
                               </>
                             )}
                             
@@ -1050,6 +1125,14 @@ export default function Schedule() {
           onClose={() => setCancelDialogOpen(false)}
           onCancel={handleCancelAppointment}
           onCancelMultiple={handleCancelMultipleAppointments}
+        />
+
+        <DeleteAppointmentDialog
+          schedule={selectedScheduleForAction}
+          isOpen={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onDelete={handleDeleteAppointment}
+          onDeleteMultiple={handleDeleteMultipleAppointments}
         />
       </div>
     </div>
