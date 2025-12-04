@@ -320,30 +320,10 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
 
-  console.log('🎯 AppSidebar Render:', {
-    userRole: permissions.userRole,
-    roleLoading: permissions.loading,
-    customLoading: customPermissions.loading,
-    customPermissionsCount: customPermissions.permissions.length,
-    customPermissions: customPermissions.permissions,
-    userId: user?.id
-  });
-
   // Load navigation items based on permissions
   useEffect(() => {
-    console.log('📊 useEffect executado:', {
-      roleLoading: permissions.loading,
-      customLoading: customPermissions.loading,
-      shouldUpdate: !permissions.loading && !customPermissions.loading
-    });
-    
     if (!permissions.loading && !customPermissions.loading) {
-      console.log('✅ Atualizando menu com permissões:', {
-        rolePermissions: permissions.userRole,
-        customPermissions: customPermissions.permissions
-      });
       const items = getMenuItemsForRole(permissions, customPermissions);
-      console.log('📋 Items do menu gerados:', items.map(i => i.title));
       setNavigationItems(items);
     }
   }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions]);

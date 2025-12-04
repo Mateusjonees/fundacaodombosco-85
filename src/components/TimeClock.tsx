@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -24,41 +25,59 @@ interface TimesheetEntry {
 export function TimeClock() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [currentEntry, setCurrentEntry] = useState<TimesheetEntry | null>(null);
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [displayTime, setDisplayTime] = useState('');
+  const animationRef = useRef<number>();
 
-  useEffect(() => {
-    if (user) {
-      loadTodayEntry();
-    }
-  }, [user]);
-
-  // Atualizar relógio a cada segundo
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const loadTodayEntry = async () => {
-    try {
+  // Usar React Query para cache do timesheet
+  const { data: currentEntry } = useQuery({
+    queryKey: ['timesheet-today', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
       const today = format(new Date(), 'yyyy-MM-dd');
       
       const { data, error } = await supabase
         .from('employee_timesheet')
         .select('*')
-        .eq('employee_id', user?.id)
+        .eq('employee_id', user.id)
         .eq('date', today)
         .maybeSingle();
 
       if (error) throw error;
-      setCurrentEntry(data);
-    } catch (error) {
-      console.error('Erro ao carregar ponto:', error);
-    }
-  };
+      return data as TimesheetEntry | null;
+    },
+    staleTime: 30 * 1000, // 30 segundos
+    enabled: !!user?.id,
+  });
+
+  // Atualizar relógio usando requestAnimationFrame para menos re-renders
+  useEffect(() => {
+    let lastSecond = -1;
+    
+    const updateClock = () => {
+      const now = new Date();
+      const currentSecond = now.getSeconds();
+      
+      // Só atualizar quando o segundo mudar
+      if (currentSecond !== lastSecond) {
+        lastSecond = currentSecond;
+        setCurrentTime(now);
+        setDisplayTime(format(now, 'HH:mm:ss'));
+      }
+      
+      animationRef.current = requestAnimationFrame(updateClock);
+    };
+    
+    updateClock();
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
 
   const calculateTotalHours = (entry: TimesheetEntry): number => {
     if (!entry.clock_in) return 0;
@@ -68,7 +87,6 @@ export function TimeClock() {
     
     let totalMinutes = differenceInMinutes(clockOut, clockIn);
     
-    // Subtrair tempo de pausa se houver
     if (entry.break_start && entry.break_end) {
       const breakStart = new Date(entry.break_start);
       const breakEnd = new Date(entry.break_end);
@@ -76,7 +94,7 @@ export function TimeClock() {
       totalMinutes -= breakMinutes;
     }
     
-    return totalMinutes / 60; // Converter para horas
+    return totalMinutes / 60;
   };
 
   const handleClockIn = async () => {
@@ -85,26 +103,23 @@ export function TimeClock() {
       const now = new Date();
       const today = format(now, 'yyyy-MM-dd');
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('employee_timesheet')
         .insert({
           employee_id: user?.id,
           date: today,
           clock_in: now.toISOString(),
           status: 'pending'
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
-      setCurrentEntry(data);
+      queryClient.invalidateQueries({ queryKey: ['timesheet-today'] });
       toast({
         title: "Entrada registrada",
         description: `Ponto batido às ${format(now, 'HH:mm:ss')}`,
       });
     } catch (error: any) {
-      console.error('Erro ao bater ponto:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -136,13 +151,12 @@ export function TimeClock() {
 
       if (error) throw error;
 
-      await loadTodayEntry();
+      queryClient.invalidateQueries({ queryKey: ['timesheet-today'] });
       toast({
         title: "Saída registrada",
         description: `Ponto batido às ${format(now, 'HH:mm:ss')}. Total: ${totalHours.toFixed(2)}h`,
       });
     } catch (error: any) {
-      console.error('Erro ao registrar saída:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -162,20 +176,17 @@ export function TimeClock() {
 
       const { error } = await supabase
         .from('employee_timesheet')
-        .update({
-          break_start: now.toISOString()
-        })
+        .update({ break_start: now.toISOString() })
         .eq('id', currentEntry.id);
 
       if (error) throw error;
 
-      await loadTodayEntry();
+      queryClient.invalidateQueries({ queryKey: ['timesheet-today'] });
       toast({
         title: "Pausa iniciada",
         description: `Início da pausa às ${format(now, 'HH:mm:ss')}`,
       });
     } catch (error: any) {
-      console.error('Erro ao iniciar pausa:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -195,20 +206,17 @@ export function TimeClock() {
 
       const { error } = await supabase
         .from('employee_timesheet')
-        .update({
-          break_end: now.toISOString()
-        })
+        .update({ break_end: now.toISOString() })
         .eq('id', currentEntry.id);
 
       if (error) throw error;
 
-      await loadTodayEntry();
+      queryClient.invalidateQueries({ queryKey: ['timesheet-today'] });
       toast({
         title: "Pausa finalizada",
         description: `Fim da pausa às ${format(now, 'HH:mm:ss')}`,
       });
     } catch (error: any) {
-      console.error('Erro ao finalizar pausa:', error);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -227,7 +235,6 @@ export function TimeClock() {
     
     let totalMinutes = differenceInMinutes(now, clockIn);
     
-    // Subtrair tempo de pausa se houver
     if (currentEntry.break_start) {
       const breakStart = new Date(currentEntry.break_start);
       const breakEnd = currentEntry.break_end ? new Date(currentEntry.break_end) : new Date();
@@ -237,9 +244,8 @@ export function TimeClock() {
     
     const hours = Math.floor(totalMinutes / 60);
     const minutes = Math.floor(totalMinutes % 60);
-    const seconds = Math.floor((totalMinutes * 60) % 60);
     
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
   };
 
   const isOnBreak = currentEntry?.break_start && !currentEntry?.break_end;
@@ -262,25 +268,22 @@ export function TimeClock() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Relógio atual */}
         <div className="text-center">
-          <div className="text-4xl font-bold text-primary">
-            {format(currentTime, 'HH:mm:ss')}
+          <div className="text-4xl font-bold text-primary font-mono">
+            {displayTime || format(currentTime, 'HH:mm:ss')}
           </div>
           <div className="text-sm text-muted-foreground">
             {format(currentTime, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </div>
         </div>
 
-        {/* Tempo trabalhado hoje */}
         {hasClockIn && (
           <div className="text-center p-4 bg-muted rounded-lg">
             <div className="text-sm text-muted-foreground mb-1">Tempo trabalhado hoje</div>
-            <div className="text-2xl font-bold">{getWorkingTime()}</div>
+            <div className="text-2xl font-bold font-mono">{getWorkingTime()}</div>
           </div>
         )}
 
-        {/* Informações do ponto de hoje */}
         {currentEntry && (
           <div className="space-y-2 text-sm">
             {currentEntry.clock_in && (
@@ -310,15 +313,9 @@ export function TimeClock() {
           </div>
         )}
 
-        {/* Botões de ação */}
         <div className="space-y-2">
           {!hasClockIn && (
-            <Button 
-              onClick={handleClockIn} 
-              disabled={loading}
-              className="w-full"
-              size="lg"
-            >
+            <Button onClick={handleClockIn} disabled={loading} className="w-full" size="lg">
               <LogIn className="mr-2 h-4 w-4" />
               Registrar Entrada
             </Button>
@@ -327,36 +324,20 @@ export function TimeClock() {
           {hasClockIn && !hasClockOut && (
             <>
               {!currentEntry?.break_start && (
-                <Button 
-                  onClick={handleBreakStart} 
-                  disabled={loading}
-                  variant="outline"
-                  className="w-full"
-                >
+                <Button onClick={handleBreakStart} disabled={loading} variant="outline" className="w-full">
                   <Coffee className="mr-2 h-4 w-4" />
                   Iniciar Pausa
                 </Button>
               )}
 
               {currentEntry?.break_start && !currentEntry?.break_end && (
-                <Button 
-                  onClick={handleBreakEnd} 
-                  disabled={loading}
-                  variant="outline"
-                  className="w-full"
-                >
+                <Button onClick={handleBreakEnd} disabled={loading} variant="outline" className="w-full">
                   <Play className="mr-2 h-4 w-4" />
                   Finalizar Pausa
                 </Button>
               )}
 
-              <Button 
-                onClick={handleClockOut} 
-                disabled={loading || isOnBreak}
-                variant="default"
-                className="w-full"
-                size="lg"
-              >
+              <Button onClick={handleClockOut} disabled={loading || isOnBreak} variant="default" className="w-full" size="lg">
                 <LogOut className="mr-2 h-4 w-4" />
                 Registrar Saída
               </Button>
@@ -369,7 +350,7 @@ export function TimeClock() {
                 Ponto do dia finalizado
               </Badge>
               <p className="text-sm text-muted-foreground mt-2">
-                Total trabalhado: {currentEntry.total_hours?.toFixed(2)}h
+                Total trabalhado: {currentEntry?.total_hours?.toFixed(2)}h
               </p>
             </div>
           )}

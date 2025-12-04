@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { LogOut, Menu, User } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
@@ -51,50 +51,13 @@ const Timesheet = lazy(() => import('@/pages/Timesheet'));
 const MeetingAlerts = lazy(() => import('@/pages/MeetingAlerts'));
 const Neuroassessment = lazy(() => import('@/pages/Neuroassessment'));
 
-interface Profile {
-  id: string;
-  user_id: string;
-  name: string;
-  employee_role: string;
-  phone?: string;
-  document_cpf?: string;
-  is_active: boolean;
-  hire_date: string;
-  department?: string;
-}
-
-
 export const MainApp = () => {
-  const permissions = useRolePermissions();
   const { user } = useAuth();
   const { toast } = useToast();
   const { logAction } = useAuditLog();
-  const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      loadUserProfile();
-    }
-  }, [user]);
-
-  const loadUserProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) {
-        console.error('Error loading user profile:', error);
-        return;
-      }
-
-      setCurrentUserProfile(data);
-    } catch (error) {
-      console.error('Unexpected error loading profile:', error);
-    }
-  };
+  
+  // Usar hook centralizado com cache
+  const { profile, userName, userRole } = useCurrentUser();
 
   const handleLogout = async () => {
     try {
@@ -165,10 +128,10 @@ export const MainApp = () => {
                       <DropdownMenuLabel className="pb-3">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-semibold leading-none">
-                            {currentUserProfile?.name || user?.email}
+                            {userName}
                           </p>
                           <p className="text-xs leading-none text-muted-foreground">
-                            {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Carregando...'}
+                            {userRole ? ROLE_LABELS[userRole] : 'Carregando...'}
                           </p>
                         </div>
                       </DropdownMenuLabel>
