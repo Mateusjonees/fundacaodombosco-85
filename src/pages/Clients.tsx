@@ -427,6 +427,7 @@ export default function Patients() {
             setSelectedClient(null);
             openEditDialog(selectedClient);
           }}
+          onBack={() => setSelectedClient(null)}
           onRefresh={() => window.location.reload()}
         />
       </div>
