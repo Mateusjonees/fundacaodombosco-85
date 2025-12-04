@@ -8,10 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useRolePermissions, ROLE_LABELS, EmployeeRole } from '@/hooks/useRolePermissions';
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
-
-type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
 
 interface CreateEmployeeFormProps {
   isOpen: boolean;
@@ -34,22 +32,6 @@ interface JobPosition {
   color: string;
   is_active: boolean;
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  director: 'Diretor(a)',
-  coordinator_madre: 'Coordenador(a) Madre',
-  coordinator_floresta: 'Coordenador(a) Floresta',
-  staff: 'Funcionário(a) Geral',
-  intern: 'Estagiário(a)',
-  musictherapist: 'Musicoterapeuta',
-  financeiro: 'Financeiro',
-  receptionist: 'Recepcionista',
-  psychologist: 'Psicólogo(a)',
-  psychopedagogue: 'Psicopedagogo(a)',
-  speech_therapist: 'Fonoaudiólogo(a)',
-  nutritionist: 'Nutricionista',
-  physiotherapist: 'Fisioterapeuta'
-};
 
 export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }: CreateEmployeeFormProps) => {
   const { toast } = useToast();
@@ -315,8 +297,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <SelectContent>
                 {Object.entries(ROLE_LABELS).map(([value, label]) => {
                   // Coordenadores não podem criar diretores ou outros coordenadores
-                  if (userRole === 'coordinator_madre' || userRole === 'coordinator_floresta') {
-                    if (value === 'director' || value === 'coordinator_madre' || value === 'coordinator_floresta') {
+                  if (userRole === 'coordinator_madre' || userRole === 'coordinator_floresta' || userRole === 'coordinator_atendimento_floresta') {
+                    if (value === 'director' || value.startsWith('coordinator_')) {
                       return null;
                     }
                   }

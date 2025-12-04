@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { TimeClock } from '@/components/TimeClock';
 import { Users, Calendar, DollarSign, UserPlus } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 
 interface DashboardStats {
   totalClients: number;
@@ -14,22 +15,6 @@ interface DashboardStats {
   monthlyRevenue: number;
   totalEmployees: number;
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  director: 'Diretor(a)',
-  coordinator_madre: 'Coordenador(a) Madre',
-  coordinator_floresta: 'Coordenador(a) Floresta',
-  staff: 'Funcionário(a) Geral',
-  intern: 'Estagiário(a)',
-  musictherapist: 'Musicoterapeuta',
-  financeiro: 'Financeiro',
-  receptionist: 'Recepcionista',
-  psychologist: 'Psicólogo(a)',
-  psychopedagogue: 'Psicopedagogo(a)',
-  speech_therapist: 'Fonoaudiólogo(a)',
-  nutritionist: 'Nutricionista',
-  physiotherapist: 'Fisioterapeuta'
-};
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -75,7 +60,7 @@ export default function Dashboard() {
     );
   }
 
-  const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta'].includes(currentUserProfile?.employee_role);
+  const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(currentUserProfile?.employee_role);
 
   return (
     <div className="space-y-8 animate-fade-in p-2">

@@ -15,8 +15,7 @@ import { Search, Eye, Edit, UserPlus, Users, Clock, Settings, Shield } from 'luc
 import EmployeePermissions from '@/components/EmployeePermissions';
 import PasswordManager from '@/components/PasswordManager';
 import { CustomRoleManager } from '@/components/CustomRoleManager';
-
-type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
+import { ROLE_LABELS, EmployeeRole } from '@/hooks/useRolePermissions';
 
 interface Employee {
   id: string;
@@ -35,21 +34,6 @@ interface Employee {
 interface UserProfile {
   employee_role: string;
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  director: 'Diretor(a)',
-  coordinator_madre: 'Coordenador(a) Madre',
-  coordinator_floresta: 'Coordenador(a) Floresta',
-  staff: 'Funcionário(a) Geral',
-  intern: 'Estagiário(a)',
-  musictherapist: 'Musicoterapeuta',
-  receptionist: 'Recepcionista',
-  psychologist: 'Psicólogo(a)',
-  psychopedagogue: 'Psicopedagogo(a)',
-  speech_therapist: 'Fonoaudiólogo(a)',
-  nutritionist: 'Nutricionista',
-  physiotherapist: 'Fisioterapeuta'
-};
 
 export default function Employees() {
   const { user } = useAuth();
