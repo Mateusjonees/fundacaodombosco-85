@@ -229,112 +229,137 @@ export default function Stock() {
       return;
     }
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    
-    // Header
-    doc.setFillColor(37, 99, 235);
-    doc.rect(0, 0, pageWidth, 35, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Lista de Compras - Estoque', pageWidth / 2, 18, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Fundação Dom Bosco - ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 28, { align: 'center' });
-    
-    // Summary
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total de Itens: ${itemsToExport.length}`, 14, 45);
-    
-    const totalEstimated = itemsToExport.reduce((sum, item) => {
-      const quantityToBuy = Math.max(0, item.minimum_quantity - item.current_quantity + 5);
-      return sum + (quantityToBuy * item.unit_cost);
-    }, 0);
-    
-    doc.text(`Valor Estimado: R$ ${totalEstimated.toFixed(2)}`, 14, 52);
+    generateStockPDF(itemsToExport, 'Lista de Compras - Estoque', `lista-compras-estoque-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
 
-    // Group by category
-    const groupedItems: { [key: string]: StockItem[] } = {};
-    itemsToExport.forEach(item => {
-      const category = item.category || 'Outros';
-      if (!groupedItems[category]) {
-        groupedItems[category] = [];
-      }
-      groupedItems[category].push(item);
-    });
-
-    // Table data
-    const tableData: any[] = [];
-    Object.keys(groupedItems).sort().forEach(category => {
-      // Category header row
-      tableData.push([
-        { content: category.toUpperCase(), colSpan: 6, styles: { fillColor: [229, 231, 235], fontStyle: 'bold', fontSize: 10 } }
-      ]);
-      
-      groupedItems[category].forEach((item, index) => {
-        const quantityToBuy = Math.max(0, item.minimum_quantity - item.current_quantity + 5);
-        const estimatedCost = quantityToBuy * item.unit_cost;
-        
-        tableData.push([
-          `${index + 1}. ${item.name}`,
-          `${item.current_quantity} ${item.unit}`,
-          `${item.minimum_quantity} ${item.unit}`,
-          `${quantityToBuy} ${item.unit}`,
-          `R$ ${item.unit_cost.toFixed(2)}`,
-          `R$ ${estimatedCost.toFixed(2)}`
-        ]);
+  const exportAllStockPDF = () => {
+    if (stockItems.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Estoque vazio",
+        description: "Não há itens no estoque para exportar.",
       });
-    });
+      return;
+    }
 
-    // Generate table
-    (doc as any).autoTable({
-      startY: 60,
-      head: [['Item', 'Qtd. Atual', 'Qtd. Mínima', 'Comprar', 'Valor Unit.', 'Valor Est.']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: {
-        fillColor: [37, 99, 235],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 9
-      },
-      styles: {
-        fontSize: 8,
-        cellPadding: 3
-      },
-      columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 25, halign: 'center' },
-        2: { cellWidth: 25, halign: 'center' },
-        3: { cellWidth: 25, halign: 'center', fontStyle: 'bold' },
-        4: { cellWidth: 25, halign: 'right' },
-        5: { cellWidth: 25, halign: 'right' }
-      },
-      didDrawPage: (data: any) => {
-        // Footer
-        const pageCount = doc.getNumberOfPages();
-        doc.setFontSize(8);
-        doc.setTextColor(128, 128, 128);
-        doc.text(
-          `Página ${data.pageNumber} de ${pageCount}`,
-          pageWidth / 2,
-          doc.internal.pageSize.getHeight() - 10,
-          { align: 'center' }
-        );
-      }
-    });
+    generateStockPDF(stockItems, 'Controle de Estoque Completo', `controle-estoque-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
 
-    doc.save(`lista-compras-estoque-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-    
-    toast({
-      title: "PDF gerado com sucesso!",
-      description: `Lista de compras com ${itemsToExport.length} itens exportada.`,
-    });
+  const generateStockPDF = (items: StockItem[], title: string, filename: string) => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header
+      doc.setFillColor(37, 99, 235);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, pageWidth / 2, 18, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Fundação Dom Bosco - ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 28, { align: 'center' });
+      
+      // Summary
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total de Itens: ${items.length}`, 14, 45);
+      
+      const totalValue = items.reduce((sum, item) => sum + (item.current_quantity * item.unit_cost), 0);
+      doc.text(`Valor Total em Estoque: R$ ${totalValue.toFixed(2)}`, 14, 52);
+
+      // Group by category
+      const groupedItems: { [key: string]: StockItem[] } = {};
+      items.forEach(item => {
+        const category = item.category || 'Outros';
+        if (!groupedItems[category]) {
+          groupedItems[category] = [];
+        }
+        groupedItems[category].push(item);
+      });
+
+      // Table data
+      const tableData: any[] = [];
+      Object.keys(groupedItems).sort().forEach(category => {
+        // Category header row
+        tableData.push([
+          { content: category.toUpperCase(), colSpan: 6, styles: { fillColor: [229, 231, 235], fontStyle: 'bold', fontSize: 10 } }
+        ]);
+        
+        groupedItems[category].forEach((item, index) => {
+          const status = item.current_quantity === 0 
+            ? 'Esgotado' 
+            : item.current_quantity <= item.minimum_quantity 
+              ? 'Baixo' 
+              : 'Normal';
+          
+          tableData.push([
+            `${index + 1}. ${item.name}`,
+            `${item.current_quantity} ${item.unit}`,
+            `${item.minimum_quantity} ${item.unit}`,
+            `R$ ${item.unit_cost.toFixed(2)}`,
+            `R$ ${(item.current_quantity * item.unit_cost).toFixed(2)}`,
+            status
+          ]);
+        });
+      });
+
+      // Generate table
+      (doc as any).autoTable({
+        startY: 60,
+        head: [['Item', 'Qtd. Atual', 'Qtd. Mínima', 'Valor Unit.', 'Valor Total', 'Status']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [37, 99, 235],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 60 },
+          1: { cellWidth: 25, halign: 'center' },
+          2: { cellWidth: 25, halign: 'center' },
+          3: { cellWidth: 25, halign: 'right' },
+          4: { cellWidth: 25, halign: 'right' },
+          5: { cellWidth: 22, halign: 'center' }
+        },
+        didDrawPage: (data: any) => {
+          // Footer
+          const pageCount = doc.getNumberOfPages();
+          doc.setFontSize(8);
+          doc.setTextColor(128, 128, 128);
+          doc.text(
+            `Página ${data.pageNumber} de ${pageCount}`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+          );
+        }
+      });
+
+      doc.save(filename);
+      
+      toast({
+        title: "PDF gerado com sucesso!",
+        description: `Relatório com ${items.length} itens exportado.`,
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível gerar o PDF. Tente novamente.",
+      });
+    }
   };
 
   if (loading) {
@@ -346,6 +371,14 @@ export default function Stock() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Controle de Estoque</h1>
         <div className="flex gap-2">
+          <Button 
+            className="gap-2" 
+            variant="outline"
+            onClick={exportAllStockPDF}
+          >
+            <FileDown className="h-4 w-4" />
+            Baixar PDF
+          </Button>
           <Button 
             className="gap-2" 
             variant="outline"
