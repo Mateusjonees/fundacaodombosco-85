@@ -13,22 +13,7 @@ import { Shield, Users, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 
-type EmployeeRole = 
-  | 'director' 
-  | 'coordinator_madre' 
-  | 'coordinator_floresta' 
-  | 'staff' 
-  | 'intern' 
-  | 'terapeuta_ocupacional'
-  | 'advogada'
-  | 'musictherapist' 
-  | 'financeiro' 
-  | 'receptionist' 
-  | 'psychologist' 
-  | 'psychopedagogue' 
-  | 'speech_therapist' 
-  | 'nutritionist' 
-  | 'physiotherapist';
+import { EmployeeRole } from '@/hooks/useRolePermissions';
 
 interface RolePermission {
   permission: string;
