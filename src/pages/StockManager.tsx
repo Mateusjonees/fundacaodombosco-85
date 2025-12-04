@@ -16,7 +16,7 @@ import { Package2, Plus, AlertTriangle, TrendingUp, Activity, Upload, Edit, File
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import BulkImportTestsDialog from '@/components/BulkImportTestsDialog';
 import StockItemInlineActions from '@/components/StockItemInlineActions';
 
@@ -460,7 +460,7 @@ export default function StockManager() {
     });
 
     // Generate table
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 68,
       head: [['Item', 'Qtd. Atual', 'Qtd. Mínima', 'Valor Unit.', 'Valor Total', 'Status']],
       body: tableData,
@@ -550,7 +550,7 @@ export default function StockManager() {
       });
 
       // Generate table
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 60,
         head: [['Item', 'Categoria', 'Qtd. Atual', 'Qtd. Mín.', 'Comprar', 'Valor Unit.', 'Valor Est.']],
         body: tableData,
