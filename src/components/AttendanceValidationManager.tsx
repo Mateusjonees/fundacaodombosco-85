@@ -444,7 +444,7 @@ export default function AttendanceValidationManager() {
         setSelectedAttendance(null);
         setEditedAttendance({});
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               Revisão Detalhada do Atendimento
@@ -667,7 +667,7 @@ export default function AttendanceValidationManager() {
         setPaymentMethod('dinheiro');
         setEditedAttendance({});
       }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {validationAction === 'validate' ? 'Validar Atendimento' : 'Rejeitar Atendimento'}

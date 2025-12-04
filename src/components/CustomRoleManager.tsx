@@ -266,7 +266,7 @@ export function CustomRoleManager() {
               Criar Cargo
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingRole ? 'Editar Cargo Customizado' : 'Criar Novo Cargo'}
