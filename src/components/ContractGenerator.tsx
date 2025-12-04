@@ -21,6 +21,7 @@ interface Client {
   address?: string;
   responsible_name?: string;
   responsible_phone?: string;
+  responsible_cpf?: string;
   email?: string;
   phone?: string;
 }
@@ -58,7 +59,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [contractData, setContractData] = useState<ContractData>({
     contratante: client.responsible_name || client.name || '',
-    contratanteCpf: client.cpf || '',
+    contratanteCpf: client.responsible_cpf || client.cpf || '',
     beneficiario: client.name || '',
     beneficiarioCpf: client.cpf || '',
     endereco: client.address || '',
