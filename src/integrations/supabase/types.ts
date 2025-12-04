@@ -754,8 +754,10 @@ export type Database = {
           last_session_type: string | null
           medical_history: string | null
           name: string
+          neuro_completed_date: string | null
           neuro_diagnosis_by: string | null
           neuro_diagnosis_suggestion: string | null
+          neuro_final_diagnosis: string | null
           neuro_report_deadline: string | null
           neuro_report_file_path: string | null
           neuro_socioeconomic: string | null
@@ -795,8 +797,10 @@ export type Database = {
           last_session_type?: string | null
           medical_history?: string | null
           name: string
+          neuro_completed_date?: string | null
           neuro_diagnosis_by?: string | null
           neuro_diagnosis_suggestion?: string | null
+          neuro_final_diagnosis?: string | null
           neuro_report_deadline?: string | null
           neuro_report_file_path?: string | null
           neuro_socioeconomic?: string | null
@@ -836,8 +840,10 @@ export type Database = {
           last_session_type?: string | null
           medical_history?: string | null
           name?: string
+          neuro_completed_date?: string | null
           neuro_diagnosis_by?: string | null
           neuro_diagnosis_suggestion?: string | null
+          neuro_final_diagnosis?: string | null
           neuro_report_deadline?: string | null
           neuro_report_file_path?: string | null
           neuro_socioeconomic?: string | null

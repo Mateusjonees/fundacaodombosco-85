@@ -37,6 +37,8 @@ interface NeuroClient {
   neuro_diagnosis_by: string | null;
   neuro_tests_applied: string[] | null;
   neuro_socioeconomic: string | null;
+  neuro_final_diagnosis: string | null;
+  neuro_completed_date: string | null;
   unit: string | null;
   total_hours?: number;
   materials_used?: string[];
@@ -59,7 +61,9 @@ export default function Neuroassessment() {
     neuro_diagnosis_by: '',
     neuro_report_delivered: false,
     neuro_tests_applied: '',
-    neuro_socioeconomic: ''
+    neuro_socioeconomic: '',
+    neuro_final_diagnosis: '',
+    neuro_completed_date: ''
   });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -73,7 +77,9 @@ export default function Neuroassessment() {
       neuro_diagnosis_by: client.neuro_diagnosis_by || '',
       neuro_report_delivered: !!client.neuro_report_file_path,
       neuro_tests_applied: Array.isArray(client.neuro_tests_applied) ? client.neuro_tests_applied.join(', ') : '',
-      neuro_socioeconomic: client.neuro_socioeconomic || ''
+      neuro_socioeconomic: client.neuro_socioeconomic || '',
+      neuro_final_diagnosis: client.neuro_final_diagnosis || '',
+      neuro_completed_date: client.neuro_completed_date || ''
     });
   };
 
@@ -96,7 +102,9 @@ export default function Neuroassessment() {
           neuro_diagnosis_by: editForm.neuro_diagnosis_by || null,
           neuro_report_file_path: editForm.neuro_report_delivered ? 'delivered' : null,
           neuro_tests_applied: testsArray.length > 0 ? testsArray : null,
-          neuro_socioeconomic: editForm.neuro_socioeconomic || null
+          neuro_socioeconomic: editForm.neuro_socioeconomic || null,
+          neuro_final_diagnosis: editForm.neuro_final_diagnosis || null,
+          neuro_completed_date: editForm.neuro_completed_date || null
         })
         .eq('id', editingClient.id);
 
@@ -179,6 +187,8 @@ export default function Neuroassessment() {
             ...client,
             neuro_tests_applied: client.neuro_tests_applied as string[] | null,
             neuro_diagnosis_by: (client as any).neuro_diagnosis_by || null,
+            neuro_final_diagnosis: (client as any).neuro_final_diagnosis || null,
+            neuro_completed_date: (client as any).neuro_completed_date || null,
             total_hours: totalHours,
             materials_used: uniqueMaterials
           };
@@ -328,36 +338,38 @@ export default function Neuroassessment() {
       client.neuro_diagnosis_suggestion || '-',
       client.neuro_diagnosis_by || '-',
       getReportStatus(client.neuro_report_file_path).label,
-      client.materials_used && client.materials_used.length > 0 ? client.materials_used.join(', ') : '-',
+      client.neuro_final_diagnosis || '-',
+      formatDate(client.neuro_completed_date),
       client.total_hours ? `${client.total_hours}h` : '-',
       client.neuro_socioeconomic || '-'
     ]);
 
     autoTable(doc, {
       startY: 42,
-      head: [['Nome', 'Nasc.', 'Sexo', 'Início', 'Suspeita Dx', 'Encaminhado', 'Laudo', 'Materiais', 'Horas', 'Socio.']],
+      head: [['Nome', 'Nasc.', 'Sexo', 'Início', 'Suspeita Dx', 'Encaminhado', 'Status', 'Resultado', 'Finalizado', 'Horas', 'Socio.']],
       body: tableData,
       theme: 'grid',
       headStyles: {
         fillColor: [0, 102, 153],
         textColor: 255,
-        fontSize: 8,
+        fontSize: 7,
         fontStyle: 'bold'
       },
       bodyStyles: {
-        fontSize: 7
+        fontSize: 6
       },
       columnStyles: {
-        0: { cellWidth: 38 },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 12 },
-        3: { cellWidth: 22 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 28 },
-        6: { cellWidth: 18 },
-        7: { cellWidth: 45 },
-        8: { cellWidth: 15 },
-        9: { cellWidth: 15 }
+        0: { cellWidth: 32 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 10 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 25 },
+        6: { cellWidth: 15 },
+        7: { cellWidth: 38 },
+        8: { cellWidth: 20 },
+        9: { cellWidth: 12 },
+        10: { cellWidth: 12 }
       },
       margin: { left: 10, right: 10 }
     });
@@ -390,6 +402,8 @@ export default function Neuroassessment() {
       'Suspeita de Diagnóstico': client.neuro_diagnosis_suggestion || '-',
       'Encaminhado por': client.neuro_diagnosis_by || '-',
       'Status do Laudo': getReportStatus(client.neuro_report_file_path).label,
+      'Resultado do Laudo': client.neuro_final_diagnosis || '-',
+      'Data Finalização': formatDate(client.neuro_completed_date),
       'Materiais Utilizados': client.materials_used && client.materials_used.length > 0 ? client.materials_used.join(', ') : '-',
       'Horas Totais': client.total_hours || 0,
       'Socioeconômico': client.neuro_socioeconomic || '-'
@@ -401,7 +415,7 @@ export default function Neuroassessment() {
     
     ws['!cols'] = [
       { wch: 35 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 15 },
-      { wch: 25 }, { wch: 25 }, { wch: 12 }, { wch: 40 }, { wch: 12 }, { wch: 15 }
+      { wch: 25 }, { wch: 25 }, { wch: 12 }, { wch: 30 }, { wch: 15 }, { wch: 40 }, { wch: 12 }, { wch: 15 }
     ];
 
     XLSX.writeFile(wb, `relatorio-neuroavaliacao-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
@@ -681,6 +695,8 @@ export default function Neuroassessment() {
                     <TableHead>Suspeita de Diagnóstico</TableHead>
                     <TableHead>Encaminhado por</TableHead>
                     <TableHead>Status Laudo</TableHead>
+                    <TableHead>Resultado do Laudo</TableHead>
+                    <TableHead>Data Finalização</TableHead>
                     <TableHead>Materiais Utilizados</TableHead>
                     <TableHead>Horas Totais</TableHead>
                     <TableHead>Socioeconômico</TableHead>
@@ -706,6 +722,10 @@ export default function Neuroassessment() {
                         <TableCell>
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </TableCell>
+                        <TableCell className="max-w-[150px]">
+                          {client.neuro_final_diagnosis || '-'}
+                        </TableCell>
+                        <TableCell>{formatDate(client.neuro_completed_date)}</TableCell>
                         <TableCell className="max-w-[200px] truncate">
                           {client.materials_used && client.materials_used.length > 0
                             ? client.materials_used.join(', ')
@@ -819,6 +839,25 @@ export default function Neuroassessment() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-final-diagnosis">Resultado do Laudo (Diagnóstico Final)</Label>
+              <Textarea
+                id="edit-final-diagnosis"
+                value={editForm.neuro_final_diagnosis}
+                onChange={(e) => setEditForm({ ...editForm, neuro_final_diagnosis: e.target.value })}
+                placeholder="Diagnóstico final após avaliação..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-completed-date">Data de Finalização do Laudo</Label>
+              <Input
+                id="edit-completed-date"
+                type="date"
+                value={editForm.neuro_completed_date}
+                onChange={(e) => setEditForm({ ...editForm, neuro_completed_date: e.target.value })}
+              />
             </div>
             <div>
               <Label htmlFor="edit-tests">Testes Aplicados (separados por vírgula)</Label>
