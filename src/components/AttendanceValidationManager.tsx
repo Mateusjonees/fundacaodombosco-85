@@ -684,71 +684,79 @@ export default function AttendanceValidationManager() {
 
             {validationAction === 'validate' && (
               <>
-                 <div className="grid grid-cols-1 gap-4">
-                   <div>
-                     <Label htmlFor="total-amount" className="flex items-center gap-2">
-                       <DollarSign className="h-4 w-4" />
-                       Valor Total da Sessão (R$)
-                     </Label>
-                     <Input
-                       id="total-amount"
-                       type="number"
-                       step="0.01"
-                       min="0"
-                       value={totalAmount || selectedAttendance?.amount_charged?.toString() || ''}
-                       onChange={(e) => setTotalAmount(e.target.value)}
-                       placeholder="0.00"
-                     />
-                   </div>
-                   <div>
-                     <Label htmlFor="payment-method">Método de Pagamento</Label>
-                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                       <SelectTrigger id="payment-method">
-                         <SelectValue placeholder="Selecione o método" />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                         <SelectItem value="pix">PIX</SelectItem>
-                         <SelectItem value="cartao">Cartão</SelectItem>
-                         <SelectItem value="prazo">Prazo</SelectItem>
-                         <SelectItem value="dividido">Dividido</SelectItem>
-                       </SelectContent>
-                     </Select>
-                   </div>
-                   <div>
-                     <Label htmlFor="professional-amount" className="flex items-center gap-2">
-                       <DollarSign className="h-4 w-4" />
-                       Valor para o Profissional (R$)
-                     </Label>
-                     <Input
-                       id="professional-amount"
-                       type="number"
-                       step="0.01"
-                       min="0"
-                       value={professionalAmount}
-                       onChange={(e) => setProfessionalAmount(e.target.value)}
-                       placeholder="0.00"
-                     />
-                   </div>
-                   <div>
-                     <Label htmlFor="foundation-amount" className="flex items-center gap-2">
-                       <DollarSign className="h-4 w-4" />
-                       Valor para a Fundação (R$)
-                     </Label>
-                     <Input
-                       id="foundation-amount"
-                       type="number"
-                       step="0.01"
-                       min="0"
-                       value={foundationAmount}
-                       onChange={(e) => setFoundationAmount(e.target.value)}
-                       placeholder="0.00"
-                     />
-                   </div>
-                 </div>
-                <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
-                  <p><strong>Informação:</strong> Os valores informados serão registrados no sistema financeiro e nos relatórios profissionais. Se não informar valores, apenas os custos dos materiais e valor total da sessão serão processados.</p>
-                </div>
+                {selectedAttendance?.unit === 'madre' ? (
+                  <>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <Label htmlFor="total-amount" className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Valor Total da Sessão (R$)
+                        </Label>
+                        <Input
+                          id="total-amount"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={totalAmount || selectedAttendance?.amount_charged?.toString() || ''}
+                          onChange={(e) => setTotalAmount(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="payment-method">Método de Pagamento</Label>
+                        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                          <SelectTrigger id="payment-method">
+                            <SelectValue placeholder="Selecione o método" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                            <SelectItem value="pix">PIX</SelectItem>
+                            <SelectItem value="cartao">Cartão</SelectItem>
+                            <SelectItem value="prazo">Prazo</SelectItem>
+                            <SelectItem value="dividido">Dividido</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="professional-amount" className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Valor para o Profissional (R$)
+                        </Label>
+                        <Input
+                          id="professional-amount"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={professionalAmount}
+                          onChange={(e) => setProfessionalAmount(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="foundation-amount" className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Valor para a Fundação (R$)
+                        </Label>
+                        <Input
+                          id="foundation-amount"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={foundationAmount}
+                          onChange={(e) => setFoundationAmount(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                      <p><strong>Informação:</strong> Os valores informados serão registrados no sistema financeiro e nos relatórios profissionais. Se não informar valores, apenas os custos dos materiais e valor total da sessão serão processados.</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                    <p><strong>Informação:</strong> Para atendimentos da unidade {selectedAttendance?.unit === 'floresta' ? 'Floresta (Neuroavaliação)' : 'Atendimento Floresta'}, não é necessário informar valores financeiros.</p>
+                  </div>
+                )}
               </>
             )}
 
