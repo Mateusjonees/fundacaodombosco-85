@@ -1052,6 +1052,118 @@ export default function Reports() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="sessions">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sessões Detalhadas</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Informações detalhadas das sessões incluindo avaliações e métricas de qualidade
+              </p>
+            </CardHeader>
+            <CardContent>
+              {employeeReports.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma sessão detalhada encontrada com os filtros aplicados.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Funcionário</TableHead>
+                      <TableHead>Paciente</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Duração</TableHead>
+                      <TableHead>Esforço</TableHead>
+                      <TableHead>Qualidade</TableHead>
+                      <TableHead>Cooperação</TableHead>
+                      <TableHead>Objetivos</TableHead>
+                      <TableHead>Materiais</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeReports.map((report) => (
+                      <TableRow key={report.id}>
+                        <TableCell>
+                          {format(new Date(report.session_date), 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell>
+                          <button
+                            onClick={() => setSelectedEmployee(report.employee_id)}
+                            className="font-medium text-primary hover:underline text-left"
+                          >
+                            {report.profiles?.name || 'N/A'}
+                          </button>
+                        </TableCell>
+                        <TableCell>
+                          {report.clients?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{report.session_type}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {report.session_duration ? `${report.session_duration} min` : '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {renderStars(report.effort_rating)}
+                            {report.effort_rating && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({report.effort_rating})
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {renderStars(report.quality_rating)}
+                            {report.quality_rating && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({report.quality_rating})
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {renderStars(report.patient_cooperation)}
+                            {report.patient_cooperation && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({report.patient_cooperation})
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {renderStars(report.goal_achievement)}
+                            {report.goal_achievement && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({report.goal_achievement})
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-semibold">
+                            {report.materials_cost && report.materials_cost > 0 
+                              ? `R$ ${report.materials_cost.toFixed(2)}` 
+                              : '-'}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="performance">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
