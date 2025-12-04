@@ -29,6 +29,7 @@ interface FeedbackControl {
     id: string;
     name: string;
     cpf: string | null;
+    diagnosis: string | null;
   };
   assigned_profiles?: {
     user_id: string;
@@ -124,7 +125,8 @@ export default function FeedbackControl() {
           clients!client_feedback_control_client_id_fkey (
             id,
             name,
-            cpf
+            cpf,
+            diagnosis
           )
         `)
         .neq('status', 'completed')
@@ -512,6 +514,11 @@ export default function FeedbackControl() {
                       <CardDescription>
                         {feedback.clients?.cpf && `CPF: ${feedback.clients.cpf}`}
                       </CardDescription>
+                      {feedback.clients?.diagnosis && (
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-medium">Diagnóstico:</span> {feedback.clients.diagnosis}
+                        </p>
+                      )}
                       {feedback.assigned_profiles ? (
                         <div className="flex items-center gap-2 text-sm mt-2">
                           <Badge variant="secondary" className="flex items-center gap-1">
@@ -636,6 +643,15 @@ export default function FeedbackControl() {
                 </div>
               </div>
               
+              {selectedFeedback.clients?.diagnosis && (
+                <div>
+                  <p className="text-sm font-medium">Diagnóstico</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedFeedback.clients.diagnosis}
+                  </p>
+                </div>
+              )}
+              
               <div>
                 <p className="text-sm font-medium">Funcionário Responsável</p>
                 {selectedFeedback.assigned_profiles ? (
@@ -690,7 +706,7 @@ export default function FeedbackControl() {
                         : 'text-blue-600 dark:text-blue-400'
                   }`}>
                     {calculateRemainingDays(selectedFeedback.deadline_date) < 0 
-                      ? `Vencido há ${Math.abs(calculateRemainingDays(selectedFeedback.deadline_date))} dias` 
+                      ? `Vencido há ${Math.abs(calculateRemainingDays(selectedFeedback.deadline_date))} dias úteis` 
                       : calculateRemainingDays(selectedFeedback.deadline_date) === 0
                         ? '🔥 Vence hoje!'
                         : `${calculateRemainingDays(selectedFeedback.deadline_date)} ${calculateRemainingDays(selectedFeedback.deadline_date) === 1 ? 'dia útil' : 'dias úteis'}`}
