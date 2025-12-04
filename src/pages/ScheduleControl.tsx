@@ -15,8 +15,9 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle, Download, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import ClientDetailsView from '@/components/ClientDetailsView';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -61,6 +62,9 @@ export default function ScheduleControl() {
   const [notificationReason, setNotificationReason] = useState("");
   const [pdfConfigDialogOpen, setPdfConfigDialogOpen] = useState(false);
   const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [searchText, setSearchText] = useState('');
+  const [filterTimeStart, setFilterTimeStart] = useState('');
+  const [filterTimeEnd, setFilterTimeEnd] = useState('');
 
   const handleClientClick = async (clientId: string) => {
     try {
@@ -729,7 +733,7 @@ ${notificationMessage}
   const groupSchedulesByDate = () => {
     const grouped: Record<string, Schedule[]> = {};
     
-    schedules.forEach(schedule => {
+    filteredSchedules.forEach(schedule => {
       const dateKey = format(new Date(schedule.start_time), 'yyyy-MM-dd');
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
@@ -740,11 +744,40 @@ ${notificationMessage}
     return grouped;
   };
 
+  // Filtrar agendamentos por texto e horário
+  const filteredSchedules = schedules.filter(schedule => {
+    // Filtro de pesquisa por texto (nome do paciente ou profissional)
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase().trim();
+      const patientName = schedule.clients?.name?.toLowerCase() || '';
+      const professionalName = schedule.profiles?.name?.toLowerCase() || '';
+      
+      if (!patientName.includes(searchLower) && !professionalName.includes(searchLower)) {
+        return false;
+      }
+    }
+
+    // Filtro de horário
+    if (filterTimeStart || filterTimeEnd) {
+      const scheduleTime = format(new Date(schedule.start_time), 'HH:mm');
+      
+      if (filterTimeStart && scheduleTime < filterTimeStart) {
+        return false;
+      }
+      
+      if (filterTimeEnd && scheduleTime > filterTimeEnd) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
   const renderDayView = () => {
     // Agrupar agendamentos por hora
     const schedulesByHour: Record<string, Schedule[]> = {};
     
-    schedules.forEach(schedule => {
+    filteredSchedules.forEach(schedule => {
       const hour = format(new Date(schedule.start_time), 'HH:00');
       if (!schedulesByHour[hour]) {
         schedulesByHour[hour] = [];
@@ -754,12 +787,15 @@ ${notificationMessage}
 
     const sortedHours = Object.keys(schedulesByHour).sort();
 
+
     return (
       <div className="space-y-6">
-        {schedules.length === 0 ? (
+        {filteredSchedules.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
-              Nenhum agendamento encontrado para esta data.
+              {schedules.length === 0 
+                ? 'Nenhum agendamento encontrado para esta data.'
+                : 'Nenhum agendamento corresponde aos filtros aplicados.'}
             </CardContent>
           </Card>
         ) : (
@@ -1112,7 +1148,60 @@ ${notificationMessage}
               </div>
 
               {/* Filtros */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {/* Barra de pesquisa */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Pesquisar paciente ou profissional..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    className="pl-10 pr-8 w-[280px]"
+                  />
+                  {searchText && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                      onClick={() => setSearchText('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Filtro de horário */}
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="time"
+                    value={filterTimeStart}
+                    onChange={(e) => setFilterTimeStart(e.target.value)}
+                    className="w-24"
+                    placeholder="Início"
+                  />
+                  <span className="text-muted-foreground text-sm">-</span>
+                  <Input
+                    type="time"
+                    value={filterTimeEnd}
+                    onChange={(e) => setFilterTimeEnd(e.target.value)}
+                    className="w-24"
+                    placeholder="Fim"
+                  />
+                  {(filterTimeStart || filterTimeEnd) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setFilterTimeStart('');
+                        setFilterTimeEnd('');
+                      }}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Todos os profissionais" />
@@ -1160,7 +1249,14 @@ ${notificationMessage}
               <CardTitle className="text-sm font-medium">Total</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <div className="text-2xl font-bold">{schedules.length}</div>
+              <div className="text-2xl font-bold">
+                {filteredSchedules.length}
+                {filteredSchedules.length !== schedules.length && (
+                  <span className="text-sm text-muted-foreground font-normal ml-1">
+                    / {schedules.length}
+                  </span>
+                )}
+              </div>
             </CardContent>
           </Card>
           
@@ -1170,7 +1266,7 @@ ${notificationMessage}
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold">
-                {schedules.filter(s => s.status === 'scheduled').length}
+                {filteredSchedules.filter(s => s.status === 'scheduled').length}
               </div>
             </CardContent>
           </Card>
@@ -1181,7 +1277,7 @@ ${notificationMessage}
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold">
-                {schedules.filter(s => s.status === 'confirmed').length}
+                {filteredSchedules.filter(s => s.status === 'confirmed').length}
               </div>
             </CardContent>
           </Card>
@@ -1192,7 +1288,7 @@ ${notificationMessage}
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold">
-                {schedules.filter(s => s.status === 'completed').length}
+                {filteredSchedules.filter(s => s.status === 'completed').length}
               </div>
             </CardContent>
           </Card>
@@ -1203,7 +1299,7 @@ ${notificationMessage}
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-destructive">
-                {schedules.filter(s => s.status === 'cancelled').length}
+                {filteredSchedules.filter(s => s.status === 'cancelled').length}
               </div>
             </CardContent>
           </Card>
