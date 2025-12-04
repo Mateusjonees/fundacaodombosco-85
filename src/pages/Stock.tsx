@@ -19,7 +19,7 @@ import { StockMovementHistory } from '@/components/StockMovementHistory';
 import { ImportExcelStockDialog } from '@/components/ImportExcelStockDialog';
 import { importAllStockItems } from '@/utils/importStockData';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface StockItem {
   id: string;
@@ -309,7 +309,7 @@ export default function Stock() {
       });
 
       // Generate table
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 60,
         head: [['Item', 'Qtd. Atual', 'Qtd. Mínima', 'Valor Unit.', 'Valor Total', 'Status']],
         body: tableData,
