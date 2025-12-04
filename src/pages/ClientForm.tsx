@@ -100,7 +100,14 @@ export default function ClientForm() {
     diagnostico_principal: '',
     medical_history: '',
     queixa_neuropsicologica: '',
-    expectativas_tratamento: ''
+    expectativas_tratamento: '',
+    
+    // Neuroavaliação (opcionais)
+    neuro_test_start_date: '',
+    neuro_report_deadline: '',
+    neuro_diagnosis_suggestion: '',
+    neuro_tests_applied: '',
+    neuro_socioeconomic: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -152,6 +159,11 @@ export default function ClientForm() {
         unitToAssign = 'floresta';
       }
 
+      // Preparar testes aplicados como array
+      const testsApplied = formData.neuro_tests_applied 
+        ? formData.neuro_tests_applied.split(',').map(t => t.trim()).filter(t => t)
+        : [];
+
       const { error } = await supabase
         .from('clients')
         .insert([{
@@ -160,13 +172,20 @@ export default function ClientForm() {
           phone: ageType === 'adult' ? formData.phone : formData.telefone_pai || formData.telefone_mae, // Use parent phone for minors
           cpf: formData.cpf,
           birth_date: formData.birth_date,
+          gender: formData.gender || null,
           address: `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade}/${formData.estado}`,
           emergency_contact: ageType === 'adult' ? formData.emergency_contact : `${formData.nome_pai} / ${formData.nome_mae}`,
           emergency_phone: ageType === 'adult' ? formData.emergency_phone : `${formData.telefone_pai} / ${formData.telefone_mae}`,
           medical_history: formData.medical_history,
           notes: notesData,
           unit: unitToAssign,
-          is_active: true
+          is_active: true,
+          // Campos de Neuroavaliação
+          neuro_test_start_date: formData.neuro_test_start_date || null,
+          neuro_report_deadline: formData.neuro_report_deadline || null,
+          neuro_diagnosis_suggestion: formData.neuro_diagnosis_suggestion || null,
+          neuro_tests_applied: testsApplied.length > 0 ? testsApplied : null,
+          neuro_socioeconomic: formData.neuro_socioeconomic || null
         }]);
 
       if (error) throw error;
@@ -186,7 +205,9 @@ export default function ClientForm() {
         telefone_mae: '', responsavel_financeiro: '', outro_responsavel: '',
         cep: '', logradouro: '', numero: '', complemento: '', bairro: '',
         cidade: '', estado: '', observacoes: '', diagnostico_principal: '',
-        medical_history: '', queixa_neuropsicologica: '', expectativas_tratamento: ''
+        medical_history: '', queixa_neuropsicologica: '', expectativas_tratamento: '',
+        neuro_test_start_date: '', neuro_report_deadline: '', neuro_diagnosis_suggestion: '',
+        neuro_tests_applied: '', neuro_socioeconomic: ''
       });
 
     } catch (error) {
@@ -737,6 +758,84 @@ export default function ClientForm() {
                 placeholder="O que o paciente/família espera do acompanhamento"
                 rows={3}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Neuroavaliação (Opcional) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🧠 Neuroavaliação
+              <span className="text-sm font-normal text-muted-foreground">(Opcional)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="neuro_test_start_date">Data de Início dos Testes</Label>
+                <Input
+                  id="neuro_test_start_date"
+                  type="date"
+                  value={formData.neuro_test_start_date}
+                  onChange={(e) => handleInputChange('neuro_test_start_date', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="neuro_report_deadline">Previsão de Entrega do Laudo</Label>
+                <Input
+                  id="neuro_report_deadline"
+                  type="date"
+                  value={formData.neuro_report_deadline}
+                  onChange={(e) => handleInputChange('neuro_report_deadline', e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="neuro_diagnosis_suggestion">Sugestão de Diagnóstico (Encaminhamento)</Label>
+                <Input
+                  id="neuro_diagnosis_suggestion"
+                  value={formData.neuro_diagnosis_suggestion}
+                  onChange={(e) => handleInputChange('neuro_diagnosis_suggestion', e.target.value)}
+                  placeholder="Ex: TEA, TDAH, TOD, Dislexia"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Hipótese diagnóstica encaminhada pelo médico
+                </p>
+              </div>
+              
+              <div>
+                <Label htmlFor="neuro_socioeconomic">Nível Socioeconômico</Label>
+                <Select 
+                  value={formData.neuro_socioeconomic} 
+                  onValueChange={(value) => handleInputChange('neuro_socioeconomic', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-md z-50">
+                    <SelectItem value="A">Classe A</SelectItem>
+                    <SelectItem value="B">Classe B</SelectItem>
+                    <SelectItem value="C">Classe C</SelectItem>
+                    <SelectItem value="D">Classe D</SelectItem>
+                    <SelectItem value="E">Classe E</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="md:col-span-2">
+                <Label htmlFor="neuro_tests_applied">Testes a Serem Aplicados</Label>
+                <Input
+                  id="neuro_tests_applied"
+                  value={formData.neuro_tests_applied}
+                  onChange={(e) => handleInputChange('neuro_tests_applied', e.target.value)}
+                  placeholder="Ex: WISC-IV, SNAP-IV, BRIEF (separados por vírgula)"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Separe os testes por vírgula
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

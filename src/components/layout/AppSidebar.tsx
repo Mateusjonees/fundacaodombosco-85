@@ -26,6 +26,7 @@ import {
   Folder,
   Clock,
   Bell,
+  Brain,
   LucideIcon
 } from 'lucide-react';
 
@@ -71,6 +72,7 @@ const iconMapping: Record<string, LucideIcon> = {
   Folder,
   Clock,
   Bell,
+  Brain,
 };
 
 // Dynamic menu items based on role permissions
@@ -140,6 +142,18 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     category: 'GESTÃO CLÍNICA',
     order_index: 5
   });
+
+  // Neuroavaliação - apenas diretores
+  if (permissions.isDirector()) {
+    items.push({ 
+      id: 'neuroassessment', 
+      title: 'Neuroavaliação', 
+      url: '/neuroassessment', 
+      icon: 'Brain', 
+      category: 'GESTÃO CLÍNICA',
+      order_index: 5.5
+    });
+  }
 
   // 📅 AGENDA
   if (permissions.canViewAllSchedules() || permissions.isProfessional() || customPermissions.hasPermission('view_schedules')) {

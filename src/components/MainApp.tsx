@@ -48,6 +48,7 @@ const FeedbackControl = lazy(() => import('@/pages/FeedbackControl'));
 const MyFiles = lazy(() => import('@/pages/MyFiles'));
 const Timesheet = lazy(() => import('@/pages/Timesheet'));
 const MeetingAlerts = lazy(() => import('@/pages/MeetingAlerts'));
+const Neuroassessment = lazy(() => import('@/pages/Neuroassessment'));
 
 interface Profile {
   id: string;
@@ -320,6 +321,12 @@ export const MainApp = () => {
                 <Route path="/meeting-alerts" element={
                   <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta']}>
                     <MeetingAlerts />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/neuroassessment" element={
+                  <ProtectedRoute allowedRoles={['director']}>
+                    <Neuroassessment />
                   </ProtectedRoute>
                 } />
                   
