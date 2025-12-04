@@ -24,6 +24,7 @@ import { AppointmentNotifications } from '@/components/AppointmentNotifications'
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { QuickHelpCenter } from '@/components/QuickHelpCenter';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Link } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
@@ -152,6 +153,7 @@ export const MainApp = () => {
                 <div className="flex items-center gap-2 sm:gap-4">
                   <QuickHelpCenter />
                   <GlobalSearch />
+                  <NotificationBell />
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
