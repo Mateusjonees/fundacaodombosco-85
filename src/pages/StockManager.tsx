@@ -12,7 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Package2, Plus, AlertTriangle, TrendingUp, Activity, Upload, Edit } from 'lucide-react';
+import { Package2, Plus, AlertTriangle, TrendingUp, Activity, Upload, Edit, FileDown } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import BulkImportTestsDialog from '@/components/BulkImportTestsDialog';
 import StockItemInlineActions from '@/components/StockItemInlineActions';
 
@@ -394,11 +398,126 @@ export default function StockManager() {
     sum + (item.current_quantity * item.unit_cost), 0
   );
 
+  const exportStockPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, pageWidth, 35, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Controle de Estoque', pageWidth / 2, 18, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Fundação Dom Bosco - ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 28, { align: 'center' });
+    
+    // Summary
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total de Itens: ${stockItems.length}`, 14, 45);
+    doc.text(`Estoque Baixo: ${lowStockItems.length}`, 14, 52);
+    doc.text(`Valor Total: R$ ${totalValue.toFixed(2)}`, 14, 59);
+
+    // Group items by category
+    const groupedItems: { [key: string]: StockItem[] } = {};
+    stockItems.forEach(item => {
+      const category = item.category || 'Outros';
+      if (!groupedItems[category]) {
+        groupedItems[category] = [];
+      }
+      groupedItems[category].push(item);
+    });
+
+    // Table data
+    const tableData: any[] = [];
+    Object.keys(groupedItems).sort().forEach(category => {
+      // Category header row
+      tableData.push([
+        { content: category.toUpperCase(), colSpan: 6, styles: { fillColor: [229, 231, 235], fontStyle: 'bold', fontSize: 10 } }
+      ]);
+      
+      groupedItems[category].forEach((item, index) => {
+        const status = item.current_quantity === 0 
+          ? 'Esgotado' 
+          : item.current_quantity <= item.minimum_quantity 
+            ? 'Baixo' 
+            : 'Normal';
+        
+        tableData.push([
+          `${index + 1}. ${item.name}`,
+          `${item.current_quantity} ${item.unit}`,
+          `${item.minimum_quantity} ${item.unit}`,
+          `R$ ${item.unit_cost.toFixed(2)}`,
+          `R$ ${(item.current_quantity * item.unit_cost).toFixed(2)}`,
+          status
+        ]);
+      });
+    });
+
+    // Generate table
+    (doc as any).autoTable({
+      startY: 68,
+      head: [['Item', 'Qtd. Atual', 'Qtd. Mínima', 'Valor Unit.', 'Valor Total', 'Status']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 25, halign: 'center' },
+        2: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 22, halign: 'center' }
+      },
+      didDrawPage: (data: any) => {
+        // Footer
+        const pageCount = doc.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+    });
+
+    doc.save(`controle-estoque-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    
+    toast({
+      title: "PDF gerado com sucesso!",
+      description: `Relatório de estoque com ${stockItems.length} itens exportado.`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Gestão de Estoque</h1>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={exportStockPDF}
+          >
+            <FileDown className="h-4 w-4" />
+            Baixar PDF
+          </Button>
           <Button 
             variant="outline" 
             className="gap-2"
