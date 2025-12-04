@@ -746,6 +746,7 @@ export type Database = {
           email: string | null
           emergency_contact: string | null
           emergency_phone: string | null
+          gender: string | null
           id: string
           is_active: boolean | null
           last_session_date: string | null
@@ -753,6 +754,12 @@ export type Database = {
           last_session_type: string | null
           medical_history: string | null
           name: string
+          neuro_diagnosis_suggestion: string | null
+          neuro_report_deadline: string | null
+          neuro_report_file_path: string | null
+          neuro_socioeconomic: string | null
+          neuro_test_start_date: string | null
+          neuro_tests_applied: Json | null
           neuropsych_complaint: string | null
           notes: string | null
           phone: string | null
@@ -778,6 +785,7 @@ export type Database = {
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
+          gender?: string | null
           id?: string
           is_active?: boolean | null
           last_session_date?: string | null
@@ -785,6 +793,12 @@ export type Database = {
           last_session_type?: string | null
           medical_history?: string | null
           name: string
+          neuro_diagnosis_suggestion?: string | null
+          neuro_report_deadline?: string | null
+          neuro_report_file_path?: string | null
+          neuro_socioeconomic?: string | null
+          neuro_test_start_date?: string | null
+          neuro_tests_applied?: Json | null
           neuropsych_complaint?: string | null
           notes?: string | null
           phone?: string | null
@@ -810,6 +824,7 @@ export type Database = {
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
+          gender?: string | null
           id?: string
           is_active?: boolean | null
           last_session_date?: string | null
@@ -817,6 +832,12 @@ export type Database = {
           last_session_type?: string | null
           medical_history?: string | null
           name?: string
+          neuro_diagnosis_suggestion?: string | null
+          neuro_report_deadline?: string | null
+          neuro_report_file_path?: string | null
+          neuro_socioeconomic?: string | null
+          neuro_test_start_date?: string | null
+          neuro_tests_applied?: Json | null
           neuropsych_complaint?: string | null
           notes?: string | null
           phone?: string | null
