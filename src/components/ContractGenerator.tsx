@@ -535,11 +535,11 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
                 <p className="text-justify mb-4">
                   A pessoa jurídica FUNDAÇÃO DOM BOSCO, registrada no CNPJ sob o n∘ 17.278.904/0001-86, com endereço 
                   comercial à Rua Urucuia, 18- Bairro Floresta, Belo Horizonte - MG, denominada neste como 
-                  CONTRATADA , e a pessoa física {contractData.contratante}, registrada no CPF 
-                  sob o n∘ {contractData.contratanteCpf}, denominada neste como CONTRATANTE, 
-                  responsável legal ou financeiro por _______, inscrito no CPF sob o 
-                  n∘ _____________, denominado neste como beneficiário do serviço, 
-                  residente _______________ - CEP: ____________ - _________ firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as 
+                  CONTRATADA, e a pessoa física <strong>{contractData.contratante}</strong>, registrada no CPF 
+                  sob o n∘ <strong>{contractData.contratanteCpf}</strong>, denominada neste como CONTRATANTE, 
+                  responsável legal ou financeiro por <strong>{contractData.beneficiario}</strong>, inscrito no CPF sob o 
+                  n∘ <strong>{contractData.beneficiarioCpf}</strong>, denominado neste como beneficiário do serviço, 
+                  residente <strong>{contractData.endereco}</strong>, firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as 
                   cláusulas abaixo.
                 </p>
 
