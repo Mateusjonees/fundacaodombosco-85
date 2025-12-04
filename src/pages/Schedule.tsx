@@ -13,9 +13,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X, Trash2, CalendarDays, LayoutList } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import { DeleteAppointmentDialog } from '@/components/DeleteAppointmentDialog';
@@ -24,6 +25,7 @@ import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocompl
 import { ProfessionalCommandAutocomplete } from '@/components/ProfessionalCommandAutocomplete';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
 import PatientArrivedNotification from '@/components/PatientArrivedNotification';
+import { ScheduleCard } from '@/components/ScheduleCard';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useClients } from '@/hooks/useClients';
@@ -60,6 +62,10 @@ export default function Schedule() {
   // Filtros
   const [filterEmployee, setFilterEmployee] = useState('all');
   const [filterUnit, setFilterUnit] = useState('all');
+  const [searchText, setSearchText] = useState('');
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
+  const [filterTimeStart, setFilterTimeStart] = useState('');
+  const [filterTimeEnd, setFilterTimeEnd] = useState('');
 
   // React Query hooks
   const { data: userProfile, isLoading: loadingProfile } = useUserProfile(user?.id);
@@ -70,6 +76,7 @@ export default function Schedule() {
     userProfile,
     {
       employeeId: filterEmployee !== 'all' ? filterEmployee : undefined,
+      viewMode: viewMode,
     }
   );
   const createSchedule = useCreateSchedule();
@@ -488,18 +495,61 @@ export default function Schedule() {
     return statusMap[status] || { text: 'Desconhecido', variant: 'outline' as const };
   };
 
+  // Calcular datas para visualização semanal
+  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 }); // Segunda-feira
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
   // Filtrar agendamentos
-  const todaySchedules = schedules.filter(schedule => {
+  const filteredSchedules = schedules.filter(schedule => {
+    // Filtro de funcionário
     if (filterEmployee !== 'all' && schedule.employee_id !== filterEmployee) {
       return false;
     }
 
+    // Filtro de unidade
     if (filterUnit !== 'all' && schedule.unit !== filterUnit) {
       return false;
     }
 
+    // Filtro de pesquisa por texto (nome do paciente ou profissional)
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase().trim();
+      const patientName = schedule.clients?.name?.toLowerCase() || '';
+      const professionalName = employees.find(emp => emp.user_id === schedule.employee_id)?.name?.toLowerCase() || '';
+      
+      if (!patientName.includes(searchLower) && !professionalName.includes(searchLower)) {
+        return false;
+      }
+    }
+
+    // Filtro de horário
+    if (filterTimeStart || filterTimeEnd) {
+      const scheduleTime = format(new Date(schedule.start_time), 'HH:mm');
+      
+      if (filterTimeStart && scheduleTime < filterTimeStart) {
+        return false;
+      }
+      
+      if (filterTimeEnd && scheduleTime > filterTimeEnd) {
+        return false;
+      }
+    }
+
     return true;
   });
+
+  // Separar agendamentos por modo de visualização
+  const todaySchedules = viewMode === 'day' 
+    ? filteredSchedules 
+    : filteredSchedules;
+
+  // Agrupar agendamentos por dia para visualização semanal
+  const schedulesByDay = weekDays.map(day => ({
+    date: day,
+    schedules: filteredSchedules.filter(schedule => 
+      isSameDay(new Date(schedule.start_time), day)
+    )
+  }));
 
   console.log('Today schedules:', todaySchedules); // Debug log
   console.log('User can see patient presence buttons:', userProfile?.employee_role === 'receptionist'); // Debug log
@@ -646,6 +696,120 @@ export default function Schedule() {
         {/* Conteúdo principal */}
         <div className="flex-1">
           <div className="space-y-6">
+            {/* Área de pesquisa avançada */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-indigo-500/5">
+              <CardContent className="pt-4 pb-4 space-y-4">
+                {/* Barra de pesquisa por texto */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Pesquisar por nome do paciente ou profissional..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    className="pl-10 pr-10"
+                  />
+                  {searchText && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+                      onClick={() => setSearchText('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Filtros: Modo de visualização e Horário */}
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Toggle Dia/Semana */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">Visualização:</span>
+                    <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')}>
+                      <ToggleGroupItem value="day" aria-label="Visualização diária" className="gap-2">
+                        <LayoutList className="h-4 w-4" />
+                        Dia
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="week" aria-label="Visualização semanal" className="gap-2">
+                        <CalendarDays className="h-4 w-4" />
+                        Semana
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+
+                  {/* Filtro de Horário */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">Horário:</span>
+                    <Input
+                      type="time"
+                      value={filterTimeStart}
+                      onChange={(e) => setFilterTimeStart(e.target.value)}
+                      className="w-28"
+                      placeholder="Início"
+                    />
+                    <span className="text-muted-foreground">até</span>
+                    <Input
+                      type="time"
+                      value={filterTimeEnd}
+                      onChange={(e) => setFilterTimeEnd(e.target.value)}
+                      className="w-28"
+                      placeholder="Fim"
+                    />
+                    {(filterTimeStart || filterTimeEnd) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setFilterTimeStart('');
+                          setFilterTimeEnd('');
+                        }}
+                        className="h-8 px-2"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mostrar filtros ativos */}
+                {(searchText || filterTimeStart || filterTimeEnd || filterEmployee !== 'all' || filterUnit !== 'all') && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Filtros ativos:</span>
+                    {searchText && (
+                      <Badge variant="secondary" className="gap-1">
+                        Pesquisa: "{searchText}"
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchText('')} />
+                      </Badge>
+                    )}
+                    {filterTimeStart && (
+                      <Badge variant="secondary" className="gap-1">
+                        Após: {filterTimeStart}
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterTimeStart('')} />
+                      </Badge>
+                    )}
+                    {filterTimeEnd && (
+                      <Badge variant="secondary" className="gap-1">
+                        Antes: {filterTimeEnd}
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterTimeEnd('')} />
+                      </Badge>
+                    )}
+                    {filterEmployee !== 'all' && (
+                      <Badge variant="secondary" className="gap-1">
+                        Profissional: {employees.find(e => e.user_id === filterEmployee)?.name}
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterEmployee('all')} />
+                      </Badge>
+                    )}
+                    {filterUnit !== 'all' && (
+                      <Badge variant="secondary" className="gap-1">
+                        Unidade: {filterUnit === 'madre' ? 'MADRE' : filterUnit === 'floresta' ? 'Floresta' : 'Atend. Floresta'}
+                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterUnit('all')} />
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Lista de Agendamentos */}
             <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-green-500/5">
                <CardHeader className="border-b border-gradient-to-r from-transparent via-green-500/20 to-transparent">
@@ -655,11 +819,17 @@ export default function Schedule() {
                   </div>
                   <div>
                     <span className="bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent font-bold">
-                      Agenda do Dia
+                      {viewMode === 'day' ? 'Agenda do Dia' : 'Agenda da Semana'}
                     </span>
                     <p className="text-sm font-normal text-muted-foreground mt-1">
-                      {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      {viewMode === 'day' 
+                        ? format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                        : `${format(weekStart, "dd/MM", { locale: ptBR })} - ${format(addDays(weekStart, 6), "dd/MM/yyyy", { locale: ptBR })}`
+                      }
                     </p>
+                  </div>
+                  <div className="ml-auto text-sm text-muted-foreground">
+                    {filteredSchedules.length} agendamento(s)
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -691,248 +861,102 @@ export default function Schedule() {
                       </Card>
                     ))}
                   </div>
-                ) : todaySchedules.length === 0 ? (
+                ) : filteredSchedules.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="inline-block p-6 bg-gradient-to-br from-gray-500/10 to-gray-600/10 rounded-full mb-4">
                       <CalendarIcon className="h-16 w-16 text-gray-400" />
                     </div>
                     <p className="text-xl font-bold bg-gradient-to-r from-gray-600 to-gray-500 bg-clip-text text-transparent">
-                      Nenhum agendamento para esta data
+                      Nenhum agendamento {viewMode === 'day' ? 'para esta data' : 'nesta semana'}
                     </p>
                     <p className="text-muted-foreground mt-2">
                       Clique em "Novo Agendamento" para adicionar compromissos
                     </p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                     {todaySchedules.map((schedule) => (
-                       <div 
-                         key={schedule.id} 
-                         className={`group relative overflow-hidden p-6 border rounded-xl gap-6 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 ${
-                           schedule.patient_arrived 
-                             ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-50/50 shadow-lg' 
-                             : 'border-border hover:border-blue-500/30 bg-gradient-to-br from-card to-blue-500/5'
-                         }`}
-                       >
-                         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                        {/* Header com horário e tipo */}
-                        <div className="relative flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-lg">
-                              <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-                                {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
-                              </span>
-                            </div>
-                            <Badge className="text-sm font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
-                              {schedule.title}
-                            </Badge>
-                          </div>
-                          <Badge 
-                            variant={
-                              schedule.unit === 'madre' ? 'default' : 
-                              schedule.unit === 'floresta' ? 'secondary' :
-                              'outline'
-                            }
-                            className={`text-sm font-semibold ${
-                              schedule.unit === 'madre' 
-                                ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' 
-                                : schedule.unit === 'floresta'
-                                ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
-                                : 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20'
-                            }`}
-                          >
-                            🏥 {schedule.unit === 'madre' ? 'MADRE' : 
-                                schedule.unit === 'floresta' ? 'FLORESTA' :
-                                schedule.unit === 'atendimento_floresta' ? 'ATEND. FLORESTA' :
-                                schedule.unit || 'N/A'}
+                ) : viewMode === 'week' ? (
+                  /* Visualização Semanal */
+                  <div className="space-y-6">
+                    {schedulesByDay.map(({ date, schedules: daySchedules }) => (
+                      <div key={date.toISOString()} className="space-y-3">
+                        <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                          isSameDay(date, new Date()) 
+                            ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/10 border border-blue-500/30' 
+                            : 'bg-muted/30'
+                        }`}>
+                          <CalendarDays className={`h-5 w-5 ${isSameDay(date, new Date()) ? 'text-blue-600' : 'text-muted-foreground'}`} />
+                          <span className={`font-bold ${isSameDay(date, new Date()) ? 'text-blue-600' : ''}`}>
+                            {format(date, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                          </span>
+                          <Badge variant="secondary" className="ml-auto">
+                            {daySchedules.length} agendamento(s)
                           </Badge>
                         </div>
-
-                        {/* Informações principais */}
-                        <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-500/5 to-transparent rounded-lg border border-green-500/10">
-                              <div className="p-1.5 bg-green-500/10 rounded-md">
-                                <User className="h-4 w-4 text-green-600 dark:text-green-400" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-xs font-medium text-muted-foreground">Paciente</span>
-                                <span className="font-bold text-foreground">{schedule.clients?.name || 'N/A'}</span>
-                              </div>
-                            </div>
+                        
+                        {daySchedules.length === 0 ? (
+                          <p className="text-sm text-muted-foreground pl-4">Nenhum agendamento</p>
+                        ) : (
+                          <div className="space-y-3 pl-4">
+                            {daySchedules.map((schedule) => (
+                              <ScheduleCard 
+                                key={schedule.id}
+                                schedule={schedule}
+                                employees={employees}
+                                userProfile={userProfile}
+                                isAdmin={isAdmin}
+                                canCancelSchedules={canCancelSchedules}
+                                canDeleteSchedules={canDeleteSchedules}
+                                onEdit={handleEditSchedule}
+                                onRedirect={handleRedirect}
+                                onCancelClick={() => {
+                                  setSelectedScheduleForAction(schedule);
+                                  setCancelDialogOpen(true);
+                                }}
+                                onDeleteClick={() => {
+                                  setSelectedScheduleForAction(schedule);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                onCompleteClick={() => {
+                                  setSelectedScheduleForAction(schedule);
+                                  setCompleteDialogOpen(true);
+                                }}
+                                onPresenceUpdate={refetchSchedules}
+                                getStatusBadge={getStatusBadge}
+                              />
+                            ))}
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-500/5 to-transparent rounded-lg border border-blue-500/10">
-                              <div className="p-1.5 bg-blue-500/10 rounded-md">
-                                <Stethoscope className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-xs font-medium text-muted-foreground">Profissional</span>
-                                 <span className="font-bold text-foreground">
-                                   {employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
-                                 </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Status e observações */}
-                        <div className="relative flex flex-col gap-3">
-                          {schedule.notes && (
-                            <div className="p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20">
-                              <p className="text-sm">
-                                <span className="font-bold text-yellow-700 dark:text-yellow-400">💭 Observações:</span>
-                                <span className="ml-2 text-foreground">{schedule.notes}</span>
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Actions footer */}
-                        <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-4 border-t border-gradient-to-r from-transparent via-border to-transparent">
-                          <div className="flex items-center gap-3">
-                            <Badge 
-                              variant={getStatusBadge(schedule.status).variant}
-                              className={`${getStatusBadge(schedule.status).className || ''} ${
-                                schedule.patient_arrived && !['pending_validation', 'completed', 'cancelled'].includes(schedule.status) 
-                                  ? 'border-emerald-500 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 font-bold shadow-md' 
-                                  : ''
-                              } text-sm px-3 py-1.5`}
-                            >
-                              {schedule.patient_arrived && !['pending_validation', 'completed', 'cancelled'].includes(schedule.status) 
-                                ? '✓ Paciente Presente' 
-                                : getStatusBadge(schedule.status).text}
-                            </Badge>
-                            {schedule.patient_arrived && schedule.arrived_at && (
-                              <span className="text-xs font-medium px-2 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-md border border-emerald-500/20">
-                                Chegou às {format(new Date(schedule.arrived_at), 'HH:mm', { locale: ptBR })}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-2 flex-wrap">
-            {/* Botão de presença do paciente para recepcionistas */}
-            {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
-              <PatientPresenceButton
-                scheduleId={schedule.id}
-                clientName={schedule.clients?.name || 'Cliente'}
-                employeeId={schedule.employee_id}
-                patientArrived={schedule.patient_arrived || false}
-                arrivedAt={schedule.arrived_at}
-                onPresenceUpdate={refetchSchedules}
-              />
-            )}
-            
-            {/* Debug: Mostrar sempre o botão para teste */}
-            {!['scheduled', 'confirmed'].includes(schedule.status) && userProfile?.employee_role === 'receptionist' && (
-              <Button variant="outline" size="sm" disabled className="text-gray-400">
-                Presença (Status: {schedule.status})
-              </Button>
-            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditSchedule(schedule)}
-                              className="h-9 gap-2 font-medium hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
-                            >
-                              <Edit className="h-4 w-4" />
-                              Editar
-                            </Button>
-
-                            {/* Botões de ação apenas para agendamentos pendentes */}
-                            {['scheduled', 'confirmed'].includes(schedule.status) && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    console.log('🔵 Botão CONCLUIR clicado para agendamento:', schedule.id);
-                                    setSelectedScheduleForAction(schedule);
-                                    setCompleteDialogOpen(true);
-                                    console.log('🔵 Diálogo de conclusão aberto');
-                                  }}
-                                  className="h-9 gap-2 font-medium bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-md hover:shadow-lg transition-all duration-300"
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                  Concluir
-                                </Button>
-
-                                {canCancelSchedules && (
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => {
-                                      setSelectedScheduleForAction(schedule);
-                                      setCancelDialogOpen(true);
-                                    }}
-                                    className="h-9 gap-2 font-medium shadow-md hover:shadow-lg transition-all duration-300"
-                                  >
-                                    <XCircle className="h-4 w-4" />
-                                    Cancelar
-                                  </Button>
-                                )}
-
-                                {canDeleteSchedules && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setSelectedScheduleForAction(schedule);
-                                      setDeleteDialogOpen(true);
-                                    }}
-                                    className="h-9 gap-2 font-medium text-destructive hover:bg-destructive/10 hover:border-destructive/50 transition-all duration-300"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    Excluir
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                            
-                            {/* Status de atendimento concluído aguardando validação */}
-                            {schedule.status === 'pending_validation' && (
-                              <div className="flex items-center gap-2 text-amber-600">
-                                <Clock className="h-4 w-4" />
-                                <span className="text-sm font-medium">Aguardando validação do coordenador</span>
-                              </div>
-                            )}
-
-                            {isAdmin && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button size="sm" variant="outline" className="h-9 gap-2 font-medium hover:bg-purple-500/10 hover:text-purple-600 hover:border-purple-500/50 transition-all duration-300">
-                                    <ArrowRightLeft className="h-4 w-4" />
-                                    Redirecionar
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Redirecionar Agendamento</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Selecione o profissional para quem deseja redirecionar este agendamento.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <Select onValueChange={(value) => handleRedirect(schedule.id, value)}>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Selecione um profissional" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {employees.filter(emp => emp.user_id !== schedule.employee_id).map((employee) => (
-                                        <SelectItem key={employee.user_id} value={employee.user_id}>
-                                          {employee.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  </AlertDialogFooter>
-                                 </AlertDialogContent>
-                               </AlertDialog>
-                             )}
-                           </div>
-                         </div>
-                       </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* Visualização Diária */
+                  <div className="space-y-4">
+                     {filteredSchedules.map((schedule) => (
+                       <ScheduleCard 
+                         key={schedule.id}
+                         schedule={schedule}
+                         employees={employees}
+                         userProfile={userProfile}
+                         isAdmin={isAdmin}
+                         canCancelSchedules={canCancelSchedules}
+                         canDeleteSchedules={canDeleteSchedules}
+                         onEdit={handleEditSchedule}
+                         onRedirect={handleRedirect}
+                         onCancelClick={() => {
+                           setSelectedScheduleForAction(schedule);
+                           setCancelDialogOpen(true);
+                         }}
+                         onDeleteClick={() => {
+                           setSelectedScheduleForAction(schedule);
+                           setDeleteDialogOpen(true);
+                         }}
+                         onCompleteClick={() => {
+                           setSelectedScheduleForAction(schedule);
+                           setCompleteDialogOpen(true);
+                         }}
+                         onPresenceUpdate={refetchSchedules}
+                         getStatusBadge={getStatusBadge}
+                       />
                      ))}
                    </div>
                  )}
