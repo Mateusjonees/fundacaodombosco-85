@@ -77,7 +77,15 @@ export default function Schedule() {
   const isAdmin = userRole === 'director' || 
                   userRole === 'coordinator_madre' || 
                   userRole === 'coordinator_floresta' ||
+                  userRole === 'coordinator_atendimento_floresta' ||
                   userRole === 'receptionist';
+  
+  // Verificar se pode cancelar agendamentos
+  const canCancelSchedules = userRole === 'director' || 
+                             userRole === 'coordinator_madre' || 
+                             userRole === 'coordinator_floresta' ||
+                             userRole === 'coordinator_atendimento_floresta' ||
+                             userRole === 'receptionist';
 
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
@@ -345,13 +353,17 @@ export default function Schedule() {
     }
   };
 
-  const handleCancelAppointment = async (scheduleId: string, reason?: string) => {
+  const handleCancelAppointment = async (scheduleId: string, reason?: string, category?: string) => {
     try {
+      const cancelNote = category 
+        ? `[${category}] ${reason || 'Cancelado'}` 
+        : (reason ? `Cancelado: ${reason}` : 'Cancelado');
+        
       const { error } = await supabase
         .from('schedules')
         .update({ 
           status: 'cancelled',
-          notes: reason ? `Cancelado: ${reason}` : 'Cancelado'
+          notes: cancelNote
         })
         .eq('id', scheduleId);
 
@@ -369,6 +381,37 @@ export default function Schedule() {
         variant: "destructive",
         title: "Erro",
         description: "Erro ao cancelar agendamento.",
+      });
+    }
+  };
+
+  // Cancelar múltiplos agendamentos
+  const handleCancelMultipleAppointments = async (scheduleIds: string[], reason: string, category: string) => {
+    try {
+      const cancelNote = `[${category}] ${reason}`;
+      
+      const { error } = await supabase
+        .from('schedules')
+        .update({ 
+          status: 'cancelled',
+          notes: cancelNote
+        })
+        .in('id', scheduleIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `${scheduleIds.length} agendamento(s) cancelado(s)!`,
+      });
+      
+      refetchSchedules();
+    } catch (error) {
+      console.error('Error cancelling multiple appointments:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao cancelar agendamentos.",
       });
     }
   };
@@ -754,18 +797,20 @@ export default function Schedule() {
                                   Concluir
                                 </Button>
 
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => {
-                                    setSelectedScheduleForAction(schedule);
-                                    setCancelDialogOpen(true);
-                                  }}
-                                  className="h-9 gap-2 font-medium shadow-md hover:shadow-lg transition-all duration-300"
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                  Cancelar
-                                </Button>
+                                {canCancelSchedules && (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                      setSelectedScheduleForAction(schedule);
+                                      setCancelDialogOpen(true);
+                                    }}
+                                    className="h-9 gap-2 font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                    Cancelar
+                                  </Button>
+                                )}
                               </>
                             )}
                             
@@ -1004,6 +1049,7 @@ export default function Schedule() {
           isOpen={cancelDialogOpen}
           onClose={() => setCancelDialogOpen(false)}
           onCancel={handleCancelAppointment}
+          onCancelMultiple={handleCancelMultipleAppointments}
         />
       </div>
     </div>
