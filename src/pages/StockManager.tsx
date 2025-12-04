@@ -161,7 +161,7 @@ export default function StockManager() {
         query = query.lte('date', filters.dateTo);
       }
 
-      if (filters.month && filters.year) {
+      if (filters.month && filters.month !== 'all' && filters.year) {
         const startDate = `${filters.year}-${filters.month.padStart(2, '0')}-01`;
         // Corrigir o cálculo da data final do mês
         const lastDay = new Date(parseInt(filters.year), parseInt(filters.month), 0).getDate();
