@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +18,6 @@ import {
   Calendar, 
   Edit, 
   FileText, 
-  Trash2, 
   Plus, 
   Users, 
   MapPin, 
@@ -26,7 +26,6 @@ import {
   User,
   Activity,
   Upload,
-  History,
   ArrowLeft,
   Download,
   Eye,
@@ -34,7 +33,12 @@ import {
   RotateCcw,
   AlertTriangle,
   UserPlus,
-  Minus
+  Minus,
+  Clock,
+  CreditCard,
+  FolderOpen,
+  Stethoscope,
+  Heart
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
@@ -49,6 +53,7 @@ interface Client {
   phone?: string;
   responsible_name?: string;
   responsible_phone?: string;
+  responsible_cpf?: string;
   unit?: string;
   address?: string;
   diagnosis?: string;
@@ -110,8 +115,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [selectedEmployees, setSelectedEmployees] = useState<string[]>(['']); // Array para múltiplas seleções
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>(['']);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -120,12 +124,64 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const { toast } = useToast();
   const [laudoInfo, setLaudoInfo] = useState<{ file_path: string; completed_at: string } | null>(null);
   const [loadingLaudo, setLoadingLaudo] = useState(false);
+  const [nextAppointment, setNextAppointment] = useState<{ date: string; time: string } | null>(null);
 
   // Helper function to check if user is coordinator or director
   const isCoordinatorOrDirector = () => {
     return userProfile?.employee_role === 'director' || 
            userProfile?.employee_role === 'coordinator_madre' || 
-           userProfile?.employee_role === 'coordinator_floresta';
+           userProfile?.employee_role === 'coordinator_floresta' ||
+           userProfile?.employee_role === 'coordinator_atendimento_floresta';
+  };
+
+  // Get unit color classes
+  const getUnitColorClasses = () => {
+    switch (client.unit) {
+      case 'madre':
+        return {
+          bg: 'bg-blue-500/10',
+          border: 'border-blue-500/30',
+          text: 'text-blue-600 dark:text-blue-400',
+          badge: 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30',
+          avatar: 'bg-blue-500 text-white'
+        };
+      case 'floresta':
+        return {
+          bg: 'bg-emerald-500/10',
+          border: 'border-emerald-500/30',
+          text: 'text-emerald-600 dark:text-emerald-400',
+          badge: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+          avatar: 'bg-emerald-500 text-white'
+        };
+      case 'atendimento_floresta':
+        return {
+          bg: 'bg-purple-500/10',
+          border: 'border-purple-500/30',
+          text: 'text-purple-600 dark:text-purple-400',
+          badge: 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30',
+          avatar: 'bg-purple-500 text-white'
+        };
+      default:
+        return {
+          bg: 'bg-muted',
+          border: 'border-border',
+          text: 'text-muted-foreground',
+          badge: 'bg-muted text-muted-foreground border-border',
+          avatar: 'bg-primary text-primary-foreground'
+        };
+    }
+  };
+
+  const unitColors = getUnitColorClasses();
+
+  // Get initials from name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
   };
 
   useEffect(() => {
@@ -141,8 +197,38 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       loadUserProfile(),
       loadAvailableEmployees(),
       loadCurrentAssignments(),
-      loadLaudoInfo()
+      loadLaudoInfo(),
+      loadNextAppointment()
     ]);
+  };
+
+  const loadNextAppointment = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('start_time')
+        .eq('client_id', client.id)
+        .gte('start_time', today)
+        .neq('status', 'cancelled')
+        .order('start_time', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        const date = new Date(data.start_time);
+        setNextAppointment({
+          date: date.toLocaleDateString('pt-BR'),
+          time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        });
+      } else {
+        setNextAppointment(null);
+      }
+    } catch (error) {
+      console.error('Error loading next appointment:', error);
+    }
   };
 
   const loadUserProfile = async () => {
@@ -247,7 +333,6 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
 
   const loadNotes = async () => {
     try {
-      // Buscar notas separadamente para evitar erros de relacionamento
       const { data: notesData, error } = await supabase
         .from('client_notes')
         .select('id, note_text, note_type, created_at, created_by')
@@ -256,7 +341,6 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
 
       if (error) throw error;
 
-      // Buscar nomes dos criadores das notas
       if (notesData && notesData.length > 0) {
         const creatorIds = [...new Set(notesData.map(n => n.created_by))];
         const { data: profiles } = await supabase
@@ -307,6 +391,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
         .from('client_assignments')
         .select('id, assigned_at, employee_id, is_active')
         .eq('client_id', client.id)
+        .eq('is_active', true)
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
@@ -382,7 +467,6 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   };
 
   const handleScheduleAppointment = () => {
-    // Use React Router navigate instead of window.location.href
     const searchParams = new URLSearchParams();
     searchParams.set('client_id', client.id);
     searchParams.set('client_name', client.name);
@@ -404,16 +488,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
     }
   };
 
-  const handleLinkProfessionals = () => {
-    setLinkProfessionalDialogOpen(true);
-  };
-
   const handleLinkProfessional = async () => {
     if (!selectedProfessional) return;
 
     setLoading(true);
     try {
-      // Verificar se já existe vinculação
       const { data: existing, error: checkError } = await supabase
         .from('client_assignments')
         .select('id, is_active')
@@ -425,7 +504,6 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
 
       if (existing) {
         if (!existing.is_active) {
-          // Reativar vinculação existente
           const { error: updateError } = await supabase
             .from('client_assignments')
             .update({ 
@@ -445,7 +523,6 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
           return;
         }
       } else {
-        // Criar nova vinculação
         const { error } = await supabase
           .from('client_assignments')
           .insert({
@@ -544,15 +621,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   };
 
   const handleAssignProfessional = async () => {
-    // Filtrar apenas seleções válidas (não vazias)
     const validEmployees = selectedEmployees.filter(emp => emp && emp.trim() !== '');
     
     if (validEmployees.length === 0) return;
 
     try {
-      // Verificar e criar/reativar vinculações
       for (const employeeId of validEmployees) {
-        // Verificar se já existe uma vinculação
         const { data: existing, error: checkError } = await supabase
           .from('client_assignments')
           .select('id, is_active')
@@ -563,7 +637,6 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
         if (checkError) throw checkError;
 
         if (existing) {
-          // Se existe mas está inativa, reativar
           if (!existing.is_active) {
             const { error: updateError } = await supabase
               .from('client_assignments')
@@ -575,9 +648,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
 
             if (updateError) throw updateError;
           }
-          // Se já existe e está ativa, apenas continuar
         } else {
-          // Criar nova vinculação
           const { error: insertError } = await supabase
             .from('client_assignments')
             .insert({
@@ -596,9 +667,10 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       });
       
       setIsAssignDialogOpen(false);
-      setSelectedEmployees(['']); // Reset para um campo vazio
+      setSelectedEmployees(['']);
       loadCurrentAssignments();
       loadAvailableEmployees();
+      loadAssignedProfessionals();
     } catch (error) {
       console.error('Error assigning professionals:', error);
       toast({
@@ -680,6 +752,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       });
       
       loadCurrentAssignments();
+      loadAssignedProfessionals();
     } catch (error) {
       console.error('Error removing assignment:', error);
       toast({
@@ -752,67 +825,22 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
     });
   };
 
-  const handleDeleteClient = async () => {
-    if (!confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('clients')
-        .update({ is_active: false })
-        .eq('id', client.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Cliente Excluído",
-        description: "O cliente foi marcado como inativo.",
-      });
-      
-      onBack && onBack();
-    } catch (error) {
-      console.error('Error deleting client:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível excluir o cliente.",
-      });
-    }
-  };
-
-  const handleUploadDocument = () => {
-    setUploadDialogOpen(true);
-  };
-
   const handleFileUpload = async () => {
-    if (!selectedFile) {
-      console.log('No file selected');
-      return;
-    }
+    if (!selectedFile) return;
 
-    console.log('Starting file upload:', selectedFile.name, 'for client:', client.id);
     setLoading(true);
     try {
-      // Upload file to Supabase Storage
       const fileExt = selectedFile.name.split('.').pop();
-      // Sanitizar nome do arquivo removendo caracteres inválidos
       const sanitizedName = selectedFile.name.replace(/[{}[\]<>]/g, '').replace(/\s+/g, '_');
       const fileName = `${Date.now()}_${sanitizedName}`;
       const filePath = `client-documents/${client.id}/${fileName}`;
 
-      console.log('Uploading to storage:', filePath);
       const { error: uploadError } = await supabase.storage
         .from('user-documents')
         .upload(filePath, selectedFile);
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
-      console.log('Storage upload successful, saving to database');
-      // Save document record to database
       const { error: dbError } = await supabase
         .from('client_documents')
         .insert({
@@ -824,12 +852,8 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
           uploaded_by: user?.id
         });
 
-      if (dbError) {
-        console.error('Database insert error:', dbError);
-        throw dbError;
-      }
+      if (dbError) throw dbError;
 
-      console.log('Document uploaded successfully');
       toast({
         title: "Sucesso",
         description: "Documento enviado com sucesso!",
@@ -838,7 +862,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
       setSelectedFile(null);
       setUploadDialogOpen(false);
       loadDocuments();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading document:', error);
       toast({
         variant: "destructive",
@@ -858,7 +882,6 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
 
       if (error) throw error;
 
-      // Criar URL do blob e fazer download
       const url = URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
@@ -886,11 +909,10 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
     try {
       const { data, error } = await supabase.storage
         .from('user-documents')
-        .createSignedUrl(doc.file_path, 3600); // URL válida por 1 hora
+        .createSignedUrl(doc.file_path, 3600);
 
       if (error) throw error;
 
-      // Abrir em nova aba
       window.open(data.signedUrl, '_blank');
     } catch (error) {
       console.error('Error viewing document:', error);
@@ -906,757 +928,713 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
     switch (unit) {
       case 'madre': return 'MADRE';
       case 'floresta': return 'Floresta';
+      case 'atendimento_floresta': return 'Atendimento Floresta';
       default: return unit || 'Não informado';
     }
   };
 
+  const calculateAge = (birthDate: string) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">{client.name}</h1>
-          <p className="text-muted-foreground">ID: {client.id}</p>
-        </div>
-        <div className="flex gap-2">
-          {isCoordinatorOrDirector() && (
-            <Button variant="outline" onClick={onEdit}>
-              <Edit className="h-4 w-4 mr-2" />
-              Editar Dados
-            </Button>
-          )}
-          <Button variant="outline" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-        </div>
-      </div>
+    <TooltipProvider>
+      <div className="space-y-6 animate-fade-in">
+        {/* Hero Header */}
+        <Card className={`${unitColors.bg} ${unitColors.border} border-2 overflow-hidden`}>
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-6">
+              {/* Avatar */}
+              <Avatar className={`h-20 w-20 ${unitColors.avatar} text-2xl font-bold shadow-lg`}>
+                <AvatarFallback className={unitColors.avatar}>
+                  {getInitials(client.name)}
+                </AvatarFallback>
+              </Avatar>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Dados Pessoais */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Dados Pessoais
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {client.cpf && (
-              <div>
-                <strong>CPF:</strong> {client.cpf}
-              </div>
-            )}
-            {client.birth_date && (
-              <div>
-                <strong>Data de Nasc.:</strong> {formatDate(client.birth_date)}
-              </div>
-            )}
-            {client.email && (
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <strong>Email:</strong> {client.email}
-              </div>
-            )}
-            {client.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <strong>Telefone:</strong> {client.phone}
-              </div>
-            )}
-            {client.responsible_name && (
-              <div>
-                <strong>Responsável:</strong> {client.responsible_name}
-                {client.responsible_phone && ` - ${client.responsible_phone}`}
-              </div>
-            )}
-            <div>
-              <strong>Unidade:</strong> {getUnitLabel(client.unit || '')}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Endereço */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Endereço
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{client.address || 'Não informado'}</p>
-          </CardContent>
-        </Card>
-
-        {/* Profissional Vinculado */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Profissional Vinculado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {assignedProfessionals.length > 0 ? (
-              <div className="space-y-2">
-                {assignedProfessionals.map((assignment) => (
-                  <div key={assignment.id} className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{assignment.profiles.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {assignment.profiles.employee_role}
-                      </div>
-                    </div>
-                    <Badge variant="outline">
-                      {formatDate(assignment.assigned_at)}
-                    </Badge>
-                  </div>
-                ))}
-                <p className="text-sm text-muted-foreground mt-2">
-                  {assignedProfessionals.length} profissional{assignedProfessionals.length > 1 ? 'is' : ''} vinculado{assignedProfessionals.length > 1 ? 's' : ''}.
-                </p>
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Nenhum profissional vinculado</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Informações Clínicas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Informações Clínicas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <strong>Diagnóstico Principal:</strong>
-              <p>{client.diagnosis || 'Nenhum'}</p>
-            </div>
-            <div>
-              <strong>Histórico Médico:</strong>
-              <p>{client.medical_history || 'Nenhum'}</p>
-            </div>
-            <div>
-              <strong>Queixa Neuropsicológica:</strong>
-              <p>{client.neuropsych_complaint || 'Nenhum'}</p>
-            </div>
-            <div>
-              <strong>Expectativas do Tratamento:</strong>
-              <p>{client.treatment_expectations || 'Não informado'}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Observações */}
-      {client.clinical_observations && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Observações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="whitespace-pre-wrap">{client.clinical_observations}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Notas do Cliente */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Evolução do Atendimento
-            </CardTitle>
-            <Dialog open={addNoteDialogOpen} onOpenChange={setAddNoteDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Nota
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Adicionar Nova Nota</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="newNote">Nota</Label>
-                    <Textarea
-                      id="newNote"
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      placeholder="Digite sua nota aqui..."
-                      rows={5}
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setAddNoteDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleAddNote} disabled={loading || !newNote.trim()}>
-                      {loading ? 'Salvando...' : 'Salvar'}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {notes.length > 0 ? (
-            <div className="space-y-4">
-              {notes.map((note) => (
-                <div key={note.id} className="border-l-4 border-primary pl-4 py-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium">
-                      {note.profiles?.name || 'Usuário'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatDateTime(note.created_at)}
-                    </div>
-                  </div>
-                  <p className="text-sm whitespace-pre-wrap">{note.note_text}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Nenhuma nota registrada.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Documentos Anexados */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              Documentos Anexados
-            </CardTitle>
-            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Anexar Documento
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Anexar Documento</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="file">Arquivo</Label>
-                    <Input
-                      id="file"
-                      type="file"
-                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Formatos aceitos: PDF, DOC, DOCX, JPG, PNG
-                    </p>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleFileUpload} disabled={loading || !selectedFile}>
-                    {loading ? 'Enviando...' : 'Enviar'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {documents.length > 0 ? (
-            <div className="space-y-3">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 border rounded">
-                  <div className="flex-1">
-                    <div className="font-medium">{doc.document_name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Enviado por {doc.profiles?.name || 'Usuário'} em {formatDateTime(doc.uploaded_at)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{doc.document_type || 'pdf'}</Badge>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleViewDocument(doc)}
-                      title="Visualizar documento"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDownloadDocument(doc)}
-                      title="Baixar documento"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Nenhum documento anexado.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Tabs Section */}
-      <Card>
-        <CardContent className="pt-6">
-          <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="details">Detalhes</TabsTrigger>
-              <TabsTrigger value="professionals">Profissionais Vinculados</TabsTrigger>
-              <TabsTrigger value="payments">Pagamentos</TabsTrigger>
-              <TabsTrigger value="history">Histórico</TabsTrigger>
-              <TabsTrigger value="contracts">Contratos</TabsTrigger>
-              <TabsTrigger value="laudo">Laudo</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="details" className="mt-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4" />
-                    <span className="font-medium">Nome:</span>
-                    <span>{client.name}</span>
-                  </div>
-                  
-                  {client.cpf && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">CPF:</span>
-                      <span>{client.cpf}</span>
-                    </div>
-                  )}
-                  
-                  {client.birth_date && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">Data de Nascimento:</span>
-                      <span>{formatDate(client.birth_date)}</span>
-                    </div>
-                  )}
-                  
-                  {client.phone && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4" />
-                      <span className="font-medium">Telefone:</span>
-                      <span>{client.phone}</span>
-                    </div>
-                  )}
-                  
-                  {client.email && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4" />
-                      <span className="font-medium">Email:</span>
-                      <span>{client.email}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  {client.responsible_name && (
-                    <>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium">Responsável:</span>
-                        <span>{client.responsible_name}</span>
-                      </div>
-                      
-                      {client.responsible_phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="h-4 w-4" />
-                          <span className="font-medium">Tel. Responsável:</span>
-                          <span>{client.responsible_phone}</span>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  
-                  {client.address && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <MapPin className="h-4 w-4 mt-0.5" />
-                      <div>
-                        <span className="font-medium">Endereço:</span>
-                        <p className="mt-1">{client.address}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">Unidade:</span>
-                    <Badge variant={
-                      client.unit === 'madre' ? 'default' : 
-                      client.unit === 'floresta' ? 'secondary' :
-                      'outline'
-                    }>
-                      {client.unit === 'madre' ? 'MADRE' : 
-                       client.unit === 'floresta' ? 'Floresta' :
-                       client.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
-                       client.unit || 'N/A'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="professionals" className="mt-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Profissionais Vinculados</h3>
-                  {userProfile?.employee_role && ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role) && (
-                    <Dialog open={linkProfessionalDialogOpen} onOpenChange={setLinkProfessionalDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Vincular Profissional
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 pt-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="professional">Selecione o Profissional</Label>
-                            <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Escolha um profissional" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {employees.filter(emp => 
-                                  !assignedProfessionals.some(assigned => assigned.employee_id === emp.user_id)
-                                ).map((employee) => (
-                                  <SelectItem key={employee.user_id} value={employee.user_id}>
-                                    {employee.name} - {employee.employee_role}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => setLinkProfessionalDialogOpen(false)}>
-                            Cancelar
-                          </Button>
-                          <Button onClick={handleLinkProfessional} disabled={loading || !selectedProfessional}>
-                            {loading ? 'Vinculando...' : 'Vincular'}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  )}
+              {/* Info Principal */}
+              <div className="flex-1 space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-2xl md:text-3xl font-bold">{client.name}</h1>
+                  <Badge 
+                    variant={client.is_active ? 'default' : 'secondary'}
+                    className={client.is_active ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : ''}
+                  >
+                    {client.is_active ? 'Ativo' : 'Inativo'}
+                  </Badge>
                 </div>
                 
-                {assignedProfessionals.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Profissional</TableHead>
-                        <TableHead>Função</TableHead>
-                        <TableHead>Data de Vinculação</TableHead>
-                        <TableHead>Status</TableHead>
-                        {userProfile?.employee_role && ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role) && (
-                          <TableHead>Ações</TableHead>
-                        )}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {assignedProfessionals.map((assignment) => (
-                        <TableRow key={assignment.id}>
-                          <TableCell className="font-medium">
-                            {assignment.profiles?.name || 'Nome não encontrado'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {assignment.profiles?.employee_role || 'Função não definida'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{formatDate(assignment.assigned_at)}</TableCell>
-                          <TableCell>
-                            <Badge variant={assignment.is_active ? 'default' : 'secondary'}>
-                              {assignment.is_active ? 'Ativo' : 'Inativo'}
-                            </Badge>
-                          </TableCell>
-                          {userProfile?.employee_role && ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role) && (
-                            <TableCell>
-                              {assignment.is_active && (
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleRemoveProfessional(assignment.id)}
-                                >
-                                  <UserX className="h-4 w-4 mr-1" />
-                                  Remover
-                                </Button>
-                              )}
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nenhum profissional vinculado a este cliente.
-                  </p>
-                )}
+                {/* Quick Info Badges */}
+                <div className="flex flex-wrap gap-2 text-sm">
+                  {client.cpf && (
+                    <Badge variant="outline" className="font-normal">
+                      <User className="h-3 w-3 mr-1" />
+                      CPF: {client.cpf}
+                    </Badge>
+                  )}
+                  {client.phone && (
+                    <Badge variant="outline" className="font-normal">
+                      <Phone className="h-3 w-3 mr-1" />
+                      {client.phone}
+                    </Badge>
+                  )}
+                  {client.unit && (
+                    <Badge className={unitColors.badge}>
+                      {getUnitLabel(client.unit)}
+                    </Badge>
+                  )}
+                  {client.birth_date && (
+                    <Badge variant="outline" className="font-normal">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {calculateAge(client.birth_date)} anos
+                    </Badge>
+                  )}
+                </div>
               </div>
-            </TabsContent>
 
-            <TabsContent value="payments" className="mt-6">
-              <ClientPaymentManager 
-                clientId={client.id} 
-                clientName={client.name}
-                userProfile={userProfile}
-              />
-            </TabsContent>
-
-            <TabsContent value="history" className="mt-6">
-              <ServiceHistory clientId={client.id} />
-            </TabsContent>
-
-            <TabsContent value="contracts" className="mt-6">
-              <ContractGenerator client={client} />
-            </TabsContent>
-
-            <TabsContent value="laudo" className="mt-6">
-              {loadingLaudo ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : laudoInfo ? (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between p-6 border rounded-lg bg-card">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-primary/10 rounded-full">
-                        <FileText className="h-8 w-8 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">Laudo Anexado</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Finalizado em {new Date(laudoInfo.completed_at).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={handleViewLaudo}
-                        className="flex items-center gap-2"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Visualizar
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={handleScheduleAppointment}>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Agendar
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Agendar novo atendimento</TooltipContent>
+                </Tooltip>
+                
+                {isCoordinatorOrDirector() && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" onClick={onEdit}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
                       </Button>
-                      <Button
-                        onClick={handleDownloadLaudo}
-                        className="flex items-center gap-2"
-                      >
-                        <Download className="h-4 w-4" />
-                        Baixar
-                      </Button>
-                    </div>
-                  </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Editar dados do paciente</TooltipContent>
+                  </Tooltip>
+                )}
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" onClick={onBack}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Voltar
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Voltar para lista</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      Informação Importante
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Este cliente foi marcado como inativo após a anexação do laudo. 
-                      O documento está armazenado de forma segura e pode ser acessado a qualquer momento.
-                    </p>
-                  </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${unitColors.bg}`}>
+                  <Clock className={`h-5 w-5 ${unitColors.text}`} />
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="p-4 bg-muted rounded-full">
-                      <FileText className="h-12 w-12 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Próximo Agendamento</p>
+                  {nextAppointment ? (
+                    <p className="font-semibold text-sm">{nextAppointment.date} às {nextAppointment.time}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Sem agendamento</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${unitColors.bg}`}>
+                  <Users className={`h-5 w-5 ${unitColors.text}`} />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Profissionais</p>
+                  <p className="font-semibold text-sm">{assignedProfessionals.length} vinculado{assignedProfessionals.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${unitColors.bg}`}>
+                  <FolderOpen className={`h-5 w-5 ${unitColors.text}`} />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Documentos</p>
+                  <p className="font-semibold text-sm">{documents.length} anexado{documents.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${unitColors.bg}`}>
+                  <FileText className={`h-5 w-5 ${unitColors.text}`} />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Laudo</p>
+                  <p className="font-semibold text-sm">{laudoInfo ? 'Disponível' : 'Pendente'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column - Info Cards */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Personal Info Card */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <User className={`h-5 w-5 ${unitColors.text}`} />
+                  Informações Pessoais
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {client.cpf && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">CPF</span>
+                    <span className="font-medium">{client.cpf}</span>
+                  </div>
+                )}
+                {client.birth_date && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Nascimento</span>
+                    <span className="font-medium">{formatDate(client.birth_date)} ({calculateAge(client.birth_date)} anos)</span>
+                  </div>
+                )}
+                {client.email && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="font-medium text-right truncate max-w-[150px]">{client.email}</span>
+                  </div>
+                )}
+                {client.phone && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Telefone</span>
+                    <span className="font-medium">{client.phone}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cadastrado em</span>
+                  <span className="font-medium">{formatDate(client.created_at)}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Responsible Card */}
+            {(client.responsible_name || client.responsible_phone || client.responsible_cpf) && (
+              <Card className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Heart className={`h-5 w-5 ${unitColors.text}`} />
+                    Responsável
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  {client.responsible_name && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Nome</span>
+                      <span className="font-medium">{client.responsible_name}</span>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-1">Nenhum Laudo Anexado</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Este cliente ainda não possui laudo anexado. <br />
-                        O laudo é anexado através do controle de devolutiva.
+                  )}
+                  {client.responsible_phone && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Telefone</span>
+                      <span className="font-medium">{client.responsible_phone}</span>
+                    </div>
+                  )}
+                  {client.responsible_cpf && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">CPF</span>
+                      <span className="font-medium">{client.responsible_cpf}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Address Card */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <MapPin className={`h-5 w-5 ${unitColors.text}`} />
+                  Endereço
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">{client.address || 'Não informado'}</p>
+              </CardContent>
+            </Card>
+
+            {/* Professionals Card */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Users className={`h-5 w-5 ${unitColors.text}`} />
+                    Profissionais
+                  </CardTitle>
+                  {isCoordinatorOrDirector() && (
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => {
+                        setIsAssignDialogOpen(true);
+                        setSelectedEmployees(['']);
+                        loadAvailableEmployees();
+                        loadCurrentAssignments();
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {assignedProfessionals.length > 0 ? (
+                  <div className="space-y-2">
+                    {assignedProfessionals.slice(0, 3).map((assignment) => (
+                      <div key={assignment.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                        <div>
+                          <p className="font-medium text-sm">{assignment.profiles?.name}</p>
+                          <p className="text-xs text-muted-foreground">{assignment.profiles?.employee_role}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {assignedProfessionals.length > 3 && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        +{assignedProfessionals.length - 3} mais
                       </p>
-                    </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhum profissional vinculado</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Ações */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => handleScheduleAppointment()}>
-              <Calendar className="h-4 w-4 mr-2" />
-              Agendar Novo Atendimento
-            </Button>
-            {isCoordinatorOrDirector() && (
-              <>
-                <Button variant="outline" onClick={onEdit}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar Dados
-                </Button>
-                <Button 
-                  onClick={() => {
-                    setIsAssignDialogOpen(true);
-                    setSelectedEmployees(['']); // Reset
-                    loadAvailableEmployees();
-                    loadCurrentAssignments();
-                  }}
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Vincular Profissional
-                </Button>
-                <Button variant="outline" onClick={() => handleGenerateReport()}>
+          {/* Right Column - Tabs */}
+          <div className="lg:col-span-8">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-6">
+                <Tabs defaultValue="clinical" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 mb-6">
+                    <TabsTrigger value="clinical" className="text-xs md:text-sm">
+                      <Stethoscope className="h-4 w-4 mr-1 hidden md:inline" />
+                      Clínico
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="text-xs md:text-sm">
+                      <Activity className="h-4 w-4 mr-1 hidden md:inline" />
+                      Atendimentos
+                    </TabsTrigger>
+                    <TabsTrigger value="financial" className="text-xs md:text-sm">
+                      <CreditCard className="h-4 w-4 mr-1 hidden md:inline" />
+                      Financeiro
+                    </TabsTrigger>
+                    <TabsTrigger value="documents" className="text-xs md:text-sm">
+                      <FolderOpen className="h-4 w-4 mr-1 hidden md:inline" />
+                      Documentos
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* Clinical Tab */}
+                  <TabsContent value="clinical" className="space-y-6">
+                    {/* Clinical Info */}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-lg bg-muted/50">
+                          <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                            <Activity className="h-4 w-4" />
+                            Diagnóstico Principal
+                          </h4>
+                          <p className="text-sm">{client.diagnosis || 'Não informado'}</p>
+                        </div>
+                        
+                        <div className="p-4 rounded-lg bg-muted/50">
+                          <h4 className="font-medium text-sm mb-2">Histórico Médico</h4>
+                          <p className="text-sm">{client.medical_history || 'Não informado'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-lg bg-muted/50">
+                          <h4 className="font-medium text-sm mb-2">Queixa Neuropsicológica</h4>
+                          <p className="text-sm">{client.neuropsych_complaint || 'Não informado'}</p>
+                        </div>
+                        
+                        <div className="p-4 rounded-lg bg-muted/50">
+                          <h4 className="font-medium text-sm mb-2">Expectativas do Tratamento</h4>
+                          <p className="text-sm">{client.treatment_expectations || 'Não informado'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {client.clinical_observations && (
+                      <div className="p-4 rounded-lg bg-muted/50">
+                        <h4 className="font-medium text-sm mb-2">Observações Clínicas</h4>
+                        <p className="text-sm whitespace-pre-wrap">{client.clinical_observations}</p>
+                      </div>
+                    )}
+
+                    {/* Notes Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Evolução do Atendimento
+                        </h4>
+                        <Dialog open={addNoteDialogOpen} onOpenChange={setAddNoteDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button size="sm">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Nova Nota
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Adicionar Nova Nota</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 pt-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="newNote">Nota</Label>
+                                <Textarea
+                                  id="newNote"
+                                  value={newNote}
+                                  onChange={(e) => setNewNote(e.target.value)}
+                                  placeholder="Digite sua nota aqui..."
+                                  rows={5}
+                                />
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <Button variant="outline" onClick={() => setAddNoteDialogOpen(false)}>
+                                  Cancelar
+                                </Button>
+                                <Button onClick={handleAddNote} disabled={loading || !newNote.trim()}>
+                                  {loading ? 'Salvando...' : 'Salvar'}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                      
+                      {notes.length > 0 ? (
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                          {notes.map((note) => (
+                            <div key={note.id} className={`border-l-4 ${unitColors.border} pl-4 py-3 bg-muted/30 rounded-r-lg`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium">{note.profiles?.name || 'Usuário'}</span>
+                                <span className="text-xs text-muted-foreground">{formatDateTime(note.created_at)}</span>
+                              </div>
+                              <p className="text-sm whitespace-pre-wrap">{note.note_text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm text-center py-8">Nenhuma nota registrada.</p>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  {/* History Tab */}
+                  <TabsContent value="history">
+                    <ServiceHistory clientId={client.id} />
+                  </TabsContent>
+
+                  {/* Financial Tab */}
+                  <TabsContent value="financial" className="space-y-6">
+                    <ClientPaymentManager 
+                      clientId={client.id} 
+                      clientName={client.name}
+                      userProfile={userProfile}
+                    />
+                    
+                    <div className="border-t pt-6">
+                      <h4 className="font-medium mb-4 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Contratos
+                      </h4>
+                      <ContractGenerator client={client} />
+                    </div>
+                  </TabsContent>
+
+                  {/* Documents Tab */}
+                  <TabsContent value="documents" className="space-y-6">
+                    {/* Upload Button */}
+                    <div className="flex justify-end">
+                      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button size="sm">
+                            <Upload className="h-4 w-4 mr-2" />
+                            Anexar Documento
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Anexar Documento</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 pt-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="file">Arquivo</Label>
+                              <Input
+                                id="file"
+                                type="file"
+                                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                              />
+                              <p className="text-sm text-muted-foreground">
+                                Formatos aceitos: PDF, DOC, DOCX, JPG, PNG
+                              </p>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+                              Cancelar
+                            </Button>
+                            <Button onClick={handleFileUpload} disabled={loading || !selectedFile}>
+                              {loading ? 'Enviando...' : 'Enviar'}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+
+                    {/* Documents List */}
+                    {documents.length > 0 ? (
+                      <div className="space-y-3">
+                        {documents.map((doc) => (
+                          <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{doc.document_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.profiles?.name || 'Usuário'} • {formatDateTime(doc.uploaded_at)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" onClick={() => handleViewDocument(doc)}>
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Visualizar</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" onClick={() => handleDownloadDocument(doc)}>
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Baixar</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm text-center py-8">Nenhum documento anexado.</p>
+                    )}
+
+                    {/* Laudo Section */}
+                    <div className="border-t pt-6">
+                      <h4 className="font-medium mb-4 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Laudo
+                      </h4>
+                      
+                      {loadingLaudo ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                      ) : laudoInfo ? (
+                        <div className={`flex items-center justify-between p-4 rounded-lg ${unitColors.bg} border ${unitColors.border}`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${unitColors.avatar}`}>
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">Laudo Disponível</p>
+                              <p className="text-xs text-muted-foreground">
+                                Finalizado em {new Date(laudoInfo.completed_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={handleViewLaudo}>
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                            <Button size="sm" onClick={handleDownloadLaudo}>
+                              <Download className="h-4 w-4 mr-1" />
+                              Baixar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground">Nenhum laudo anexado</p>
+                          <p className="text-xs text-muted-foreground">O laudo é anexado através do controle de devolutiva</p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Action Bar */}
+        {isCoordinatorOrDirector() && (
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                <Button variant="outline" size="sm" onClick={handleGenerateReport}>
                   <FileText className="h-4 w-4 mr-2" />
                   Gerar Relatório
                 </Button>
+                
                 {client.is_active ? (
-                  <Button variant="destructive" size="sm" onClick={() => handleDeactivateClient()}>
+                  <Button variant="destructive" size="sm" onClick={handleDeactivateClient}>
                     <AlertTriangle className="h-4 w-4 mr-2" />
-                    Desativar Cliente
+                    Desativar
                   </Button>
                 ) : (
-                  <Button variant="default" size="sm" onClick={() => handleDeactivateClient()}>
+                  <Button variant="default" size="sm" onClick={handleDeactivateClient}>
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Reativar Cliente
+                    Reativar
                   </Button>
                 )}
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Dialog para Vincular Profissional */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Profissionais Já Vinculados */}
-            {currentAssignments.length > 0 && (
-              <div>
-                <h4 className="font-medium mb-2">Profissionais Vinculados:</h4>
-                <div className="space-y-2">
-                  {currentAssignments.map((assignment: any) => (
-                    <div key={assignment.id} className="flex items-center justify-between p-2 border rounded">
-                      <span>{assignment.profiles?.name} - {assignment.profiles?.employee_role}</span>
+        {/* Dialog para Vincular Profissional */}
+        <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {currentAssignments.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-2 text-sm">Profissionais Vinculados:</h4>
+                  <div className="space-y-2">
+                    {currentAssignments.map((assignment: any) => (
+                      <div key={assignment.id} className="flex items-center justify-between p-2 border rounded-lg">
+                        <span className="text-sm">{assignment.profiles?.name} - {assignment.profiles?.employee_role}</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleRemoveAssignment(assignment.id)}
+                        >
+                          <UserX className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Selecionar Profissionais:</Label>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm" 
+                    onClick={addEmployeeField}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+                
+                {selectedEmployees.map((selectedEmployee, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Select 
+                      value={selectedEmployee} 
+                      onValueChange={(value) => updateEmployeeSelection(index, value)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Escolha um profissional" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-md z-50">
+                        {availableEmployees
+                          .filter(emp => {
+                            const isAlreadyAssigned = currentAssignments.some((a: any) => a.employee_id === emp.user_id);
+                            const isAlreadySelected = selectedEmployees.some((selEmp, selIndex) => 
+                              selIndex !== index && selEmp === emp.user_id
+                            );
+                            return !isAlreadyAssigned && !isAlreadySelected;
+                          })
+                          .map((employee: any) => (
+                          <SelectItem key={employee.user_id} value={employee.user_id}>
+                            {employee.name} - {employee.employee_role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {selectedEmployees.length > 1 && (
                       <Button 
+                        type="button"
                         variant="outline" 
                         size="sm" 
-                        onClick={() => handleRemoveAssignment(assignment.id)}
+                        onClick={() => removeEmployeeField(index)}
                       >
-                        <UserX className="h-4 w-4" />
+                        <Minus className="h-4 w-4" />
                       </Button>
-                    </div>
-                  ))}
-                </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
-
-            {/* Adicionar Novos Profissionais */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Selecionar Profissionais:</Label>
-                <Button 
-                  type="button"
-                  variant="outline" 
-                  size="sm" 
-                  onClick={addEmployeeField}
-                  className="flex items-center gap-1"
-                >
-                  <Plus className="h-4 w-4" />
-                  Adicionar
-                </Button>
-              </div>
-              
-              {selectedEmployees.map((selectedEmployee, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Select 
-                    value={selectedEmployee} 
-                    onValueChange={(value) => updateEmployeeSelection(index, value)}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Escolha um profissional" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border shadow-md z-50">
-                      {availableEmployees
-                        .filter(emp => {
-                          // Não mostrar se já está vinculado
-                          const isAlreadyAssigned = currentAssignments.some((a: any) => a.employee_id === emp.user_id);
-                          // Não mostrar se já foi selecionado em outro campo
-                          const isAlreadySelected = selectedEmployees.some((selEmp, selIndex) => 
-                            selIndex !== index && selEmp === emp.user_id
-                          );
-                          return !isAlreadyAssigned && !isAlreadySelected;
-                        })
-                        .map((employee: any) => (
-                        <SelectItem key={employee.user_id} value={employee.user_id}>
-                          {employee.name} - {employee.employee_role}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  {selectedEmployees.length > 1 && (
-                    <Button 
-                      type="button"
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => removeEmployeeField(index)}
-                      className="px-2"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsAssignDialogOpen(false);
-                setSelectedEmployees(['']); // Reset
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button onClick={handleAssignProfessional} disabled={!selectedEmployees.some(emp => emp && emp.trim() !== '')}>
-              Vincular Selecionados
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsAssignDialogOpen(false);
+                  setSelectedEmployees(['']);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleAssignProfessional} disabled={!selectedEmployees.some(emp => emp && emp.trim() !== '')}>
+                Vincular Selecionados
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
 }
