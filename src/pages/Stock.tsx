@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { Package, Plus, AlertTriangle, TrendingUp, TrendingDown, ArrowLeftRight, Search } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingUp, ArrowLeftRight, Search, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import StockItemActions from '@/components/StockItemActions';
@@ -17,6 +18,8 @@ import { StockMovementDialog } from '@/components/StockMovementDialog';
 import { StockMovementHistory } from '@/components/StockMovementHistory';
 import { ImportExcelStockDialog } from '@/components/ImportExcelStockDialog';
 import { importAllStockItems } from '@/utils/importStockData';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface StockItem {
   id: string;
@@ -48,6 +51,7 @@ export default function Stock() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const { userRole, loading: roleLoading } = useRolePermissions();
   const customPermissions = useCustomPermissions();
@@ -190,6 +194,147 @@ export default function Stock() {
       (item.location && item.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (item.supplier && item.supplier.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+  };
+
+  const handleSelectItem = (itemId: string) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const filteredItems = getFilteredItems();
+    if (selectedItems.size === filteredItems.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(filteredItems.map(item => item.id)));
+    }
+  };
+
+  const exportShoppingListPDF = () => {
+    const itemsToExport = stockItems.filter(item => selectedItems.has(item.id));
+    
+    if (itemsToExport.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Nenhum item selecionado",
+        description: "Selecione pelo menos um item para exportar.",
+      });
+      return;
+    }
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, pageWidth, 35, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Lista de Compras - Estoque', pageWidth / 2, 18, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Fundação Dom Bosco - ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 28, { align: 'center' });
+    
+    // Summary
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total de Itens: ${itemsToExport.length}`, 14, 45);
+    
+    const totalEstimated = itemsToExport.reduce((sum, item) => {
+      const quantityToBuy = Math.max(0, item.minimum_quantity - item.current_quantity + 5);
+      return sum + (quantityToBuy * item.unit_cost);
+    }, 0);
+    
+    doc.text(`Valor Estimado: R$ ${totalEstimated.toFixed(2)}`, 14, 52);
+
+    // Group by category
+    const groupedItems: { [key: string]: StockItem[] } = {};
+    itemsToExport.forEach(item => {
+      const category = item.category || 'Outros';
+      if (!groupedItems[category]) {
+        groupedItems[category] = [];
+      }
+      groupedItems[category].push(item);
+    });
+
+    // Table data
+    const tableData: any[] = [];
+    Object.keys(groupedItems).sort().forEach(category => {
+      // Category header row
+      tableData.push([
+        { content: category.toUpperCase(), colSpan: 6, styles: { fillColor: [229, 231, 235], fontStyle: 'bold', fontSize: 10 } }
+      ]);
+      
+      groupedItems[category].forEach((item, index) => {
+        const quantityToBuy = Math.max(0, item.minimum_quantity - item.current_quantity + 5);
+        const estimatedCost = quantityToBuy * item.unit_cost;
+        
+        tableData.push([
+          `${index + 1}. ${item.name}`,
+          `${item.current_quantity} ${item.unit}`,
+          `${item.minimum_quantity} ${item.unit}`,
+          `${quantityToBuy} ${item.unit}`,
+          `R$ ${item.unit_cost.toFixed(2)}`,
+          `R$ ${estimatedCost.toFixed(2)}`
+        ]);
+      });
+    });
+
+    // Generate table
+    (doc as any).autoTable({
+      startY: 60,
+      head: [['Item', 'Qtd. Atual', 'Qtd. Mínima', 'Comprar', 'Valor Unit.', 'Valor Est.']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 25, halign: 'center' },
+        2: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 25, halign: 'center', fontStyle: 'bold' },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 25, halign: 'right' }
+      },
+      didDrawPage: (data: any) => {
+        // Footer
+        const pageCount = doc.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount}`,
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+    });
+
+    doc.save(`lista-compras-estoque-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    
+    toast({
+      title: "PDF gerado com sucesso!",
+      description: `Lista de compras com ${itemsToExport.length} itens exportada.`,
+    });
   };
 
   if (loading) {
@@ -349,15 +494,34 @@ export default function Stock() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Itens em Estoque</CardTitle>
-              <div className="relative w-72">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, categoria, localização..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="flex items-center gap-4">
+                <CardTitle>Itens em Estoque</CardTitle>
+                {selectedItems.size > 0 && (
+                  <Badge variant="secondary" className="text-sm">
+                    {selectedItems.size} selecionado(s)
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {selectedItems.size > 0 && (
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={exportShoppingListPDF}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Exportar Lista de Compras
+                  </Button>
+                )}
+                <div className="relative w-72">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome, categoria, localização..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -365,6 +529,12 @@ export default function Stock() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={getFilteredItems().length > 0 && selectedItems.size === getFilteredItems().length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Quantidade</TableHead>
@@ -378,7 +548,7 @@ export default function Stock() {
               <TableBody>
                 {getFilteredItems().length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       {searchTerm ? 'Nenhum item encontrado com os termos de busca.' : 'Nenhum item cadastrado.'}
                     </TableCell>
                   </TableRow>
@@ -386,7 +556,13 @@ export default function Stock() {
                   getFilteredItems().map((item) => {
                     const status = getStockStatus(item);
                     return (
-                      <TableRow key={item.id}>
+                      <TableRow key={item.id} className={selectedItems.has(item.id) ? 'bg-muted/50' : ''}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedItems.has(item.id)}
+                            onCheckedChange={() => handleSelectItem(item.id)}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{item.name}</TableCell>
                         <TableCell>{item.category || '-'}</TableCell>
                         <TableCell>{item.current_quantity}</TableCell>
