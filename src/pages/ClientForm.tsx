@@ -106,6 +106,7 @@ export default function ClientForm() {
     neuro_test_start_date: '',
     neuro_report_deadline: '',
     neuro_diagnosis_suggestion: '',
+    neuro_diagnosis_by: '',
     neuro_tests_applied: '',
     neuro_socioeconomic: ''
   });
@@ -184,6 +185,7 @@ export default function ClientForm() {
           neuro_test_start_date: formData.neuro_test_start_date || null,
           neuro_report_deadline: formData.neuro_report_deadline || null,
           neuro_diagnosis_suggestion: formData.neuro_diagnosis_suggestion || null,
+          neuro_diagnosis_by: formData.neuro_diagnosis_by || null,
           neuro_tests_applied: testsApplied.length > 0 ? testsApplied : null,
           neuro_socioeconomic: formData.neuro_socioeconomic || null
         }]);
@@ -207,7 +209,7 @@ export default function ClientForm() {
         cidade: '', estado: '', observacoes: '', diagnostico_principal: '',
         medical_history: '', queixa_neuropsicologica: '', expectativas_tratamento: '',
         neuro_test_start_date: '', neuro_report_deadline: '', neuro_diagnosis_suggestion: '',
-        neuro_tests_applied: '', neuro_socioeconomic: ''
+        neuro_diagnosis_by: '', neuro_tests_applied: '', neuro_socioeconomic: ''
       });
 
     } catch (error) {
@@ -793,7 +795,7 @@ export default function ClientForm() {
               </div>
               
               <div>
-                <Label htmlFor="neuro_diagnosis_suggestion">Sugestão de Diagnóstico (Encaminhamento)</Label>
+                <Label htmlFor="neuro_diagnosis_suggestion">Suspeita de Diagnóstico</Label>
                 <Input
                   id="neuro_diagnosis_suggestion"
                   value={formData.neuro_diagnosis_suggestion}
@@ -801,7 +803,20 @@ export default function ClientForm() {
                   placeholder="Ex: TEA, TDAH, TOD, Dislexia"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Hipótese diagnóstica encaminhada pelo médico
+                  Hipótese diagnóstica encaminhada pelo médico/profissional
+                </p>
+              </div>
+              
+              <div>
+                <Label htmlFor="neuro_diagnosis_by">Encaminhado por</Label>
+                <Input
+                  id="neuro_diagnosis_by"
+                  value={formData.neuro_diagnosis_by}
+                  onChange={(e) => handleInputChange('neuro_diagnosis_by', e.target.value)}
+                  placeholder="Nome do médico ou profissional"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Profissional que fez o encaminhamento
                 </p>
               </div>
               
