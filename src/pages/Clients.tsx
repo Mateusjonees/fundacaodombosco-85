@@ -52,6 +52,7 @@ interface Client {
   cpf?: string;
   responsible_name?: string;
   responsible_phone?: string;
+  responsible_cpf?: string;
   unit?: string;
   diagnosis?: string;
   neuropsych_complaint?: string;
@@ -109,6 +110,7 @@ export default function Patients() {
     cpf: "",
     responsible_name: "",
     responsible_phone: "",
+    responsible_cpf: "",
     unit: "madre",
     diagnosis: "",
     neuropsych_complaint: "",
@@ -287,6 +289,7 @@ export default function Patients() {
       cpf: "",
       responsible_name: "",
       responsible_phone: "",
+      responsible_cpf: "",
       unit: defaultUnit,
       diagnosis: "",
       neuropsych_complaint: "",
@@ -351,6 +354,7 @@ export default function Patients() {
       cpf: client.cpf || "",
       responsible_name: client.responsible_name || "",
       responsible_phone: client.responsible_phone || "",
+      responsible_cpf: (client as any).responsible_cpf || "",
       unit: client.unit || "madre",
       diagnosis: client.diagnosis || "",
       neuropsych_complaint: client.neuropsych_complaint || "",
@@ -629,6 +633,20 @@ export default function Patients() {
                       })
                     }
                     placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="responsible_cpf">CPF do Responsável Financeiro</Label>
+                  <Input
+                    id="responsible_cpf"
+                    value={newClient.responsible_cpf}
+                    onChange={(e) =>
+                      setNewClient({
+                        ...newClient,
+                        responsible_cpf: e.target.value,
+                      })
+                    }
+                    placeholder="000.000.000-00"
                   />
                 </div>
                 <div className="space-y-2">
