@@ -481,7 +481,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 Adicionar Serviço
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Serviço</DialogTitle>
               </DialogHeader>
@@ -946,7 +946,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
       
       {/* Modal de Detalhes Completos */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />

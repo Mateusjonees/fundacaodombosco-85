@@ -139,7 +139,7 @@ export function CancelAppointmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg text-destructive">
             <XCircle className="h-5 w-5" />
