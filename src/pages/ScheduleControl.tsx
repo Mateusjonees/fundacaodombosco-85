@@ -182,12 +182,13 @@ ${notificationMessage}
           message_body: messageBody,
           message_type: 'appointment_notification',
           priority: 'high',
-          metadata: {
+          attachments: [{
+            type: 'notification_metadata',
             schedule_id: schedule.id,
             notification_id: notificationData?.id,
             appointment_date: schedule.start_time,
             client_name: schedule.clients?.name,
-          }
+          }]
         });
 
       if (messageError) {
