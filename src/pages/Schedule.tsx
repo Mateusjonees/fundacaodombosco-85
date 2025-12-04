@@ -511,13 +511,35 @@ export default function Schedule() {
       return false;
     }
 
-    // Filtro de pesquisa por texto (nome do paciente ou profissional)
+    // Filtro de pesquisa universal (busca em todos os campos)
     if (searchText.trim()) {
       const searchLower = searchText.toLowerCase().trim();
       const patientName = schedule.clients?.name?.toLowerCase() || '';
       const professionalName = employees.find(emp => emp.user_id === schedule.employee_id)?.name?.toLowerCase() || '';
+      const title = schedule.title?.toLowerCase() || '';
+      const notes = schedule.notes?.toLowerCase() || '';
+      const unit = schedule.unit?.toLowerCase() || '';
+      const startTime = format(new Date(schedule.start_time), 'HH:mm');
+      const endTime = format(new Date(schedule.end_time), 'HH:mm');
+      const dateFormatted = format(new Date(schedule.start_time), 'dd/MM/yyyy');
+      const dayName = format(new Date(schedule.start_time), 'EEEE', { locale: ptBR }).toLowerCase();
+      const status = schedule.status?.toLowerCase() || '';
       
-      if (!patientName.includes(searchLower) && !professionalName.includes(searchLower)) {
+      // Buscar em todos os campos
+      const allFields = [
+        patientName,
+        professionalName,
+        title,
+        notes,
+        unit,
+        startTime,
+        endTime,
+        dateFormatted,
+        dayName,
+        status
+      ].join(' ');
+      
+      if (!allFields.includes(searchLower)) {
         return false;
       }
     }
@@ -703,7 +725,7 @@ export default function Schedule() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Pesquisar por nome do paciente ou profissional..."
+                    placeholder="Pesquisar: paciente, profissional, horário (ex: 14:00), data, status..."
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     className="pl-10 pr-10"
