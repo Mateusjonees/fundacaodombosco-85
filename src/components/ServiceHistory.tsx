@@ -275,11 +275,19 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         });
       }
 
+      // Coletar schedule_ids dos attendance_reports para evitar duplicação
+      const attendanceScheduleIds = new Set(
+        attendanceReports
+          ?.filter(r => r.schedule_id)
+          .map(r => r.schedule_id) || []
+      );
+
       // Carregar employee reports (relatórios detalhados) - apenas validados
       const { data: reports, error: reportsError } = await supabase
         .from('employee_reports')
         .select(`
           id,
+          schedule_id,
           session_date,
           session_type,
           professional_notes,
@@ -308,31 +316,34 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
       if (reportsError) throw reportsError;
 
       if (reports) {
-        reports.forEach(report => {
-          records.push({
-            id: `report_${report.id}`,
-            date: report.session_date,
-            service_type: report.session_type || 'Sessão Terapêutica',
-            professional_name: report.profiles?.name || 'Profissional',
-            professional_role: report.profiles?.employee_role || 'Staff',
-            duration: report.session_duration,
-            status: 'completed',
-            detailed_notes: report.professional_notes || '',
-            techniques_used: report.techniques_used || '',
-            session_objectives: report.session_objectives || '',
-            patient_response: report.patient_response || '',
-            next_session_plan: report.next_session_plan || '',
-            materials_used: Array.isArray(report.materials_used) ? report.materials_used : [],
-            quality_rating: report.quality_rating,
-            cooperation_rating: report.patient_cooperation,
-            goals_rating: report.goal_achievement,
-            effort_rating: report.effort_rating,
-            attachments: Array.isArray(report.attachments) ? report.attachments : [],
-            amount_charged: report.materials_cost || 0,
-            created_at: report.session_date,
-            source: 'session_report'
+        // Filtrar employee_reports que não têm attendance_report correspondente
+        reports
+          .filter(report => !report.schedule_id || !attendanceScheduleIds.has(report.schedule_id))
+          .forEach(report => {
+            records.push({
+              id: `report_${report.id}`,
+              date: report.session_date,
+              service_type: report.session_type || 'Sessão Terapêutica',
+              professional_name: report.profiles?.name || 'Profissional',
+              professional_role: report.profiles?.employee_role || 'Staff',
+              duration: report.session_duration,
+              status: 'completed',
+              detailed_notes: report.professional_notes || '',
+              techniques_used: report.techniques_used || '',
+              session_objectives: report.session_objectives || '',
+              patient_response: report.patient_response || '',
+              next_session_plan: report.next_session_plan || '',
+              materials_used: Array.isArray(report.materials_used) ? report.materials_used : [],
+              quality_rating: report.quality_rating,
+              cooperation_rating: report.patient_cooperation,
+              goals_rating: report.goal_achievement,
+              effort_rating: report.effort_rating,
+              attachments: Array.isArray(report.attachments) ? report.attachments : [],
+              amount_charged: report.materials_cost || 0,
+              created_at: report.session_date,
+              source: 'session_report'
+            });
           });
-        });
       }
 
       // Ordenar todos os registros por data (mais recente primeiro)
