@@ -764,6 +764,7 @@ export type Database = {
           neuropsych_complaint: string | null
           notes: string | null
           phone: string | null
+          responsible_cpf: string | null
           responsible_name: string | null
           responsible_phone: string | null
           rg: string | null
@@ -804,6 +805,7 @@ export type Database = {
           neuropsych_complaint?: string | null
           notes?: string | null
           phone?: string | null
+          responsible_cpf?: string | null
           responsible_name?: string | null
           responsible_phone?: string | null
           rg?: string | null
@@ -844,6 +846,7 @@ export type Database = {
           neuropsych_complaint?: string | null
           notes?: string | null
           phone?: string | null
+          responsible_cpf?: string | null
           responsible_name?: string | null
           responsible_phone?: string | null
           rg?: string | null

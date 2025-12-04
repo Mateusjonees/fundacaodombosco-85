@@ -82,6 +82,7 @@ export default function ClientForm() {
     profissao_mae: '',
     telefone_mae: '',
     responsavel_financeiro: '',
+    responsible_cpf: '',
     outro_responsavel: '',
     
     // Endereço
@@ -181,6 +182,14 @@ export default function ClientForm() {
           notes: notesData,
           unit: unitToAssign,
           is_active: true,
+          // Responsável (para menores)
+          responsible_name: ageType === 'minor' ? (
+            formData.responsavel_financeiro === 'pai' ? formData.nome_pai :
+            formData.responsavel_financeiro === 'mae' ? formData.nome_mae :
+            formData.responsavel_financeiro === 'ambos' ? `${formData.nome_pai} / ${formData.nome_mae}` :
+            formData.outro_responsavel || formData.nome_mae
+          ) : null,
+          responsible_cpf: ageType === 'minor' ? formData.responsible_cpf : null,
           // Campos de Neuroavaliação
           neuro_test_start_date: formData.neuro_test_start_date || null,
           neuro_report_deadline: formData.neuro_report_deadline || null,
@@ -204,7 +213,7 @@ export default function ClientForm() {
         emergency_contact: '', emergency_phone: '', unidade_atendimento: '',
         nome_escola: '', tipo_escola: '', ano_escolar: '', nome_pai: '', idade_pai: '',
         profissao_pai: '', telefone_pai: '', nome_mae: '', idade_mae: '', profissao_mae: '',
-        telefone_mae: '', responsavel_financeiro: '', outro_responsavel: '',
+        telefone_mae: '', responsavel_financeiro: '', responsible_cpf: '', outro_responsavel: '',
         cep: '', logradouro: '', numero: '', complemento: '', bairro: '',
         cidade: '', estado: '', observacoes: '', diagnostico_principal: '',
         medical_history: '', queixa_neuropsicologica: '', expectativas_tratamento: '',
@@ -604,12 +613,26 @@ export default function ClientForm() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="outro_responsavel">Outro Responsável (se aplicável)</Label>
+                  <RequiredLabel htmlFor="responsible_cpf" required>CPF do Responsável Financeiro</RequiredLabel>
+                  <Input
+                    id="responsible_cpf"
+                    value={formData.responsible_cpf}
+                    onChange={(e) => handleInputChange('responsible_cpf', e.target.value)}
+                    placeholder="000.000.000-00"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Campo obrigatório para geração de contrato
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="outro_responsavel">Outro Responsável (se houver)</Label>
                   <Input
                     id="outro_responsavel"
                     value={formData.outro_responsavel}
                     onChange={(e) => handleInputChange('outro_responsavel', e.target.value)}
-                    placeholder="Nome e parentesco"
+                    placeholder="Nome completo"
                   />
                 </div>
               </div>
@@ -623,7 +646,7 @@ export default function ClientForm() {
             <CardTitle>Endereço</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="cep">CEP</Label>
                 <Input
@@ -632,9 +655,6 @@ export default function ClientForm() {
                   onChange={(e) => handleCepChange(e.target.value)}
                   placeholder="00000-000"
                 />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Digite o CEP para preenchimento automático.
-                </p>
               </div>
               
               <div className="md:col-span-2">
