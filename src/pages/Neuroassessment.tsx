@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Brain, FileDown, FileSpreadsheet, Calendar, Filter, Users, Clock, UserCheck, UserX } from 'lucide-react';
+import { Brain, FileDown, FileSpreadsheet, Calendar, Filter, Users, Clock, UserCheck, UserX, Pencil } from 'lucide-react';
 import { format, differenceInYears, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
@@ -49,7 +51,75 @@ export default function Neuroassessment() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reportStatus, setReportStatus] = useState<string>('all');
+  const [editingClient, setEditingClient] = useState<NeuroClient | null>(null);
+  const [editForm, setEditForm] = useState({
+    gender: '',
+    neuro_test_start_date: '',
+    neuro_diagnosis_suggestion: '',
+    neuro_diagnosis_by: '',
+    neuro_report_delivered: false,
+    neuro_tests_applied: '',
+    neuro_socioeconomic: ''
+  });
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  const openEditDialog = (client: NeuroClient) => {
+    setEditingClient(client);
+    setEditForm({
+      gender: client.gender || '',
+      neuro_test_start_date: client.neuro_test_start_date || '',
+      neuro_diagnosis_suggestion: client.neuro_diagnosis_suggestion || '',
+      neuro_diagnosis_by: client.neuro_diagnosis_by || '',
+      neuro_report_delivered: !!client.neuro_report_file_path,
+      neuro_tests_applied: Array.isArray(client.neuro_tests_applied) ? client.neuro_tests_applied.join(', ') : '',
+      neuro_socioeconomic: client.neuro_socioeconomic || ''
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingClient) return;
+    
+    setSaving(true);
+    try {
+      const testsArray = editForm.neuro_tests_applied
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
+      const { error } = await supabase
+        .from('clients')
+        .update({
+          gender: editForm.gender || null,
+          neuro_test_start_date: editForm.neuro_test_start_date || null,
+          neuro_diagnosis_suggestion: editForm.neuro_diagnosis_suggestion || null,
+          neuro_diagnosis_by: editForm.neuro_diagnosis_by || null,
+          neuro_report_file_path: editForm.neuro_report_delivered ? 'delivered' : null,
+          neuro_tests_applied: testsArray.length > 0 ? testsArray : null,
+          neuro_socioeconomic: editForm.neuro_socioeconomic || null
+        })
+        .eq('id', editingClient.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Dados de neuroavaliação atualizados!",
+      });
+
+      setEditingClient(null);
+      loadNeuroClients();
+    } catch (error) {
+      console.error('Error updating client:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar os dados.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     loadNeuroClients();
@@ -614,6 +684,7 @@ export default function Neuroassessment() {
                     <TableHead>Materiais Utilizados</TableHead>
                     <TableHead>Horas Totais</TableHead>
                     <TableHead>Socioeconômico</TableHead>
+                    <TableHead className="w-[60px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -642,6 +713,15 @@ export default function Neuroassessment() {
                         </TableCell>
                         <TableCell>{client.total_hours ? `${client.total_hours}h` : '-'}</TableCell>
                         <TableCell>{client.neuro_socioeconomic || '-'}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(client)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -651,6 +731,116 @@ export default function Neuroassessment() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog de Edição */}
+      <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Neuroavaliação - {editingClient?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-gender">Sexo</Label>
+                <Select
+                  value={editForm.gender}
+                  onValueChange={(value) => setEditForm({ ...editForm, gender: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-md z-50">
+                    <SelectItem value="masculino">Masculino</SelectItem>
+                    <SelectItem value="feminino">Feminino</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                    <SelectItem value="nao-informar">Não informar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-start-date">Início dos Testes</Label>
+                <Input
+                  id="edit-start-date"
+                  type="date"
+                  value={editForm.neuro_test_start_date}
+                  onChange={(e) => setEditForm({ ...editForm, neuro_test_start_date: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-diagnosis">Suspeita de Diagnóstico</Label>
+              <Input
+                id="edit-diagnosis"
+                value={editForm.neuro_diagnosis_suggestion}
+                onChange={(e) => setEditForm({ ...editForm, neuro_diagnosis_suggestion: e.target.value })}
+                placeholder="Ex: TDAH, TEA, Dislexia..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-diagnosis-by">Encaminhado por</Label>
+              <Input
+                id="edit-diagnosis-by"
+                value={editForm.neuro_diagnosis_by}
+                onChange={(e) => setEditForm({ ...editForm, neuro_diagnosis_by: e.target.value })}
+                placeholder="Nome do médico/profissional"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-socio">Nível Socioeconômico</Label>
+                <Select
+                  value={editForm.neuro_socioeconomic}
+                  onValueChange={(value) => setEditForm({ ...editForm, neuro_socioeconomic: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-md z-50">
+                    <SelectItem value="A">Classe A</SelectItem>
+                    <SelectItem value="B">Classe B</SelectItem>
+                    <SelectItem value="C">Classe C</SelectItem>
+                    <SelectItem value="D">Classe D</SelectItem>
+                    <SelectItem value="E">Classe E</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-status">Status do Laudo</Label>
+                <Select
+                  value={editForm.neuro_report_delivered ? 'delivered' : 'pending'}
+                  onValueChange={(value) => setEditForm({ ...editForm, neuro_report_delivered: value === 'delivered' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-md z-50">
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="delivered">Entregue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-tests">Testes Aplicados (separados por vírgula)</Label>
+              <Textarea
+                id="edit-tests"
+                value={editForm.neuro_tests_applied}
+                onChange={(e) => setEditForm({ ...editForm, neuro_tests_applied: e.target.value })}
+                placeholder="WISC-IV, Bender, HTP..."
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingClient(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
