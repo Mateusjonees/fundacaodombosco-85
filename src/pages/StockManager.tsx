@@ -505,6 +505,104 @@ export default function StockManager() {
     });
   };
 
+  const exportLowStockPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header
+      doc.setFillColor(234, 88, 12);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Itens com Estoque Baixo', pageWidth / 2, 18, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Fundação Dom Bosco - ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 28, { align: 'center' });
+      
+      // Summary
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total de Itens com Estoque Baixo: ${lowStockItems.length}`, 14, 45);
+      
+      const totalToBuy = lowStockItems.reduce((sum, item) => {
+        const qtyToBuy = Math.max(0, item.minimum_quantity - item.current_quantity + 5);
+        return sum + (qtyToBuy * item.unit_cost);
+      }, 0);
+      doc.text(`Valor Estimado para Reposição: R$ ${totalToBuy.toFixed(2)}`, 14, 52);
+
+      // Table data
+      const tableData = lowStockItems.map((item, index) => {
+        const qtyToBuy = Math.max(0, item.minimum_quantity - item.current_quantity + 5);
+        return [
+          `${index + 1}. ${item.name}`,
+          item.category || '-',
+          `${item.current_quantity} ${item.unit}`,
+          `${item.minimum_quantity} ${item.unit}`,
+          `${qtyToBuy} ${item.unit}`,
+          `R$ ${item.unit_cost.toFixed(2)}`,
+          `R$ ${(qtyToBuy * item.unit_cost).toFixed(2)}`
+        ];
+      });
+
+      // Generate table
+      (doc as any).autoTable({
+        startY: 60,
+        head: [['Item', 'Categoria', 'Qtd. Atual', 'Qtd. Mín.', 'Comprar', 'Valor Unit.', 'Valor Est.']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [234, 88, 12],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 22, halign: 'center' },
+          3: { cellWidth: 22, halign: 'center' },
+          4: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
+          5: { cellWidth: 22, halign: 'right' },
+          6: { cellWidth: 22, halign: 'right' }
+        },
+        didDrawPage: (data: any) => {
+          const pageCount = doc.getNumberOfPages();
+          doc.setFontSize(8);
+          doc.setTextColor(128, 128, 128);
+          doc.text(
+            `Página ${data.pageNumber} de ${pageCount}`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+          );
+        }
+      });
+
+      doc.save(`estoque-baixo-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      
+      toast({
+        title: "PDF gerado com sucesso!",
+        description: `Lista com ${lowStockItems.length} itens com estoque baixo exportada.`,
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível gerar o PDF. Tente novamente.",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -898,94 +996,7 @@ export default function StockManager() {
                 <Button 
                   variant="outline" 
                   className="gap-2"
-                  onClick={() => {
-                    const doc = new jsPDF();
-                    const pageWidth = doc.internal.pageSize.getWidth();
-                    
-                    // Header
-                    doc.setFillColor(234, 88, 12);
-                    doc.rect(0, 0, pageWidth, 35, 'F');
-                    
-                    doc.setTextColor(255, 255, 255);
-                    doc.setFontSize(20);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text('Itens com Estoque Baixo', pageWidth / 2, 18, { align: 'center' });
-                    
-                    doc.setFontSize(10);
-                    doc.setFont('helvetica', 'normal');
-                    doc.text(`Fundação Dom Bosco - ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 28, { align: 'center' });
-                    
-                    // Summary
-                    doc.setTextColor(0, 0, 0);
-                    doc.setFontSize(11);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Total de Itens com Estoque Baixo: ${lowStockItems.length}`, 14, 45);
-                    
-                    const totalToBuy = lowStockItems.reduce((sum, item) => {
-                      const qtyToBuy = Math.max(0, item.minimum_quantity - item.current_quantity + 5);
-                      return sum + (qtyToBuy * item.unit_cost);
-                    }, 0);
-                    doc.text(`Valor Estimado para Reposição: R$ ${totalToBuy.toFixed(2)}`, 14, 52);
-
-                    // Table data
-                    const tableData = lowStockItems.map((item, index) => {
-                      const qtyToBuy = Math.max(0, item.minimum_quantity - item.current_quantity + 5);
-                      return [
-                        `${index + 1}. ${item.name}`,
-                        item.category || '-',
-                        `${item.current_quantity} ${item.unit}`,
-                        `${item.minimum_quantity} ${item.unit}`,
-                        `${qtyToBuy} ${item.unit}`,
-                        `R$ ${item.unit_cost.toFixed(2)}`,
-                        `R$ ${(qtyToBuy * item.unit_cost).toFixed(2)}`
-                      ];
-                    });
-
-                    // Generate table
-                    (doc as any).autoTable({
-                      startY: 60,
-                      head: [['Item', 'Categoria', 'Qtd. Atual', 'Qtd. Mín.', 'Comprar', 'Valor Unit.', 'Valor Est.']],
-                      body: tableData,
-                      theme: 'striped',
-                      headStyles: {
-                        fillColor: [234, 88, 12],
-                        textColor: [255, 255, 255],
-                        fontStyle: 'bold',
-                        fontSize: 9
-                      },
-                      styles: {
-                        fontSize: 8,
-                        cellPadding: 3
-                      },
-                      columnStyles: {
-                        0: { cellWidth: 50 },
-                        1: { cellWidth: 25 },
-                        2: { cellWidth: 22, halign: 'center' },
-                        3: { cellWidth: 22, halign: 'center' },
-                        4: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
-                        5: { cellWidth: 22, halign: 'right' },
-                        6: { cellWidth: 22, halign: 'right' }
-                      },
-                      didDrawPage: (data: any) => {
-                        const pageCount = doc.getNumberOfPages();
-                        doc.setFontSize(8);
-                        doc.setTextColor(128, 128, 128);
-                        doc.text(
-                          `Página ${data.pageNumber} de ${pageCount}`,
-                          pageWidth / 2,
-                          doc.internal.pageSize.getHeight() - 10,
-                          { align: 'center' }
-                        );
-                      }
-                    });
-
-                    doc.save(`estoque-baixo-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-                    
-                    toast({
-                      title: "PDF gerado com sucesso!",
-                      description: `Lista com ${lowStockItems.length} itens com estoque baixo exportada.`,
-                    });
-                  }}
+                  onClick={exportLowStockPDF}
                 >
                   <FileDown className="h-4 w-4" />
                   Baixar PDF
