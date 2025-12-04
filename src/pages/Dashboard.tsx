@@ -1,50 +1,20 @@
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/auth/AuthProvider';
 import { TimeClock } from '@/components/TimeClock';
 import { Users, Calendar, DollarSign, UserPlus } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 
-interface DashboardStats {
-  totalClients: number;
-  todayAppointments: number;
-  monthlyRevenue: number;
-  totalEmployees: number;
-}
-
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
+  // Usar hook centralizado com cache
+  const { profile, userName, userRole, loading: profileLoading } = useCurrentUser();
   
   // Usar React Query para cache automático e otimização com batch queries
-  const { data: stats, isLoading } = useDashboardStats(currentUserProfile);
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(profile);
 
-  // Carregar perfil do usuário
-  useEffect(() => {
-    if (user) {
-      loadUserProfile();
-    }
-  }, [user]);
-
-  const loadUserProfile = async () => {
-    if (!user) return;
-
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      setCurrentUserProfile(profile);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    }
-  };
+  const isLoading = profileLoading || statsLoading;
 
   if (isLoading || !stats) {
     return (
@@ -60,7 +30,7 @@ export default function Dashboard() {
     );
   }
 
-  const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(currentUserProfile?.employee_role);
+  const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
 
   return (
     <div className="space-y-8 animate-fade-in p-2">
@@ -88,12 +58,12 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="relative space-y-3">
               <p className="text-base text-muted-foreground leading-relaxed">
-                Olá, <span className="font-bold text-foreground text-lg">{currentUserProfile?.name || user?.email}</span>!
+                Olá, <span className="font-bold text-foreground text-lg">{userName}</span>!
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Conectado como:</span>
                 <Badge variant="secondary" className="text-sm px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
-                  {currentUserProfile?.employee_role ? ROLE_LABELS[currentUserProfile.employee_role] : 'Usuário'}
+                  {userRole ? ROLE_LABELS[userRole] : 'Usuário'}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground pt-2 border-t border-border/50">
