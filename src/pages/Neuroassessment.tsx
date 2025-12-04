@@ -16,6 +16,13 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+interface MaterialUsed {
+  stock_item_id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
 interface NeuroClient {
   id: string;
   name: string;
@@ -30,6 +37,7 @@ interface NeuroClient {
   neuro_socioeconomic: string | null;
   unit: string | null;
   total_hours?: number;
+  materials_used?: string[];
 }
 
 const COLORS = ['#3b82f6', '#ec4899', '#8b5cf6', '#6b7280'];
@@ -77,18 +85,32 @@ export default function Neuroassessment() {
         (clientsData || []).map(async (client) => {
           const { data: attendances } = await supabase
             .from('attendance_reports')
-            .select('session_duration')
+            .select('session_duration, materials_used')
             .eq('client_id', client.id)
             .eq('status', 'completed');
 
           const totalMinutes = attendances?.reduce((sum, att) => sum + (att.session_duration || 0), 0) || 0;
           const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
+          // Extrair materiais únicos usados nos atendimentos
+          const materialsMap = new Map<string, string>();
+          attendances?.forEach(att => {
+            if (att.materials_used && Array.isArray(att.materials_used)) {
+              (att.materials_used as unknown as MaterialUsed[]).forEach(material => {
+                if (material.name && !materialsMap.has(material.name)) {
+                  materialsMap.set(material.name, material.name);
+                }
+              });
+            }
+          });
+          const uniqueMaterials = Array.from(materialsMap.values());
+
           return {
             ...client,
             neuro_tests_applied: client.neuro_tests_applied as string[] | null,
             neuro_diagnosis_by: (client as any).neuro_diagnosis_by || null,
-            total_hours: totalHours
+            total_hours: totalHours,
+            materials_used: uniqueMaterials
           };
         })
       );
@@ -236,14 +258,14 @@ export default function Neuroassessment() {
       client.neuro_diagnosis_suggestion || '-',
       client.neuro_diagnosis_by || '-',
       getReportStatus(client.neuro_report_file_path).label,
-      Array.isArray(client.neuro_tests_applied) ? client.neuro_tests_applied.join(', ') : '-',
+      client.materials_used && client.materials_used.length > 0 ? client.materials_used.join(', ') : '-',
       client.total_hours ? `${client.total_hours}h` : '-',
       client.neuro_socioeconomic || '-'
     ]);
 
     autoTable(doc, {
       startY: 42,
-      head: [['Nome', 'Nasc.', 'Sexo', 'Início', 'Suspeita Dx', 'Encaminhado', 'Laudo', 'Testes', 'Horas', 'Socio.']],
+      head: [['Nome', 'Nasc.', 'Sexo', 'Início', 'Suspeita Dx', 'Encaminhado', 'Laudo', 'Materiais', 'Horas', 'Socio.']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -298,7 +320,7 @@ export default function Neuroassessment() {
       'Suspeita de Diagnóstico': client.neuro_diagnosis_suggestion || '-',
       'Encaminhado por': client.neuro_diagnosis_by || '-',
       'Status do Laudo': getReportStatus(client.neuro_report_file_path).label,
-      'Testes Aplicados': Array.isArray(client.neuro_tests_applied) ? client.neuro_tests_applied.join(', ') : '-',
+      'Materiais Utilizados': client.materials_used && client.materials_used.length > 0 ? client.materials_used.join(', ') : '-',
       'Horas Totais': client.total_hours || 0,
       'Socioeconômico': client.neuro_socioeconomic || '-'
     }));
@@ -589,7 +611,7 @@ export default function Neuroassessment() {
                     <TableHead>Suspeita de Diagnóstico</TableHead>
                     <TableHead>Encaminhado por</TableHead>
                     <TableHead>Status Laudo</TableHead>
-                    <TableHead>Testes Aplicados</TableHead>
+                    <TableHead>Materiais Utilizados</TableHead>
                     <TableHead>Horas Totais</TableHead>
                     <TableHead>Socioeconômico</TableHead>
                   </TableRow>
@@ -614,8 +636,8 @@ export default function Neuroassessment() {
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">
-                          {Array.isArray(client.neuro_tests_applied) && client.neuro_tests_applied.length > 0
-                            ? client.neuro_tests_applied.join(', ')
+                          {client.materials_used && client.materials_used.length > 0
+                            ? client.materials_used.join(', ')
                             : '-'}
                         </TableCell>
                         <TableCell>{client.total_hours ? `${client.total_hours}h` : '-'}</TableCell>
