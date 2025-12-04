@@ -169,7 +169,6 @@ export function ConfirmAppointmentDialog({
         .from('stock_items')
         .select('id, name, current_quantity, unit, category, unit_cost')
         .eq('is_active', true)
-        .gt('current_quantity', 0)
         .order('name');
 
       if (error) throw error;
