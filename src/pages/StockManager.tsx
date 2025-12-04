@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -63,6 +64,7 @@ export default function StockManager() {
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
@@ -397,6 +399,151 @@ export default function StockManager() {
   const totalValue = stockItems.reduce((sum, item) => 
     sum + (item.current_quantity * item.unit_cost), 0
   );
+
+  const handleSelectItem = (itemId: string) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.size === filteredItems.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(filteredItems.map(item => item.id)));
+    }
+  };
+
+  const exportSelectedPDF = () => {
+    const itemsToExport = stockItems.filter(item => selectedItems.has(item.id));
+    
+    if (itemsToExport.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Nenhum item selecionado",
+        description: "Selecione pelo menos um item para exportar.",
+      });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header
+      doc.setFillColor(37, 99, 235);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Lista de Itens Selecionados', pageWidth / 2, 18, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Fundação Dom Bosco - ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 28, { align: 'center' });
+      
+      // Summary
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total de Itens: ${itemsToExport.length}`, 14, 45);
+      
+      const totalSelectedValue = itemsToExport.reduce((sum, item) => sum + (item.current_quantity * item.unit_cost), 0);
+      doc.text(`Valor Total: R$ ${totalSelectedValue.toFixed(2)}`, 14, 52);
+
+      // Group items by category
+      const groupedItems: { [key: string]: StockItem[] } = {};
+      itemsToExport.forEach(item => {
+        const category = item.category || 'Outros';
+        if (!groupedItems[category]) {
+          groupedItems[category] = [];
+        }
+        groupedItems[category].push(item);
+      });
+
+      // Table data
+      const tableData: any[] = [];
+      Object.keys(groupedItems).sort().forEach(category => {
+        tableData.push([
+          { content: category.toUpperCase(), colSpan: 6, styles: { fillColor: [229, 231, 235], fontStyle: 'bold', fontSize: 10 } }
+        ]);
+        
+        groupedItems[category].forEach((item, index) => {
+          const status = item.current_quantity === 0 
+            ? 'Esgotado' 
+            : item.current_quantity <= item.minimum_quantity 
+              ? 'Baixo' 
+              : 'Normal';
+          
+          tableData.push([
+            `${index + 1}. ${item.name}`,
+            `${item.current_quantity} ${item.unit}`,
+            `${item.minimum_quantity} ${item.unit}`,
+            `R$ ${item.unit_cost.toFixed(2)}`,
+            `R$ ${(item.current_quantity * item.unit_cost).toFixed(2)}`,
+            status
+          ]);
+        });
+      });
+
+      autoTable(doc, {
+        startY: 60,
+        head: [['Item', 'Qtd. Atual', 'Qtd. Mínima', 'Valor Unit.', 'Valor Total', 'Status']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [37, 99, 235],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 60 },
+          1: { cellWidth: 25, halign: 'center' },
+          2: { cellWidth: 25, halign: 'center' },
+          3: { cellWidth: 25, halign: 'right' },
+          4: { cellWidth: 25, halign: 'right' },
+          5: { cellWidth: 22, halign: 'center' }
+        },
+        didDrawPage: (data: any) => {
+          const pageCount = doc.getNumberOfPages();
+          doc.setFontSize(8);
+          doc.setTextColor(128, 128, 128);
+          doc.text(
+            `Página ${data.pageNumber} de ${pageCount}`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+          );
+        }
+      });
+
+      doc.save(`itens-selecionados-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      
+      toast({
+        title: "PDF gerado com sucesso!",
+        description: `Relatório com ${itemsToExport.length} itens exportado.`,
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível gerar o PDF. Tente novamente.",
+      });
+    }
+  };
 
   const exportStockPDF = () => {
     const doc = new jsPDF();
@@ -890,6 +1037,35 @@ export default function StockManager() {
         </TabsList>
 
         <TabsContent value="items">
+          {/* Barra de seleção quando há itens selecionados */}
+          {selectedItems.size > 0 && (
+            <Card className="border-primary bg-primary/5 mb-4">
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="default" className="text-sm px-3 py-1">
+                      {selectedItems.size} item(ns) selecionado(s)
+                    </Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setSelectedItems(new Set())}
+                    >
+                      Limpar seleção
+                    </Button>
+                  </div>
+                  <Button 
+                    className="gap-2"
+                    onClick={exportSelectedPDF}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Baixar PDF dos Selecionados
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -909,6 +1085,12 @@ export default function StockManager() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox 
+                          checked={filteredItems.length > 0 && selectedItems.size === filteredItems.length}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead>Nome do Teste</TableHead>
                       <TableHead>Folha de Resposta</TableHead>
                       <TableHead>Tipo</TableHead>
@@ -928,7 +1110,13 @@ export default function StockManager() {
                       const responseSheet = parts[1] || '-';
                       
                       return (
-                        <TableRow key={item.id} className={item.current_quantity <= item.minimum_quantity ? 'bg-orange-50/50' : ''}>
+                        <TableRow key={item.id} className={`${item.current_quantity <= item.minimum_quantity ? 'bg-orange-50/50' : ''} ${selectedItems.has(item.id) ? 'bg-primary/10' : ''}`}>
+                          <TableCell>
+                            <Checkbox 
+                              checked={selectedItems.has(item.id)}
+                              onCheckedChange={() => handleSelectItem(item.id)}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium max-w-xs">
                             <div className="truncate" title={testName}>
                               {testName}
