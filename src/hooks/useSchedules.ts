@@ -6,6 +6,7 @@ interface ScheduleFilters {
   status?: string;
   employeeId?: string;
   clientId?: string;
+  viewMode?: 'day' | 'week';
 }
 
 /**
@@ -15,11 +16,27 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
   return useQuery({
     queryKey: ['schedules', format(date, 'yyyy-MM-dd'), userProfile?.user_id, filters],
     queryFn: async () => {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+      let startDate: Date;
+      let endDate: Date;
+
+      if (filters?.viewMode === 'week') {
+        // Calcular início e fim da semana (segunda a domingo)
+        const dayOfWeek = date.getDay();
+        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Ajustar para segunda-feira
+        startDate = new Date(date);
+        startDate.setDate(date.getDate() + diff);
+        startDate.setHours(0, 0, 0, 0);
+        
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        
+        endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+      }
 
       let query = supabase
         .from('schedules')
@@ -31,8 +48,8 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
           clients (id, name, phone, cpf, email, unit),
           profiles (id, name, employee_role, phone, unit)
         `)
-        .gte('start_time', startOfDay.toISOString())
-        .lte('start_time', endOfDay.toISOString())
+        .gte('start_time', startDate.toISOString())
+        .lte('start_time', endDate.toISOString())
         .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
         .order('start_time');
 
@@ -86,8 +103,8 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
         const fallbackQuery = supabase
           .from('schedules')
           .select(`*, clients (name)`)
-          .gte('start_time', startOfDay.toISOString())
-          .lte('start_time', endOfDay.toISOString())
+          .gte('start_time', startDate.toISOString())
+          .lte('start_time', endDate.toISOString())
           .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
           .order('start_time');
 
