@@ -524,40 +524,53 @@ export default function Stock() {
 
       {/* Conteúdo das Tabs */}
       {activeTab === 'items' && (
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <CardTitle>Itens em Estoque</CardTitle>
-                {selectedItems.size > 0 && (
-                  <Badge variant="secondary" className="text-sm">
-                    {selectedItems.size} selecionado(s)
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {selectedItems.size > 0 && (
+        <>
+          {/* Barra de seleção quando há itens selecionados */}
+          {selectedItems.size > 0 && (
+            <Card className="border-primary bg-primary/5">
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="default" className="text-sm px-3 py-1">
+                      {selectedItems.size} item(ns) selecionado(s)
+                    </Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setSelectedItems(new Set())}
+                    >
+                      Limpar seleção
+                    </Button>
+                  </div>
                   <Button 
-                    variant="outline" 
                     className="gap-2"
                     onClick={exportShoppingListPDF}
                   >
                     <FileDown className="h-4 w-4" />
-                    Exportar Lista de Compras
+                    Baixar PDF dos Selecionados
                   </Button>
-                )}
-                <div className="relative w-72">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nome, categoria, localização..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Itens em Estoque</CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="relative w-72">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nome, categoria, localização..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardHeader>
+            </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
@@ -619,6 +632,7 @@ export default function Stock() {
             </Table>
           </CardContent>
         </Card>
+        </>
       )}
 
       {activeTab === 'movements' && (
