@@ -500,13 +500,14 @@ export default function Financial() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Painel Financeiro</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={exportToCSV} className="gap-2">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Painel Financeiro</h1>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={exportToCSV} className="gap-2 flex-1 sm:flex-none text-sm">
             <Download className="h-4 w-4" />
-            Baixar Relatório
+            <span className="hidden sm:inline">Baixar Relatório</span>
+            <span className="sm:hidden">Baixar</span>
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -620,7 +621,7 @@ export default function Financial() {
       </div>
 
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
@@ -713,7 +714,7 @@ export default function Financial() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="dateStart">Data Início</Label>
               <Input
@@ -784,7 +785,7 @@ export default function Financial() {
       </Card>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-8 lg:grid-cols-8">
+        <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
           <TabsTrigger value="all">Todas</TabsTrigger>
           <TabsTrigger value="income">Receitas</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
@@ -817,7 +818,8 @@ export default function Financial() {
                   {searchTerm ? 'Nenhuma transação encontrada.' : 'Nenhuma transação registrada.'}
                 </p>
               ) : (
-                <Table>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <Table className="min-w-[700px]">
                    <TableHeader>
                      <TableRow>
                        <TableHead>Data</TableHead>
@@ -888,6 +890,7 @@ export default function Financial() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -899,7 +902,8 @@ export default function Financial() {
               <CardTitle>Receitas</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <Table className="min-w-[500px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>
@@ -925,6 +929,7 @@ export default function Financial() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -935,7 +940,8 @@ export default function Financial() {
               <CardTitle>Despesas</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <Table className="min-w-[500px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>
@@ -959,6 +965,7 @@ export default function Financial() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

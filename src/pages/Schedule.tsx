@@ -577,18 +577,18 @@ export default function Schedule() {
   console.log('User can see patient presence buttons:', userProfile?.employee_role === 'receptionist'); // Debug log
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
       <PatientArrivedNotification />
       <ScheduleAlerts />
       
       {/* Cabeçalho principal */}
       <div className="animate-fade-in">
-        <div className="relative mb-6">
-          <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 rounded-full" />
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent">
+        <div className="relative mb-4 sm:mb-6">
+          <div className="absolute -left-2 sm:-left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 rounded-full" />
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent pl-2 sm:pl-0">
             Agenda de Atendimentos
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2 pl-2 sm:pl-0">
             Gerencie seus compromissos e visualize os horários disponíveis
           </p>
         </div>
@@ -743,53 +743,55 @@ export default function Schedule() {
                 </div>
 
                 {/* Filtros: Modo de visualização e Horário */}
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4">
                   {/* Toggle Dia/Semana */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">Visualização:</span>
-                    <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')}>
-                      <ToggleGroupItem value="day" aria-label="Visualização diária" className="gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Visualização:</span>
+                    <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')} className="flex-1 sm:flex-none">
+                      <ToggleGroupItem value="day" aria-label="Visualização diária" className="gap-1 sm:gap-2 flex-1 sm:flex-none">
                         <LayoutList className="h-4 w-4" />
-                        Dia
+                        <span>Dia</span>
                       </ToggleGroupItem>
-                      <ToggleGroupItem value="week" aria-label="Visualização semanal" className="gap-2">
+                      <ToggleGroupItem value="week" aria-label="Visualização semanal" className="gap-1 sm:gap-2 flex-1 sm:flex-none">
                         <CalendarDays className="h-4 w-4" />
-                        Semana
+                        <span>Semana</span>
                       </ToggleGroupItem>
                     </ToggleGroup>
                   </div>
 
                   {/* Filtro de Horário */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">Horário:</span>
-                    <Input
-                      type="time"
-                      value={filterTimeStart}
-                      onChange={(e) => setFilterTimeStart(e.target.value)}
-                      className="w-28"
-                      placeholder="Início"
-                    />
-                    <span className="text-muted-foreground">até</span>
-                    <Input
-                      type="time"
-                      value={filterTimeEnd}
-                      onChange={(e) => setFilterTimeEnd(e.target.value)}
-                      className="w-28"
-                      placeholder="Fim"
-                    />
-                    {(filterTimeStart || filterTimeEnd) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setFilterTimeStart('');
-                          setFilterTimeEnd('');
-                        }}
-                        className="h-8 px-2"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Horário:</span>
+                    <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                      <Input
+                        type="time"
+                        value={filterTimeStart}
+                        onChange={(e) => setFilterTimeStart(e.target.value)}
+                        className="w-full sm:w-28"
+                        placeholder="Início"
+                      />
+                      <span className="text-muted-foreground text-sm">até</span>
+                      <Input
+                        type="time"
+                        value={filterTimeEnd}
+                        onChange={(e) => setFilterTimeEnd(e.target.value)}
+                        className="w-full sm:w-28"
+                        placeholder="Fim"
+                      />
+                      {(filterTimeStart || filterTimeEnd) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setFilterTimeStart('');
+                            setFilterTimeEnd('');
+                          }}
+                          className="h-8 w-8 p-0 flex-shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

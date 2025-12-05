@@ -688,45 +688,44 @@ export default function Reports() {
   }
 
   return (
-      <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Relatórios de Atendimento</h1>
-        <div className="flex gap-2">
+      <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Relatórios de Atendimento</h1>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {isDirector() && (
             <Button 
               variant="outline" 
               onClick={() => setIsDeleteFinancialDialogOpen(true)}
-              className="text-destructive hover:text-destructive"
+              className="text-destructive hover:text-destructive flex-1 sm:flex-none text-sm"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir Registros Financeiros
+              <Trash2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Excluir Registros</span>
             </Button>
           )}
           {canConfigureReports?.() && (
-            <Button variant="outline" onClick={clearFilters}>
-              <Filter className="h-4 w-4 mr-2" />
-              Limpar Filtros
+            <Button variant="outline" onClick={clearFilters} className="flex-1 sm:flex-none text-sm">
+              <Filter className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Limpar</span>
             </Button>
           )}
-          <Button onClick={exportToCSV} disabled={attendanceReports.length === 0} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
+          <Button onClick={exportToCSV} disabled={attendanceReports.length === 0} variant="outline" className="flex-1 sm:flex-none text-sm">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">CSV</span>
           </Button>
-          <Button onClick={exportToPDF} disabled={attendanceReports.length === 0}>
-            <FileDown className="h-4 w-4 mr-2" />
-            Exportar PDF
+          <Button onClick={exportToPDF} disabled={attendanceReports.length === 0} className="flex-1 sm:flex-none text-sm">
+            <FileDown className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">PDF</span>
           </Button>
         </div>
       </div>
 
       {/* Aviso sobre geração automática de relatórios */}
       <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-blue-800">
-            <BarChart3 className="h-5 w-5" />
-            <p className="text-sm font-medium">
-              <strong>Novo!</strong> Os relatórios de funcionários agora são gerados automaticamente quando você completa um atendimento. 
-              Isso garante maior controle e rastreabilidade das atividades.
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-start sm:items-center gap-2 text-blue-800">
+            <BarChart3 className="h-5 w-5 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <p className="text-xs sm:text-sm font-medium">
+              <strong>Novo!</strong> Os relatórios são gerados automaticamente quando você completa um atendimento.
             </p>
           </div>
         </CardContent>
@@ -734,16 +733,16 @@ export default function Reports() {
 
       {/* Filtros Avançados */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             Filtros de Pesquisa
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+          <div className="space-y-4 sm:space-y-6">
             {/* Primeira linha: Funcionário, Paciente, Unidade */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Funcionário</Label>
                 <Combobox

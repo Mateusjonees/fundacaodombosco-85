@@ -473,16 +473,16 @@ export default function Patients() {
     );
   }
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in px-2 sm:px-0">
+      <div className="flex flex-col gap-4">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-1.5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-8 sm:h-10 w-1 sm:w-1.5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent">
               Gerenciar Pacientes
             </h1>
           </div>
-          <p className="text-sm text-muted-foreground ml-5 flex items-center gap-2">
+          <p className="text-xs sm:text-sm text-muted-foreground ml-3 sm:ml-5 flex items-center gap-2 flex-wrap">
             {isGodMode() ? (
               <>
                 <span className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium">
@@ -532,7 +532,7 @@ export default function Patients() {
                 Cadastrar Paciente
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle>{editingClient ? "Editar Paciente" : "Cadastrar Novo Paciente"}</DialogTitle>
               </DialogHeader>
@@ -883,7 +883,7 @@ export default function Patients() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
@@ -1016,7 +1016,8 @@ export default function Patients() {
                   {searchTerm ? "Nenhum paciente encontrado com o termo de busca." : "Nenhum paciente cadastrado."}
                 </p>
               ) : (
-                <Table>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       {isCoordinatorOrDirector() && (
@@ -1131,6 +1132,7 @@ export default function Patients() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
