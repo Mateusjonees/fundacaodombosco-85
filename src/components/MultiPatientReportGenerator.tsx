@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { FileText, Download, Users, CheckCircle } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,21 @@ interface Client {
   created_at: string;
 }
 
+interface AttendanceReport {
+  id: string;
+  start_time: string;
+  end_time: string;
+  professional_name: string;
+  attendance_type: string;
+  session_notes?: string;
+  techniques_used?: string;
+  patient_response?: string;
+  amount_charged?: number;
+  session_duration?: number;
+  validated_at?: string;
+  validated_by_name?: string;
+}
+
 interface MultiPatientReportGeneratorProps {
   clients: Client[];
   isOpen: boolean;
@@ -43,6 +58,17 @@ export function MultiPatientReportGenerator({ clients, isOpen, onClose }: MultiP
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const formatDateTime = (dateString?: string) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const calculateAge = (birthDate?: string) => {
@@ -62,6 +88,34 @@ export function MultiPatientReportGenerator({ clients, isOpen, onClose }: MultiP
     }
   };
 
+  const getAttendanceTypeLabel = (type: string) => {
+    const types: Record<string, string> = {
+      'consultation': 'Consulta',
+      'therapy': 'Terapia',
+      'evaluation': 'Avaliação',
+      'follow_up': 'Retorno',
+      'anamnesis': 'Anamnese',
+      'neuroassessment': 'Neuroavaliação',
+    };
+    return types[type] || type;
+  };
+
+  const fetchAttendanceReports = async (clientId: string): Promise<AttendanceReport[]> => {
+    const { data, error } = await supabase
+      .from('attendance_reports')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('validation_status', 'validated')
+      .order('start_time', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching attendance reports:', error);
+      return [];
+    }
+
+    return data || [];
+  };
+
   const generatePDF = async () => {
     setIsGenerating(true);
     setProgress(0);
@@ -72,11 +126,14 @@ export function MultiPatientReportGenerator({ clients, isOpen, onClose }: MultiP
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 15;
 
-      // Para cada paciente, gerar uma página
+      // Para cada paciente, gerar páginas
       for (let i = 0; i < clients.length; i++) {
         const client = clients[i];
         setCurrentPatient(client.name);
-        setProgress(((i + 1) / clients.length) * 100);
+        setProgress(((i + 0.5) / clients.length) * 100);
+
+        // Buscar atendimentos validados do paciente
+        const attendanceReports = await fetchAttendanceReports(client.id);
 
         if (i > 0) {
           pdf.addPage();
@@ -203,13 +260,135 @@ export function MultiPatientReportGenerator({ clients, isOpen, onClose }: MultiP
               },
               margin: { left: margin, right: margin },
             });
+
+            yPos = (pdf as any).lastAutoTable.finalY + 10;
           }
         }
 
-        // Rodapé
+        // Histórico de Atendimentos Validados
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(33, 37, 41);
+        
+        // Verificar se precisa de nova página
+        if (yPos > pageHeight - 60) {
+          pdf.addPage();
+          yPos = margin;
+        }
+        
+        pdf.text(`HISTÓRICO DE ATENDIMENTOS (${attendanceReports.length} validados)`, margin, yPos);
+        yPos += 8;
+
+        if (attendanceReports.length === 0) {
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'italic');
+          pdf.setTextColor(108, 117, 125);
+          pdf.text('Nenhum atendimento validado encontrado.', margin, yPos);
+          yPos += 10;
+        } else {
+          // Tabela resumo de atendimentos
+          const attendanceTableData = attendanceReports.map((att) => [
+            formatDateTime(att.start_time),
+            att.professional_name,
+            getAttendanceTypeLabel(att.attendance_type),
+            att.session_duration ? `${att.session_duration} min` : '-',
+            att.amount_charged ? `R$ ${att.amount_charged.toFixed(2)}` : '-',
+          ]);
+
+          autoTable(pdf, {
+            startY: yPos,
+            head: [['Data/Hora', 'Profissional', 'Tipo', 'Duração', 'Valor']],
+            body: attendanceTableData,
+            theme: 'striped',
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+            columnStyles: {
+              0: { cellWidth: 35 },
+              1: { cellWidth: 45 },
+              2: { cellWidth: 30 },
+              3: { cellWidth: 20 },
+              4: { cellWidth: 25 },
+            },
+            margin: { left: margin, right: margin },
+            didDrawPage: () => {
+              // Rodapé em cada página
+              pdf.setFontSize(8);
+              pdf.setTextColor(150, 150, 150);
+              pdf.text(
+                `Fundação Dom Bosco - Relatório Confidencial`,
+                pageWidth / 2,
+                pageHeight - 10,
+                { align: 'center' }
+              );
+            },
+          });
+
+          yPos = (pdf as any).lastAutoTable.finalY + 10;
+
+          // Detalhes de cada atendimento
+          for (let j = 0; j < attendanceReports.length; j++) {
+            const att = attendanceReports[j];
+            
+            // Verificar se precisa de nova página
+            if (yPos > pageHeight - 80) {
+              pdf.addPage();
+              yPos = margin;
+            }
+
+            // Cabeçalho do atendimento
+            pdf.setFillColor(240, 240, 240);
+            pdf.rect(margin, yPos - 4, pageWidth - margin * 2, 8, 'F');
+            pdf.setFontSize(10);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(33, 37, 41);
+            pdf.text(`Atendimento ${j + 1}: ${formatDateTime(att.start_time)} - ${att.professional_name}`, margin + 2, yPos);
+            yPos += 10;
+
+            // Detalhes do atendimento
+            const detailsData: string[][] = [];
+            
+            if (att.techniques_used) {
+              detailsData.push(['Técnicas Utilizadas', att.techniques_used]);
+            }
+            if (att.patient_response) {
+              detailsData.push(['Resposta do Paciente', att.patient_response]);
+            }
+            if (att.session_notes) {
+              detailsData.push(['Observações da Sessão', att.session_notes]);
+            }
+            if (att.validated_by_name) {
+              detailsData.push(['Validado por', `${att.validated_by_name} em ${formatDateTime(att.validated_at)}`]);
+            }
+
+            if (detailsData.length > 0) {
+              autoTable(pdf, {
+                startY: yPos,
+                head: [],
+                body: detailsData,
+                theme: 'plain',
+                styles: { fontSize: 8, cellPadding: 2 },
+                columnStyles: {
+                  0: { fontStyle: 'bold', cellWidth: 40, textColor: [100, 100, 100] },
+                  1: { cellWidth: 'auto' },
+                },
+                margin: { left: margin, right: margin },
+              });
+
+              yPos = (pdf as any).lastAutoTable.finalY + 8;
+            } else {
+              yPos += 4;
+            }
+          }
+        }
+
+        setProgress(((i + 1) / clients.length) * 100);
+
+        // Rodapé da página principal do paciente
+        const currentPage = pdf.getNumberOfPages();
+        pdf.setPage(currentPage);
         pdf.setFontSize(8);
         pdf.setTextColor(150, 150, 150);
-        pdf.text(`Fundação Dom Bosco - Relatório Confidencial - Página ${i + 1}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        pdf.text(`Fundação Dom Bosco - Relatório Confidencial - Paciente ${i + 1}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
       }
 
       // Salvar PDF
@@ -221,7 +400,7 @@ export function MultiPatientReportGenerator({ clients, isOpen, onClose }: MultiP
 
       toast({
         title: "Relatório gerado com sucesso!",
-        description: `PDF com ${clients.length} paciente(s) foi baixado.`,
+        description: `PDF com ${clients.length} paciente(s) e histórico de atendimentos foi baixado.`,
       });
 
       onClose();
@@ -248,7 +427,7 @@ export function MultiPatientReportGenerator({ clients, isOpen, onClose }: MultiP
             Gerar Relatório em PDF
           </DialogTitle>
           <DialogDescription>
-            {clients.length} paciente(s) selecionado(s) para o relatório
+            {clients.length} paciente(s) selecionado(s) - Inclui histórico de atendimentos validados
           </DialogDescription>
         </DialogHeader>
 
