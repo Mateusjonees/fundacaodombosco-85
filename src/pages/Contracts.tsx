@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -54,6 +55,7 @@ interface ContractData {
   paymentNotes: string;
   paymentCombination: PaymentMethod[];
   useCombinedPayment: boolean;
+  includeResponsible: boolean;
 }
 
 export default function Contracts() {
@@ -85,7 +87,8 @@ export default function Contracts() {
     isManualCombination: false,
     paymentNotes: '',
     paymentCombination: [],
-    useCombinedPayment: false
+    useCombinedPayment: false,
+    includeResponsible: false
   });
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
@@ -185,14 +188,19 @@ export default function Contracts() {
   const handleClientSelect = (clientId: string) => {
     const selectedClient = clients.find(c => c.id === clientId);
     if (selectedClient) {
+      // Detecta se tem responsável financeiro diferente do paciente
+      const hasResponsible = !!selectedClient.responsible_cpf && 
+                             selectedClient.responsible_cpf !== selectedClient.cpf;
+      
       setContractData(prev => ({
         ...prev,
         clientId: selectedClient.id,
         clientName: selectedClient.name,
         clientCpf: selectedClient.cpf || '',
-        responsibleName: selectedClient.responsible_name || selectedClient.name,
-        responsibleCpf: selectedClient.responsible_cpf || selectedClient.cpf || '',
-        address: selectedClient.address || ''
+        responsibleName: hasResponsible ? (selectedClient.responsible_name || '') : '',
+        responsibleCpf: hasResponsible ? selectedClient.responsible_cpf : '',
+        address: selectedClient.address || '',
+        includeResponsible: hasResponsible
       }));
     }
   };
@@ -251,13 +259,18 @@ export default function Contracts() {
   };
 
   const generateContract = () => {
+    // Define o texto das partes com base em incluir ou não o responsável
+    const partiesText = contractData.includeResponsible 
+      ? `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.responsibleCpf || '__________________________________'}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName || '__________________________________________'}, inscrito no CPF sob o nº ${contractData.clientCpf || '__________________________________________'}, denominado neste como beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`
+      : `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.clientName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.clientCpf || '__________________________________'}, denominada neste como CONTRATANTE e beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`;
+
     const contractContent = `
 Contrato de Prestação de Serviços
 Avaliação Neuropsicológica
 
 1. Das partes
 
-A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.responsibleCpf || '__________________________________'}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName || '__________________________________________'}, inscrito no CPF sob o nº ${contractData.clientCpf || '__________________________________________'}, denominado neste como beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.
+${partiesText}
 
 2. Cláusulas
 
@@ -646,7 +659,8 @@ Contratante
       isManualCombination: false,
       paymentNotes: '',
       paymentCombination: [],
-      useCombinedPayment: false
+      useCombinedPayment: false,
+      includeResponsible: false
     });
     setPaymentMethods([{ method: 'cash', amount: 0, notes: '' }]);
   };
@@ -796,32 +810,49 @@ Contratante
                     </div>
                   </div>
 
-                  {/* Dados do Responsável Financeiro (CONTRATANTE) */}
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
-                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">
-                      Responsável Financeiro (Contratante)
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="responsibleName">Nome Completo</Label>
-                        <Input
-                          id="responsibleName"
-                          value={contractData.responsibleName}
-                          onChange={(e) => setContractData(prev => ({ ...prev, responsibleName: e.target.value }))}
-                          placeholder="Nome completo do responsável financeiro"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="responsibleCpf">CPF</Label>
-                        <Input
-                          id="responsibleCpf"
-                          value={contractData.responsibleCpf}
-                          onChange={(e) => setContractData(prev => ({ ...prev, responsibleCpf: e.target.value }))}
-                          placeholder="000.000.000-00"
-                        />
+                  {/* Toggle para incluir Responsável Financeiro */}
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg mb-4">
+                    <Label htmlFor="includeResponsible" className="flex items-center gap-2 cursor-pointer">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>Incluir Responsável Financeiro no Contrato</span>
+                    </Label>
+                    <Switch
+                      id="includeResponsible"
+                      checked={contractData.includeResponsible}
+                      onCheckedChange={(checked) => 
+                        setContractData(prev => ({ ...prev, includeResponsible: checked }))
+                      }
+                    />
+                  </div>
+
+                  {/* Dados do Responsável Financeiro (CONTRATANTE) - só aparece se toggle ativo */}
+                  {contractData.includeResponsible && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
+                      <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">
+                        Responsável Financeiro (Contratante)
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="responsibleName">Nome Completo</Label>
+                          <Input
+                            id="responsibleName"
+                            value={contractData.responsibleName}
+                            onChange={(e) => setContractData(prev => ({ ...prev, responsibleName: e.target.value }))}
+                            placeholder="Nome completo do responsável financeiro"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="responsibleCpf">CPF</Label>
+                          <Input
+                            id="responsibleCpf"
+                            value={contractData.responsibleCpf}
+                            onChange={(e) => setContractData(prev => ({ ...prev, responsibleCpf: e.target.value }))}
+                            placeholder="000.000.000-00"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Dados do Beneficiário (PACIENTE) */}
                   <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg mb-4">
