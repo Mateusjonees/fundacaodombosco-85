@@ -5,12 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useClients } from '@/hooks/useClients';
 import { useMedicalRecords } from '@/hooks/useMedicalRecords';
 import { MedicalRecordTimeline } from '@/components/MedicalRecordTimeline';
 import { AddMedicalRecordDialog } from '@/components/AddMedicalRecordDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebouncedValue } from '@/hooks/useDebounce';
+import { useQuery } from '@tanstack/react-query';
 
 export default function MedicalRecords() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,7 +19,6 @@ export default function MedicalRecords() {
   const [userProfile, setUserProfile] = useState<any>(null);
   
   const debouncedSearch = useDebouncedValue(searchTerm, 300);
-  const { data: clients = [], isLoading: loadingClients } = useClients({ searchTerm: debouncedSearch });
   const { data: medicalRecords = [], isLoading: loadingRecords } = useMedicalRecords(selectedClientId);
 
   useEffect(() => {
@@ -38,6 +37,67 @@ export default function MedicalRecords() {
 
     setUserProfile(profile);
   };
+
+  // Query para buscar pacientes vinculados ao profissional
+  const { data: clients = [], isLoading: loadingClients } = useQuery({
+    queryKey: ['my-patients-medical-records', userProfile?.user_id, userProfile?.employee_role, debouncedSearch],
+    queryFn: async () => {
+      if (!userProfile) return [];
+
+      const isDirector = userProfile.employee_role === 'director';
+      const isCoordinator = ['coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userProfile.employee_role);
+
+      // Diretores e coordenadores veem todos os pacientes
+      if (isDirector || isCoordinator) {
+        let query = supabase
+          .from('clients')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (debouncedSearch) {
+          query = query.or(
+            `name.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`
+          );
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+      }
+
+      // Outros profissionais veem apenas pacientes vinculados
+      const { data: assignments, error: assignError } = await supabase
+        .from('client_assignments')
+        .select('client_id')
+        .eq('employee_id', userProfile.user_id)
+        .eq('is_active', true);
+
+      if (assignError) throw assignError;
+      if (!assignments || assignments.length === 0) return [];
+
+      const clientIds = assignments.map(a => a.client_id).filter(Boolean);
+
+      let query = supabase
+        .from('clients')
+        .select('*')
+        .in('id', clientIds)
+        .eq('is_active', true)
+        .order('name');
+
+      if (debouncedSearch) {
+        query = query.or(
+          `name.ilike.%${debouncedSearch}%,cpf.ilike.%${debouncedSearch}%`
+        );
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!userProfile,
+    staleTime: 60000,
+  });
 
   const handleClientSelect = (client: any) => {
     setSelectedClient(client);
