@@ -811,10 +811,10 @@ Contratante
                   </div>
 
                   {/* Toggle para incluir Responsável Financeiro */}
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg mb-4">
-                    <Label htmlFor="includeResponsible" className="flex items-center gap-2 cursor-pointer">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>Incluir Responsável Financeiro no Contrato</span>
+                  <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950 border-2 border-amber-300 dark:border-amber-700 rounded-lg mb-4 shadow-sm">
+                    <Label htmlFor="includeResponsible" className="flex items-center gap-2 cursor-pointer font-medium">
+                      <Users className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      <span className="text-amber-800 dark:text-amber-200">Incluir Responsável Financeiro no Contrato</span>
                     </Label>
                     <Switch
                       id="includeResponsible"
@@ -822,6 +822,7 @@ Contratante
                       onCheckedChange={(checked) => 
                         setContractData(prev => ({ ...prev, includeResponsible: checked }))
                       }
+                      className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-gray-300"
                     />
                   </div>
 
