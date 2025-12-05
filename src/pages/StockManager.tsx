@@ -751,38 +751,41 @@ export default function StockManager() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Gestão de Estoque</h1>
-        <div className="flex gap-2">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Gestão de Estoque</h1>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button 
             variant="outline" 
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none text-sm"
             onClick={exportStockPDF}
           >
             <FileDown className="h-4 w-4" />
-            Baixar PDF
+            <span className="hidden sm:inline">Baixar PDF</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
           <Button 
             variant="outline" 
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none text-sm"
             onClick={() => setIsBulkImportDialogOpen(true)}
           >
             <Upload className="h-4 w-4" />
-            Importar Testes
+            <span className="hidden sm:inline">Importar Testes</span>
+            <span className="sm:hidden">Importar</span>
           </Button>
           <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 flex-1 sm:flex-none text-sm">
                 <Plus className="h-4 w-4" />
-                Novo Item
+                <span className="hidden sm:inline">Novo Item</span>
+                <span className="sm:hidden">Novo</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="w-[95vw] max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Cadastrar Novo Item</DialogTitle>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
                 <div className="col-span-2">
                   <Label htmlFor="name">Nome do Item *</Label>
                   <Input

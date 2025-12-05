@@ -686,22 +686,23 @@ Contratante
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Geração de Contratos - Unidade Floresta</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Geração de Contratos - Unidade Floresta</h1>
+          <p className="text-sm text-muted-foreground">
             Crie contratos de avaliação neuropsicológica com valores personalizados
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button 
             variant="outline" 
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none"
             onClick={() => navigate('/client-form')}
           >
             <UserPlus className="h-4 w-4" />
-            Novo Paciente
+            <span className="hidden sm:inline">Novo Paciente</span>
+            <span className="sm:hidden">Paciente</span>
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
@@ -710,12 +711,13 @@ Contratante
             }
           }}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 flex-1 sm:flex-none">
                 <Plus className="h-4 w-4" />
-                Novo Contrato
+                <span className="hidden sm:inline">Novo Contrato</span>
+                <span className="sm:hidden">Contrato</span>
              </Button>
              </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>Gerar Novo Contrato</DialogTitle>
             </DialogHeader>
@@ -782,7 +784,7 @@ Contratante
                   <CardTitle className="text-lg">2. Dados do Contrato</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="contractType">Tipo de Contrato</Label>
                       <Select
@@ -811,10 +813,10 @@ Contratante
                   </div>
 
                   {/* Toggle para incluir Responsável Financeiro */}
-                  <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950 border-2 border-amber-300 dark:border-amber-700 rounded-lg mb-4 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-amber-50 dark:bg-amber-950 border-2 border-amber-300 dark:border-amber-700 rounded-lg mb-4 shadow-sm gap-3">
                     <Label htmlFor="includeResponsible" className="flex items-center gap-2 cursor-pointer font-medium">
-                      <Users className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      <span className="text-amber-800 dark:text-amber-200">Incluir Responsável Financeiro no Contrato</span>
+                      <Users className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                      <span className="text-amber-800 dark:text-amber-200 text-sm sm:text-base">Incluir Responsável Financeiro no Contrato</span>
                     </Label>
                     <Switch
                       id="includeResponsible"
@@ -832,7 +834,7 @@ Contratante
                       <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">
                         Responsável Financeiro (Contratante)
                       </h4>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="responsibleName">Nome Completo</Label>
                           <Input
@@ -860,7 +862,7 @@ Contratante
                     <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-3">
                       Beneficiário (Paciente)
                     </h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="clientName">Nome Completo</Label>
                         <Input
