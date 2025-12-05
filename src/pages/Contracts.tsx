@@ -796,24 +796,57 @@ Contratante
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="responsibleName">Nome do Responsável</Label>
-                      <Input
-                        id="responsibleName"
-                        value={contractData.responsibleName}
-                        onChange={(e) => setContractData(prev => ({ ...prev, responsibleName: e.target.value }))}
-                        placeholder="Nome completo do responsável"
-                      />
+                  {/* Dados do Responsável Financeiro (CONTRATANTE) */}
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
+                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">
+                      Responsável Financeiro (Contratante)
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="responsibleName">Nome Completo</Label>
+                        <Input
+                          id="responsibleName"
+                          value={contractData.responsibleName}
+                          onChange={(e) => setContractData(prev => ({ ...prev, responsibleName: e.target.value }))}
+                          placeholder="Nome completo do responsável financeiro"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="responsibleCpf">CPF</Label>
+                        <Input
+                          id="responsibleCpf"
+                          value={contractData.responsibleCpf}
+                          onChange={(e) => setContractData(prev => ({ ...prev, responsibleCpf: e.target.value }))}
+                          placeholder="000.000.000-00"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="responsibleCpf">CPF do Responsável</Label>
-                      <Input
-                        id="responsibleCpf"
-                        value={contractData.responsibleCpf}
-                        onChange={(e) => setContractData(prev => ({ ...prev, responsibleCpf: e.target.value }))}
-                        placeholder="000.000.000-00"
-                      />
+                  </div>
+
+                  {/* Dados do Beneficiário (PACIENTE) */}
+                  <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg mb-4">
+                    <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-3">
+                      Beneficiário (Paciente)
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="clientName">Nome Completo</Label>
+                        <Input
+                          id="clientName"
+                          value={contractData.clientName}
+                          onChange={(e) => setContractData(prev => ({ ...prev, clientName: e.target.value }))}
+                          placeholder="Nome completo do paciente"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="clientCpf">CPF</Label>
+                        <Input
+                          id="clientCpf"
+                          value={contractData.clientCpf}
+                          onChange={(e) => setContractData(prev => ({ ...prev, clientCpf: e.target.value }))}
+                          placeholder="000.000.000-00"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -823,7 +856,7 @@ Contratante
                       id="address"
                       value={contractData.address}
                       onChange={(e) => setContractData(prev => ({ ...prev, address: e.target.value }))}
-                      placeholder="Endereço completo do beneficiário"
+                      placeholder="Endereço completo"
                     />
                   </div>
                 </CardContent>
