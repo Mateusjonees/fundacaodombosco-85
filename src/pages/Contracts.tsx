@@ -21,6 +21,7 @@ interface Client {
   cpf?: string;
   address?: string;
   responsible_name?: string;
+  responsible_cpf?: string;
   responsible_phone?: string;
   email?: string;
   phone?: string;
@@ -190,7 +191,7 @@ export default function Contracts() {
         clientName: selectedClient.name,
         clientCpf: selectedClient.cpf || '',
         responsibleName: selectedClient.responsible_name || selectedClient.name,
-        responsibleCpf: selectedClient.cpf || '',
+        responsibleCpf: selectedClient.responsible_cpf || selectedClient.cpf || '',
         address: selectedClient.address || ''
       }));
     }
