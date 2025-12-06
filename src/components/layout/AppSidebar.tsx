@@ -328,12 +328,13 @@ export function AppSidebar() {
     }
   }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions]);
 
-  // Fechar sidebar automaticamente em mobile após navegar
+  // Fechar sidebar automaticamente em mobile após navegar para outra rota
   useEffect(() => {
-    if (isMobile && openMobile) {
+    if (isMobile) {
       setOpenMobile(false);
     }
-  }, [currentPath, isMobile, openMobile, setOpenMobile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPath]);
 
   const isActive = (path: string) => {
     if (path === '/') {
