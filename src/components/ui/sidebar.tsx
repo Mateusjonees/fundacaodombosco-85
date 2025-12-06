@@ -271,11 +271,14 @@ const SidebarTrigger = React.forwardRef<
   return (
     <Button
       ref={ref}
+      type="button"
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
       className={cn("h-7 w-7", className)}
       onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
         onClick?.(event)
         toggleSidebar()
       }}
