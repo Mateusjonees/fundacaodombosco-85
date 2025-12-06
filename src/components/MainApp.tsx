@@ -106,9 +106,7 @@ export const MainApp = () => {
             <header className="bg-card border-b border-border p-3 sm:p-4 sticky top-0 z-40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 sm:gap-4">
-                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 rounded-md border hover:bg-accent">
-                    <Menu className="h-4 w-4" />
-                  </SidebarTrigger>
+                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 rounded-md border hover:bg-accent" />
                   <h1 className="text-base sm:text-xl font-bold text-primary hidden sm:block">FUNDAÇÃO DOM BOSCO</h1>
                   <h1 className="text-sm font-bold text-primary sm:hidden">FDB</h1>
                 </div>
