@@ -310,7 +310,7 @@ interface MenuItem {
 }
 
 export function AppSidebar() {
-  const { state, setOpen, isMobile } = useSidebar();
+  const { state, setOpen, isMobile, openMobile, setOpenMobile } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { user } = useAuth();
@@ -330,10 +330,10 @@ export function AppSidebar() {
 
   // Fechar sidebar automaticamente em mobile após navegar
   useEffect(() => {
-    if (isMobile && state === 'expanded') {
-      setOpen(false);
+    if (isMobile && openMobile) {
+      setOpenMobile(false);
     }
-  }, [currentPath, isMobile]);
+  }, [currentPath, isMobile, openMobile, setOpenMobile]);
 
   const isActive = (path: string) => {
     if (path === '/') {
