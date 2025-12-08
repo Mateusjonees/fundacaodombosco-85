@@ -40,6 +40,8 @@ export default function ClientForm() {
             setFormData(prev => ({ ...prev, unidade_atendimento: 'madre' }));
           } else if (data.employee_role === 'coordinator_floresta') {
             setFormData(prev => ({ ...prev, unidade_atendimento: 'floresta' }));
+          } else if (data.employee_role === 'coordinator_atendimento_floresta') {
+            setFormData(prev => ({ ...prev, unidade_atendimento: 'atendimento_floresta' }));
           }
         }
       } catch (error) {
@@ -159,6 +161,8 @@ export default function ClientForm() {
         unitToAssign = 'madre';
       } else if (userProfile?.employee_role === 'coordinator_floresta') {
         unitToAssign = 'floresta';
+      } else if (userProfile?.employee_role === 'coordinator_atendimento_floresta') {
+        unitToAssign = 'atendimento_floresta';
       }
 
       // Preparar testes aplicados como array

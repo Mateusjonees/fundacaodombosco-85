@@ -78,7 +78,8 @@ export default function Reports() {
 
   // Determinar a unidade do coordenador
   const coordinatorUnit = userRole === 'coordinator_madre' ? 'madre' : 
-                         userRole === 'coordinator_floresta' ? 'floresta' : null;
+                         userRole === 'coordinator_floresta' ? 'floresta' :
+                         userRole === 'coordinator_atendimento_floresta' ? 'atendimento_floresta' : null;
 
   // Debug: Log user info
   useEffect(() => {
@@ -97,6 +98,7 @@ export default function Reports() {
     const canAccessReports = userRole === 'director' || 
                             userRole === 'coordinator_madre' || 
                             userRole === 'coordinator_floresta' ||
+                            userRole === 'coordinator_atendimento_floresta' ||
                             customPermissions.hasPermission('view_reports');
     
     if (!canAccessReports) {
