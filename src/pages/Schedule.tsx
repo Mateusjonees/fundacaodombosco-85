@@ -125,6 +125,8 @@ export default function Schedule() {
           defaultUnit = 'floresta';
         } else if (userProfile.employee_role === 'coordinator_madre') {
           defaultUnit = 'madre';
+        } else if (userProfile.employee_role === 'coordinator_atendimento_floresta') {
+          defaultUnit = 'atendimento_floresta';
         }
       }
       
@@ -696,12 +698,13 @@ export default function Schedule() {
                   )}
 
                   {/* Info da unidade atual para Coordenadores e Recepcionistas */}
-                  {(userRole === 'coordinator_madre' || userRole === 'coordinator_floresta' || userRole === 'receptionist') && (
+                  {(userRole === 'coordinator_madre' || userRole === 'coordinator_floresta' || userRole === 'coordinator_atendimento_floresta' || userRole === 'receptionist') && (
                     <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-lg">
                       <p className="text-sm font-medium text-muted-foreground">Unidade Atual:</p>
                       <p className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
                         🏥 {userRole === 'coordinator_madre' ? 'MADRE' : 
                          userRole === 'coordinator_floresta' ? 'FLORESTA' : 
+                         userRole === 'coordinator_atendimento_floresta' ? 'ATENDIMENTO FLORESTA' :
                          userProfile?.unit === 'madre' ? 'MADRE' : 
                          userProfile?.unit === 'floresta' ? 'FLORESTA' :
                          userProfile?.unit === 'atendimento_floresta' ? 'ATENDIMENTO FLORESTA' :
@@ -1034,6 +1037,7 @@ export default function Schedule() {
                       unitFilter={
                         userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
                         userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                        userProfile?.employee_role === 'coordinator_atendimento_floresta' ? 'atendimento_floresta' :
                         'all'
                       }
                     />
@@ -1049,6 +1053,7 @@ export default function Schedule() {
                         // Para coordenadores, usar sua unidade específica
                         userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
                         userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
+                        userProfile?.employee_role === 'coordinator_atendimento_floresta' ? 'atendimento_floresta' :
                         // Para recepcionistas, usar a unidade do agendamento sendo criado
                         userProfile?.employee_role === 'receptionist' ? newAppointment.unit :
                         // Para diretores, mostrar todos
