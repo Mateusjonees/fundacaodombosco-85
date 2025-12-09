@@ -70,7 +70,7 @@ export function ScheduleAlerts() {
       // Filter based on user role
       if (userProfile) {
         const isReceptionist = ['receptionist', 'administrative'].includes(userProfile.employee_role);
-        const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta'].includes(userProfile.employee_role);
+        const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userProfile.employee_role);
         
         if (!isDirectorOrCoordinator && !isReceptionist) {
           // Staff members see only their appointments

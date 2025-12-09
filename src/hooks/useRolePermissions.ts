@@ -179,11 +179,11 @@ export const useRolePermissions = () => {
   };
 
   const canCreateClients = (): boolean => {
-    return isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist', 'staff']);
+    return isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist', 'staff']);
   };
 
   const canDeleteClients = (): boolean => isGodMode();
-  const canEditClients = (): boolean => isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'receptionist']);
+  const canEditClients = (): boolean => isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']);
   const canDeleteEmployees = (): boolean => isGodMode();
   const canEditEmployees = (): boolean => isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
   const canViewAuditLogs = (): boolean => isGodMode();

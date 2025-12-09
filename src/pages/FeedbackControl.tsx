@@ -93,7 +93,8 @@ export default function FeedbackControl() {
       
       // Apenas coordenadores e diretores podem adicionar clientes
       const isManager = profile.employee_role === 'director' || 
-                       profile.employee_role === 'coordinator_floresta';
+                       profile.employee_role === 'coordinator_floresta' ||
+                       profile.employee_role === 'coordinator_atendimento_floresta';
       setIsCoordinator(isManager);
     } catch (error) {
       console.error('Erro ao verificar permissões:', error);

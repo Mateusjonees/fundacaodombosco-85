@@ -23,7 +23,7 @@ export default function AttendanceValidation() {
           .eq('user_id', user.id)
           .single();
 
-        const allowedRoles = ['director', 'coordinator_madre', 'coordinator_floresta'];
+        const allowedRoles = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'];
         setHasPermission(profile && allowedRoles.includes(profile.employee_role));
       } catch (error) {
         console.error('Error checking permissions:', error);
