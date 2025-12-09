@@ -24,9 +24,14 @@ export const useEmployees = (userProfile?: any, filters?: EmployeeFilters) => {
       // Aplicar filtros baseados no role do usuário
       if (userProfile) {
         if (userProfile.employee_role === 'coordinator_madre') {
-          query = query.not('employee_role', 'eq', 'coordinator_floresta');
+          query = query.not('employee_role', 'eq', 'coordinator_floresta')
+                       .not('employee_role', 'eq', 'coordinator_atendimento_floresta');
         } else if (userProfile.employee_role === 'coordinator_floresta') {
-          query = query.not('employee_role', 'eq', 'coordinator_madre');
+          query = query.not('employee_role', 'eq', 'coordinator_madre')
+                       .not('employee_role', 'eq', 'coordinator_atendimento_floresta');
+        } else if (userProfile.employee_role === 'coordinator_atendimento_floresta') {
+          query = query.not('employee_role', 'eq', 'coordinator_madre')
+                       .not('employee_role', 'eq', 'coordinator_floresta');
         } else if (!['director', 'receptionist'].includes(userProfile.employee_role)) {
           query = query.eq('user_id', userProfile.user_id);
         }

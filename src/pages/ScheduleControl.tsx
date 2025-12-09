@@ -119,7 +119,7 @@ export default function ScheduleControl() {
       const notificationType = isDirector ? 'director_notification' : 'coordinator_notification';
 
       // Verificar se o usuário tem permissão
-      if (!['director', 'coordinator_madre', 'coordinator_floresta'].includes(senderProfile?.employee_role || '')) {
+      if (!['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(senderProfile?.employee_role || '')) {
         toast({
           title: "Sem permissão",
           description: "Apenas diretores e coordenadores podem enviar notificações",

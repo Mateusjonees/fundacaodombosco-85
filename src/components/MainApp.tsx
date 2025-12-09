@@ -196,19 +196,19 @@ export const MainApp = () => {
                 } />
                 
                 <Route path="/schedule-control" element={
-                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta']}>
+                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}>
                     <ScheduleControl />
                   </ProtectedRoute>
                 } />
                 
                 <Route path="/attendance-validation" element={
-                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta']}>
+                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}>
                     <AttendanceValidation />
                   </ProtectedRoute>
                 } />
                 
                 <Route path="/feedback-control" element={
-                  <ProtectedRoute allowedRoles={['director', 'coordinator_floresta']}>
+                  <ProtectedRoute allowedRoles={['director', 'coordinator_floresta', 'coordinator_atendimento_floresta']}>
                     <FeedbackControl />
                   </ProtectedRoute>
                 } />
@@ -282,7 +282,7 @@ export const MainApp = () => {
                 } />
                 
                 <Route path="/meeting-alerts" element={
-                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta']}>
+                  <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}>
                     <MeetingAlerts />
                   </ProtectedRoute>
                 } />

@@ -484,7 +484,7 @@ export default function ClientForm() {
                 <Select 
                   value={formData.unidade_atendimento} 
                   onValueChange={(value) => handleInputChange('unidade_atendimento', value)}
-                  disabled={userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta'}
+                  disabled={userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta' || userProfile?.employee_role === 'coordinator_atendimento_floresta'}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -495,7 +495,7 @@ export default function ClientForm() {
                     <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                   </SelectContent>
                 </Select>
-                {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && (
+                {(userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta' || userProfile?.employee_role === 'coordinator_atendimento_floresta') && (
                   <p className="text-sm text-muted-foreground mt-1">
                     Unidade definida automaticamente com base no seu papel de coordenador
                   </p>

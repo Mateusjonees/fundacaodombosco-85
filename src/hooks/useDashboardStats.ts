@@ -21,7 +21,8 @@ export const useDashboardStats = (userProfile?: any) => {
 
       const isDirector = userProfile.employee_role === 'director';
       const isCoordinator = userProfile.employee_role === 'coordinator_madre' || 
-                          userProfile.employee_role === 'coordinator_floresta';
+                          userProfile.employee_role === 'coordinator_floresta' ||
+                          userProfile.employee_role === 'coordinator_atendimento_floresta';
       const isStaff = !isDirector && !isCoordinator;
 
       // Batch de queries em paralelo usando Promise.all
