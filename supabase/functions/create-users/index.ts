@@ -100,7 +100,7 @@ serve(async (req) => {
 
     console.log('User created successfully:', createdUser.user.id);
 
-    // Update profile with explicit employee_role casting
+    // Update profile with explicit employee_role casting and must_change_password
     const { error: profileUpdateError } = await supabaseAdmin
       .from('profiles')
       .update({
@@ -108,7 +108,8 @@ serve(async (req) => {
         phone: phone || null,
         department: department || null,
         employee_role: employee_role,
-        is_active: true
+        is_active: true,
+        must_change_password: true
       })
       .eq('user_id', createdUser.user.id);
 

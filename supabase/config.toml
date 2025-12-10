@@ -12,5 +12,8 @@ verify_jwt = true
 [functions.change-user-password]
 verify_jwt = true
 
+[functions.change-own-password]
+verify_jwt = true
+
 [functions.send-employee-confirmation]
 verify_jwt = false

@@ -3,17 +3,24 @@ import { AuthProvider, useAuth } from '@/components/auth/AuthProvider';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
 import { MainApp } from '@/components/MainApp';
+import { ChangeOwnPasswordDialog } from '@/components/ChangeOwnPasswordDialog';
 import { Loader2 } from 'lucide-react';
 
 const AppContent = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, mustChangePassword, setMustChangePassword } = useAuth();
   const [showApp, setShowApp] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [userName, setUserName] = useState<string | undefined>();
 
   useEffect(() => {
     if (!loading) {
       const shouldShowApp = !!user;
       setShowApp(shouldShowApp);
+      
+      // Get user name from metadata
+      if (user?.user_metadata?.name) {
+        setUserName(user.user_metadata.name);
+      }
     }
   }, [user, loading]);
 
@@ -50,9 +57,17 @@ const AppContent = () => {
     );
   }
 
-  return <MainApp />;
+  return (
+    <>
+      <MainApp />
+      <ChangeOwnPasswordDialog
+        isOpen={mustChangePassword}
+        onSuccess={() => setMustChangePassword(false)}
+        userName={userName}
+      />
+    </>
+  );
 };
-
 const Index = () => {
   return (
     <AuthProvider>

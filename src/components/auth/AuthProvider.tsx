@@ -7,12 +7,16 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  mustChangePassword: boolean;
+  setMustChangePassword: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  mustChangePassword: false,
+  setMustChangePassword: () => {},
 });
 
 export const useAuth = () => {
@@ -31,6 +35,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -45,7 +50,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             try {
               const { data: profile, error } = await supabase
                 .from('profiles')
-                .select('is_active, employee_role')
+                .select('is_active, employee_role, must_change_password')
                 .eq('user_id', session.user.id)
                 .single();
               
@@ -59,6 +64,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 await supabase.auth.signOut();
                 // Don't log audit event here as signOut will trigger its own event
                 return;
+              }
+              
+              // Check if user must change password
+              if (profile && profile.must_change_password === true) {
+                setMustChangePassword(true);
+              } else {
+                setMustChangePassword(false);
               }
               
               // Continue with normal login process
@@ -130,7 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading }}>
+    <AuthContext.Provider value={{ user, session, loading, mustChangePassword, setMustChangePassword }}>
       {children}
     </AuthContext.Provider>
   );
