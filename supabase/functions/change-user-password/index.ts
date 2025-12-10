@@ -119,11 +119,22 @@ serve(async (req) => {
       );
     }
 
-    console.log('Password updated successfully');
+    // Set must_change_password to true so user must change on next login
+    const { error: profileUpdateError } = await supabaseAdmin
+      .from('profiles')
+      .update({ must_change_password: true })
+      .eq('user_id', userId);
+
+    if (profileUpdateError) {
+      console.error('Error updating profile must_change_password:', profileUpdateError);
+      // Don't fail the request, password was already changed
+    }
+
+    console.log('Password updated successfully, must_change_password set to true');
 
     return new Response(
       JSON.stringify({ 
-        message: 'Senha atualizada com sucesso',
+        message: 'Senha atualizada com sucesso. O usuário precisará trocar a senha no próximo login.',
         data: { user_id: data.user.id }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
