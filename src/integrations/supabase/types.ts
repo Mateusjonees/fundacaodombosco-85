@@ -2800,17 +2800,17 @@ export type Database = {
       }
       get_user_permissions:
         | {
+            Args: never
+            Returns: {
+              permission: Database["public"]["Enums"]["permission_type"]
+            }[]
+          }
+        | {
             Args: { user_uuid?: string }
             Returns: {
               granted: boolean
               permission: Database["public"]["Enums"]["permission_action"]
               source: string
-            }[]
-          }
-        | {
-            Args: never
-            Returns: {
-              permission: Database["public"]["Enums"]["permission_type"]
             }[]
           }
       get_user_role: {
@@ -2861,14 +2861,14 @@ export type Database = {
       user_has_permission:
         | {
             Args: {
-              required_permission: Database["public"]["Enums"]["permission_action"]
-              user_uuid: string
+              required_permission: Database["public"]["Enums"]["permission_type"]
             }
             Returns: boolean
           }
         | {
             Args: {
-              required_permission: Database["public"]["Enums"]["permission_type"]
+              required_permission: Database["public"]["Enums"]["permission_action"]
+              user_uuid: string
             }
             Returns: boolean
           }
