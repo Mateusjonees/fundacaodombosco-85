@@ -160,12 +160,10 @@ export default function Neuroassessment() {
   const loadNeuroClients = async () => {
     setLoading(true);
     try {
-      // Busca todos os pacientes, inclusive inativos, para controle completo
+      // Busca TODOS os pacientes de todas as unidades, inclusive inativos, para controle completo
       let query = supabase
         .from('clients')
-        .select('*')
-        .eq('unit', 'floresta')
-        .eq('is_active', true);
+        .select('*');
 
       if (startDate) {
         query = query.gte('neuro_test_start_date', startDate);
