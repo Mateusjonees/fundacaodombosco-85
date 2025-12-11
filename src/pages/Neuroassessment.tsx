@@ -160,6 +160,7 @@ export default function Neuroassessment() {
   const loadNeuroClients = async () => {
     setLoading(true);
     try {
+      // Busca todos os pacientes, inclusive inativos, para controle completo
       let query = supabase
         .from('clients')
         .select('*')
