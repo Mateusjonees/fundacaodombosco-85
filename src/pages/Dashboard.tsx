@@ -2,19 +2,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TimeClock } from '@/components/TimeClock';
+import { BirthdayAlerts } from '@/components/BirthdayAlerts';
+import { DashboardCharts } from '@/components/DashboardCharts';
 import { Users, Calendar, DollarSign, UserPlus } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 
 export default function Dashboard() {
-  // Usar hook centralizado com cache
   const { profile, userName, userRole, loading: profileLoading } = useCurrentUser();
-  
-  // Usar React Query para cache automático e otimização com batch queries
   const { data: stats, isLoading: statsLoading } = useDashboardStats(profile);
 
   const isLoading = profileLoading || statsLoading;
+  const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
 
   if (isLoading || !stats) {
     return (
@@ -29,8 +29,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fade-in p-2 sm:p-4">
@@ -66,16 +64,12 @@ export default function Dashboard() {
                   {userRole ? ROLE_LABELS[userRole] : 'Usuário'}
                 </Badge>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground pt-2 border-t border-border/50">
-                💡 Use o menu lateral para acessar todas as funcionalidades.
-              </p>
             </CardContent>
           </Card>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-3 sm:gap-5">
             <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
                 <CardTitle className="text-sm font-semibold text-muted-foreground">
                   {isDirectorOrCoordinator ? 'Total de Pacientes' : 'Meus Pacientes'}
@@ -88,18 +82,12 @@ export default function Dashboard() {
                 <div className="text-4xl font-extrabold bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent mb-2">
                   {stats.totalClients}
                 </div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  {isDirectorOrCoordinator ? 'Cadastrados no sistema' : 'Vinculados a você'}
-                </p>
               </CardContent>
             </Card>
 
             <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-                <CardTitle className="text-sm font-semibold text-muted-foreground">
-                  {isDirectorOrCoordinator ? 'Consultas Hoje' : 'Minhas Consultas Hoje'}
-                </CardTitle>
+                <CardTitle className="text-sm font-semibold text-muted-foreground">Consultas Hoje</CardTitle>
                 <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                   <Calendar className="h-6 w-6 text-white" />
                 </div>
@@ -108,63 +96,56 @@ export default function Dashboard() {
                 <div className="text-4xl font-extrabold bg-gradient-to-br from-green-600 to-green-400 bg-clip-text text-transparent mb-2">
                   {stats.todayAppointments}
                 </div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  Agendamentos para hoje
-                </p>
               </CardContent>
             </Card>
 
             {isDirectorOrCoordinator && (
-              <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-                  <CardTitle className="text-sm font-semibold text-muted-foreground">
-                    Receita Mensal
-                  </CardTitle>
-                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-3xl font-extrabold bg-gradient-to-br from-emerald-600 to-emerald-400 bg-clip-text text-transparent mb-2">
-                    R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Faturamento do mês
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+              <>
+                <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+                    <CardTitle className="text-sm font-semibold text-muted-foreground">Receita Mensal</CardTitle>
+                    <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <DollarSign className="h-6 w-6 text-white" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <div className="text-3xl font-extrabold bg-gradient-to-br from-emerald-600 to-emerald-400 bg-clip-text text-transparent mb-2">
+                      R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {isDirectorOrCoordinator && (
-              <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-purple-500/10 via-card to-purple-500/5">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-                  <CardTitle className="text-sm font-semibold text-muted-foreground">
-                    Funcionários
-                  </CardTitle>
-                  <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <UserPlus className="h-6 w-6 text-white" />
-                  </div>
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-4xl font-extrabold bg-gradient-to-br from-purple-600 to-purple-400 bg-clip-text text-transparent mb-2">
-                    {stats.totalEmployees}
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Registrados no sistema
-                  </p>
-                </CardContent>
-              </Card>
+                <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-purple-500/10 via-card to-purple-500/5">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+                    <CardTitle className="text-sm font-semibold text-muted-foreground">Funcionários</CardTitle>
+                    <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <UserPlus className="h-6 w-6 text-white" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <div className="text-4xl font-extrabold bg-gradient-to-br from-purple-600 to-purple-400 bg-clip-text text-transparent mb-2">
+                      {stats.totalEmployees}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             )}
           </div>
         </div>
 
-        {/* Ponto Eletrônico */}
-        <div className="lg:col-span-1">
+        {/* Right Column */}
+        <div className="lg:col-span-1 space-y-4">
           <TimeClock />
+          <BirthdayAlerts />
         </div>
       </div>
+
+      {/* Charts Section - Only for directors/coordinators */}
+      {isDirectorOrCoordinator && (
+        <div className="pt-4">
+          <DashboardCharts />
+        </div>
+      )}
     </div>
   );
 }

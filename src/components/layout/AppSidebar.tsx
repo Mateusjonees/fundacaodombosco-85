@@ -49,6 +49,8 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
+import { Tag } from 'lucide-react';
+
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
   Home,
@@ -73,6 +75,7 @@ const iconMapping: Record<string, LucideIcon> = {
   Clock,
   Bell,
   Brain,
+  Tag,
 };
 
 // Dynamic menu items based on role permissions
@@ -242,6 +245,24 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       icon: 'UserCheck', 
       category: 'EQUIPE',
       order_index: 13
+    });
+    
+    items.push({ 
+      id: 'custom-roles', 
+      title: 'Cargos Personalizados', 
+      url: '/custom-roles', 
+      icon: 'Tag', 
+      category: 'EQUIPE',
+      order_index: 13.5
+    });
+    
+    items.push({ 
+      id: 'anamnesis', 
+      title: 'Anamnese Digital', 
+      url: '/anamnesis', 
+      icon: 'ClipboardList', 
+      category: 'GESTÃO CLÍNICA',
+      order_index: 5.6
     });
   }
 
