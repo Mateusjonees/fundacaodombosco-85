@@ -213,6 +213,18 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     });
   }
 
+  // Templates de Contrato - apenas diretores
+  if (permissions.isDirector()) {
+    items.push({ 
+      id: 'contract-templates', 
+      title: 'Templates de Contrato', 
+      url: '/contract-templates', 
+      icon: 'FileText', 
+      category: 'FINANCEIRO',
+      order_index: 10.5 
+    });
+  }
+
   // 📦 ESTOQUE
   if (permissions.canManageStock() || customPermissions.hasPermission('view_stock')) {
     items.push({ 

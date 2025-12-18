@@ -50,6 +50,9 @@ const MyFiles = lazy(() => import('@/pages/MyFiles'));
 const Timesheet = lazy(() => import('@/pages/Timesheet'));
 const MeetingAlerts = lazy(() => import('@/pages/MeetingAlerts'));
 const Neuroassessment = lazy(() => import('@/pages/Neuroassessment'));
+const ContractTemplates = lazy(() => import('@/pages/ContractTemplates'));
+const CustomRoles = lazy(() => import('@/pages/CustomRoles'));
+const Anamnesis = lazy(() => import('@/pages/Anamnesis'));
 
 export const MainApp = () => {
   const { user } = useAuth();
@@ -290,6 +293,24 @@ export const MainApp = () => {
                 <Route path="/neuroassessment" element={
                   <ProtectedRoute allowedRoles={['director']}>
                     <Neuroassessment />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/contract-templates" element={
+                  <ProtectedRoute allowedRoles={['director']}>
+                    <ContractTemplates />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/custom-roles" element={
+                  <ProtectedRoute allowedRoles={['director']}>
+                    <CustomRoles />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/anamnesis" element={
+                  <ProtectedRoute allowedRoles={['director']}>
+                    <Anamnesis />
                   </ProtectedRoute>
                 } />
                   
