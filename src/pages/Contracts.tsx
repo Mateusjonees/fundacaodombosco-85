@@ -13,8 +13,8 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer, X, AlertTriangle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer, X, AlertTriangle, Settings } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface Client {
   id: string;
@@ -58,6 +58,13 @@ interface ContractData {
   includeResponsible: boolean;
 }
 
+interface ContractTemplate {
+  id: string;
+  name: string;
+  content: string;
+  is_default: boolean;
+}
+
 export default function Contracts() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -69,6 +76,7 @@ export default function Contracts() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [contractTemplate, setContractTemplate] = useState<ContractTemplate | null>(null);
   const [contractData, setContractData] = useState<ContractData>({
     contractType: 'Avaliação Neuropsicológica',
     clientId: '',
@@ -154,7 +162,29 @@ export default function Contracts() {
     }
     
     loadClients();
+    loadDefaultTemplate();
   }, [roleLoading, userRole, customPermissions.loading, customPermissions.hasPermission('view_contracts')]);
+
+  const loadDefaultTemplate = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contract_templates')
+        .select('*')
+        .eq('is_default', true)
+        .eq('is_active', true)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading template:', error);
+      }
+      
+      if (data) {
+        setContractTemplate(data);
+      }
+    } catch (error) {
+      console.error('Error loading default template:', error);
+    }
+  };
 
   const loadClients = async () => {
     setLoading(true);
@@ -264,6 +294,38 @@ export default function Contracts() {
       ? `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.responsibleCpf || '__________________________________'}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName || '__________________________________________'}, inscrito no CPF sob o nº ${contractData.clientCpf || '__________________________________________'}, denominado neste como beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`
       : `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.clientName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.clientCpf || '__________________________________'}, denominada neste como CONTRATANTE e beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`;
 
+    // Se tem template do banco de dados, usar ele com substituições
+    if (contractTemplate?.content) {
+      const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 
+                      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const date = new Date();
+      
+      let content = contractTemplate.content;
+      
+      // Substituir todas as variáveis
+      const replacements: Record<string, string> = {
+        '{{TEXTO_PARTES}}': partiesText,
+        '{{NOME_CONTRATANTE}}': contractData.responsibleName || contractData.clientName || '______________',
+        '{{CPF_CONTRATANTE}}': contractData.responsibleCpf || contractData.clientCpf || '______________',
+        '{{NOME_BENEFICIARIO}}': contractData.clientName || '______________',
+        '{{CPF_BENEFICIARIO}}': contractData.clientCpf || '______________',
+        '{{ENDERECO}}': contractData.address || '______________',
+        '{{VALOR}}': contractData.value || '______________________',
+        '{{VALOR_EXTENSO}}': contractData.valueInWords || '______________________________________________',
+        '{{FORMA_PAGAMENTO}}': generatePaymentDetails(),
+        '{{DATA_DIA}}': String(date.getDate()),
+        '{{DATA_MES}}': months[date.getMonth()],
+        '{{DATA_ANO}}': String(date.getFullYear()),
+      };
+      
+      Object.entries(replacements).forEach(([key, value]) => {
+        content = content.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
+      });
+      
+      return content;
+    }
+
+    // Fallback: usar template hardcoded se não houver no banco
     const contractContent = `
 Contrato de Prestação de Serviços
 Avaliação Neuropsicológica
@@ -692,9 +754,25 @@ Contratante
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Geração de Contratos - Unidade Floresta</h1>
           <p className="text-sm text-muted-foreground">
             Crie contratos de avaliação neuropsicológica com valores personalizados
+            {contractTemplate && (
+              <span className="ml-2 text-xs text-primary">
+                • Template: {contractTemplate.name}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          {userRole === 'director' && (
+            <Button 
+              variant="outline" 
+              className="gap-2 flex-1 sm:flex-none"
+              onClick={() => navigate('/contract-templates')}
+            >
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Editar Templates</span>
+              <span className="sm:hidden">Templates</span>
+            </Button>
+          )}
           <Button 
             variant="outline" 
             className="gap-2 flex-1 sm:flex-none"
