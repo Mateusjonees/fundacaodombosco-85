@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,9 +13,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { ContractDocumentEditor } from '@/components/ContractDocumentEditor';
 import { 
   FileText, Plus, Edit, Trash2, Star, Eye, Copy, 
-  Save, AlertTriangle, Code, ArrowLeft, Check
+  Save, AlertTriangle, Code, ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -301,15 +301,6 @@ export default function ContractTemplates() {
     setTemplateContent(prev => prev + variable);
   };
   
-  // Preview com variáveis substituídas
-  const previewContent = useMemo(() => {
-    let content = templateContent;
-    Object.entries(SAMPLE_DATA).forEach(([key, value]) => {
-      content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
-    });
-    return content;
-  }, [templateContent]);
-  
   if (roleLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -494,8 +485,8 @@ export default function ContractTemplates() {
               
               <TabsContent value="editor" className="flex-1 overflow-hidden mt-4">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
-                  {/* Main Editor */}
-                  <div className="lg:col-span-3 flex flex-col gap-4 h-full">
+                  {/* Main Editor - Visual Word-like */}
+                  <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="name">Nome do Template *</Label>
@@ -517,14 +508,10 @@ export default function ContractTemplates() {
                       </div>
                     </div>
                     
-                    <div className="flex-1">
-                      <Label htmlFor="content">Conteúdo do Contrato *</Label>
-                      <Textarea
-                        id="content"
-                        value={templateContent}
-                        onChange={(e) => setTemplateContent(e.target.value)}
-                        placeholder="Digite o conteúdo do contrato aqui... Use as variáveis ao lado para inserir dados dinâmicos."
-                        className="h-[calc(100%-2rem)] min-h-[400px] font-mono text-sm resize-none"
+                    <div className="flex-1 overflow-hidden border rounded-lg">
+                      <ContractDocumentEditor
+                        content={templateContent}
+                        onChange={setTemplateContent}
                       />
                     </div>
                   </div>
@@ -562,21 +549,14 @@ export default function ContractTemplates() {
               </TabsContent>
               
               <TabsContent value="preview" className="flex-1 overflow-hidden mt-4">
-                <Card className="h-full overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Preview com Dados de Exemplo</CardTitle>
-                    <CardDescription>
-                      Visualize como o contrato ficará com dados reais
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-[calc(100%-5rem)] overflow-hidden">
-                    <ScrollArea className="h-full">
-                      <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed p-4 bg-muted rounded-lg">
-                        {previewContent || 'Digite o conteúdo do template para ver o preview...'}
-                      </pre>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
+                <div className="h-full border rounded-lg overflow-hidden">
+                  <ContractDocumentEditor
+                    content={templateContent}
+                    onChange={() => {}}
+                    readOnly={true}
+                    previewData={SAMPLE_DATA}
+                  />
+                </div>
               </TabsContent>
             </Tabs>
           </div>
