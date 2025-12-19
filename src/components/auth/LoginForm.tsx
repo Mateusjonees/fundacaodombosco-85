@@ -91,12 +91,7 @@ export const LoginForm = ({
           <div className="flex justify-center">
             <img alt="Fundação Dom Bosco - Sistema de Gestão Clínica e Neuropsicológica" width="168" height="128" fetchPriority="high" src="/lovable-uploads/d1e09cd0-006f-4737-87e4-4824049ed50a.png" className="h-48 w-auto object-contain" />
           </div>
-          <div className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-primary">
-              Sistema de Gestão
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">Acesso Restrito</p>
-          </div>
+          
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
