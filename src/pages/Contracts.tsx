@@ -762,7 +762,7 @@ Contratante
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {userRole === 'director' && (
+          {(userRole === 'director' || userRole === 'coordinator_floresta') && (
             <Button 
               variant="outline" 
               className="gap-2 flex-1 sm:flex-none"
