@@ -82,11 +82,14 @@ export default function ContractTemplates() {
   const [templateContent, setTemplateContent] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   
+  // Permitir acesso para diretor e coordinator_floresta
+  const hasTemplateAccess = userRole === 'director' || userRole === 'coordinator_floresta';
+  
   useEffect(() => {
-    if (!roleLoading && userRole === 'director') {
+    if (!roleLoading && hasTemplateAccess) {
       loadTemplates();
     }
-  }, [roleLoading, userRole]);
+  }, [roleLoading, userRole, hasTemplateAccess]);
   
   const loadTemplates = async () => {
     setLoading(true);
@@ -315,14 +318,14 @@ export default function ContractTemplates() {
     );
   }
   
-  if (userRole !== 'director') {
+  if (!hasTemplateAccess) {
     return (
       <Card className="max-w-md mx-auto mt-10">
         <CardContent className="pt-6 text-center">
           <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">Acesso Restrito</h2>
           <p className="text-muted-foreground">
-            Apenas diretores podem gerenciar templates de contrato.
+            Apenas diretores e coordenadores do Floresta podem gerenciar templates de contrato.
           </p>
         </CardContent>
       </Card>
