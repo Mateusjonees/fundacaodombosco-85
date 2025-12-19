@@ -368,7 +368,7 @@ export function AppSidebar() {
         {/* Logo Header */}
         <div className="flex flex-col items-center p-4 border-b">
           {!collapsed ? <div className="text-center space-y-3">
-              <img alt="Fundação Dom Bosco" className="h-16 md:h-20 w-auto object-contain mx-auto" width="84" height="64" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" />
+              <img alt="Fundação Dom Bosco" width="84" height="64" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" className="h-25 md:h-25 w-auto object-contain mx-auto" />
               
             </div> : <img src={logo} alt="Fundação Dom Bosco" className="h-8 w-auto object-contain" width="42" height="32" />}
         </div>
