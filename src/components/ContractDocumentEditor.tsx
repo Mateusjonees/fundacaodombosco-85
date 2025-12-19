@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import timbradoFooter from '@/assets/contract-timbrado-footer.jpg';
+import logoFundacao from '@/assets/fundacao-dom-bosco-logo-main.png';
 
 interface ContractDocumentEditorProps {
   content: string;
@@ -44,8 +45,17 @@ export function ContractDocumentEditor({
             fontFamily: 'Georgia, "Times New Roman", serif',
           }}
         >
-          {/* Área de Conteúdo Editável - Sem cabeçalho */}
-          <div className="flex-1 px-12 py-10">
+          {/* Cabeçalho com Logo - Apenas primeira página */}
+          <div className="flex justify-center pt-8 pb-4">
+            <img 
+              src={logoFundacao} 
+              alt="Fundação Dom Bosco" 
+              className="h-20 object-contain"
+            />
+          </div>
+
+          {/* Área de Conteúdo Editável */}
+          <div className="flex-1 px-12 pb-10">
             {readOnly ? (
               <div 
                 className="whitespace-pre-wrap text-sm leading-7 text-gray-800"
