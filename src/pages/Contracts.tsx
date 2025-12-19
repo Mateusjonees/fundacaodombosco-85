@@ -15,6 +15,7 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer, X, AlertTriangle, Settings } from 'lucide-react';
 import timbradoFooter from '@/assets/contract-timbrado-footer.jpg';
+import logoFundacao from '@/assets/fundacao-dom-bosco-logo-main.png';
 import { useNavigate, Link } from 'react-router-dom';
 
 interface Client {
@@ -734,6 +735,18 @@ Contratante
                   }
                 }
               </style>
+                /* Logo no cabeçalho - apenas primeira página */
+                .page-header {
+                  text-align: center;
+                  margin-bottom: 20px;
+                  page-break-after: avoid;
+                }
+                
+                .page-header img {
+                  max-height: 80px;
+                  width: auto;
+                }
+              </style>
             </head>
             <body>
               <div class="content-wrapper">
@@ -744,6 +757,12 @@ Contratante
                   <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
                   <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
                 </div>
+                
+                <!-- Logo apenas na primeira página -->
+                <div class="page-header">
+                  <img src="${logoFundacao}" alt="Fundação Dom Bosco" />
+                </div>
+                
                 <div class="contract-content">${contractContent}</div>
               </div>
               
