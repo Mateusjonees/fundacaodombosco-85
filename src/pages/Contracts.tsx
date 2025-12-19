@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer, X, AlertTriangle, Settings } from 'lucide-react';
+import timbradoFooter from '@/assets/contract-timbrado-footer.jpg';
 import { useNavigate, Link } from 'react-router-dom';
 
 interface Client {
@@ -643,28 +644,113 @@ Contratante
             <head>
               <title>Contrato - ${contractData.clientName}</title>
               <style>
-                body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-                h1 { text-align: center; color: #333; margin-bottom: 30px; }
-                .contract-content { white-space: pre-line; font-size: 14px; }
-                .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-                .signatures { display: flex; justify-content: space-between; margin-top: 50px; }
-                .signature-line { width: 200px; border-bottom: 1px solid #000; text-align: center; padding-top: 40px; }
-                .print-info { margin-bottom: 20px; text-align: right; font-size: 10px; color: #666; }
-                @media print { 
-                  .no-print { display: none; } 
-                  .print-info { font-size: 8px; }
+                @page {
+                  size: A4;
+                  margin: 15mm 15mm 50mm 15mm;
+                }
+                
+                * {
+                  box-sizing: border-box;
+                }
+                
+                html, body {
+                  margin: 0;
+                  padding: 0;
+                  font-family: Arial, sans-serif;
+                  font-size: 12px;
+                  line-height: 1.5;
+                }
+                
+                body {
+                  padding: 0 20px;
+                }
+                
+                .contract-content {
+                  white-space: pre-line;
+                  font-size: 12px;
+                  text-align: justify;
+                }
+                
+                .print-info {
+                  text-align: right;
+                  font-size: 8px;
+                  color: #666;
+                  margin-bottom: 10px;
+                }
+                
+                /* Rodapé fixo que aparece em todas as páginas */
+                .page-footer {
+                  position: fixed;
+                  bottom: 0;
+                  left: 0;
+                  right: 0;
+                  height: 40mm;
+                  z-index: 1000;
+                }
+                
+                .page-footer img {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                  object-position: bottom;
+                }
+                
+                /* Espaço reservado para o rodapé não sobrepor o conteúdo */
+                .content-wrapper {
+                  padding-bottom: 45mm;
+                }
+                
+                @media print {
+                  .no-print { 
+                    display: none !important; 
+                  }
+                  
+                  .page-footer {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 40mm;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                  }
+                }
+                
+                @media screen {
+                  body {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    padding-bottom: 50mm;
+                  }
+                  
+                  .page-footer {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 40mm;
+                    background: white;
+                  }
                 }
               </style>
             </head>
             <body>
-              <div class="print-info">
-                Impresso por: ${userName} em ${new Date().toLocaleString('pt-BR')}
+              <div class="content-wrapper">
+                <div class="print-info no-print">
+                  Impresso por: ${userName} em ${new Date().toLocaleString('pt-BR')}
+                </div>
+                <div class="no-print" style="margin-bottom: 20px;">
+                  <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
+                  <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+                </div>
+                <div class="contract-content">${contractContent}</div>
               </div>
-              <div class="no-print" style="margin-bottom: 20px;">
-                <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
-                <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+              
+              <!-- Rodapé com papel timbrado - aparece em todas as páginas -->
+              <div class="page-footer">
+                <img src="${timbradoFooter}" alt="Papel Timbrado Fundação Dom Bosco" />
               </div>
-              <div class="contract-content">${contractContent}</div>
             </body>
           </html>
         `);
