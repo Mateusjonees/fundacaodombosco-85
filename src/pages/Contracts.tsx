@@ -738,8 +738,26 @@ Contratante
                 }
                 
                 @media print {
+                  * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                  }
+                  
                   .no-print { 
                     display: none !important; 
+                  }
+                  
+                  body {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                  }
+                  
+                  .page-header img,
+                  .page-footer img {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    color-adjust: exact !important;
                   }
                   
                   .page-footer {
@@ -748,8 +766,9 @@ Contratante
                     left: 0;
                     right: 0;
                     height: 40mm;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    background: white !important;
                   }
                 }
                 
@@ -798,6 +817,37 @@ Contratante
           </html>
         `);
         newWindow.document.close();
+        
+        // Aguardar imagens carregarem antes de imprimir
+        const waitForImages = (): Promise<void> => {
+          return new Promise((resolve) => {
+            let attempts = 0;
+            const maxAttempts = 30;
+            
+            const checkImages = () => {
+              attempts++;
+              const images = newWindow.document.querySelectorAll('img');
+              let allLoaded = true;
+              
+              images.forEach((img: HTMLImageElement) => {
+                if (!img.complete || img.naturalHeight === 0) {
+                  allLoaded = false;
+                }
+              });
+              
+              if (allLoaded || attempts >= maxAttempts) {
+                resolve();
+              } else {
+                setTimeout(checkImages, 100);
+              }
+            };
+            
+            // Dar tempo inicial para o documento carregar
+            setTimeout(checkImages, 300);
+          });
+        };
+        
+        await waitForImages();
         newWindow.focus();
         newWindow.print();
       }
