@@ -637,6 +637,30 @@ Contratante
 
       // Gerar contrato para impressão
       const contractContent = generateContract();
+      
+      // Converter imagens para Base64 para garantir que funcionem na impressão
+      const imageToBase64 = (imgSrc: string): Promise<string> => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.onerror = () => resolve(imgSrc);
+          img.src = imgSrc;
+        });
+      };
+
+      const [logoBase64, footerBase64] = await Promise.all([
+        imageToBase64(logoFundacao),
+        imageToBase64(timbradoFooter)
+      ]);
+
       const newWindow = window.open('', '_blank');
       
       if (newWindow) {
@@ -677,6 +701,18 @@ Contratante
                   font-size: 8px;
                   color: #666;
                   margin-bottom: 10px;
+                }
+                
+                /* Logo no cabeçalho - apenas primeira página */
+                .page-header {
+                  text-align: center;
+                  margin-bottom: 20px;
+                  page-break-after: avoid;
+                }
+                
+                .page-header img {
+                  max-height: 80px;
+                  width: auto;
                 }
                 
                 /* Rodapé fixo que aparece em todas as páginas */
@@ -735,18 +771,6 @@ Contratante
                   }
                 }
               </style>
-                /* Logo no cabeçalho - apenas primeira página */
-                .page-header {
-                  text-align: center;
-                  margin-bottom: 20px;
-                  page-break-after: avoid;
-                }
-                
-                .page-header img {
-                  max-height: 80px;
-                  width: auto;
-                }
-              </style>
             </head>
             <body>
               <div class="content-wrapper">
@@ -760,7 +784,7 @@ Contratante
                 
                 <!-- Logo apenas na primeira página -->
                 <div class="page-header">
-                  <img src="${logoFundacao}" alt="Fundação Dom Bosco" />
+                  <img src="${logoBase64}" alt="Fundação Dom Bosco" />
                 </div>
                 
                 <div class="contract-content">${contractContent}</div>
@@ -768,7 +792,7 @@ Contratante
               
               <!-- Rodapé com papel timbrado - aparece em todas as páginas -->
               <div class="page-footer">
-                <img src="${timbradoFooter}" alt="Papel Timbrado Fundação Dom Bosco" />
+                <img src="${footerBase64}" alt="Papel Timbrado Fundação Dom Bosco" />
               </div>
             </body>
           </html>
