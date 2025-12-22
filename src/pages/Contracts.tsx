@@ -665,17 +665,21 @@ Contratante
       
       if (newWindow) {
         newWindow.document.write(`
+          <!DOCTYPE html>
           <html>
             <head>
               <title>Contrato - ${contractData.clientName}</title>
+              <meta charset="UTF-8">
               <style>
                 @page {
                   size: A4;
-                  margin: 15mm 15mm 50mm 15mm;
+                  margin: 0;
                 }
                 
                 * {
                   box-sizing: border-box;
+                  margin: 0;
+                  padding: 0;
                 }
                 
                 html, body {
@@ -684,16 +688,16 @@ Contratante
                   font-family: Arial, sans-serif;
                   font-size: 12px;
                   line-height: 1.5;
-                }
-                
-                body {
-                  padding: 0 20px;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                  color-adjust: exact !important;
                 }
                 
                 .contract-content {
                   white-space: pre-line;
                   font-size: 12px;
                   text-align: justify;
+                  padding: 15mm 15mm 0 15mm;
                 }
                 
                 .print-info {
@@ -703,42 +707,79 @@ Contratante
                   margin-bottom: 10px;
                 }
                 
-                /* Logo no cabeçalho - apenas primeira página */
-                .page-header {
+                /* Cabeçalho centralizado com título */
+                .contract-header {
                   text-align: center;
-                  margin-bottom: 20px;
+                  padding: 15mm 15mm 0 15mm;
                   page-break-after: avoid;
                 }
                 
-                .page-header img {
+                .contract-header img {
                   max-height: 80px;
                   width: auto;
+                  margin-bottom: 15px;
                 }
                 
-                /* Rodapé fixo que aparece em todas as páginas */
+                .contract-header h1 {
+                  font-size: 16px;
+                  font-weight: bold;
+                  margin: 10px 0 5px 0;
+                  text-align: center;
+                }
+                
+                .contract-header h2 {
+                  font-size: 14px;
+                  font-weight: normal;
+                  margin: 0 0 5px 0;
+                  text-align: center;
+                }
+                
+                .contract-header .client-name {
+                  font-size: 13px;
+                  font-weight: bold;
+                  margin: 10px 0 20px 0;
+                  text-align: center;
+                }
+                
+                /* Rodapé fixo no final absoluto de cada página */
                 .page-footer {
                   position: fixed;
                   bottom: 0;
                   left: 0;
                   right: 0;
-                  height: 40mm;
+                  width: 100%;
+                  height: 35mm;
                   z-index: 1000;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                  color-adjust: exact !important;
                 }
                 
                 .page-footer img {
                   width: 100%;
                   height: 100%;
                   object-fit: cover;
-                  object-position: bottom;
+                  object-position: bottom center;
+                  display: block;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                  color-adjust: exact !important;
                 }
                 
                 /* Espaço reservado para o rodapé não sobrepor o conteúdo */
                 .content-wrapper {
-                  padding-bottom: 45mm;
+                  padding-bottom: 40mm;
                 }
                 
                 @media print {
-                  * {
+                  @page {
+                    size: A4;
+                    margin: 0;
+                  }
+                  
+                  html, body {
+                    margin: 0 !important;
+                    padding: 0 !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                     color-adjust: exact !important;
@@ -748,27 +789,21 @@ Contratante
                     display: none !important; 
                   }
                   
-                  body {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
+                  .page-footer {
+                    position: fixed !important;
+                    bottom: 0 !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    width: 100% !important;
+                    height: 35mm !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
                   }
                   
-                  .page-header img,
                   .page-footer img {
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                     color-adjust: exact !important;
-                  }
-                  
-                  .page-footer {
-                    position: fixed;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    height: 40mm;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    background: white !important;
                   }
                 }
                 
@@ -776,16 +811,23 @@ Contratante
                   body {
                     max-width: 800px;
                     margin: 0 auto;
-                    padding: 20px;
-                    padding-bottom: 50mm;
+                    background: #f5f5f5;
+                  }
+                  
+                  .content-wrapper {
+                    background: white;
+                    min-height: 100vh;
+                    padding-bottom: 40mm;
                   }
                   
                   .page-footer {
                     position: fixed;
                     bottom: 0;
-                    left: 0;
-                    right: 0;
-                    height: 40mm;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    max-width: 800px;
+                    width: 100%;
+                    height: 35mm;
                     background: white;
                   }
                 }
@@ -796,22 +838,25 @@ Contratante
                 <div class="print-info no-print">
                   Impresso por: ${userName} em ${new Date().toLocaleString('pt-BR')}
                 </div>
-                <div class="no-print" style="margin-bottom: 20px;">
-                  <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
+                <div class="no-print" style="padding: 15mm 15mm 0 15mm; margin-bottom: 20px;">
+                  <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir / Salvar PDF</button>
                   <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
                 </div>
                 
-                <!-- Logo apenas na primeira página -->
-                <div class="page-header">
+                <!-- Cabeçalho centralizado com logo e título -->
+                <div class="contract-header">
                   <img src="${logoBase64}" alt="Fundação Dom Bosco" />
+                  <h1>Contrato de Prestação de Serviços</h1>
+                  <h2>Avaliação Neuropsicológica</h2>
+                  <p class="client-name">${contractData.clientName}</p>
                 </div>
                 
                 <div class="contract-content">${contractContent}</div>
               </div>
               
-              <!-- Rodapé com papel timbrado - aparece em todas as páginas -->
+              <!-- Rodapé com papel timbrado - final absoluto de cada página -->
               <div class="page-footer">
-                <img src="${footerBase64}" alt="Papel Timbrado Fundação Dom Bosco" />
+                <img src="${footerBase64}" alt="Papel Timbrado" />
               </div>
             </body>
           </html>
