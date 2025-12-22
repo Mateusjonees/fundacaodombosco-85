@@ -673,74 +673,79 @@ Contratante
               <style>
                 @page {
                   size: A4;
-                  margin: 10mm 10mm 45mm 10mm;
+                  /* Margens do conteúdo (o rodapé fica reservado via padding-bottom) */
+                  margin: 15mm 15mm 50mm 15mm;
                 }
-                
+
                 * {
                   box-sizing: border-box;
                   margin: 0;
                   padding: 0;
                 }
-                
+
                 html, body {
                   margin: 0;
                   padding: 0;
                   font-family: Arial, sans-serif;
                   font-size: 12px;
                   line-height: 1.5;
+                  background: #fff;
+                  color: #000;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                   color-adjust: exact !important;
                 }
-                
+
                 .contract-content {
                   white-space: pre-line;
                   font-size: 12px;
                   text-align: justify;
-                  padding: 5mm 10mm 0 10mm;
+                  /* Deixa as margens por conta do @page */
+                  padding: 0;
                 }
-                
+
                 .print-info {
                   text-align: right;
                   font-size: 8px;
                   color: #666;
                   margin-bottom: 10px;
                 }
-                
+
                 /* Cabeçalho centralizado com título */
                 .contract-header {
                   text-align: center;
-                  padding: 5mm 10mm 0 10mm;
+                  /* Deixa as margens por conta do @page */
+                  padding: 0;
                   page-break-after: avoid;
                 }
-                
+
                 .contract-header img {
-                  max-height: 70px;
+                  max-height: 75px;
                   width: auto;
-                  margin-bottom: 10px;
+                  margin-bottom: 12px;
                 }
-                
+
                 .contract-header h1 {
                   font-size: 16px;
                   font-weight: bold;
                   margin: 8px 0 5px 0;
                   text-align: center;
                 }
-                
+
                 .contract-header h2 {
                   font-size: 14px;
                   font-weight: normal;
-                  margin: 0 0 5px 0;
+                  margin: 0 0 6px 0;
                   text-align: center;
                 }
-                
+
                 .contract-header .client-name {
                   font-size: 13px;
                   font-weight: bold;
-                  margin: 8px 0 15px 0;
+                  margin: 8px 0 14px 0;
                   text-align: center;
                 }
-                
+
                 /* Rodapé fixo no final absoluto de cada página */
                 .page-footer {
                   position: fixed;
@@ -748,78 +753,88 @@ Contratante
                   left: 0;
                   right: 0;
                   width: 100%;
-                  height: 40mm;
+                  height: 45mm; /* altura suficiente para não cortar a matriz */
                   z-index: 1000;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                   color-adjust: exact !important;
                 }
-                
+
                 .page-footer img {
                   width: 100%;
-                  height: auto;
+                  height: 100%;
+                  object-fit: contain; /* mostra a matriz completa (sem cortar) */
+                  object-position: bottom center;
                   display: block;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                   color-adjust: exact !important;
                 }
-                
+
                 /* Espaço reservado para o rodapé não sobrepor o conteúdo */
                 .content-wrapper {
-                  padding-bottom: 45mm;
+                  padding-bottom: 50mm;
                 }
-                
+
                 @media print {
                   @page {
                     size: A4;
-                    margin: 10mm 10mm 45mm 10mm;
+                    margin: 15mm 15mm 50mm 15mm;
                   }
-                  
+
                   html, body {
                     margin: 0 !important;
                     padding: 0 !important;
+                    background: #fff !important;
+                    color: #000 !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                     color-adjust: exact !important;
                   }
-                  
-                  .no-print { 
-                    display: none !important; 
+
+                  .no-print {
+                    display: none !important;
                   }
-                  
+
                   .page-footer {
                     position: fixed !important;
                     bottom: 0 !important;
                     left: 0 !important;
                     right: 0 !important;
                     width: 100% !important;
-                    height: auto !important;
+                    height: 45mm !important; /* IMPORTANTE: não deixar auto (cobria o texto) */
                     margin: 0 !important;
                     padding: 0 !important;
                   }
-                  
+
                   .page-footer img {
                     width: 100% !important;
-                    height: auto !important;
+                    height: 100% !important;
+                    object-fit: contain !important;
+                    object-position: bottom center !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                     color-adjust: exact !important;
                   }
+
+                  .content-wrapper {
+                    padding-bottom: 50mm;
+                  }
                 }
-                
+
                 @media screen {
                   body {
                     max-width: 800px;
                     margin: 0 auto;
                     background: #f5f5f5;
                   }
-                  
+
                   .content-wrapper {
                     background: white;
                     min-height: 100vh;
-                    padding-bottom: 45mm;
+                    padding-bottom: 50mm;
                   }
-                  
+
                   .page-footer {
                     position: fixed;
                     bottom: 0;
@@ -827,7 +842,7 @@ Contratante
                     transform: translateX(-50%);
                     max-width: 800px;
                     width: 100%;
-                    height: auto;
+                    height: 45mm;
                     background: white;
                   }
                 }
