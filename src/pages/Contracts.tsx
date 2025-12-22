@@ -673,7 +673,7 @@ Contratante
               <style>
                 @page {
                   size: A4;
-                  margin: 0;
+                  margin: 10mm 10mm 45mm 10mm;
                 }
                 
                 * {
@@ -697,7 +697,7 @@ Contratante
                   white-space: pre-line;
                   font-size: 12px;
                   text-align: justify;
-                  padding: 15mm 15mm 0 15mm;
+                  padding: 5mm 10mm 0 10mm;
                 }
                 
                 .print-info {
@@ -710,20 +710,20 @@ Contratante
                 /* Cabeçalho centralizado com título */
                 .contract-header {
                   text-align: center;
-                  padding: 15mm 15mm 0 15mm;
+                  padding: 5mm 10mm 0 10mm;
                   page-break-after: avoid;
                 }
                 
                 .contract-header img {
-                  max-height: 80px;
+                  max-height: 70px;
                   width: auto;
-                  margin-bottom: 15px;
+                  margin-bottom: 10px;
                 }
                 
                 .contract-header h1 {
                   font-size: 16px;
                   font-weight: bold;
-                  margin: 10px 0 5px 0;
+                  margin: 8px 0 5px 0;
                   text-align: center;
                 }
                 
@@ -737,7 +737,7 @@ Contratante
                 .contract-header .client-name {
                   font-size: 13px;
                   font-weight: bold;
-                  margin: 10px 0 20px 0;
+                  margin: 8px 0 15px 0;
                   text-align: center;
                 }
                 
@@ -748,7 +748,7 @@ Contratante
                   left: 0;
                   right: 0;
                   width: 100%;
-                  height: 35mm;
+                  height: 40mm;
                   z-index: 1000;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
@@ -757,9 +757,7 @@ Contratante
                 
                 .page-footer img {
                   width: 100%;
-                  height: 100%;
-                  object-fit: cover;
-                  object-position: bottom center;
+                  height: auto;
                   display: block;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
@@ -768,13 +766,13 @@ Contratante
                 
                 /* Espaço reservado para o rodapé não sobrepor o conteúdo */
                 .content-wrapper {
-                  padding-bottom: 40mm;
+                  padding-bottom: 45mm;
                 }
                 
                 @media print {
                   @page {
                     size: A4;
-                    margin: 0;
+                    margin: 10mm 10mm 45mm 10mm;
                   }
                   
                   html, body {
@@ -795,12 +793,14 @@ Contratante
                     left: 0 !important;
                     right: 0 !important;
                     width: 100% !important;
-                    height: 35mm !important;
+                    height: auto !important;
                     margin: 0 !important;
                     padding: 0 !important;
                   }
                   
                   .page-footer img {
+                    width: 100% !important;
+                    height: auto !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                     color-adjust: exact !important;
@@ -817,7 +817,7 @@ Contratante
                   .content-wrapper {
                     background: white;
                     min-height: 100vh;
-                    padding-bottom: 40mm;
+                    padding-bottom: 45mm;
                   }
                   
                   .page-footer {
@@ -827,7 +827,7 @@ Contratante
                     transform: translateX(-50%);
                     max-width: 800px;
                     width: 100%;
-                    height: 35mm;
+                    height: auto;
                     background: white;
                   }
                 }
