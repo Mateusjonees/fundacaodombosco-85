@@ -18,7 +18,6 @@ import timbradoFooter from '@/assets/contract-timbrado-footer.jpg';
 import logoFundacao from '@/assets/fundacao-dom-bosco-logo-main.png';
 import { useNavigate, Link } from 'react-router-dom';
 import { downloadContractDocx, ContractDocxData } from '@/utils/contractDocx';
-
 interface Client {
   id: string;
   name: string;
@@ -32,13 +31,11 @@ interface Client {
   birth_date?: string;
   unit?: string;
 }
-
 interface PaymentMethod {
   method: string;
   amount: number;
   notes?: string;
 }
-
 interface ContractData {
   contractType: string;
   clientId: string;
@@ -60,19 +57,24 @@ interface ContractData {
   useCombinedPayment: boolean;
   includeResponsible: boolean;
 }
-
 interface ContractTemplate {
   id: string;
   name: string;
   content: string;
   is_default: boolean;
 }
-
 export default function Contracts() {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
-  const { userRole, loading: roleLoading } = useRolePermissions();
+  const {
+    userRole,
+    loading: roleLoading
+  } = useRolePermissions();
   const customPermissions = useCustomPermissions();
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,29 +103,32 @@ export default function Contracts() {
     useCombinedPayment: false,
     includeResponsible: false
   });
-
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    { method: 'cash', amount: 0, notes: '' }
-  ]);
-
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([{
+    method: 'cash',
+    amount: 0,
+    notes: ''
+  }]);
   const addPaymentMethod = () => {
-    setPaymentMethods([...paymentMethods, { method: 'cash', amount: 0, notes: '' }]);
+    setPaymentMethods([...paymentMethods, {
+      method: 'cash',
+      amount: 0,
+      notes: ''
+    }]);
   };
-
   const removePaymentMethod = (index: number) => {
     setPaymentMethods(paymentMethods.filter((_, i) => i !== index));
   };
-
   const updatePaymentMethod = (index: number, field: keyof PaymentMethod, value: any) => {
     const updated = [...paymentMethods];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = {
+      ...updated[index],
+      [field]: value
+    };
     setPaymentMethods(updated);
   };
-
   const getTotalFromCombinedPayments = () => {
     return paymentMethods.reduce((sum, pm) => sum + (parseFloat(String(pm.amount)) || 0), 0);
   };
-
   const translatePaymentMethodCode = (code: string): string => {
     const translations: Record<string, string> = {
       'cash': 'Dinheiro',
@@ -137,24 +142,22 @@ export default function Contracts() {
     };
     return translations[code] || code;
   };
-
   useEffect(() => {
     if (roleLoading || customPermissions.loading) {
-      console.log('⏳ Aguardando carregamento de permissões...', { roleLoading, customLoading: customPermissions.loading });
+      console.log('⏳ Aguardando carregamento de permissões...', {
+        roleLoading,
+        customLoading: customPermissions.loading
+      });
       return;
     }
-    
+
     // Verificar permissão: diretor, coordenador floresta OU permissão customizada
-    const hasAccess = userRole === 'director' || 
-                      userRole === 'coordinator_floresta' || 
-                      customPermissions.hasPermission('view_contracts');
-    
+    const hasAccess = userRole === 'director' || userRole === 'coordinator_floresta' || customPermissions.hasPermission('view_contracts');
     console.log('🔐 Verificação de acesso - Contracts:', {
       userRole,
       hasCustomPermission: customPermissions.hasPermission('view_contracts'),
       hasAccess
     });
-    
     if (!hasAccess) {
       toast({
         variant: "destructive",
@@ -163,24 +166,18 @@ export default function Contracts() {
       });
       return;
     }
-    
     loadClients();
     loadDefaultTemplate();
   }, [roleLoading, userRole, customPermissions.loading, customPermissions.hasPermission('view_contracts')]);
-
   const loadDefaultTemplate = async () => {
     try {
-      const { data, error } = await supabase
-        .from('contract_templates')
-        .select('*')
-        .eq('is_default', true)
-        .eq('is_active', true)
-        .single();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('contract_templates').select('*').eq('is_default', true).eq('is_active', true).single();
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading template:', error);
       }
-      
       if (data) {
         setContractTemplate(data);
       }
@@ -188,22 +185,19 @@ export default function Contracts() {
       console.error('Error loading default template:', error);
     }
   };
-
   const loadClients = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('clients')
-        .select('*')
-        .eq('is_active', true);
+      let query = supabase.from('clients').select('*').eq('is_active', true);
 
       // Se não for diretor, filtra apenas pela unidade floresta
       if (userRole !== 'director') {
         query = query.eq('unit', 'floresta');
       }
-
-      const { data, error } = await query.order('name');
-
+      const {
+        data,
+        error
+      } = await query.order('name');
       if (error) throw error;
       setClients(data || []);
     } catch (error) {
@@ -211,50 +205,41 @@ export default function Contracts() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível carregar os pacientes.",
+        description: "Não foi possível carregar os pacientes."
       });
     } finally {
       setLoading(false);
     }
   };
-
   const handleClientSelect = (clientId: string) => {
     const selectedClient = clients.find(c => c.id === clientId);
     if (selectedClient) {
       // Detecta se tem responsável financeiro diferente do paciente
-      const hasResponsible = !!selectedClient.responsible_cpf && 
-                             selectedClient.responsible_cpf !== selectedClient.cpf;
-      
+      const hasResponsible = !!selectedClient.responsible_cpf && selectedClient.responsible_cpf !== selectedClient.cpf;
       setContractData(prev => ({
         ...prev,
         clientId: selectedClient.id,
         clientName: selectedClient.name,
         clientCpf: selectedClient.cpf || '',
-        responsibleName: hasResponsible ? (selectedClient.responsible_name || '') : '',
+        responsibleName: hasResponsible ? selectedClient.responsible_name || '' : '',
         responsibleCpf: hasResponsible ? selectedClient.responsible_cpf : '',
         address: selectedClient.address || '',
         includeResponsible: hasResponsible
       }));
     }
   };
-
   const generatePaymentDetails = (): string => {
     const valorNum = parseContractValue(contractData.value);
-    
-    switch(contractData.paymentMethod) {
+    switch (contractData.paymentMethod) {
       case 'PIX':
         return `(X) R$ ${contractData.value} à vista via PIX na data da anamnese.`;
-      
       case 'Cartão':
         const valorParcela = (valorNum / contractData.creditCardInstallments).toFixed(2).replace('.', ',');
         return `(X) R$ ${contractData.value} no Cartão de crédito, parcelado em ${contractData.creditCardInstallments}x de R$ ${valorParcela}`;
-      
       case 'Boleto':
         return `(X) R$ ${contractData.value} parcelado no Boleto conforme acordado.`;
-      
       case 'Transferência':
         return `(X) R$ ${contractData.value} via Transferência Bancária.`;
-      
       case 'Combinado':
         if (contractData.useCombinedPayment && contractData.paymentCombination.length > 0) {
           let detalhes = `(X) Pagamento Combinado:\n`;
@@ -269,7 +254,6 @@ export default function Contracts() {
           return detalhes;
         }
         return `(X) Pagamento conforme acordado`;
-
       case 'Manual':
         let detalhes = '';
         if (contractData.downPaymentAmount) {
@@ -285,26 +269,20 @@ export default function Contracts() {
           detalhes = `(X) Pagamento Manual conforme combinado: ${contractData.paymentNotes || 'A definir'}`;
         }
         return detalhes;
-      
       default:
         return `( ) R$ ______________ à vista pagos na data da anamnese.\n( ) R$ ______________ parcelado no Boleto\n( ) R$ ______________ no Cartão de crédito`;
     }
   };
-
   const generateContract = () => {
     // Define o texto das partes com base em incluir ou não o responsável
-    const partiesText = contractData.includeResponsible 
-      ? `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.responsibleCpf || '__________________________________'}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName || '__________________________________________'}, inscrito no CPF sob o nº ${contractData.clientCpf || '__________________________________________'}, denominado neste como beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`
-      : `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.clientName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.clientCpf || '__________________________________'}, denominada neste como CONTRATANTE e beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`;
+    const partiesText = contractData.includeResponsible ? `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.responsibleCpf || '__________________________________'}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName || '__________________________________________'}, inscrito no CPF sob o nº ${contractData.clientCpf || '__________________________________________'}, denominado neste como beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.` : `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.clientName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.clientCpf || '__________________________________'}, denominada neste como CONTRATANTE e beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`;
 
     // Se tem template do banco de dados, usar ele com substituições
     if (contractTemplate?.content) {
-      const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 
-                      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
       const date = new Date();
-      
       let content = contractTemplate.content;
-      
+
       // Substituir todas as variáveis
       const replacements: Record<string, string> = {
         '{{TEXTO_PARTES}}': partiesText,
@@ -318,13 +296,11 @@ export default function Contracts() {
         '{{FORMA_PAGAMENTO}}': generatePaymentDetails(),
         '{{DATA_DIA}}': String(date.getDate()),
         '{{DATA_MES}}': months[date.getMonth()],
-        '{{DATA_ANO}}': String(date.getFullYear()),
+        '{{DATA_ANO}}': String(date.getFullYear())
       };
-      
       Object.entries(replacements).forEach(([key, value]) => {
         content = content.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
       });
-      
       return content;
     }
 
@@ -414,26 +390,21 @@ Contratada
 ___________________________________________________
 Contratante
 `;
-
     return contractContent;
   };
-
   const parseContractValue = (value: string): number => {
     // Converte valores como "1.600,00" para 1600.00
     if (!value || value.trim() === '') return 0;
     const cleaned = value.replace(/\./g, '').replace(',', '.');
     return parseFloat(cleaned) || 0;
   };
-
   const createFinancialRecord = async () => {
     const contractValueNumber = parseContractValue(contractData.value);
-    
     console.log('📊 Criando registro financeiro:', {
       amount: contractValueNumber,
       clientName: contractData.clientName,
       clientId: contractData.clientId
     });
-    
     const recordData: any = {
       type: 'income',
       category: 'evaluation',
@@ -452,16 +423,13 @@ Contratante
     } else {
       recordData.payment_method = 'contract';
     }
-
-    const { error } = await supabase
-      .from('financial_records')
-      .insert([recordData]);
-
+    const {
+      error
+    } = await supabase.from('financial_records').insert([recordData]);
     if (error) {
       console.error('❌ Erro ao criar registro financeiro:', error);
       throw error;
     }
-
     console.log('✅ Registro financeiro criado com sucesso');
   };
 
@@ -474,146 +442,130 @@ Contratante
         toast({
           variant: "destructive",
           title: "Campos obrigatórios",
-          description: "Por favor, preencha o valor do contrato e o valor por extenso.",
+          description: "Por favor, preencha o valor do contrato e o valor por extenso."
         });
         setIsGenerating(false);
         return;
       }
-
       if (!contractData.clientId) {
         toast({
           variant: "destructive",
           title: "Cliente não selecionado",
-          description: "Por favor, selecione um cliente antes de gerar o contrato.",
+          description: "Por favor, selecione um cliente antes de gerar o contrato."
         });
         setIsGenerating(false);
         return;
       }
 
       // Buscar dados do usuário atual
-      const { data: currentUser, error: userError } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('user_id', user?.id)
-        .single();
-
+      const {
+        data: currentUser,
+        error: userError
+      } = await supabase.from('profiles').select('name').eq('user_id', user?.id).single();
       if (userError) {
         console.error('Erro ao buscar usuário:', userError);
       }
-
       const userName = currentUser?.name || 'Usuário não identificado';
       const contractValueNumber = parseContractValue(contractData.value);
-      
+
       // Validação pagamento combinado
       if (contractData.paymentMethod === 'Combinado' && contractData.useCombinedPayment) {
         const combinedTotal = getTotalFromCombinedPayments();
         const contractValue = parseContractValue(contractData.value);
-        
         if (Math.abs(combinedTotal - contractValue) > 0.01) {
           toast({
             variant: "destructive",
             title: "Erro de Validação",
-            description: `O total dos métodos de pagamento (R$ ${combinedTotal.toFixed(2).replace('.', ',')}) não corresponde ao valor do contrato (R$ ${contractValue.toFixed(2).replace('.', ',')}).`,
+            description: `O total dos métodos de pagamento (R$ ${combinedTotal.toFixed(2).replace('.', ',')}) não corresponde ao valor do contrato (R$ ${contractValue.toFixed(2).replace('.', ',')}).`
           });
           setIsGenerating(false);
           return;
         }
-        
         setContractData(prev => ({
           ...prev,
           paymentCombination: paymentMethods.filter(pm => pm.amount > 0)
         }));
       }
-      
-      // Criar registros no banco (attendance_reports, client_payments, etc.)
-      const { data: attendanceReport, error: attendanceError } = await supabase
-        .from('attendance_reports')
-        .insert([{
-          client_id: contractData.clientId,
-          employee_id: user?.id,
-          patient_name: contractData.clientName,
-          professional_name: userName,
-          attendance_type: 'Avaliação Neuropsicológica',
-          start_time: new Date().toISOString(),
-          end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-          session_duration: 60,
-          amount_charged: contractValueNumber,
-          professional_amount: 0,
-          institution_amount: contractValueNumber,
-          status: 'completed',
-          validation_status: 'validated',
-          session_notes: `Contrato de Avaliação Neuropsicológica gerado por ${userName}`,
-          created_by: user?.id,
-          completed_by: user?.id,
-          completed_by_name: userName,
-          validated_by: user?.id,
-          validated_by_name: userName,
-          validated_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
 
+      // Criar registros no banco (attendance_reports, client_payments, etc.)
+      const {
+        data: attendanceReport,
+        error: attendanceError
+      } = await supabase.from('attendance_reports').insert([{
+        client_id: contractData.clientId,
+        employee_id: user?.id,
+        patient_name: contractData.clientName,
+        professional_name: userName,
+        attendance_type: 'Avaliação Neuropsicológica',
+        start_time: new Date().toISOString(),
+        end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        session_duration: 60,
+        amount_charged: contractValueNumber,
+        professional_amount: 0,
+        institution_amount: contractValueNumber,
+        status: 'completed',
+        validation_status: 'validated',
+        session_notes: `Contrato de Avaliação Neuropsicológica gerado por ${userName}`,
+        created_by: user?.id,
+        completed_by: user?.id,
+        completed_by_name: userName,
+        validated_by: user?.id,
+        validated_by_name: userName,
+        validated_at: new Date().toISOString()
+      }]).select().single();
       if (attendanceError) {
         console.error('Erro ao criar relatório de atendimento:', attendanceError);
       }
-
-      const downPaymentNum = contractData.downPaymentAmount 
-        ? parseFloat(contractData.downPaymentAmount.replace(',', '.'))
-        : 0;
-
-      const { error: paymentError } = await supabase
-        .from('client_payments')
-        .insert([{
-          client_id: contractData.clientId,
-          payment_type: 'Avaliação Neuropsicológica',
-          total_amount: contractValueNumber,
-          amount_paid: contractData.paymentMethod === 'Manual' ? downPaymentNum : contractValueNumber,
-          amount_remaining: contractData.paymentMethod === 'Manual' ? (contractValueNumber - downPaymentNum) : 0,
-          status: contractData.paymentMethod === 'Manual' && downPaymentNum < contractValueNumber ? 'partial' : 'completed',
-          payment_method: contractData.paymentMethod,
-          description: `Pagamento de Avaliação Neuropsicológica - Contrato gerado por ${userName}`,
-          unit: 'floresta',
-          created_by: user?.id,
-          installments_total: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : 1,
-          installments_paid: contractData.paymentMethod === 'Manual' && downPaymentNum > 0 ? 1 : (contractData.paymentMethod === 'Cartão' ? 0 : 1),
-          credit_card_installments: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : null,
-          down_payment_amount: contractData.paymentMethod === 'Manual' ? downPaymentNum : null,
-          down_payment_method: contractData.paymentMethod === 'Manual' ? contractData.downPaymentMethod : null,
-          notes: contractData.paymentNotes || `Forma de pagamento: ${contractData.paymentMethod}`
-        }]);
-
+      const downPaymentNum = contractData.downPaymentAmount ? parseFloat(contractData.downPaymentAmount.replace(',', '.')) : 0;
+      const {
+        error: paymentError
+      } = await supabase.from('client_payments').insert([{
+        client_id: contractData.clientId,
+        payment_type: 'Avaliação Neuropsicológica',
+        total_amount: contractValueNumber,
+        amount_paid: contractData.paymentMethod === 'Manual' ? downPaymentNum : contractValueNumber,
+        amount_remaining: contractData.paymentMethod === 'Manual' ? contractValueNumber - downPaymentNum : 0,
+        status: contractData.paymentMethod === 'Manual' && downPaymentNum < contractValueNumber ? 'partial' : 'completed',
+        payment_method: contractData.paymentMethod,
+        description: `Pagamento de Avaliação Neuropsicológica - Contrato gerado por ${userName}`,
+        unit: 'floresta',
+        created_by: user?.id,
+        installments_total: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : 1,
+        installments_paid: contractData.paymentMethod === 'Manual' && downPaymentNum > 0 ? 1 : contractData.paymentMethod === 'Cartão' ? 0 : 1,
+        credit_card_installments: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : null,
+        down_payment_amount: contractData.paymentMethod === 'Manual' ? downPaymentNum : null,
+        down_payment_method: contractData.paymentMethod === 'Manual' ? contractData.downPaymentMethod : null,
+        notes: contractData.paymentNotes || `Forma de pagamento: ${contractData.paymentMethod}`
+      }]);
       if (paymentError) {
         console.error('Erro ao criar registro de pagamento:', paymentError);
       }
-
-      const { error: autoFinancialError } = await supabase
-        .from('automatic_financial_records')
-        .insert([{
-          patient_id: contractData.clientId,
-          patient_name: contractData.clientName,
-          professional_id: user?.id,
-          professional_name: userName,
-          amount: contractValueNumber,
-          transaction_type: 'income',
-          payment_method: 'Contrato',
-          description: `Avaliação Neuropsicológica - Contrato gerado por ${userName}`,
-          origin_type: 'contract',
-          origin_id: attendanceReport?.id,
-          attendance_report_id: attendanceReport?.id,
-          created_by: user?.id,
-          created_by_name: userName,
-          metadata: {
-            contract_data: JSON.parse(JSON.stringify(contractData)),
-            generated_by: userName,
-            generated_at: new Date().toISOString(),
-            contract_type: 'Avaliação Neuropsicológica'
-          } as any
-        }]);
-
+      const {
+        error: autoFinancialError
+      } = await supabase.from('automatic_financial_records').insert([{
+        patient_id: contractData.clientId,
+        patient_name: contractData.clientName,
+        professional_id: user?.id,
+        professional_name: userName,
+        amount: contractValueNumber,
+        transaction_type: 'income',
+        payment_method: 'Contrato',
+        description: `Avaliação Neuropsicológica - Contrato gerado por ${userName}`,
+        origin_type: 'contract',
+        origin_id: attendanceReport?.id,
+        attendance_report_id: attendanceReport?.id,
+        created_by: user?.id,
+        created_by_name: userName,
+        metadata: {
+          contract_data: JSON.parse(JSON.stringify(contractData)),
+          generated_by: userName,
+          generated_at: new Date().toISOString(),
+          contract_type: 'Avaliação Neuropsicológica'
+        } as any
+      }]);
       if (autoFinancialError) {
         console.error('Erro ao criar registro financeiro automático:', autoFinancialError);
       }
-
       try {
         await createFinancialRecord();
       } catch (error) {
@@ -621,12 +573,8 @@ Contratante
       }
 
       // Gerar texto das partes
-      const partiesText = contractData.includeResponsible 
-        ? `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.responsibleCpf || '__________________________________'}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName || '__________________________________________'}, inscrito no CPF sob o nº ${contractData.clientCpf || '__________________________________________'}, denominado neste como beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`
-        : `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.clientName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.clientCpf || '__________________________________'}, denominada neste como CONTRATANTE e beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`;
-
-      const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 
-                      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const partiesText = contractData.includeResponsible ? `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.responsibleCpf || '__________________________________'}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName || '__________________________________________'}, inscrito no CPF sob o nº ${contractData.clientCpf || '__________________________________________'}, denominado neste como beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.` : `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.clientName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.clientCpf || '__________________________________'}, denominada neste como CONTRATANTE e beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`;
+      const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
       const date = new Date();
 
       // Dados para o template DOCX
@@ -637,32 +585,28 @@ Contratante
         formaPagamento: generatePaymentDetails(),
         dataDia: String(date.getDate()),
         dataMes: months[date.getMonth()],
-        dataAno: String(date.getFullYear()),
+        dataAno: String(date.getFullYear())
       };
 
       // Baixar o documento Word
       await downloadContractDocx(docxData, contractData.clientName);
-
       toast({
         title: "Contrato gerado com sucesso!",
-        description: `Documento Word baixado. Para PDF idêntico, abra no Word e salve como PDF.`,
+        description: `Documento Word baixado. Para PDF idêntico, abra no Word e salve como PDF.`
       });
-      
       resetForm();
       setIsDialogOpen(false);
-      
     } catch (error) {
       console.error('Erro ao gerar contrato:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao gerar o contrato. Verifique se o template está disponível.",
+        description: "Erro ao gerar o contrato. Verifique se o template está disponível."
       });
     } finally {
       setIsGenerating(false);
     }
   };
-
   const handlePrintContract = async () => {
     setIsGenerating(true);
     try {
@@ -671,153 +615,143 @@ Contratante
         toast({
           variant: "destructive",
           title: "Campos obrigatórios",
-          description: "Por favor, preencha o valor do contrato e o valor por extenso.",
+          description: "Por favor, preencha o valor do contrato e o valor por extenso."
         });
         setIsGenerating(false);
         return;
       }
-
       if (!contractData.clientId) {
         toast({
           variant: "destructive",
           title: "Cliente não selecionado",
-          description: "Por favor, selecione um cliente antes de gerar o contrato.",
+          description: "Por favor, selecione um cliente antes de gerar o contrato."
         });
         setIsGenerating(false);
         return;
       }
 
       // Buscar dados do usuário atual para registrar quem imprimiu
-      const { data: currentUser, error: userError } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('user_id', user?.id)
-        .single();
-
+      const {
+        data: currentUser,
+        error: userError
+      } = await supabase.from('profiles').select('name').eq('user_id', user?.id).single();
       if (userError) {
         console.error('Erro ao buscar usuário:', userError);
       }
-
       const userName = currentUser?.name || 'Usuário não identificado';
       const contractValueNumber = parseContractValue(contractData.value);
-      
+
       // ✅ VALIDAÇÃO PAGAMENTO COMBINADO
       if (contractData.paymentMethod === 'Combinado' && contractData.useCombinedPayment) {
         const combinedTotal = getTotalFromCombinedPayments();
         const contractValue = parseContractValue(contractData.value);
-        
         console.log('🔍 Validação de pagamento combinado:', {
           combinedTotal,
           contractValue,
           difference: Math.abs(combinedTotal - contractValue),
           paymentMethods
         });
-        
+
         // Tolerância de 0.01 para lidar com arredondamentos
         if (Math.abs(combinedTotal - contractValue) > 0.01) {
           toast({
             variant: "destructive",
             title: "Erro de Validação",
-            description: `O total dos métodos de pagamento (R$ ${combinedTotal.toFixed(2).replace('.', ',')}) não corresponde ao valor do contrato (R$ ${contractValue.toFixed(2).replace('.', ',')}).`,
+            description: `O total dos métodos de pagamento (R$ ${combinedTotal.toFixed(2).replace('.', ',')}) não corresponde ao valor do contrato (R$ ${contractValue.toFixed(2).replace('.', ',')}).`
           });
           setIsGenerating(false);
           return;
         }
-        
+
         // Atualizar contractData com a combinação
         setContractData(prev => ({
           ...prev,
           paymentCombination: paymentMethods.filter(pm => pm.amount > 0)
         }));
       }
-      
-      // Criar registro no attendance_reports
-      const { data: attendanceReport, error: attendanceError } = await supabase
-        .from('attendance_reports')
-        .insert([{
-          client_id: contractData.clientId,
-          employee_id: user?.id,
-          patient_name: contractData.clientName,
-          professional_name: userName,
-          attendance_type: 'Avaliação Neuropsicológica',
-          start_time: new Date().toISOString(),
-          end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hora depois
-          session_duration: 60,
-          amount_charged: contractValueNumber,
-          professional_amount: 0, // Pode ser definido depois
-          institution_amount: contractValueNumber,
-          status: 'completed',
-          validation_status: 'validated',
-          session_notes: `Contrato de Avaliação Neuropsicológica gerado e impresso por ${userName}`,
-          created_by: user?.id,
-          completed_by: user?.id,
-          completed_by_name: userName,
-          validated_by: user?.id,
-          validated_by_name: userName,
-          validated_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
 
+      // Criar registro no attendance_reports
+      const {
+        data: attendanceReport,
+        error: attendanceError
+      } = await supabase.from('attendance_reports').insert([{
+        client_id: contractData.clientId,
+        employee_id: user?.id,
+        patient_name: contractData.clientName,
+        professional_name: userName,
+        attendance_type: 'Avaliação Neuropsicológica',
+        start_time: new Date().toISOString(),
+        end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        // 1 hora depois
+        session_duration: 60,
+        amount_charged: contractValueNumber,
+        professional_amount: 0,
+        // Pode ser definido depois
+        institution_amount: contractValueNumber,
+        status: 'completed',
+        validation_status: 'validated',
+        session_notes: `Contrato de Avaliação Neuropsicológica gerado e impresso por ${userName}`,
+        created_by: user?.id,
+        completed_by: user?.id,
+        completed_by_name: userName,
+        validated_by: user?.id,
+        validated_by_name: userName,
+        validated_at: new Date().toISOString()
+      }]).select().single();
       if (attendanceError) {
         console.error('Erro ao criar relatório de atendimento:', attendanceError);
       }
 
       // Criar registro de pagamento do paciente
-      const downPaymentNum = contractData.downPaymentAmount 
-        ? parseFloat(contractData.downPaymentAmount.replace(',', '.'))
-        : 0;
-
-      const { error: paymentError } = await supabase
-        .from('client_payments')
-        .insert([{
-          client_id: contractData.clientId,
-          payment_type: 'Avaliação Neuropsicológica',
-          total_amount: contractValueNumber,
-          amount_paid: contractData.paymentMethod === 'Manual' ? downPaymentNum : contractValueNumber,
-          amount_remaining: contractData.paymentMethod === 'Manual' ? (contractValueNumber - downPaymentNum) : 0,
-          status: contractData.paymentMethod === 'Manual' && downPaymentNum < contractValueNumber ? 'partial' : 'completed',
-          payment_method: contractData.paymentMethod,
-          description: `Pagamento de Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
-          unit: 'floresta',
-          created_by: user?.id,
-          installments_total: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : 1,
-          installments_paid: contractData.paymentMethod === 'Manual' && downPaymentNum > 0 ? 1 : (contractData.paymentMethod === 'Cartão' ? 0 : 1),
-          credit_card_installments: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : null,
-          down_payment_amount: contractData.paymentMethod === 'Manual' ? downPaymentNum : null,
-          down_payment_method: contractData.paymentMethod === 'Manual' ? contractData.downPaymentMethod : null,
-          notes: contractData.paymentNotes || `Forma de pagamento: ${contractData.paymentMethod}`
-        }]);
-
+      const downPaymentNum = contractData.downPaymentAmount ? parseFloat(contractData.downPaymentAmount.replace(',', '.')) : 0;
+      const {
+        error: paymentError
+      } = await supabase.from('client_payments').insert([{
+        client_id: contractData.clientId,
+        payment_type: 'Avaliação Neuropsicológica',
+        total_amount: contractValueNumber,
+        amount_paid: contractData.paymentMethod === 'Manual' ? downPaymentNum : contractValueNumber,
+        amount_remaining: contractData.paymentMethod === 'Manual' ? contractValueNumber - downPaymentNum : 0,
+        status: contractData.paymentMethod === 'Manual' && downPaymentNum < contractValueNumber ? 'partial' : 'completed',
+        payment_method: contractData.paymentMethod,
+        description: `Pagamento de Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
+        unit: 'floresta',
+        created_by: user?.id,
+        installments_total: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : 1,
+        installments_paid: contractData.paymentMethod === 'Manual' && downPaymentNum > 0 ? 1 : contractData.paymentMethod === 'Cartão' ? 0 : 1,
+        credit_card_installments: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : null,
+        down_payment_amount: contractData.paymentMethod === 'Manual' ? downPaymentNum : null,
+        down_payment_method: contractData.paymentMethod === 'Manual' ? contractData.downPaymentMethod : null,
+        notes: contractData.paymentNotes || `Forma de pagamento: ${contractData.paymentMethod}`
+      }]);
       if (paymentError) {
         console.error('Erro ao criar registro de pagamento:', paymentError);
       }
 
       // Criar registro financeiro automático
-      const { error: autoFinancialError } = await supabase
-        .from('automatic_financial_records')
-        .insert([{
-          patient_id: contractData.clientId,
-          patient_name: contractData.clientName,
-          professional_id: user?.id,
-          professional_name: userName,
-          amount: contractValueNumber,
-          transaction_type: 'income',
-          payment_method: 'Contrato',
-          description: `Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
-          origin_type: 'contract',
-          origin_id: attendanceReport?.id,
-          attendance_report_id: attendanceReport?.id,
-          created_by: user?.id,
-          created_by_name: userName,
-          metadata: {
-            contract_data: JSON.parse(JSON.stringify(contractData)),
-            printed_by: userName,
-            printed_at: new Date().toISOString(),
-            contract_type: 'Avaliação Neuropsicológica'
-          } as any
-        }]);
-
+      const {
+        error: autoFinancialError
+      } = await supabase.from('automatic_financial_records').insert([{
+        patient_id: contractData.clientId,
+        patient_name: contractData.clientName,
+        professional_id: user?.id,
+        professional_name: userName,
+        amount: contractValueNumber,
+        transaction_type: 'income',
+        payment_method: 'Contrato',
+        description: `Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
+        origin_type: 'contract',
+        origin_id: attendanceReport?.id,
+        attendance_report_id: attendanceReport?.id,
+        created_by: user?.id,
+        created_by_name: userName,
+        metadata: {
+          contract_data: JSON.parse(JSON.stringify(contractData)),
+          printed_by: userName,
+          printed_at: new Date().toISOString(),
+          contract_type: 'Avaliação Neuropsicológica'
+        } as any
+      }]);
       if (autoFinancialError) {
         console.error('Erro ao criar registro financeiro automático:', autoFinancialError);
       }
@@ -830,16 +764,16 @@ Contratante
         toast({
           variant: "destructive",
           title: "Aviso",
-          description: "Contrato gerado mas houve erro ao criar registro financeiro. Verifique o financeiro.",
+          description: "Contrato gerado mas houve erro ao criar registro financeiro. Verifique o financeiro."
         });
       }
 
       // Gerar contrato para impressão
       const contractContent = generateContract();
-      
+
       // Converter imagens para Base64 para garantir que funcionem na impressão
       const imageToBase64 = (imgSrc: string): Promise<string> => {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
           img.onload = () => {
@@ -854,14 +788,8 @@ Contratante
           img.src = imgSrc;
         });
       };
-
-      const [logoBase64, footerBase64] = await Promise.all([
-        imageToBase64(logoFundacao),
-        imageToBase64(timbradoFooter)
-      ]);
-
+      const [logoBase64, footerBase64] = await Promise.all([imageToBase64(logoFundacao), imageToBase64(timbradoFooter)]);
       const newWindow = window.open('', '_blank');
-      
       if (newWindow) {
         newWindow.document.write(`
           <!DOCTYPE html>
@@ -1076,70 +1004,55 @@ Contratante
           </html>
         `);
         newWindow.document.close();
-        
+
         // Aguardar imagens carregarem antes de imprimir
         const waitForImages = (): Promise<void> => {
-          return new Promise((resolve) => {
+          return new Promise(resolve => {
             let attempts = 0;
             const maxAttempts = 30;
-            
             const checkImages = () => {
               attempts++;
               const images = newWindow.document.querySelectorAll('img');
               let allLoaded = true;
-              
               images.forEach((img: HTMLImageElement) => {
                 if (!img.complete || img.naturalHeight === 0) {
                   allLoaded = false;
                 }
               });
-              
               if (allLoaded || attempts >= maxAttempts) {
                 resolve();
               } else {
                 setTimeout(checkImages, 100);
               }
             };
-            
+
             // Dar tempo inicial para o documento carregar
             setTimeout(checkImages, 300);
           });
         };
-        
         await waitForImages();
         newWindow.focus();
         newWindow.print();
       }
-
       toast({
         title: "Contrato processado com sucesso!",
-        description: `Contrato impresso por ${userName}. ${
-          contractData.paymentMethod === 'Combinado' && contractData.useCombinedPayment
-            ? `Pagamento combinado (${contractData.paymentCombination.length} formas) registrado.`
-            : contractData.paymentMethod === 'Manual' 
-            ? `Entrada de R$ ${contractData.downPaymentAmount || '0,00'} registrada.` 
-            : contractData.paymentMethod === 'Cartão'
-            ? `Pagamento em ${contractData.creditCardInstallments}x registrado.`
-            : 'Pagamento registrado.'
-        }`,
+        description: `Contrato impresso por ${userName}. ${contractData.paymentMethod === 'Combinado' && contractData.useCombinedPayment ? `Pagamento combinado (${contractData.paymentCombination.length} formas) registrado.` : contractData.paymentMethod === 'Manual' ? `Entrada de R$ ${contractData.downPaymentAmount || '0,00'} registrada.` : contractData.paymentMethod === 'Cartão' ? `Pagamento em ${contractData.creditCardInstallments}x registrado.` : 'Pagamento registrado.'}`
       });
-      
+
       // Resetar form e fechar dialog
       resetForm();
       setIsDialogOpen(false);
-      
     } catch (error) {
       console.error('Erro ao processar contrato:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao processar o contrato. Tente novamente.",
+        description: "Erro ao processar o contrato. Tente novamente."
       });
     } finally {
       setIsGenerating(false);
     }
   };
-
   const resetForm = () => {
     setContractData({
       contractType: 'Avaliação Neuropsicológica',
@@ -1162,70 +1075,52 @@ Contratante
       useCombinedPayment: false,
       includeResponsible: false
     });
-    setPaymentMethods([{ method: 'cash', amount: 0, notes: '' }]);
+    setPaymentMethods([{
+      method: 'cash',
+      amount: 0,
+      notes: ''
+    }]);
   };
-
-  const filteredClients = clients.filter(client => 
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.cpf?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const filteredClients = clients.filter(client => client.name.toLowerCase().includes(searchTerm.toLowerCase()) || client.cpf?.toLowerCase().includes(searchTerm.toLowerCase()));
   if (roleLoading) {
     return <div className="p-6">Carregando...</div>;
   }
-
   if (userRole !== 'director' && userRole !== 'coordinator_floresta') {
-    return (
-      <div className="flex items-center justify-center h-64">
+    return <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">Acesso restrito a diretores e coordenadores do Floresta</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+  return <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Geração de Contratos - Unidade Floresta</h1>
           <p className="text-sm text-muted-foreground">
             Crie contratos de avaliação neuropsicológica com valores personalizados
-            {contractTemplate && (
-              <span className="ml-2 text-xs text-primary">
+            {contractTemplate && <span className="ml-2 text-xs text-primary">
                 • Template: {contractTemplate.name}
-              </span>
-            )}
+              </span>}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {(userRole === 'director' || userRole === 'coordinator_floresta') && (
-            <Button 
-              variant="outline" 
-              className="gap-2 flex-1 sm:flex-none"
-              onClick={() => navigate('/contract-templates')}
-            >
+          {(userRole === 'director' || userRole === 'coordinator_floresta') && <Button variant="outline" className="gap-2 flex-1 sm:flex-none" onClick={() => navigate('/contract-templates')}>
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Editar Templates</span>
               <span className="sm:hidden">Templates</span>
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            className="gap-2 flex-1 sm:flex-none"
-            onClick={() => navigate('/client-form')}
-          >
+            </Button>}
+          <Button variant="outline" className="gap-2 flex-1 sm:flex-none" onClick={() => navigate('/client-form')}>
             <UserPlus className="h-4 w-4" />
             <span className="hidden sm:inline">Novo Paciente</span>
             <span className="sm:hidden">Paciente</span>
           </Button>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) {
-              resetForm();
-            }
-          }}>
+          <Dialog open={isDialogOpen} onOpenChange={open => {
+          setIsDialogOpen(open);
+          if (!open) {
+            resetForm();
+          }
+        }}>
             <DialogTrigger asChild>
               <Button className="gap-2 flex-1 sm:flex-none">
                 <Plus className="h-4 w-4" />
@@ -1248,40 +1143,23 @@ Contratante
                     <Label htmlFor="clientSearch">Buscar Cliente</Label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="clientSearch"
-                        placeholder="Digite o nome ou CPF do paciente..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
+                      <Input id="clientSearch" placeholder="Digite o nome ou CPF do paciente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
                     </div>
                   </div>
                   
-                  {searchTerm && (
-                    <div className="max-h-48 overflow-y-auto border rounded">
-                      {filteredClients.map((client) => (
-                        <div
-                          key={client.id}
-                          className={`p-3 cursor-pointer hover:bg-muted border-b last:border-b-0 ${
-                            contractData.clientId === client.id ? 'bg-primary/10' : ''
-                          }`}
-                          onClick={() => {
-                            handleClientSelect(client.id);
-                            setSearchTerm('');
-                          }}
-                        >
+                  {searchTerm && <div className="max-h-48 overflow-y-auto border rounded">
+                      {filteredClients.map(client => <div key={client.id} className={`p-3 cursor-pointer hover:bg-muted border-b last:border-b-0 ${contractData.clientId === client.id ? 'bg-primary/10' : ''}`} onClick={() => {
+                      handleClientSelect(client.id);
+                      setSearchTerm('');
+                    }}>
                           <div className="font-medium">{client.name}</div>
                           <div className="text-sm text-muted-foreground">
                             CPF: {client.cpf || 'Não informado'} | Unidade: Floresta
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        </div>)}
+                    </div>}
 
-                  {contractData.clientId && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded">
+                  {contractData.clientId && <div className="p-3 bg-green-50 border border-green-200 rounded">
                       <div className="flex items-center gap-2 text-green-700">
                         <Users className="h-4 w-4" />
                         <span className="font-medium">Paciente Selecionado:</span>
@@ -1289,8 +1167,7 @@ Contratante
                       <div className="mt-1 text-sm text-green-600">
                         {contractData.clientName} - {contractData.clientCpf || 'CPF não informado'}
                       </div>
-                    </div>
-                  )}
+                    </div>}
                 </CardContent>
               </Card>
 
@@ -1303,10 +1180,10 @@ Contratante
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="contractType">Tipo de Contrato</Label>
-                      <Select
-                        value={contractData.contractType}
-                        onValueChange={(value) => setContractData(prev => ({ ...prev, contractType: value }))}
-                      >
+                      <Select value={contractData.contractType} onValueChange={value => setContractData(prev => ({
+                        ...prev,
+                        contractType: value
+                      }))}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -1319,12 +1196,10 @@ Contratante
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="contractDate">Data do Contrato</Label>
-                      <Input
-                        id="contractDate"
-                        type="date"
-                        value={contractData.contractDate}
-                        onChange={(e) => setContractData(prev => ({ ...prev, contractDate: e.target.value }))}
-                      />
+                      <Input id="contractDate" type="date" value={contractData.contractDate} onChange={e => setContractData(prev => ({
+                        ...prev,
+                        contractDate: e.target.value
+                      }))} />
                     </div>
                   </div>
 
@@ -1334,44 +1209,34 @@ Contratante
                       <Users className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                       <span className="text-amber-800 dark:text-amber-200 text-sm sm:text-base">Incluir Responsável Financeiro no Contrato</span>
                     </Label>
-                    <Switch
-                      id="includeResponsible"
-                      checked={contractData.includeResponsible}
-                      onCheckedChange={(checked) => 
-                        setContractData(prev => ({ ...prev, includeResponsible: checked }))
-                      }
-                      className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-gray-300"
-                    />
+                    <Switch id="includeResponsible" checked={contractData.includeResponsible} onCheckedChange={checked => setContractData(prev => ({
+                      ...prev,
+                      includeResponsible: checked
+                    }))} className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-gray-300" />
                   </div>
 
                   {/* Dados do Responsável Financeiro (CONTRATANTE) - só aparece se toggle ativo */}
-                  {contractData.includeResponsible && (
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
+                  {contractData.includeResponsible && <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
                       <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">
                         Responsável Financeiro (Contratante)
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="responsibleName">Nome Completo</Label>
-                          <Input
-                            id="responsibleName"
-                            value={contractData.responsibleName}
-                            onChange={(e) => setContractData(prev => ({ ...prev, responsibleName: e.target.value }))}
-                            placeholder="Nome completo do responsável financeiro"
-                          />
+                          <Input id="responsibleName" value={contractData.responsibleName} onChange={e => setContractData(prev => ({
+                          ...prev,
+                          responsibleName: e.target.value
+                        }))} placeholder="Nome completo do responsável financeiro" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="responsibleCpf">CPF</Label>
-                          <Input
-                            id="responsibleCpf"
-                            value={contractData.responsibleCpf}
-                            onChange={(e) => setContractData(prev => ({ ...prev, responsibleCpf: e.target.value }))}
-                            placeholder="000.000.000-00"
-                          />
+                          <Input id="responsibleCpf" value={contractData.responsibleCpf} onChange={e => setContractData(prev => ({
+                          ...prev,
+                          responsibleCpf: e.target.value
+                        }))} placeholder="000.000.000-00" />
                         </div>
                       </div>
-                    </div>
-                  )}
+                    </div>}
 
                   {/* Dados do Beneficiário (PACIENTE) */}
                   <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg mb-4">
@@ -1381,33 +1246,27 @@ Contratante
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="clientName">Nome Completo</Label>
-                        <Input
-                          id="clientName"
-                          value={contractData.clientName}
-                          onChange={(e) => setContractData(prev => ({ ...prev, clientName: e.target.value }))}
-                          placeholder="Nome completo do paciente"
-                        />
+                        <Input id="clientName" value={contractData.clientName} onChange={e => setContractData(prev => ({
+                          ...prev,
+                          clientName: e.target.value
+                        }))} placeholder="Nome completo do paciente" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="clientCpf">CPF</Label>
-                        <Input
-                          id="clientCpf"
-                          value={contractData.clientCpf}
-                          onChange={(e) => setContractData(prev => ({ ...prev, clientCpf: e.target.value }))}
-                          placeholder="000.000.000-00"
-                        />
+                        <Input id="clientCpf" value={contractData.clientCpf} onChange={e => setContractData(prev => ({
+                          ...prev,
+                          clientCpf: e.target.value
+                        }))} placeholder="000.000.000-00" />
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="address">Endereço Completo</Label>
-                    <Textarea
-                      id="address"
-                      value={contractData.address}
-                      onChange={(e) => setContractData(prev => ({ ...prev, address: e.target.value }))}
-                      placeholder="Endereço completo"
-                    />
+                    <Textarea id="address" value={contractData.address} onChange={e => setContractData(prev => ({
+                      ...prev,
+                      address: e.target.value
+                    }))} placeholder="Endereço completo" />
                   </div>
                 </CardContent>
               </Card>
@@ -1421,13 +1280,10 @@ Contratante
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="value">Valor do Contrato (R$) *</Label>
-                      <Input
-                        id="value"
-                        value={contractData.value}
-                        onChange={(e) => setContractData(prev => ({ ...prev, value: e.target.value }))}
-                        placeholder="1.600,00"
-                        required
-                      />
+                      <Input id="value" value={contractData.value} onChange={e => setContractData(prev => ({
+                        ...prev,
+                        value: e.target.value
+                      }))} placeholder="1.600,00" required />
                       <p className="text-xs text-muted-foreground">
                         Use formato: 1.600,00 ou 800,00
                       </p>
@@ -1435,13 +1291,10 @@ Contratante
                     
                     <div className="space-y-2">
                       <Label htmlFor="valueInWords">Valor por Extenso *</Label>
-                      <Input
-                        id="valueInWords"
-                        value={contractData.valueInWords}
-                        onChange={(e) => setContractData(prev => ({ ...prev, valueInWords: e.target.value }))}
-                        placeholder="mil e seiscentos reais"
-                        required
-                      />
+                      <Input id="valueInWords" value={contractData.valueInWords} onChange={e => setContractData(prev => ({
+                        ...prev,
+                        valueInWords: e.target.value
+                      }))} placeholder="mil e seiscentos reais" required />
                       <p className="text-xs text-muted-foreground">
                         Ex: oitocentos reais
                       </p>
@@ -1449,23 +1302,21 @@ Contratante
                   </div>
                   
                   {/* Preview do valor */}
-                  {contractData.value && contractData.valueInWords && (
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
+                  {contractData.value && contractData.valueInWords && <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
                       <div className="text-sm text-blue-700 dark:text-blue-300">
                         <div className="font-semibold">Valor Total do Contrato:</div>
                         <div className="text-lg font-bold mt-1">
                           R$ {contractData.value} ({contractData.valueInWords})
                         </div>
                       </div>
-                    </div>
-                  )}
+                    </div>}
 
                   <div className="space-y-2">
                     <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
-                    <Select
-                      value={contractData.paymentMethod}
-                      onValueChange={(value) => setContractData(prev => ({ ...prev, paymentMethod: value }))}
-                    >
+                    <Select value={contractData.paymentMethod} onValueChange={value => setContractData(prev => ({
+                      ...prev,
+                      paymentMethod: value
+                    }))}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1482,30 +1333,25 @@ Contratante
                   </div>
 
                   {/* Parcelas para Cartão de Crédito */}
-                  {contractData.paymentMethod === 'Cartão' && (
-                    <div className="space-y-2">
+                  {contractData.paymentMethod === 'Cartão' && <div className="space-y-2">
                       <Label htmlFor="creditCardInstallments">Número de Parcelas</Label>
-                      <Select
-                        value={contractData.creditCardInstallments.toString()}
-                        onValueChange={(value) => setContractData(prev => ({ ...prev, creditCardInstallments: parseInt(value) }))}
-                      >
+                      <Select value={contractData.creditCardInstallments.toString()} onValueChange={value => setContractData(prev => ({
+                      ...prev,
+                      creditCardInstallments: parseInt(value)
+                    }))}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-                            <SelectItem key={num} value={num.toString()}>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => <SelectItem key={num} value={num.toString()}>
                               {num}x de R$ {(parseContractValue(contractData.value) / num).toFixed(2).replace('.', ',')}
-                            </SelectItem>
-                          ))}
+                            </SelectItem>)}
                         </SelectContent>
                       </Select>
-                    </div>
-                  )}
+                    </div>}
 
                   {/* Pagamento Combinado */}
-                  {contractData.paymentMethod === 'Combinado' && (
-                    <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                  {contractData.paymentMethod === 'Combinado' && <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                       <div className="space-y-2">
                         <Label className="text-base font-semibold">Configuração de Pagamento Combinado</Label>
                         <p className="text-sm text-muted-foreground">
@@ -1514,45 +1360,36 @@ Contratante
                       </div>
 
                       <div className="flex items-center space-x-2 mb-4">
-                        <input
-                          type="checkbox"
-                          id="useCombined"
-                          checked={contractData.useCombinedPayment}
-                          onChange={(e) => {
-                            setContractData({ ...contractData, useCombinedPayment: e.target.checked });
-                            if (!e.target.checked) {
-                              setPaymentMethods([{ method: 'cash', amount: 0, notes: '' }]);
-                            }
-                          }}
-                          className="h-4 w-4"
-                        />
+                        <input type="checkbox" id="useCombined" checked={contractData.useCombinedPayment} onChange={e => {
+                        setContractData({
+                          ...contractData,
+                          useCombinedPayment: e.target.checked
+                        });
+                        if (!e.target.checked) {
+                          setPaymentMethods([{
+                            method: 'cash',
+                            amount: 0,
+                            notes: ''
+                          }]);
+                        }
+                      }} className="h-4 w-4" />
                         <Label htmlFor="useCombined">Usar múltiplas formas de pagamento</Label>
                       </div>
 
-                      {contractData.useCombinedPayment && (
-                        <>
+                      {contractData.useCombinedPayment && <>
                           <div className="flex items-center justify-between">
                             <Label className="text-base font-semibold">Formas de Pagamento</Label>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={addPaymentMethod}
-                            >
+                            <Button type="button" variant="outline" size="sm" onClick={addPaymentMethod}>
                               <Plus className="h-4 w-4 mr-1" />
                               Adicionar
                             </Button>
                           </div>
 
-                          {paymentMethods.map((pm, index) => (
-                            <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                          {paymentMethods.map((pm, index) => <div key={index} className="grid grid-cols-12 gap-2 items-end">
                               {/* Forma de Pagamento */}
                               <div className="col-span-5 space-y-2">
                                 <Label>Método {index + 1}</Label>
-                                <Select 
-                                  value={pm.method} 
-                                  onValueChange={(value) => updatePaymentMethod(index, 'method', value)}
-                                >
+                                <Select value={pm.method} onValueChange={value => updatePaymentMethod(index, 'method', value)}>
                                   <SelectTrigger>
                                     <SelectValue />
                                   </SelectTrigger>
@@ -1572,42 +1409,22 @@ Contratante
                               {/* Valor */}
                               <div className="col-span-3 space-y-2">
                                 <Label>Valor (R$)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={pm.amount}
-                                  onChange={(e) => updatePaymentMethod(index, 'amount', parseFloat(e.target.value) || 0)}
-                                  placeholder="0,00"
-                                />
+                                <Input type="number" step="0.01" value={pm.amount} onChange={e => updatePaymentMethod(index, 'amount', parseFloat(e.target.value) || 0)} placeholder="0,00" />
                               </div>
 
                               {/* Observação */}
                               <div className="col-span-3 space-y-2">
                                 <Label>Obs.</Label>
-                                <Input
-                                  type="text"
-                                  value={pm.notes || ''}
-                                  onChange={(e) => updatePaymentMethod(index, 'notes', e.target.value)}
-                                  placeholder="Opcional"
-                                />
+                                <Input type="text" value={pm.notes || ''} onChange={e => updatePaymentMethod(index, 'notes', e.target.value)} placeholder="Opcional" />
                               </div>
 
                               {/* Botão Remover */}
                               <div className="col-span-1">
-                                {paymentMethods.length > 1 && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removePaymentMethod(index)}
-                                    className="text-destructive"
-                                  >
+                                {paymentMethods.length > 1 && <Button type="button" variant="ghost" size="sm" onClick={() => removePaymentMethod(index)} className="text-destructive">
                                     <X className="h-4 w-4" />
-                                  </Button>
-                                )}
+                                  </Button>}
                               </div>
-                            </div>
-                          ))}
+                            </div>)}
 
                           {/* Mostrar total calculado */}
                           <div className="flex justify-between items-center pt-2 border-t">
@@ -1618,8 +1435,7 @@ Contratante
                           </div>
 
                           {/* Validação: checar se o total bate */}
-                          {Math.abs(getTotalFromCombinedPayments() - parseContractValue(contractData.value)) > 0.01 && contractData.value && (
-                            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded">
+                          {Math.abs(getTotalFromCombinedPayments() - parseContractValue(contractData.value)) > 0.01 && contractData.value && <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded">
                               <AlertTriangle className="h-4 w-4 text-destructive" />
                               <div className="flex-1 text-sm text-destructive">
                                 <div className="font-semibold">Atenção: Valores não conferem</div>
@@ -1629,22 +1445,16 @@ Contratante
                                   Diferença: R$ {Math.abs(getTotalFromCombinedPayments() - parseContractValue(contractData.value)).toFixed(2)}
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </>
-                      )}
+                            </div>}
+                        </>}
 
-                      {!contractData.useCombinedPayment && (
-                        <div className="text-sm text-muted-foreground text-center py-4">
+                      {!contractData.useCombinedPayment && <div className="text-sm text-muted-foreground text-center py-4">
                           Marque a opção acima para configurar múltiplas formas de pagamento
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        </div>}
+                    </div>}
 
                   {/* Modo Manual */}
-                  {contractData.paymentMethod === 'Manual' && (
-                    <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                  {contractData.paymentMethod === 'Manual' && <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                       <div className="space-y-2">
                         <Label className="text-base font-semibold">Configuração de Pagamento Manual</Label>
                         <p className="text-sm text-muted-foreground">
@@ -1655,19 +1465,17 @@ Contratante
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="downPaymentAmount">Valor da Entrada (R$)</Label>
-                          <Input
-                            id="downPaymentAmount"
-                            value={contractData.downPaymentAmount}
-                            onChange={(e) => setContractData(prev => ({ ...prev, downPaymentAmount: e.target.value }))}
-                            placeholder="0,00"
-                          />
+                          <Input id="downPaymentAmount" value={contractData.downPaymentAmount} onChange={e => setContractData(prev => ({
+                          ...prev,
+                          downPaymentAmount: e.target.value
+                        }))} placeholder="0,00" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="downPaymentMethod">Forma de Pagamento da Entrada</Label>
-                          <Select
-                            value={contractData.downPaymentMethod}
-                            onValueChange={(value) => setContractData(prev => ({ ...prev, downPaymentMethod: value }))}
-                          >
+                          <Select value={contractData.downPaymentMethod} onValueChange={value => setContractData(prev => ({
+                          ...prev,
+                          downPaymentMethod: value
+                        }))}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -1683,54 +1491,30 @@ Contratante
 
                       <div className="space-y-2">
                         <Label htmlFor="paymentNotes">Observações sobre o Pagamento</Label>
-                        <Textarea
-                          id="paymentNotes"
-                          value={contractData.paymentNotes}
-                          onChange={(e) => setContractData(prev => ({ ...prev, paymentNotes: e.target.value }))}
-                          placeholder="Ex: Restante em 3 parcelas no boleto, primeira em 30 dias..."
-                          rows={3}
-                        />
+                        <Textarea id="paymentNotes" value={contractData.paymentNotes} onChange={e => setContractData(prev => ({
+                        ...prev,
+                        paymentNotes: e.target.value
+                      }))} placeholder="Ex: Restante em 3 parcelas no boleto, primeira em 30 dias..." rows={3} />
                       </div>
 
-                      {contractData.downPaymentAmount && (
-                        <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                      {contractData.downPaymentAmount && <div className="p-3 bg-blue-50 border border-blue-200 rounded">
                           <div className="text-sm text-blue-700">
                             <div className="font-semibold mb-1">Resumo do Pagamento:</div>
                             <div>• Entrada: R$ {contractData.downPaymentAmount} ({contractData.downPaymentMethod})</div>
                             <div>• Restante: R$ {(parseContractValue(contractData.value) - parseFloat(contractData.downPaymentAmount.replace(',', '.') || '0')).toFixed(2).replace('.', ',')}</div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        </div>}
+                    </div>}
                 </CardContent>
               </Card>
 
               {/* Botões de Ação */}
               <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                  <Button
-                    onClick={handleDownloadWord}
-                    className="gap-2"
-                    disabled={!contractData.clientId || !contractData.value || !contractData.valueInWords || isGenerating}
-                  >
+                  <Button onClick={handleDownloadWord} className="gap-2" disabled={!contractData.clientId || !contractData.value || !contractData.valueInWords || isGenerating}>
                     <Download className="h-4 w-4" />
-                    {isGenerating 
-                      ? 'Gerando...' 
-                      : contractData.value 
-                        ? `Baixar Word + Registrar R$ ${contractData.value}` 
-                        : 'Preencha os dados do contrato'
-                    }
+                    {isGenerating ? 'Gerando...' : contractData.value ? `Baixar Word + Registrar R$ ${contractData.value}` : 'Preencha os dados do contrato'}
                   </Button>
-                  <Button
-                    onClick={handlePrintContract}
-                    variant="outline"
-                    className="gap-2"
-                    disabled={!contractData.clientId || !contractData.value || !contractData.valueInWords || isGenerating}
-                  >
-                    <Printer className="h-4 w-4" />
-                    <span className="hidden sm:inline">Imprimir (navegador)</span>
-                    <span className="sm:hidden">Imprimir</span>
-                  </Button>
+                  
               </div>
             </div>
           </DialogContent>
@@ -1750,18 +1534,10 @@ Contratante
           <div className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar paciente..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder="Buscar paciente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
             </div>
 
-            {loading ? (
-              <div className="text-center py-8">Carregando pacientes...</div>
-            ) : (
-              <Table>
+            {loading ? <div className="text-center py-8">Carregando pacientes...</div> : <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
@@ -1771,43 +1547,30 @@ Contratante
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClients.length > 0 ? (
-                    filteredClients.map((client) => (
-                      <TableRow key={client.id}>
+                  {filteredClients.length > 0 ? filteredClients.map(client => <TableRow key={client.id}>
                         <TableCell className="font-medium">{client.name}</TableCell>
                         <TableCell>{client.cpf || 'Não informado'}</TableCell>
                         <TableCell>Floresta</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                handleClientSelect(client.id);
-                                setIsDialogOpen(true);
-                              }}
-                              className="gap-1"
-                            >
+                            <Button size="sm" variant="outline" onClick={() => {
+                      handleClientSelect(client.id);
+                      setIsDialogOpen(true);
+                    }} className="gap-1">
                               <FileText className="h-3 w-3" />
                               Contrato
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
+                      </TableRow>) : <TableRow>
                       <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                         {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
                       </TableCell>
-                    </TableRow>
-                  )}
+                    </TableRow>}
                 </TableBody>
-              </Table>
-            )}
+              </Table>}
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
