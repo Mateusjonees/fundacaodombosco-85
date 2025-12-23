@@ -13,10 +13,11 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer, X, AlertTriangle, Settings } from 'lucide-react';
+import { FileText, Edit, Plus, Users, Search, Calendar, UserPlus, Shield, Printer, X, AlertTriangle, Settings, Download } from 'lucide-react';
 import timbradoFooter from '@/assets/contract-timbrado-footer.jpg';
 import logoFundacao from '@/assets/fundacao-dom-bosco-logo-main.png';
 import { useNavigate, Link } from 'react-router-dom';
+import { downloadContractDocx, ContractDocxData } from '@/utils/contractDocx';
 
 interface Client {
   id: string;
@@ -462,6 +463,204 @@ Contratante
     }
 
     console.log('✅ Registro financeiro criado com sucesso');
+  };
+
+  // Função para baixar o contrato em Word (.docx)
+  const handleDownloadWord = async () => {
+    setIsGenerating(true);
+    try {
+      // Validações
+      if (!contractData.value || !contractData.valueInWords) {
+        toast({
+          variant: "destructive",
+          title: "Campos obrigatórios",
+          description: "Por favor, preencha o valor do contrato e o valor por extenso.",
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      if (!contractData.clientId) {
+        toast({
+          variant: "destructive",
+          title: "Cliente não selecionado",
+          description: "Por favor, selecione um cliente antes de gerar o contrato.",
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      // Buscar dados do usuário atual
+      const { data: currentUser, error: userError } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (userError) {
+        console.error('Erro ao buscar usuário:', userError);
+      }
+
+      const userName = currentUser?.name || 'Usuário não identificado';
+      const contractValueNumber = parseContractValue(contractData.value);
+      
+      // Validação pagamento combinado
+      if (contractData.paymentMethod === 'Combinado' && contractData.useCombinedPayment) {
+        const combinedTotal = getTotalFromCombinedPayments();
+        const contractValue = parseContractValue(contractData.value);
+        
+        if (Math.abs(combinedTotal - contractValue) > 0.01) {
+          toast({
+            variant: "destructive",
+            title: "Erro de Validação",
+            description: `O total dos métodos de pagamento (R$ ${combinedTotal.toFixed(2).replace('.', ',')}) não corresponde ao valor do contrato (R$ ${contractValue.toFixed(2).replace('.', ',')}).`,
+          });
+          setIsGenerating(false);
+          return;
+        }
+        
+        setContractData(prev => ({
+          ...prev,
+          paymentCombination: paymentMethods.filter(pm => pm.amount > 0)
+        }));
+      }
+      
+      // Criar registros no banco (attendance_reports, client_payments, etc.)
+      const { data: attendanceReport, error: attendanceError } = await supabase
+        .from('attendance_reports')
+        .insert([{
+          client_id: contractData.clientId,
+          employee_id: user?.id,
+          patient_name: contractData.clientName,
+          professional_name: userName,
+          attendance_type: 'Avaliação Neuropsicológica',
+          start_time: new Date().toISOString(),
+          end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          session_duration: 60,
+          amount_charged: contractValueNumber,
+          professional_amount: 0,
+          institution_amount: contractValueNumber,
+          status: 'completed',
+          validation_status: 'validated',
+          session_notes: `Contrato de Avaliação Neuropsicológica gerado por ${userName}`,
+          created_by: user?.id,
+          completed_by: user?.id,
+          completed_by_name: userName,
+          validated_by: user?.id,
+          validated_by_name: userName,
+          validated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (attendanceError) {
+        console.error('Erro ao criar relatório de atendimento:', attendanceError);
+      }
+
+      const downPaymentNum = contractData.downPaymentAmount 
+        ? parseFloat(contractData.downPaymentAmount.replace(',', '.'))
+        : 0;
+
+      const { error: paymentError } = await supabase
+        .from('client_payments')
+        .insert([{
+          client_id: contractData.clientId,
+          payment_type: 'Avaliação Neuropsicológica',
+          total_amount: contractValueNumber,
+          amount_paid: contractData.paymentMethod === 'Manual' ? downPaymentNum : contractValueNumber,
+          amount_remaining: contractData.paymentMethod === 'Manual' ? (contractValueNumber - downPaymentNum) : 0,
+          status: contractData.paymentMethod === 'Manual' && downPaymentNum < contractValueNumber ? 'partial' : 'completed',
+          payment_method: contractData.paymentMethod,
+          description: `Pagamento de Avaliação Neuropsicológica - Contrato gerado por ${userName}`,
+          unit: 'floresta',
+          created_by: user?.id,
+          installments_total: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : 1,
+          installments_paid: contractData.paymentMethod === 'Manual' && downPaymentNum > 0 ? 1 : (contractData.paymentMethod === 'Cartão' ? 0 : 1),
+          credit_card_installments: contractData.paymentMethod === 'Cartão' ? contractData.creditCardInstallments : null,
+          down_payment_amount: contractData.paymentMethod === 'Manual' ? downPaymentNum : null,
+          down_payment_method: contractData.paymentMethod === 'Manual' ? contractData.downPaymentMethod : null,
+          notes: contractData.paymentNotes || `Forma de pagamento: ${contractData.paymentMethod}`
+        }]);
+
+      if (paymentError) {
+        console.error('Erro ao criar registro de pagamento:', paymentError);
+      }
+
+      const { error: autoFinancialError } = await supabase
+        .from('automatic_financial_records')
+        .insert([{
+          patient_id: contractData.clientId,
+          patient_name: contractData.clientName,
+          professional_id: user?.id,
+          professional_name: userName,
+          amount: contractValueNumber,
+          transaction_type: 'income',
+          payment_method: 'Contrato',
+          description: `Avaliação Neuropsicológica - Contrato gerado por ${userName}`,
+          origin_type: 'contract',
+          origin_id: attendanceReport?.id,
+          attendance_report_id: attendanceReport?.id,
+          created_by: user?.id,
+          created_by_name: userName,
+          metadata: {
+            contract_data: JSON.parse(JSON.stringify(contractData)),
+            generated_by: userName,
+            generated_at: new Date().toISOString(),
+            contract_type: 'Avaliação Neuropsicológica'
+          } as any
+        }]);
+
+      if (autoFinancialError) {
+        console.error('Erro ao criar registro financeiro automático:', autoFinancialError);
+      }
+
+      try {
+        await createFinancialRecord();
+      } catch (error) {
+        console.error('❌ Falha ao criar registro financeiro:', error);
+      }
+
+      // Gerar texto das partes
+      const partiesText = contractData.includeResponsible 
+        ? `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.responsibleName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.responsibleCpf || '__________________________________'}, denominada neste como CONTRATANTE, responsável legal ou financeiro por ${contractData.clientName || '__________________________________________'}, inscrito no CPF sob o nº ${contractData.clientCpf || '__________________________________________'}, denominado neste como beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`
+        : `A pessoa jurídica Fundação Dom Bosco, registrada no CNPJ sob o nº 17.278.904/0001-86, com endereço comercial à Rua Urucuia, 18 – Bairro Floresta, Belo Horizonte – MG, denominada neste como CONTRATADA e a pessoa física ${contractData.clientName || '______________________________________________'}, registrada no CPF sob o nº ${contractData.clientCpf || '__________________________________'}, denominada neste como CONTRATANTE e beneficiário do serviço, residente à ${contractData.address || '____________________________________________________________'} firmam contrato de prestação de serviço de avaliação neuropsicológica que será realizado conforme as cláusulas abaixo.`;
+
+      const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 
+                      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const date = new Date();
+
+      // Dados para o template DOCX
+      const docxData: ContractDocxData = {
+        textoPartes: partiesText,
+        valor: contractData.value || '______________________',
+        valorExtenso: contractData.valueInWords || '______________________________________________',
+        formaPagamento: generatePaymentDetails(),
+        dataDia: String(date.getDate()),
+        dataMes: months[date.getMonth()],
+        dataAno: String(date.getFullYear()),
+      };
+
+      // Baixar o documento Word
+      await downloadContractDocx(docxData, contractData.clientName);
+
+      toast({
+        title: "Contrato gerado com sucesso!",
+        description: `Documento Word baixado. Para PDF idêntico, abra no Word e salve como PDF.`,
+      });
+      
+      resetForm();
+      setIsDialogOpen(false);
+      
+    } catch (error) {
+      console.error('Erro ao gerar contrato:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao gerar o contrato. Verifique se o template está disponível.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handlePrintContract = async () => {
@@ -1508,19 +1707,29 @@ Contratante
               </Card>
 
               {/* Botões de Ação */}
-              <div className="flex gap-2 justify-end">
+              <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                  <Button
+                    onClick={handleDownloadWord}
+                    className="gap-2"
+                    disabled={!contractData.clientId || !contractData.value || !contractData.valueInWords || isGenerating}
+                  >
+                    <Download className="h-4 w-4" />
+                    {isGenerating 
+                      ? 'Gerando...' 
+                      : contractData.value 
+                        ? `Baixar Word + Registrar R$ ${contractData.value}` 
+                        : 'Preencha os dados do contrato'
+                    }
+                  </Button>
                   <Button
                     onClick={handlePrintContract}
+                    variant="outline"
                     className="gap-2"
                     disabled={!contractData.clientId || !contractData.value || !contractData.valueInWords || isGenerating}
                   >
                     <Printer className="h-4 w-4" />
-                    {isGenerating 
-                      ? 'Processando...' 
-                      : contractData.value 
-                        ? `Imprimir + Registrar R$ ${contractData.value}` 
-                        : 'Preencha os dados do contrato'
-                    }
+                    <span className="hidden sm:inline">Imprimir (navegador)</span>
+                    <span className="sm:hidden">Imprimir</span>
                   </Button>
               </div>
             </div>
