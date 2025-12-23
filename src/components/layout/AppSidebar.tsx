@@ -1,41 +1,41 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import logo from '@/assets/fundacao-dom-bosco-logo-optimized.png';
-import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ChevronLeft, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon } from 'lucide-react';
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { 
+  Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, 
+  Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, 
+  ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, 
+  LucideIcon, ChevronDown, ChevronRight, Stethoscope, CalendarDays, Wallet, 
+  UsersRound, TrendingUp, MessageCircle, User, Tag
+} from 'lucide-react';
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Tag } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
-  Home,
-  UserPlus,
-  Users,
-  Calendar,
-  ClipboardList,
-  UserCheck,
-  FolderOpen,
-  DollarSign,
-  BarChart3,
-  Package,
-  Settings,
-  Archive,
-  CheckSquare,
-  Shield,
-  Heart,
-  MessageSquare,
-  FileCheck,
-  FileText,
-  Folder,
-  Clock,
-  Bell,
-  Brain,
-  Tag
+  Home, UserPlus, Users, Calendar, ClipboardList, UserCheck, FolderOpen, 
+  DollarSign, BarChart3, Package, Settings, Archive, CheckSquare, Shield, 
+  Heart, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, Tag
+};
+
+// Category icons and colors
+const categoryConfig: Record<string, { icon: LucideIcon; color: string }> = {
+  'GESTÃO CLÍNICA': { icon: Stethoscope, color: 'text-emerald-500' },
+  'AGENDA': { icon: CalendarDays, color: 'text-blue-500' },
+  'FINANCEIRO': { icon: Wallet, color: 'text-amber-500' },
+  'ESTOQUE': { icon: Package, color: 'text-purple-500' },
+  'EQUIPE': { icon: UsersRound, color: 'text-cyan-500' },
+  'RELATÓRIOS': { icon: TrendingUp, color: 'text-rose-500' },
+  'COMUNICAÇÃO': { icon: MessageCircle, color: 'text-indigo-500' },
+  'PESSOAL': { icon: User, color: 'text-teal-500' },
 };
 
 // Dynamic menu items based on role permissions
@@ -279,6 +279,7 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   });
   return items.sort((a, b) => a.order_index - b.order_index);
 };
+
 interface MenuItem {
   id: string;
   title: string;
@@ -287,26 +288,18 @@ interface MenuItem {
   category: string | null;
   order_index: number;
 }
+
 export function AppSidebar() {
-  const {
-    state,
-    setOpen,
-    isMobile,
-    openMobile,
-    setOpenMobile
-  } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const permissions = useRolePermissions();
   const customPermissions = useCustomPermissions();
   const currentPath = location.pathname;
   const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
   // Load navigation items based on permissions
   useEffect(() => {
@@ -316,39 +309,44 @@ export function AppSidebar() {
     }
   }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions]);
 
-  // Fechar sidebar automaticamente em mobile após navegar para outra rota
+  // Auto-expand category containing active route
+  useEffect(() => {
+    const activeItem = navigationItems.find(item => {
+      if (item.url === '/') return currentPath === '/';
+      return currentPath.startsWith(item.url);
+    });
+    if (activeItem?.category) {
+      setOpenCategories(prev => ({ ...prev, [activeItem.category!]: true }));
+    }
+  }, [currentPath, navigationItems]);
+
+  // Close sidebar on mobile after navigation
   useEffect(() => {
     if (isMobile) {
       setOpenMobile(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPath]);
+  }, [currentPath, isMobile, setOpenMobile]);
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories(prev => ({ ...prev, [category]: !prev[category] }));
+  };
+
   const isActive = (path: string) => {
-    if (path === '/') {
-      return currentPath === '/';
-    }
+    if (path === '/') return currentPath === '/';
     return currentPath.startsWith(path);
   };
-  const getNavCls = ({
-    isActive
-  }: {
-    isActive: boolean;
-  }) => isActive ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted/50";
 
   // Group items by category
   const groupedItems = navigationItems.reduce((acc, item) => {
     const category = item.category || 'main';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
+    if (!acc[category]) acc[category] = [];
     acc[category].push(item);
     return acc;
   }, {} as Record<string, MenuItem[]>);
+
   const handleLogout = async () => {
     try {
-      const {
-        error
-      } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
       if (error) throw error;
       toast({
         title: "Logout realizado",
@@ -363,86 +361,187 @@ export function AppSidebar() {
       });
     }
   };
-  return <Sidebar className={collapsed ? "w-14" : "w-60 md:w-60"}>
-      <SidebarContent>
+
+  const categories = ['GESTÃO CLÍNICA', 'AGENDA', 'FINANCEIRO', 'ESTOQUE', 'EQUIPE', 'RELATÓRIOS', 'COMUNICAÇÃO', 'PESSOAL'];
+
+  return (
+    <Sidebar className={cn(
+      "border-r border-border/50 bg-gradient-to-b from-background to-muted/20",
+      collapsed ? "w-14" : "w-64"
+    )}>
+      <SidebarContent className="flex flex-col h-full">
         {/* Logo Header */}
-        <div className="flex flex-col items-center p-4 border-b">
-          {!collapsed ? <div className="text-center space-y-3">
-              <img alt="Fundação Dom Bosco" width="84" height="64" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" className="h-20 md:h-20 w-auto object-contain mx-auto" />
-              
-            </div> : <img src={logo} alt="Fundação Dom Bosco" className="h-8 w-auto object-contain" width="42" height="32" />}
+        <div className={cn(
+          "flex items-center justify-center border-b border-border/50 bg-gradient-to-r from-primary/5 to-transparent",
+          collapsed ? "p-2" : "p-4"
+        )}>
+          {!collapsed ? (
+            <div className="flex items-center gap-3">
+              <img 
+                alt="Fundação Dom Bosco" 
+                src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" 
+                className="h-12 w-auto object-contain" 
+              />
+            </div>
+          ) : (
+            <img 
+              src={logo} 
+              alt="FDB" 
+              className="h-8 w-8 object-contain" 
+            />
+          )}
         </div>
 
-        {/* Main Menu - Dashboard */}
-        {groupedItems.main && <SidebarGroup>
-            <SidebarGroupContent>
+        <ScrollArea className="flex-1 px-2 py-3">
+          {/* Dashboard - Main */}
+          {groupedItems.main && (
+            <div className="mb-2">
               <SidebarMenu>
                 {groupedItems.main.map(item => {
-              const IconComponent = iconMapping[item.icon];
-              return <SidebarMenuItem key={item.id}>
+                  const IconComponent = iconMapping[item.icon];
+                  const active = isActive(item.url);
+                  return (
+                    <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton asChild>
-                        <NavLink to={item.url} className={({
-                    isActive
-                  }) => getNavCls({
-                    isActive
-                  })}>
-                          {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
-                          {!collapsed && <span className="text-sm">{item.title}</span>}
+                        <NavLink 
+                          to={item.url} 
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                            active 
+                              ? "bg-primary text-primary-foreground shadow-sm" 
+                              : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {IconComponent && <IconComponent className="h-4 w-4 shrink-0" />}
+                          {!collapsed && <span className="text-sm font-medium">{item.title}</span>}
                         </NavLink>
                       </SidebarMenuButton>
-                    </SidebarMenuItem>;
-            })}
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>}
+            </div>
+          )}
 
-        {/* Categorized Menu Groups */}
-        {['GESTÃO CLÍNICA', 'AGENDA', 'FINANCEIRO', 'ESTOQUE', 'EQUIPE', 'RELATÓRIOS', 'COMUNICAÇÃO', 'PESSOAL'].map(category => {
-        if (!groupedItems[category] || groupedItems[category].length === 0) return null;
-        return <SidebarGroup key={category}>
-              {!collapsed && <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 py-2">
-                  {category}
-                </SidebarGroupLabel>}
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {groupedItems[category].map(item => {
-                const IconComponent = iconMapping[item.icon];
-                return <SidebarMenuItem key={item.id}>
-                        <SidebarMenuButton asChild>
-                          <NavLink to={item.url} className={({
-                      isActive
-                    }) => getNavCls({
-                      isActive
-                    })}>
-                            {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
-                            {!collapsed && <span className="text-sm">{item.title}</span>}
-                          </NavLink>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>;
-              })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>;
-      })}
+          {/* Categorized Menu Groups */}
+          <div className="space-y-1">
+            {categories.map(category => {
+              if (!groupedItems[category] || groupedItems[category].length === 0) return null;
+              
+              const config = categoryConfig[category];
+              const CategoryIcon = config?.icon;
+              const isOpen = openCategories[category] ?? false;
+              const hasActiveItem = groupedItems[category].some(item => isActive(item.url));
+
+              if (collapsed) {
+                // Collapsed: show only icons
+                return (
+                  <div key={category} className="space-y-0.5">
+                    {groupedItems[category].map(item => {
+                      const IconComponent = iconMapping[item.icon];
+                      const active = isActive(item.url);
+                      return (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton asChild>
+                            <NavLink 
+                              to={item.url}
+                              title={item.title}
+                              className={cn(
+                                "flex items-center justify-center p-2 rounded-lg transition-all duration-200",
+                                active 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {IconComponent && <IconComponent className="h-4 w-4" />}
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
+              return (
+                <Collapsible 
+                  key={category} 
+                  open={isOpen} 
+                  onOpenChange={() => toggleCategory(category)}
+                >
+                  <CollapsibleTrigger className={cn(
+                    "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide transition-all duration-200",
+                    hasActiveItem 
+                      ? "text-foreground bg-muted/50" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                  )}>
+                    {CategoryIcon && <CategoryIcon className={cn("h-3.5 w-3.5", config?.color)} />}
+                    <span className="flex-1 text-left">{category}</span>
+                    {isOpen ? (
+                      <ChevronDown className="h-3.5 w-3.5 transition-transform" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 transition-transform" />
+                    )}
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="pl-2 mt-1 space-y-0.5">
+                    <SidebarMenu>
+                      {groupedItems[category].map(item => {
+                        const IconComponent = iconMapping[item.icon];
+                        const active = isActive(item.url);
+                        return (
+                          <SidebarMenuItem key={item.id}>
+                            <SidebarMenuButton asChild>
+                              <NavLink 
+                                to={item.url} 
+                                className={cn(
+                                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
+                                  active 
+                                    ? "bg-primary text-primary-foreground shadow-sm font-medium" 
+                                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {IconComponent && <IconComponent className="h-4 w-4 shrink-0" />}
+                                <span className="truncate">{item.title}</span>
+                                {active && (
+                                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-foreground" />
+                                )}
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
+          </div>
+        </ScrollArea>
         
-        {/* Logout Section */}
-        <SidebarGroup className="mt-auto border-t">
-          <SidebarGroupContent className="space-y-1 py-2">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <ThemeToggle collapsed={collapsed} />
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <button onClick={handleLogout} className="w-full text-left hover:bg-destructive hover:text-destructive-foreground">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {!collapsed && <span className="text-sm">Sair</span>}
-                  </button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Footer Section */}
+        <div className="mt-auto border-t border-border/50 p-2 space-y-1 bg-gradient-to-t from-muted/30 to-transparent">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <ThemeToggle collapsed={collapsed} />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <button 
+                  onClick={handleLogout} 
+                  className={cn(
+                    "flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all duration-200 text-muted-foreground",
+                    "hover:bg-destructive/10 hover:text-destructive"
+                  )}
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span className="text-sm">Sair</span>}
+                </button>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
       </SidebarContent>
-    </Sidebar>;
+    </Sidebar>
+  );
 }
