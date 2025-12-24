@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { LogOut, Menu, User } from 'lucide-react';
+import { LogOut, User, Camera } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import {
@@ -28,6 +28,8 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { Link } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
+import { UserAvatar } from '@/components/UserAvatar';
+import { UserProfileDialog } from '@/components/UserProfileDialog';
 
 // Lazy load page components
 const Clients = lazy(() => import('@/pages/Clients'));
@@ -58,9 +60,10 @@ export const MainApp = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { logAction } = useAuditLog();
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   
   // Usar hook centralizado com cache
-  const { profile, userName, userRole } = useCurrentUser();
+  const { profile, userName, userRole, avatarUrl } = useCurrentUser();
 
   const handleLogout = async () => {
     try {
@@ -121,21 +124,45 @@ export const MainApp = () => {
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="rounded-full h-8 w-8 sm:h-10 sm:w-10">
-                        <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 sm:h-10 sm:w-10 p-0 overflow-hidden">
+                        <UserAvatar 
+                          name={userName}
+                          avatarUrl={avatarUrl}
+                          role={userRole}
+                          size="sm"
+                          className="h-9 w-9 sm:h-10 sm:w-10"
+                        />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-80 bg-background z-50 p-2">
                       <DropdownMenuLabel className="pb-3">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-semibold leading-none">
-                            {userName}
-                          </p>
-                          <p className="text-xs leading-none text-muted-foreground">
-                            {userRole ? ROLE_LABELS[userRole] : 'Carregando...'}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <UserAvatar 
+                            name={userName}
+                            avatarUrl={avatarUrl}
+                            role={userRole}
+                            size="md"
+                          />
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-semibold leading-none">
+                              {userName}
+                            </p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                              {userRole ? ROLE_LABELS[userRole] : 'Carregando...'}
+                            </p>
+                          </div>
                         </div>
                       </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      
+                      <DropdownMenuItem 
+                        onClick={() => setProfileDialogOpen(true)} 
+                        className="cursor-pointer px-2 py-2"
+                      >
+                        <Camera className="mr-3 h-4 w-4" />
+                        <span>Meu Perfil</span>
+                      </DropdownMenuItem>
+                      
                       <DropdownMenuSeparator />
                       
                       <div className="px-2 py-1">
@@ -172,6 +199,11 @@ export const MainApp = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  
+                  <UserProfileDialog 
+                    open={profileDialogOpen} 
+                    onOpenChange={setProfileDialogOpen} 
+                  />
                 </div>
               </div>
             </header>

@@ -18,6 +18,8 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/UserAvatar';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
@@ -520,7 +522,10 @@ export function AppSidebar() {
         </ScrollArea>
         
         {/* Footer Section */}
-        <div className="mt-auto border-t border-border/50 p-2 space-y-1 bg-gradient-to-t from-muted/30 to-transparent">
+        <div className="mt-auto border-t border-border/50 p-2 space-y-2 bg-gradient-to-t from-muted/30 to-transparent">
+          {/* User Avatar Section */}
+          <UserAvatarFooter collapsed={collapsed} />
+          
           <SidebarMenu>
             <SidebarMenuItem>
               <ThemeToggle collapsed={collapsed} />
@@ -545,3 +550,36 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
+// Componente para exibir avatar do usuário no footer
+const UserAvatarFooter = ({ collapsed }: { collapsed: boolean }) => {
+  const { userName, userRole, avatarUrl } = useCurrentUser();
+  
+  if (collapsed) {
+    return (
+      <div className="flex justify-center py-1">
+        <UserAvatar 
+          name={userName}
+          avatarUrl={avatarUrl}
+          role={userRole}
+          size="sm"
+        />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50">
+      <UserAvatar 
+        name={userName}
+        avatarUrl={avatarUrl}
+        role={userRole}
+        size="sm"
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{userName || 'Usuário'}</p>
+        <p className="text-xs text-muted-foreground truncate">{userRole || 'Carregando...'}</p>
+      </div>
+    </div>
+  );
+};

@@ -20,6 +20,7 @@ interface UserProfile {
   document_rg: string | null;
   salary: number | null;
   permissions: any | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -61,5 +62,6 @@ export const useCurrentUser = () => {
     userRole: profile?.employee_role,
     userUnit: profile?.unit,
     isActive: profile?.is_active ?? false,
+    avatarUrl: profile?.avatar_url || null,
   };
 };

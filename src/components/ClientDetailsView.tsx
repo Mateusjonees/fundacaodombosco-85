@@ -38,7 +38,11 @@ import {
   CreditCard,
   FolderOpen,
   Stethoscope,
-  Heart
+  Heart,
+  Brain,
+  ClipboardCheck,
+  FileCheck2,
+  AlertCircle
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
@@ -1262,29 +1266,104 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
 
                   {/* Clinical Tab */}
                   <TabsContent value="clinical" className="space-y-6">
+                    {/* Diagnosis Highlight Card */}
+                    <Card className={`border-2 ${client.diagnosis ? 'border-emerald-500/30 bg-gradient-to-r from-emerald-500/5 to-emerald-500/10' : 'border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-amber-500/10'}`}>
+                      <CardContent className="pt-5">
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-xl ${client.diagnosis ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
+                            <Brain className={`h-6 w-6 ${client.diagnosis ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-lg">Diagnóstico</h3>
+                              {client.diagnosis ? (
+                                <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+                                  <ClipboardCheck className="h-3 w-3 mr-1" />
+                                  Definido
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  Pendente
+                                </Badge>
+                              )}
+                            </div>
+                            <p className={`text-base ${client.diagnosis ? '' : 'text-muted-foreground italic'}`}>
+                              {client.diagnosis || 'Diagnóstico ainda não definido'}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Laudo Section */}
+                    <Card className={`border-2 ${laudoInfo ? 'border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-blue-500/10' : 'border-slate-500/20 bg-muted/30'}`}>
+                      <CardContent className="pt-5">
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-xl ${laudoInfo ? 'bg-blue-500/20' : 'bg-muted'}`}>
+                            <FileCheck2 className={`h-6 w-6 ${laudoInfo ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-lg">Laudo</h3>
+                                {loadingLaudo ? (
+                                  <Badge variant="outline" className="animate-pulse">Carregando...</Badge>
+                                ) : laudoInfo ? (
+                                  <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30">
+                                    <FileCheck2 className="h-3 w-3 mr-1" />
+                                    Disponível
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-muted-foreground">
+                                    Pendente
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              {laudoInfo && (
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline" onClick={handleViewLaudo}>
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    Visualizar
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={handleDownloadLaudo}>
+                                    <Download className="h-4 w-4 mr-1" />
+                                    Baixar
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {laudoInfo ? (
+                              <p className="text-sm text-muted-foreground">
+                                Concluído em: {new Date(laudoInfo.completed_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">
+                                O laudo será disponibilizado após a conclusão do processo de devolutiva
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     {/* Clinical Info */}
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-4">
                         <div className="p-4 rounded-lg bg-muted/50">
-                          <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                            <Activity className="h-4 w-4" />
-                            Diagnóstico Principal
-                          </h4>
-                          <p className="text-sm">{client.diagnosis || 'Não informado'}</p>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-muted/50">
                           <h4 className="font-medium text-sm mb-2">Histórico Médico</h4>
                           <p className="text-sm">{client.medical_history || 'Não informado'}</p>
                         </div>
-                      </div>
-                      
-                      <div className="space-y-4">
+                        
                         <div className="p-4 rounded-lg bg-muted/50">
                           <h4 className="font-medium text-sm mb-2">Queixa Neuropsicológica</h4>
                           <p className="text-sm">{client.neuropsych_complaint || 'Não informado'}</p>
                         </div>
-                        
+                      </div>
+                      
+                      <div className="space-y-4">
                         <div className="p-4 rounded-lg bg-muted/50">
                           <h4 className="font-medium text-sm mb-2">Expectativas do Tratamento</h4>
                           <p className="text-sm">{client.treatment_expectations || 'Não informado'}</p>
