@@ -31,7 +31,14 @@ import {
   FileDown,
   FileText,
   CheckSquare,
+  UserCheck,
+  UserX,
+  Baby,
+  UserRound,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatsCard } from "@/components/ui/stats-card";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { useClients } from "@/hooks/useClients";
 import { useDebouncedValue } from "@/hooks/useDebounce";
 import ClientDetailsView from "@/components/ClientDetailsView";
@@ -472,51 +479,42 @@ export default function Patients() {
       </div>
     );
   }
+  // Counts for stats
+  const activeCount = filteredClients.filter((c) => c.is_active).length;
+  const inactiveCount = filteredClients.filter((c) => !c.is_active).length;
+  const minorCount = filteredClients.filter((c) => {
+    if (!c.birth_date) return false;
+    const birthDate = new Date(c.birth_date);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
+    return age < 18;
+  }).length;
+  const activeFiltersCount = (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0);
+
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in px-2 sm:px-0">
-      <div className="flex flex-col gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="h-8 sm:h-10 w-1 sm:w-1.5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent">
-              Gerenciar Pacientes
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground ml-3 sm:ml-5 flex items-center gap-2 flex-wrap">
-            {isGodMode() ? (
-              <>
-                <span className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-600 text-xs font-medium">
-                  🔑 Modo Diretor
-                </span>{" "}
-                Acesso total aos pacientes
-              </>
-            ) : isCoordinatorOrDirector() ? (
-              <>
-                <span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
-                  📋
-                </span>{" "}
-                Gerenciando pacientes da sua unidade
-              </>
-            ) : (
-              <>
-                <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-500/10 text-green-600 text-xs font-medium">
-                  👥
-                </span>{" "}
-                Visualizando apenas pacientes vinculados a você
-              </>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <PageHeader
+        title="Gerenciar Pacientes"
+        description={
+          isGodMode()
+            ? "Acesso total aos pacientes do sistema"
+            : isCoordinatorOrDirector()
+            ? "Gerenciando pacientes da sua unidade"
+            : "Visualizando pacientes vinculados a você"
+        }
+        icon={<Users className="h-6 w-6" />}
+        iconColor="blue"
+        actions={
+          <>
+            {isGodMode() && (
+              <Badge className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0">
+                🔑 Diretor
+              </Badge>
             )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isGodMode() && (
-            <Badge
-              variant="default"
-              className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg"
-            >
-              🔑 Diretor
-            </Badge>
-          )}
-          <Dialog
+            <Dialog
             open={isDialogOpen}
             onOpenChange={(open) => {
               setIsDialogOpen(open);
@@ -812,126 +810,92 @@ export default function Patients() {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
+          </>
+        }
+      />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          title="Total de Pacientes"
+          value={filteredClients.length}
+          subtitle="Registrados no sistema"
+          icon={<Users className="h-5 w-5" />}
+          variant="blue"
+        />
+        <StatsCard
+          title="Pacientes Ativos"
+          value={activeCount}
+          subtitle="Em tratamento ativo"
+          icon={<UserCheck className="h-5 w-5" />}
+          variant="green"
+        />
+        <StatsCard
+          title="Menores de Idade"
+          value={minorCount}
+          subtitle="Pacientes < 18 anos"
+          icon={<Baby className="h-5 w-5" />}
+          variant="purple"
+        />
+        <StatsCard
+          title="Inativos"
+          value={inactiveCount}
+          subtitle="Fora de tratamento"
+          icon={<UserX className="h-5 w-5" />}
+          variant="default"
+        />
       </div>
 
-      {/* Filters Section */}
-      <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-primary/5 via-card to-primary/10">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <CardHeader className="relative">
-          <div className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base font-semibold">Filtros de Busca</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 relative">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Unidade:</Label>
-              <Select value={unitFilter} onValueChange={setUnitFilter}>
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="Todas as Unidades" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Unidades</SelectItem>
-                  <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
-                  <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
-                  <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Idade:</Label>
-              <Select value={ageFilter} onValueChange={setAgeFilter}>
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="Todas as Idades" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Idades</SelectItem>
-                  <SelectItem value="minor">Menor de Idade</SelectItem>
-                  <SelectItem value="adult">Maior de Idade</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+      {/* Filter Bar */}
+      <FilterBar
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar por nome, CPF, telefone..."
+        activeFiltersCount={activeFiltersCount}
+        onClearFilters={() => {
+          setUnitFilter("all");
+          setAgeFilter("all");
+          setProfessionalFilter("all");
+        }}
+        filters={
+          <>
+            <Select value={unitFilter} onValueChange={setUnitFilter}>
+              <SelectTrigger className="w-[160px] h-10">
+                <SelectValue placeholder="Unidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Unidades</SelectItem>
+                <SelectItem value="madre">MADRE</SelectItem>
+                <SelectItem value="floresta">Floresta</SelectItem>
+                <SelectItem value="atendimento_floresta">Atend. Floresta</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={ageFilter} onValueChange={setAgeFilter}>
+              <SelectTrigger className="w-[140px] h-10">
+                <SelectValue placeholder="Idade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Idades</SelectItem>
+                <SelectItem value="minor">Menores</SelectItem>
+                <SelectItem value="adult">Adultos</SelectItem>
+              </SelectContent>
+            </Select>
             {isCoordinatorOrDirector() && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Profissional:</Label>
-                <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
-                  <SelectTrigger className="bg-background border-border">
-                    <SelectValue placeholder="Todos os Profissionais" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os Profissionais</SelectItem>
-                    {employees.map((employee) => {
-                      // Count how many clients this professional has assigned
-                      const assignedCount = clientAssignments.filter(
-                        (assignment) => assignment.employee_id === employee.user_id && assignment.is_active,
-                      ).length;
-                      return (
-                        <SelectItem key={employee.id} value={employee.id}>
-                          {employee.name} ({assignedCount} pacientes)
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
+                <SelectTrigger className="w-[180px] h-10">
+                  <SelectValue placeholder="Profissional" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Profissionais</SelectItem>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground">Total de Pacientes</CardTitle>
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-              <Users className="h-6 w-6 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-extrabold bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent mb-1">
-              {filteredClients.length}
-            </div>
-            <p className="text-xs text-muted-foreground font-medium">Registrados no sistema</p>
-          </CardContent>
-        </Card>
-
-        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground">Pacientes Ativos</CardTitle>
-            <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-              <Users className="h-6 w-6 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-extrabold bg-gradient-to-br from-green-600 to-green-400 bg-clip-text text-transparent mb-1">
-              {filteredClients.filter((c) => c.is_active).length}
-            </div>
-            <p className="text-xs text-muted-foreground font-medium">Em tratamento ativo</p>
-          </CardContent>
-        </Card>
-
-        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-gray-500/10 via-card to-gray-500/5">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground">Pacientes Inativos</CardTitle>
-            <div className="p-3 bg-gradient-to-br from-gray-500 to-gray-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-              <Users className="h-6 w-6 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-extrabold bg-gradient-to-br from-gray-600 to-gray-400 bg-clip-text text-transparent mb-1">
-              {filteredClients.filter((c) => !c.is_active).length}
-            </div>
-            <p className="text-xs text-muted-foreground font-medium">Fora de tratamento</p>
-          </CardContent>
-        </Card>
-      </div>
+          </>
+        }
+      />
 
       <Tabs defaultValue="list" className="space-y-6">
         <TabsList

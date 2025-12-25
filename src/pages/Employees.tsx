@@ -11,11 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Eye, Edit, UserPlus, Users, Clock, Settings, Shield } from 'lucide-react';
+import { Search, Eye, Edit, UserPlus, Users, Clock, Settings, Shield, UserCheck, UserX, Briefcase } from 'lucide-react';
 import EmployeePermissions from '@/components/EmployeePermissions';
 import PasswordManager from '@/components/PasswordManager';
 import { CustomRoleManager } from '@/components/CustomRoleManager';
 import { ROLE_LABELS, EmployeeRole } from '@/hooks/useRolePermissions';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatsCard } from '@/components/ui/stats-card';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { EnhancedTable, StatusBadge } from '@/components/ui/enhanced-table';
+import { UserAvatar } from '@/components/UserAvatar';
 
 interface Employee {
   id: string;
@@ -180,55 +185,49 @@ export default function Employees() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Funcionários</h1>
-        {isDirector && (
-          <Button className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Cadastrar Funcionário
-          </Button>
-        )}
-      </div>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <PageHeader
+        title="Funcionários"
+        description={`${filteredEmployees.length} funcionários cadastrados no sistema`}
+        icon={<Users className="h-6 w-6" />}
+        iconColor="purple"
+        actions={
+          isDirector && (
+            <Button className="gap-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 border-0">
+              <UserPlus className="h-4 w-4" />
+              Cadastrar Funcionário
+            </Button>
+          )
+        }
+      />
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Funcionários</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredEmployees.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ativos</CardTitle>
-            <Users className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeEmployees.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inativos</CardTitle>
-            <Users className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-500">{inactiveEmployees.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cargos</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(employeesByRole).length}</div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          title="Total de Funcionários"
+          value={filteredEmployees.length}
+          icon={<Users className="h-5 w-5" />}
+          variant="purple"
+        />
+        <StatsCard
+          title="Ativos"
+          value={activeEmployees.length}
+          icon={<UserCheck className="h-5 w-5" />}
+          variant="green"
+        />
+        <StatsCard
+          title="Inativos"
+          value={inactiveEmployees.length}
+          icon={<UserX className="h-5 w-5" />}
+          variant="default"
+        />
+        <StatsCard
+          title="Cargos"
+          value={Object.keys(employeesByRole).length}
+          icon={<Briefcase className="h-5 w-5" />}
+          variant="blue"
+        />
       </div>
 
       {isDirector ? (
@@ -240,18 +239,28 @@ export default function Employees() {
           </TabsList>
 
           <TabsContent value="list" className="space-y-4">
+            {/* Filter Bar */}
+            <FilterBar
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Buscar por nome, cargo, telefone..."
+            />
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Employees by Role */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Funcionários por Cargo</CardTitle>
+              <Card className="border shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-purple-500" />
+                    Por Cargo
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {Object.entries(employeesByRole).map(([role, roleEmployees]) => (
-                      <div key={role} className="flex justify-between items-center">
-                        <span className="text-sm">{ROLE_LABELS[role] || role}</span>
-                        <Badge variant="outline">{(roleEmployees as Employee[]).length}</Badge>
+                      <div key={role} className="flex justify-between items-center p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                        <span className="text-sm font-medium">{ROLE_LABELS[role] || role}</span>
+                        <Badge variant="secondary" className="font-semibold">{(roleEmployees as Employee[]).length}</Badge>
                       </div>
                     ))}
                   </div>
@@ -259,9 +268,12 @@ export default function Employees() {
               </Card>
 
               {/* Recent Hires */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contratações Recentes</CardTitle>
+              <Card className="border shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-blue-500" />
+                    Recentes
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -269,9 +281,10 @@ export default function Employees() {
                       .sort((a, b) => new Date(b.hire_date || 0).getTime() - new Date(a.hire_date || 0).getTime())
                       .slice(0, 5)
                       .map((employee) => (
-                        <div key={employee.id} className="flex justify-between items-center">
-                          <div>
-                            <div className="text-sm font-medium">{employee.name}</div>
+                        <div key={employee.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                          <UserAvatar name={employee.name} size="sm" role={employee.employee_role} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">{employee.name}</div>
                             <div className="text-xs text-muted-foreground">
                               {ROLE_LABELS[employee.employee_role] || employee.employee_role}
                             </div>
@@ -285,26 +298,29 @@ export default function Employees() {
                 </CardContent>
               </Card>
 
-              {/* Active vs Inactive */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Status dos Funcionários</CardTitle>
+              {/* Activity Status */}
+              <Card className="border shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users className="h-4 w-4 text-green-500" />
+                    Status
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Funcionários Ativos</span>
-                      <Badge variant="default">{activeEmployees.length}</Badge>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-emerald-500/10">
+                      <span className="text-sm font-medium">Ativos</span>
+                      <Badge className="bg-emerald-500 text-white">{activeEmployees.length}</Badge>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Funcionários Inativos</span>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
+                      <span className="text-sm font-medium">Inativos</span>
                       <Badge variant="secondary">{inactiveEmployees.length}</Badge>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Taxa de Atividade</span>
-                      <Badge variant="outline">
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/10">
+                      <span className="text-sm font-medium">Taxa de Atividade</span>
+                      <Badge className="bg-blue-500 text-white">
                         {filteredEmployees.length > 0 
-                          ? ((activeEmployees.length / filteredEmployees.length) * 100).toFixed(1) 
+                          ? ((activeEmployees.length / filteredEmployees.length) * 100).toFixed(0) 
                           : 0}%
                       </Badge>
                     </div>
@@ -314,20 +330,14 @@ export default function Employees() {
             </div>
 
             {/* Employees Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Lista de Funcionários</CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar funcionário..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                  />
-                </div>
+            <Card className="border shadow-sm">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Lista de Funcionários
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 {loading ? (
                   <p className="text-muted-foreground text-center py-8">Carregando funcionários...</p>
                 ) : filteredEmployees.length === 0 ? (
@@ -335,61 +345,74 @@ export default function Employees() {
                     {searchTerm ? 'Nenhum funcionário encontrado.' : 'Nenhum funcionário cadastrado.'}
                   </p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Cargo</TableHead>
-                        <TableHead>Telefone</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredEmployees.map((employee) => (
-                        <TableRow key={employee.id}>
-                          <TableCell className="font-medium">{employee.name}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {ROLE_LABELS[employee.employee_role] || employee.employee_role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{employee.phone || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant={employee.is_active ? "default" : "secondary"}>
-                              {employee.is_active ? 'Ativo' : 'Inativo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => openEditDialog(employee)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openPermissionsDialog(employee)}
-                              >
-                                <Settings className="h-3 w-3" />
-                              </Button>
-                              <PasswordManager 
-                                employeeId={employee.user_id}
-                                employeeName={employee.name || 'Funcionário'}
-                                employeeEmail={employee.phone || 'email@exemplo.com'}
-                              />
-                            </div>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead className="font-semibold">Funcionário</TableHead>
+                          <TableHead className="font-semibold">Cargo</TableHead>
+                          <TableHead className="font-semibold">Telefone</TableHead>
+                          <TableHead className="font-semibold">Status</TableHead>
+                          <TableHead className="font-semibold">Ações</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEmployees.map((employee, index) => (
+                          <TableRow 
+                            key={employee.id}
+                            className={index % 2 === 1 ? "bg-muted/20" : ""}
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <UserAvatar name={employee.name} size="sm" role={employee.employee_role} />
+                                <span className="font-medium">{employee.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="font-medium">
+                                {ROLE_LABELS[employee.employee_role] || employee.employee_role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{employee.phone || '-'}</TableCell>
+                            <TableCell>
+                              <StatusBadge 
+                                status={employee.is_active ? 'Ativo' : 'Inativo'} 
+                                variant={employee.is_active ? 'success' : 'default'} 
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => openEditDialog(employee)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => openPermissionsDialog(employee)}
+                                >
+                                  <Settings className="h-4 w-4" />
+                                </Button>
+                                <PasswordManager 
+                                  employeeId={employee.user_id}
+                                  employeeName={employee.name || 'Funcionário'}
+                                  employeeEmail={employee.phone || 'email@exemplo.com'}
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
