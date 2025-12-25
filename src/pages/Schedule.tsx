@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X, Trash2, CalendarDays, LayoutList } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X, Trash2, CalendarDays, LayoutList, UserCheck, ClipboardList, AlertCircle } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -30,6 +30,8 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useClients } from '@/hooks/useClients';
 import { useSchedules, useCreateSchedule, useUpdateSchedule } from '@/hooks/useSchedules';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatsCard } from '@/components/ui/stats-card';
 
 interface Schedule {
   id: string;
@@ -578,98 +580,113 @@ export default function Schedule() {
   console.log('Today schedules:', todaySchedules); // Debug log
   console.log('User can see patient presence buttons:', userProfile?.employee_role === 'receptionist'); // Debug log
 
+  // Estatísticas do dia
+  const dayStats = {
+    total: filteredSchedules.length,
+    confirmed: filteredSchedules.filter(s => s.status === 'confirmed' || s.patient_arrived).length,
+    pending: filteredSchedules.filter(s => s.status === 'scheduled' && !s.patient_arrived).length,
+    completed: filteredSchedules.filter(s => s.status === 'completed').length,
+  };
+
   return (
-    <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
+    <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6 animate-fade-in">
       <PatientArrivedNotification />
       <ScheduleAlerts />
       
-      {/* Cabeçalho principal */}
-      <div className="animate-fade-in">
-        <div className="relative mb-4 sm:mb-6">
-          <div className="absolute -left-2 sm:-left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 rounded-full" />
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 bg-clip-text text-transparent pl-2 sm:pl-0">
-            Agenda de Atendimentos
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2 pl-2 sm:pl-0">
-            Gerencie seus compromissos e visualize os horários disponíveis
-          </p>
-        </div>
+      {/* Header */}
+      <PageHeader
+        title="Agenda de Atendimentos"
+        description="Gerencie seus compromissos e visualize os horários disponíveis"
+        icon={<CalendarIcon className="h-6 w-6" />}
+        iconColor="blue"
+        actions={
+          <Button 
+            className="gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 border-0 shadow-lg" 
+            onClick={() => {
+              setEditingSchedule(null);
+              const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
+              setNewAppointment({
+                client_id: '',
+                employee_id: defaultEmployeeId,
+                title: 'Consulta',
+                start_time: '',
+                end_time: '',
+                notes: '',
+                unit: userProfile?.unit || 'madre',
+                sessionCount: 1
+              });
+              setIsDialogOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Novo Agendamento
+          </Button>
+        }
+      />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatsCard
+          title="Total do Dia"
+          value={dayStats.total}
+          icon={<ClipboardList className="h-5 w-5" />}
+          variant="blue"
+        />
+        <StatsCard
+          title="Presentes"
+          value={dayStats.confirmed}
+          icon={<UserCheck className="h-5 w-5" />}
+          variant="green"
+        />
+        <StatsCard
+          title="Aguardando"
+          value={dayStats.pending}
+          icon={<Clock className="h-5 w-5" />}
+          variant="orange"
+        />
+        <StatsCard
+          title="Concluídos"
+          value={dayStats.completed}
+          icon={<CheckCircle className="h-5 w-5" />}
+          variant="default"
+        />
       </div>
       
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar esquerda com calendário e controles */}
-        <div className="lg:w-80">
-          <div className="space-y-6">
-            <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-blue-500/5 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent pointer-events-none" />
-              <CardHeader className="relative">
-                <CardTitle className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg">
-                    <CalendarIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent font-bold">
-                    Calendário
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
+        <div className="lg:w-72">
+          <div className="space-y-4">
+            {/* Calendário */}
+            <Card className="border shadow-sm">
+              <CardContent className="p-3">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={(date) => date && setSelectedDate(date)}
                   locale={ptBR}
-                  className="rounded-lg border-blue-500/20 w-full pointer-events-auto"
+                  className="rounded-lg w-full"
                 />
               </CardContent>
             </Card>
 
-            {/* Botão Novo Agendamento - Versão Desktop */}
-            <Button 
-              className="w-full py-6 text-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
-              onClick={() => {
-                setEditingSchedule(null);
-                // Para profissionais comuns, pré-selecionar eles mesmos
-                const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
-                setNewAppointment({
-                  client_id: '',
-                  employee_id: defaultEmployeeId,
-                  title: 'Consulta',
-                  start_time: '',
-                  end_time: '',
-                  notes: '',
-                  unit: 'madre',
-                  sessionCount: 1
-                });
-                setIsDialogOpen(true);
-              }}
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Novo Agendamento
-            </Button>
-
             {/* Filtros para Administradores */}
             {isAdmin && (
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-purple-500/5">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg">
-                      <Filter className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <span className="bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent font-bold">
-                      Filtros
-                    </span>
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    Filtros
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Filtro de Funcionário */}
+                <CardContent className="space-y-3">
                   <div>
-                    <Label htmlFor="filterEmployee">Profissional</Label>
+                    <Label className="text-xs">Profissional</Label>
                     <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos os profissionais" />
+                      <SelectTrigger className="h-9 mt-1">
+                        <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos os profissionais</SelectItem>
+                        <SelectItem value="all">Todos</SelectItem>
                         {employees.map((emp) => (
                           <SelectItem key={emp.user_id} value={emp.user_id}>
                             {emp.name}
@@ -679,37 +696,20 @@ export default function Schedule() {
                     </Select>
                   </div>
 
-                  {/* Filtro de Unidade - Apenas para Diretores */}
                   {userRole === 'director' && (
                     <div>
-                      <Label htmlFor="filterUnit">Unidade</Label>
+                      <Label className="text-xs">Unidade</Label>
                       <Select value={filterUnit} onValueChange={setFilterUnit}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todas as unidades" />
+                        <SelectTrigger className="h-9 mt-1">
+                          <SelectValue placeholder="Todas" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">Todas as unidades</SelectItem>
-                          <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
-                          <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
-                          <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
+                          <SelectItem value="all">Todas</SelectItem>
+                          <SelectItem value="madre">MADRE</SelectItem>
+                          <SelectItem value="floresta">Floresta</SelectItem>
+                          <SelectItem value="atendimento_floresta">Atend. Floresta</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                  )}
-
-                  {/* Info da unidade atual para Coordenadores e Recepcionistas */}
-                  {(userRole === 'coordinator_madre' || userRole === 'coordinator_floresta' || userRole === 'coordinator_atendimento_floresta' || userRole === 'receptionist') && (
-                    <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-lg">
-                      <p className="text-sm font-medium text-muted-foreground">Unidade Atual:</p>
-                      <p className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-                        🏥 {userRole === 'coordinator_madre' ? 'MADRE' : 
-                         userRole === 'coordinator_floresta' ? 'FLORESTA' : 
-                         userRole === 'coordinator_atendimento_floresta' ? 'ATENDIMENTO FLORESTA' :
-                         userProfile?.unit === 'madre' ? 'MADRE' : 
-                         userProfile?.unit === 'floresta' ? 'FLORESTA' :
-                         userProfile?.unit === 'atendimento_floresta' ? 'ATENDIMENTO FLORESTA' :
-                         'N/A'}
-                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -720,115 +720,91 @@ export default function Schedule() {
 
         {/* Conteúdo principal */}
         <div className="flex-1">
-          <div className="space-y-6">
-            {/* Área de pesquisa avançada */}
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-indigo-500/5">
-              <CardContent className="pt-4 pb-4 space-y-4">
-                {/* Barra de pesquisa por texto */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Pesquisar: paciente, profissional, horário (ex: 14:00), data, status..."
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    className="pl-10 pr-10"
-                  />
-                  {searchText && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                      onClick={() => setSearchText('')}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-
-                {/* Filtros: Modo de visualização e Horário */}
-                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4">
-                  {/* Toggle Dia/Semana */}
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Visualização:</span>
-                    <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')} className="flex-1 sm:flex-none">
-                      <ToggleGroupItem value="day" aria-label="Visualização diária" className="gap-1 sm:gap-2 flex-1 sm:flex-none">
-                        <LayoutList className="h-4 w-4" />
-                        <span>Dia</span>
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="week" aria-label="Visualização semanal" className="gap-1 sm:gap-2 flex-1 sm:flex-none">
-                        <CalendarDays className="h-4 w-4" />
-                        <span>Semana</span>
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
-
-                  {/* Filtro de Horário */}
-                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                    <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Horário:</span>
-                    <div className="flex items-center gap-2 flex-1 sm:flex-none">
-                      <Input
-                        type="time"
-                        value={filterTimeStart}
-                        onChange={(e) => setFilterTimeStart(e.target.value)}
-                        className="w-full sm:w-28"
-                        placeholder="Início"
-                      />
-                      <span className="text-muted-foreground text-sm">até</span>
-                      <Input
-                        type="time"
-                        value={filterTimeEnd}
-                        onChange={(e) => setFilterTimeEnd(e.target.value)}
-                        className="w-full sm:w-28"
-                        placeholder="Fim"
-                      />
-                      {(filterTimeStart || filterTimeEnd) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setFilterTimeStart('');
-                            setFilterTimeEnd('');
-                          }}
-                          className="h-8 w-8 p-0 flex-shrink-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mostrar filtros ativos */}
-                {(searchText || filterTimeStart || filterTimeEnd || filterEmployee !== 'all' || filterUnit !== 'all') && (
-                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Filtros ativos:</span>
+          <div className="space-y-4">
+            {/* Barra de pesquisa e visualização */}
+            <Card className="border shadow-sm">
+              <CardContent className="py-3 px-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Pesquisa */}
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar paciente, profissional, horário..."
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      className="pl-9 pr-9 h-9"
+                    />
                     {searchText && (
-                      <Badge variant="secondary" className="gap-1">
-                        Pesquisa: "{searchText}"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+                        onClick={() => setSearchText('')}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Toggle Dia/Semana */}
+                  <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')}>
+                    <ToggleGroupItem value="day" aria-label="Dia" className="gap-1.5 h-9 px-3">
+                      <LayoutList className="h-4 w-4" />
+                      <span className="text-sm">Dia</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="week" aria-label="Semana" className="gap-1.5 h-9 px-3">
+                      <CalendarDays className="h-4 w-4" />
+                      <span className="text-sm">Semana</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+
+                  {/* Filtro de horário */}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="time"
+                      value={filterTimeStart}
+                      onChange={(e) => setFilterTimeStart(e.target.value)}
+                      className="w-24 h-9"
+                    />
+                    <span className="text-muted-foreground text-sm">-</span>
+                    <Input
+                      type="time"
+                      value={filterTimeEnd}
+                      onChange={(e) => setFilterTimeEnd(e.target.value)}
+                      className="w-24 h-9"
+                    />
+                    {(filterTimeStart || filterTimeEnd) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setFilterTimeStart(''); setFilterTimeEnd(''); }}
+                        className="h-9 w-9 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Filtros ativos */}
+                {(searchText || filterTimeStart || filterTimeEnd || filterEmployee !== 'all' || filterUnit !== 'all') && (
+                  <div className="flex flex-wrap items-center gap-2 pt-3 mt-3 border-t">
+                    <span className="text-xs text-muted-foreground">Filtros:</span>
+                    {searchText && (
+                      <Badge variant="secondary" className="gap-1 text-xs">
+                        "{searchText}"
                         <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchText('')} />
                       </Badge>
                     )}
-                    {filterTimeStart && (
-                      <Badge variant="secondary" className="gap-1">
-                        Após: {filterTimeStart}
-                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterTimeStart('')} />
-                      </Badge>
-                    )}
-                    {filterTimeEnd && (
-                      <Badge variant="secondary" className="gap-1">
-                        Antes: {filterTimeEnd}
-                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterTimeEnd('')} />
-                      </Badge>
-                    )}
                     {filterEmployee !== 'all' && (
-                      <Badge variant="secondary" className="gap-1">
-                        Profissional: {employees.find(e => e.user_id === filterEmployee)?.name}
+                      <Badge variant="secondary" className="gap-1 text-xs">
+                        {employees.find(e => e.user_id === filterEmployee)?.name}
                         <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterEmployee('all')} />
                       </Badge>
                     )}
                     {filterUnit !== 'all' && (
-                      <Badge variant="secondary" className="gap-1">
-                        Unidade: {filterUnit === 'madre' ? 'MADRE' : filterUnit === 'floresta' ? 'Floresta' : 'Atend. Floresta'}
+                      <Badge variant="secondary" className="gap-1 text-xs">
+                        {filterUnit === 'madre' ? 'MADRE' : filterUnit === 'floresta' ? 'Floresta' : 'Atend. Floresta'}
                         <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterUnit('all')} />
                       </Badge>
                     )}
@@ -838,29 +814,23 @@ export default function Schedule() {
             </Card>
 
             {/* Lista de Agendamentos */}
-            <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-green-500/5">
-               <CardHeader className="border-b border-gradient-to-r from-transparent via-green-500/20 to-transparent">
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-lg">
-                    <Clock className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <span className="bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent font-bold">
-                      {viewMode === 'day' ? 'Agenda do Dia' : 'Agenda da Semana'}
-                    </span>
-                    <p className="text-sm font-normal text-muted-foreground mt-1">
-                      {viewMode === 'day' 
-                        ? format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-                        : `${format(weekStart, "dd/MM", { locale: ptBR })} - ${format(addDays(weekStart, 6), "dd/MM/yyyy", { locale: ptBR })}`
+            <Card className="border shadow-sm">
+              <CardHeader className="pb-3 border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    {viewMode === 'day' ? 'Agenda do Dia' : 'Agenda da Semana'}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      - {viewMode === 'day' 
+                        ? format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
+                        : `${format(weekStart, "dd/MM", { locale: ptBR })} a ${format(addDays(weekStart, 6), "dd/MM", { locale: ptBR })}`
                       }
-                    </p>
-                  </div>
-                  <div className="ml-auto text-sm text-muted-foreground">
-                    {filteredSchedules.length} agendamento(s)
-                  </div>
-                </CardTitle>
+                    </span>
+                  </CardTitle>
+                  <Badge variant="outline">{filteredSchedules.length} agendamento(s)</Badge>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 {loading ? (
                   <div className="space-y-4">
                     {[1, 2, 3].map((i) => (

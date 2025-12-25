@@ -2,10 +2,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2 } from 'lucide-react';
+import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
+import { UserAvatar } from '@/components/UserAvatar';
 
 interface Schedule {
   id: string;
@@ -40,6 +41,12 @@ interface ScheduleCardProps {
   getStatusBadge: (status: string) => { text: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string };
 }
 
+const unitColors: Record<string, { bg: string; text: string; border: string; label: string }> = {
+  madre: { bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-500/20', label: 'MADRE' },
+  floresta: { bg: 'bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-500/20', label: 'FLORESTA' },
+  atendimento_floresta: { bg: 'bg-purple-500/10', text: 'text-purple-700 dark:text-purple-400', border: 'border-purple-500/20', label: 'ATEND. FLORESTA' },
+};
+
 export const ScheduleCard = ({
   schedule,
   employees,
@@ -55,214 +62,220 @@ export const ScheduleCard = ({
   onPresenceUpdate,
   getStatusBadge
 }: ScheduleCardProps) => {
+  const professional = employees.find(emp => emp.user_id === schedule.employee_id);
+  const unitStyle = unitColors[schedule.unit || 'madre'] || unitColors.madre;
+  const isCompleted = schedule.status === 'completed';
+  const isCancelled = schedule.status === 'cancelled';
+  const isPendingValidation = schedule.status === 'pending_validation';
+
   return (
     <div 
-      className={`group relative overflow-hidden p-6 border rounded-xl gap-6 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 ${
-        schedule.patient_arrived 
-          ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-50/50 shadow-lg dark:from-emerald-950/30 dark:via-green-950/20 dark:to-emerald-950/10' 
-          : 'border-border hover:border-blue-500/30 bg-gradient-to-br from-card to-blue-500/5'
+      className={`group relative rounded-xl border bg-card transition-all duration-300 hover:shadow-lg ${
+        schedule.patient_arrived && !isCompleted && !isCancelled && !isPendingValidation
+          ? 'border-emerald-400/50 ring-1 ring-emerald-400/30' 
+          : isCompleted 
+            ? 'border-green-400/30 bg-green-50/50 dark:bg-green-950/10'
+            : isCancelled
+              ? 'border-destructive/30 bg-destructive/5'
+              : 'border-border hover:border-primary/30'
       }`}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      {/* Barra lateral colorida por status */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${
+        schedule.patient_arrived && !isCompleted && !isCancelled && !isPendingValidation
+          ? 'bg-emerald-500'
+          : isCompleted 
+            ? 'bg-green-500'
+            : isCancelled
+              ? 'bg-destructive'
+              : isPendingValidation
+                ? 'bg-amber-500'
+                : 'bg-primary'
+      }`} />
       
-      {/* Header com horário e tipo */}
-      <div className="relative flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-lg">
-            <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-              {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
-            </span>
-          </div>
-          <Badge className="text-sm font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
-            {schedule.title}
-          </Badge>
-        </div>
-        <Badge 
-          variant={
-            schedule.unit === 'madre' ? 'default' : 
-            schedule.unit === 'floresta' ? 'secondary' :
-            'outline'
-          }
-          className={`text-sm font-semibold ${
-            schedule.unit === 'madre' 
-              ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' 
-              : schedule.unit === 'floresta'
-              ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
-              : 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20'
-          }`}
-        >
-          🏥 {schedule.unit === 'madre' ? 'MADRE' : 
-              schedule.unit === 'floresta' ? 'FLORESTA' :
-              schedule.unit === 'atendimento_floresta' ? 'ATEND. FLORESTA' :
-              schedule.unit || 'N/A'}
-        </Badge>
-      </div>
-
-      {/* Informações principais */}
-      <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-500/5 to-transparent rounded-lg border border-green-500/10">
-            <div className="p-1.5 bg-green-500/10 rounded-md">
-              <User className="h-4 w-4 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-muted-foreground">Paciente</span>
-              <span className="font-bold text-foreground">{schedule.clients?.name || 'N/A'}</span>
-            </div>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-500/5 to-transparent rounded-lg border border-blue-500/10">
-            <div className="p-1.5 bg-blue-500/10 rounded-md">
-              <Stethoscope className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-muted-foreground">Profissional</span>
-              <span className="font-bold text-foreground">
-                {employees.find(emp => emp.user_id === schedule.employee_id)?.name || 'Não atribuído'}
+      <div className="p-4 pl-5">
+        {/* Header: Horário + Unidade + Status */}
+        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/5 rounded-md border border-primary/10">
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              <span className="text-sm font-semibold text-foreground">
+                {format(new Date(schedule.start_time), 'HH:mm')} - {format(new Date(schedule.end_time), 'HH:mm')}
               </span>
             </div>
+            <Badge variant="outline" className={`${unitStyle.bg} ${unitStyle.text} ${unitStyle.border} text-xs font-medium`}>
+              <MapPin className="h-3 w-3 mr-1" />
+              {unitStyle.label}
+            </Badge>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {schedule.patient_arrived && !isCompleted && !isCancelled && !isPendingValidation && (
+              <Badge className="bg-emerald-500 text-white text-xs animate-pulse">
+                ✓ Presente
+              </Badge>
+            )}
+            <Badge 
+              variant={getStatusBadge(schedule.status).variant}
+              className={`text-xs ${getStatusBadge(schedule.status).className || ''}`}
+            >
+              {getStatusBadge(schedule.status).text}
+            </Badge>
           </div>
         </div>
-      </div>
 
-      {/* Status e observações */}
-      <div className="relative flex flex-col gap-3">
+        {/* Conteúdo: Paciente e Profissional */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          {/* Paciente */}
+          <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
+            <UserAvatar name={schedule.clients?.name} size="sm" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">Paciente</p>
+              <p className="font-medium text-sm truncate">{schedule.clients?.name || 'N/A'}</p>
+            </div>
+          </div>
+
+          {/* Profissional */}
+          <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
+            <UserAvatar 
+              name={professional?.name} 
+              size="sm" 
+              role={professional?.employee_role}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">Profissional</p>
+              <p className="font-medium text-sm truncate">{professional?.name || 'Não atribuído'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tipo de atendimento */}
+        <div className="flex items-center gap-2 mb-3">
+          <Badge variant="secondary" className="text-xs">
+            <Stethoscope className="h-3 w-3 mr-1" />
+            {schedule.title}
+          </Badge>
+          {schedule.arrived_at && (
+            <span className="text-xs text-muted-foreground">
+              Chegou às {format(new Date(schedule.arrived_at), 'HH:mm')}
+            </span>
+          )}
+        </div>
+
+        {/* Observações */}
         {schedule.notes && (
-          <div className="p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20">
-            <p className="text-sm">
-              <span className="font-bold text-yellow-700 dark:text-yellow-400">💭 Observações:</span>
-              <span className="ml-2 text-foreground">{schedule.notes}</span>
+          <div className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10 mb-3">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium text-amber-700 dark:text-amber-400">Obs:</span>{' '}
+              <span className="text-foreground">{schedule.notes}</span>
             </p>
           </div>
         )}
-      </div>
 
-      {/* Actions footer */}
-      <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-4 border-t border-gradient-to-r from-transparent via-border to-transparent">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Badge 
-            variant={getStatusBadge(schedule.status).variant}
-            className={`${getStatusBadge(schedule.status).className || ''} ${
-              schedule.patient_arrived && !['pending_validation', 'completed', 'cancelled'].includes(schedule.status) 
-                ? 'border-emerald-500 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 font-bold shadow-md dark:from-emerald-900/50 dark:to-emerald-800/50 dark:text-emerald-200' 
-                : ''
-            } text-sm px-3 py-1.5`}
-          >
-            {schedule.patient_arrived && !['pending_validation', 'completed', 'cancelled'].includes(schedule.status) 
-              ? '✓ Paciente Presente' 
-              : getStatusBadge(schedule.status).text}
-          </Badge>
-          {schedule.patient_arrived && schedule.arrived_at && (
-            <span className="text-xs font-medium px-2 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-md border border-emerald-500/20">
-              Chegou às {format(new Date(schedule.arrived_at), 'HH:mm', { locale: ptBR })}
-            </span>
-          )}
-        </div>
+        {/* Ações */}
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-border/50 flex-wrap">
+          {/* Botão de presença para recepcionistas */}
+          <div>
+            {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
+              <PatientPresenceButton
+                scheduleId={schedule.id}
+                clientName={schedule.clients?.name || 'Cliente'}
+                employeeId={schedule.employee_id}
+                patientArrived={schedule.patient_arrived || false}
+                arrivedAt={schedule.arrived_at}
+                onPresenceUpdate={onPresenceUpdate}
+              />
+            )}
+          </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Botão de presença do paciente para recepcionistas */}
-          {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
-            <PatientPresenceButton
-              scheduleId={schedule.id}
-              clientName={schedule.clients?.name || 'Cliente'}
-              employeeId={schedule.employee_id}
-              patientArrived={schedule.patient_arrived || false}
-              arrivedAt={schedule.arrived_at}
-              onPresenceUpdate={onPresenceUpdate}
-            />
-          )}
-          
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onEdit(schedule)}
-            className="h-9 gap-2 font-medium hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
-          >
-            <Edit className="h-4 w-4" />
-            Editar
-          </Button>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onEdit(schedule)}
+              className="h-8 text-xs gap-1.5"
+            >
+              <Edit className="h-3.5 w-3.5" />
+              Editar
+            </Button>
 
-          {/* Botões de ação apenas para agendamentos pendentes */}
-          {['scheduled', 'confirmed'].includes(schedule.status) && (
-            <>
-              <Button
-                size="sm"
-                onClick={onCompleteClick}
-                className="h-9 gap-2 font-medium bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-md hover:shadow-lg transition-all duration-300"
-              >
-                <CheckCircle className="h-4 w-4" />
-                Concluir
-              </Button>
-
-              {canCancelSchedules && (
+            {['scheduled', 'confirmed'].includes(schedule.status) && (
+              <>
                 <Button
                   size="sm"
-                  variant="destructive"
-                  onClick={onCancelClick}
-                  className="h-9 gap-2 font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                  onClick={onCompleteClick}
+                  className="h-8 text-xs gap-1.5 bg-green-600 hover:bg-green-700"
                 >
-                  <XCircle className="h-4 w-4" />
-                  Cancelar
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Concluir
                 </Button>
-              )}
 
-              {canDeleteSchedules && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onDeleteClick}
-                  className="h-9 gap-2 font-medium text-destructive hover:bg-destructive/10 hover:border-destructive/50 transition-all duration-300"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Excluir
-                </Button>
-              )}
-            </>
-          )}
-          
-          {/* Status de atendimento concluído aguardando validação */}
-          {schedule.status === 'pending_validation' && (
-            <div className="flex items-center gap-2 text-amber-600">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm font-medium">Aguardando validação</span>
-            </div>
-          )}
+                {canCancelSchedules && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onCancelClick}
+                    className="h-8 text-xs gap-1.5 text-destructive hover:bg-destructive/10"
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Cancelar
+                  </Button>
+                )}
 
-          {isAdmin && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button size="sm" variant="outline" className="h-9 gap-2 font-medium hover:bg-purple-500/10 hover:text-purple-600 hover:border-purple-500/50 transition-all duration-300">
-                  <ArrowRightLeft className="h-4 w-4" />
-                  Redirecionar
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Redirecionar Agendamento</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Selecione o profissional para quem deseja redirecionar este agendamento.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <Select onValueChange={(value) => onRedirect(schedule.id, value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um profissional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.filter(emp => emp.user_id !== schedule.employee_id).map((employee) => (
-                      <SelectItem key={employee.user_id} value={employee.user_id}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+                {canDeleteSchedules && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={onDeleteClick}
+                    className="h-8 text-xs gap-1.5 text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </>
+            )}
+            
+            {isPendingValidation && (
+              <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                Aguardando validação
+              </span>
+            )}
+
+            {isAdmin && !isCompleted && !isCancelled && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5">
+                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                    Redirecionar
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Redirecionar Agendamento</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Selecione o profissional para quem deseja redirecionar este agendamento.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <Select onValueChange={(value) => onRedirect(schedule.id, value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um profissional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.filter(emp => emp.user_id !== schedule.employee_id).map((employee) => (
+                        <SelectItem key={employee.user_id} value={employee.user_id}>
+                          {employee.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
       </div>
     </div>
