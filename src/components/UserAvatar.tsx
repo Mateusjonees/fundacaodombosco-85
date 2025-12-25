@@ -5,7 +5,7 @@ import type { EmployeeRole } from '@/hooks/useRolePermissions';
 interface UserAvatarProps {
   name?: string | null;
   avatarUrl?: string | null;
-  role?: EmployeeRole | null;
+  role?: EmployeeRole | string | null;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   showRoleBadge?: boolean;
@@ -41,9 +41,9 @@ const getInitials = (name: string | null | undefined): string => {
     .toUpperCase();
 };
 
-const getRoleColor = (role: EmployeeRole | null | undefined): string => {
+const getRoleColor = (role: EmployeeRole | string | null | undefined): string => {
   if (!role) return 'bg-gradient-to-br from-primary to-primary/80';
-  return roleColors[role] || 'bg-gradient-to-br from-primary to-primary/80';
+  return roleColors[role as string] || 'bg-gradient-to-br from-primary to-primary/80';
 };
 
 export const UserAvatar = ({ 

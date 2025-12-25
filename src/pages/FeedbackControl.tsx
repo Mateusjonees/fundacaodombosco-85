@@ -54,6 +54,7 @@ export default function FeedbackControl() {
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackControl | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [uploadingLaudo, setUploadingLaudo] = useState(false);
+  const [diagnosisInput, setDiagnosisInput] = useState('');
 
   useEffect(() => {
     checkPermissions();
@@ -254,8 +255,9 @@ export default function FeedbackControl() {
   };
 
   const calculateRemainingDays = (deadlineDate: string) => {
-    const deadline = new Date(deadlineDate);
+    const deadline = new Date(deadlineDate + 'T23:59:59');
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     return differenceInBusinessDays(deadline, today);
   };
 
@@ -283,12 +285,28 @@ export default function FeedbackControl() {
       return;
     }
 
+    // Verificar se diagnóstico foi preenchido
+    if (!diagnosisInput.trim()) {
+      toast.error('Por favor, preencha o diagnóstico antes de anexar o laudo');
+      return;
+    }
+
     const file = e.target.files[0];
     
-    // Validar tipo de arquivo
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    // Validar tipo de arquivo - agora aceita mais formatos
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'application/msword', // .doc
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/vnd.ms-excel', // .xls
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'text/plain', // .txt
+    ];
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Formato não permitido. Use PDF, JPG ou PNG');
+      toast.error('Formato não permitido. Use PDF, JPG, PNG, DOC, DOCX, XLS, XLSX ou TXT');
       return;
     }
 
@@ -311,19 +329,32 @@ export default function FeedbackControl() {
 
       if (uploadError) throw uploadError;
 
-      // Atualizar registro com o caminho do laudo
+      // Atualizar o diagnóstico no cliente
+      const { error: clientError } = await supabase
+        .from('clients')
+        .update({ diagnosis: diagnosisInput.trim() })
+        .eq('id', selectedFeedback.client_id);
+
+      if (clientError) throw clientError;
+
+      // Atualizar registro com o caminho do laudo e marcar como completo
       const { error: updateError } = await supabase
         .from('client_feedback_control')
         .update({ 
           laudo_file_path: fileName,
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          completed_by: user?.id,
+          report_attached: true,
         })
         .eq('id', selectedFeedback.id);
 
       if (updateError) throw updateError;
 
-      toast.success('Laudo anexado com sucesso! Cliente movido para inativo.');
+      toast.success('Laudo anexado e diagnóstico salvo com sucesso!');
       setShowDetailsDialog(false);
       setSelectedFeedback(null);
+      setDiagnosisInput('');
       loadFeedbacks();
     } catch (error: any) {
       console.error('Erro ao fazer upload:', error);
@@ -730,35 +761,67 @@ export default function FeedbackControl() {
               {!selectedFeedback.report_attached && (
                 <>
                   {(isCoordinator || selectedFeedback.assigned_to === user?.id) ? (
-                    <div className="border-2 border-dashed rounded-lg p-4">
-                      <div className="text-center space-y-2">
-                        <FileText className="h-8 w-8 text-muted-foreground mx-auto" />
-                        <div>
-                          <p className="text-sm font-medium">Anexar Laudo</p>
+                    <div className="space-y-4">
+                      {/* Campo de Diagnóstico Obrigatório */}
+                      <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <span className="text-red-500">*</span>
+                            Diagnóstico do Paciente
+                          </label>
+                          <Textarea
+                            value={diagnosisInput}
+                            onChange={(e) => setDiagnosisInput(e.target.value)}
+                            placeholder="Digite o diagnóstico do paciente..."
+                            rows={3}
+                            className="resize-none"
+                          />
                           <p className="text-xs text-muted-foreground">
-                            PDF, JPG ou PNG (máximo 10MB)
+                            Este diagnóstico será salvo no cadastro do paciente ao anexar o laudo.
                           </p>
                         </div>
-                        <label className="cursor-pointer">
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            disabled={uploadingLaudo}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              document.getElementById('laudo-upload')?.click();
-                            }}
-                          >
-                            {uploadingLaudo ? 'Enviando...' : 'Selecionar Arquivo'}
-                          </Button>
-                          <input
-                            id="laudo-upload"
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                          />
-                        </label>
+                      </div>
+
+                      {/* Área de Upload do Laudo */}
+                      <div className={`border-2 border-dashed rounded-lg p-4 ${!diagnosisInput.trim() ? 'opacity-50' : ''}`}>
+                        <div className="text-center space-y-2">
+                          <FileText className="h-8 w-8 text-muted-foreground mx-auto" />
+                          <div>
+                            <p className="text-sm font-medium">Anexar Laudo</p>
+                            <p className="text-xs text-muted-foreground">
+                              PDF, JPG, PNG, DOC, DOCX, XLS, XLSX ou TXT (máximo 10MB)
+                            </p>
+                          </div>
+                          <label className="cursor-pointer">
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              disabled={uploadingLaudo || !diagnosisInput.trim()}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (!diagnosisInput.trim()) {
+                                  toast.error('Preencha o diagnóstico antes de anexar o laudo');
+                                  return;
+                                }
+                                document.getElementById('laudo-upload')?.click();
+                              }}
+                            >
+                              {uploadingLaudo ? 'Enviando...' : 'Selecionar Arquivo'}
+                            </Button>
+                            <input
+                              id="laudo-upload"
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt"
+                              onChange={handleFileUpload}
+                              className="hidden"
+                            />
+                          </label>
+                          {!diagnosisInput.trim() && (
+                            <p className="text-xs text-amber-600 font-medium">
+                              ⚠️ Preencha o diagnóstico acima antes de anexar o laudo
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : (
