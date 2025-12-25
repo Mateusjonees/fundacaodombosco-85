@@ -9,7 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useRolePermissions, ROLE_LABELS, EmployeeRole } from '@/hooks/useRolePermissions';
-import { UserPlus, Eye, EyeOff } from 'lucide-react';
+import { TempPasswordDialog } from './TempPasswordDialog';
+import { UserPlus, KeyRound } from 'lucide-react';
 
 interface CreateEmployeeFormProps {
   isOpen: boolean;
@@ -18,7 +19,6 @@ interface CreateEmployeeFormProps {
   prefilledData?: {
     name?: string;
     email?: string;
-    password?: string;
     employee_role?: EmployeeRole;
     unit?: string;
     phone?: string;
@@ -33,18 +33,36 @@ interface JobPosition {
   is_active: boolean;
 }
 
+// Função para gerar senha temporária segura
+const generateTempPassword = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const special = '@#$!';
+  let password = 'Temp';
+  for (let i = 0; i < 6; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  password += special.charAt(Math.floor(Math.random() * special.length));
+  return password;
+};
+
 export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }: CreateEmployeeFormProps) => {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const { userRole } = useRolePermissions();
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
+  
+  // Estado para o dialog de senha temporária
+  const [showTempPasswordDialog, setShowTempPasswordDialog] = useState(false);
+  const [createdEmployee, setCreatedEmployee] = useState<{
+    name: string;
+    email: string;
+    tempPassword: string;
+  } | null>(null);
   
   const [formData, setFormData] = useState({
     name: prefilledData?.name || '',
     email: prefilledData?.email || '',
-    password: prefilledData?.password || '',
     employee_role: (prefilledData?.employee_role || 'staff') as EmployeeRole,
     phone: '',
     department: '',
@@ -55,12 +73,10 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
   useEffect(() => {
     if (isOpen) {
       loadJobPositions();
-      // Atualizar form com dados preenchidos quando o dialog abrir
       if (prefilledData) {
         setFormData({
           name: prefilledData.name || '',
           email: prefilledData.email || '',
-          password: prefilledData.password || '',
           employee_role: (prefilledData.employee_role || 'staff') as EmployeeRole,
           phone: prefilledData.phone || '',
           department: '',
@@ -94,43 +110,35 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
     setFormData({
       name: '',
       email: '',
-      password: '',
       employee_role: 'staff',
       phone: '',
       department: '',
       unit: '',
       job_position_id: ''
     });
-    setShowPassword(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim() || !formData.unit.trim()) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.unit.trim()) {
       toast({
         variant: "destructive",
         title: "Campos obrigatórios",
-        description: "Nome, email, senha e unidade são obrigatórios.",
-      });
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Senha inválida",
-        description: "A senha deve ter pelo menos 6 caracteres.",
+        description: "Nome, email e unidade são obrigatórios.",
       });
       return;
     }
 
     setLoading(true);
+    
+    // Gerar senha temporária automaticamente
+    const tempPassword = generateTempPassword();
+    
     try {
-      // Usar supabase.auth.signUp para criação segura
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
-        password: formData.password,
+        password: tempPassword,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
@@ -154,7 +162,6 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
         return;
       }
 
-      // Verificar se o usuário foi criado
       if (data?.user) {
         // Se um cargo foi selecionado, criar a associação
         if (formData.job_position_id) {
@@ -184,13 +191,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
           console.log('Warning: Could not send welcome email:', emailError);
         }
 
-        // Sucesso
-        toast({
-          title: "Funcionário criado com sucesso",
-          description: `Login criado para ${formData.name}. O funcionário já pode fazer login no sistema.`,
-        });
-
-        // Log the action (optional - don't fail if it doesn't work)
+        // Log the action
         try {
           await logAction({
             entityType: 'employees',
@@ -206,9 +207,18 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
           console.warn('Could not log action:', logError);
         }
 
+        // Guardar dados para o dialog de senha temporária
+        setCreatedEmployee({
+          name: formData.name,
+          email: formData.email,
+          tempPassword
+        });
+        
+        // Mostrar dialog com senha temporária
+        setShowTempPasswordDialog(true);
+        
         resetForm();
         onSuccess();
-        onClose();
       }
     } catch (error: any) {
       console.error('Error creating employee:', error);
@@ -227,177 +237,183 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
     onClose();
   };
 
+  const handleTempPasswordDialogClose = () => {
+    setShowTempPasswordDialog(false);
+    setCreatedEmployee(null);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Criar Novo Funcionário
-          </DialogTitle>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <RequiredLabel htmlFor="name" required>Nome Completo</RequiredLabel>
-            <Input
-              id="name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Digite o nome completo"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <RequiredLabel htmlFor="email" required>Email</RequiredLabel>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="email@exemplo.com"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <RequiredLabel htmlFor="password" required>Senha</RequiredLabel>
-            <div className="relative">
+    <>
+      <Dialog open={isOpen && !showTempPasswordDialog} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Criar Novo Funcionário
+            </DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <RequiredLabel htmlFor="name" required>Nome Completo</RequiredLabel>
               <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Digite o nome completo"
                 required
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="role">Função *</Label>
-            <Select 
-              value={formData.employee_role} 
-              onValueChange={(value: EmployeeRole) => handleInputChange('employee_role', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(ROLE_LABELS).map(([value, label]) => {
-                  // Coordenadores não podem criar diretores ou outros coordenadores
-                  if (userRole === 'coordinator_madre' || userRole === 'coordinator_floresta' || userRole === 'coordinator_atendimento_floresta') {
-                    if (value === 'director' || value.startsWith('coordinator_')) {
-                      return null;
-                    }
-                  }
-                  return (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="(11) 99999-9999"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="department">Departamento</Label>
-            <Input
-              id="department"
-              type="text"
-              value={formData.department}
-              onChange={(e) => handleInputChange('department', e.target.value)}
-              placeholder="ex: Psicologia, Fisioterapia"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="unit">Unidade *</Label>
-            <Select 
-              value={formData.unit} 
-              onValueChange={(value) => handleInputChange('unit', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma unidade" />
-              </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
-                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
-                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
-                  </SelectContent>
-            </Select>
-          </div>
-
-          {jobPositions.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="job_position">Cargo Customizado</Label>
+              <RequiredLabel htmlFor="email" required>Email</RequiredLabel>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder="email@exemplo.com"
+                required
+              />
+            </div>
+
+            {/* Aviso sobre senha temporária */}
+            <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/20 p-3">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                <KeyRound className="h-4 w-4" />
+                <p className="text-sm">
+                  Uma senha temporária será gerada automaticamente. 
+                  O funcionário deverá alterá-la no primeiro acesso.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Função *</Label>
               <Select 
-                value={formData.job_position_id} 
-                onValueChange={(value) => handleInputChange('job_position_id', value)}
+                value={formData.employee_role} 
+                onValueChange={(value: EmployeeRole) => handleInputChange('employee_role', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um cargo (opcional)" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {jobPositions.map((position) => (
-                    <SelectItem key={position.id} value={position.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: position.color }}
-                        />
-                        {position.name}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {Object.entries(ROLE_LABELS).map(([value, label]) => {
+                    if (userRole === 'coordinator_madre' || userRole === 'coordinator_floresta' || userRole === 'coordinator_atendimento_floresta') {
+                      if (value === 'director' || value.startsWith('coordinator_')) {
+                        return null;
+                      }
+                    }
+                    return (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          <div className="flex gap-2 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={handleClose}
-              disabled={loading}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={loading}
-              className="flex-1"
-            >
-              {loading ? 'Criando...' : 'Criar Funcionário'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="(11) 99999-9999"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department">Departamento</Label>
+              <Input
+                id="department"
+                type="text"
+                value={formData.department}
+                onChange={(e) => handleInputChange('department', e.target.value)}
+                placeholder="ex: Psicologia, Fisioterapia"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unit">Unidade *</Label>
+              <Select 
+                value={formData.unit} 
+                onValueChange={(value) => handleInputChange('unit', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma unidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                  <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                  <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {jobPositions.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="job_position">Cargo Customizado</Label>
+                <Select 
+                  value={formData.job_position_id} 
+                  onValueChange={(value) => handleInputChange('job_position_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um cargo (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobPositions.map((position) => (
+                      <SelectItem key={position.id} value={position.id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: position.color }}
+                          />
+                          {position.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleClose}
+                disabled={loading}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? 'Criando...' : 'Criar Funcionário'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de senha temporária */}
+      {createdEmployee && (
+        <TempPasswordDialog
+          isOpen={showTempPasswordDialog}
+          onClose={handleTempPasswordDialogClose}
+          employeeName={createdEmployee.name}
+          employeeEmail={createdEmployee.email}
+          tempPassword={createdEmployee.tempPassword}
+        />
+      )}
+    </>
   );
 };

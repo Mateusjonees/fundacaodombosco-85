@@ -904,7 +904,6 @@ export default function UserManagement() {
         prefilledData={{
           name: 'Elvimar Peixoto',
           email: 'institucional@fundacaodombosco.org',
-          password: '123456',
           phone: '31985642292',
           employee_role: 'director',
           unit: 'madre'
