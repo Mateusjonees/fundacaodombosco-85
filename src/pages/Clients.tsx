@@ -35,7 +35,10 @@ import {
   UserX,
   Baby,
   UserRound,
+  LayoutGrid,
+  List,
 } from "lucide-react";
+import { PatientCard } from "@/components/PatientCard";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -86,6 +89,7 @@ export default function Patients() {
   const [unitFilter, setUnitFilter] = useState("all");
   const [ageFilter, setAgeFilter] = useState("all");
   const [professionalFilter, setProfessionalFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
   // Debounce da busca para evitar queries excessivas durante digitação
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
@@ -911,39 +915,39 @@ export default function Patients() {
         <TabsContent value="list" className="space-y-6">
           <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-primary/5">
             <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 to-transparent">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <CardTitle className="text-xl">Lista de Pacientes</CardTitle>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex items-center space-x-2 flex-1 relative">
-                  <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    placeholder="🔍 Buscar por ID, nome, CPF, telefone..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="flex-1 pl-10 border-primary/20 focus:border-primary/40 bg-background/50"
-                  />
-                </div>
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <Select value={unitFilter} onValueChange={setUnitFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as Unidades</SelectItem>
-                      <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
-                      <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
-                      <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl">Lista de Pacientes</CardTitle>
+                  <Badge variant="secondary" className="ml-2">{filteredClients.length}</Badge>
+                </div>
+                
+                {/* Toggle de visualização */}
+                <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                  <Button
+                    variant={viewMode === "cards" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("cards")}
+                    className="h-8 px-3 gap-1.5"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                    <span className="hidden sm:inline">Cards</span>
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="h-8 px-3 gap-1.5"
+                  >
+                    <List className="h-4 w-4" />
+                    <span className="hidden sm:inline">Lista</span>
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               {/* Barra de seleção e ações em lote */}
               {isCoordinatorOrDirector() && filteredClients.length > 0 && (
                 <div className="flex items-center justify-between mb-4 p-3 bg-muted/50 rounded-lg border">
@@ -979,7 +983,26 @@ export default function Patients() {
                 <p className="text-muted-foreground text-center py-8">
                   {searchTerm ? "Nenhum paciente encontrado com o termo de busca." : "Nenhum paciente cadastrado."}
                 </p>
+              ) : viewMode === "cards" ? (
+                /* Visualização em Cards */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredClients.map((client) => (
+                    <PatientCard
+                      key={client.id}
+                      client={client}
+                      isSelected={selectedClients.includes(client.id)}
+                      showCheckbox={isCoordinatorOrDirector()}
+                      showActions={true}
+                      onSelect={() => toggleClientSelection(client.id)}
+                      onView={() => setSelectedClient(client)}
+                      onEdit={isCoordinatorOrDirector() ? () => openEditDialog(client) : undefined}
+                      onReport={isCoordinatorOrDirector() ? () => setReportClient(client) : undefined}
+                      onToggleStatus={isCoordinatorOrDirector() ? () => handleToggleClientStatus(client.id, client.is_active) : undefined}
+                    />
+                  ))}
+                </div>
               ) : (
+                /* Visualização em Lista/Tabela */
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <Table className="min-w-[700px]">
                   <TableHeader>
@@ -1022,7 +1045,9 @@ export default function Patients() {
                             className={
                               client.unit === "madre"
                                 ? "border-blue-500/50 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20"
-                                : "border-green-500/50 bg-green-500/10 text-green-600 hover:bg-green-500/20"
+                                : client.unit === "floresta"
+                                  ? "border-green-500/50 bg-green-500/10 text-green-600 hover:bg-green-500/20"
+                                  : "border-purple-500/50 bg-purple-500/10 text-purple-600 hover:bg-purple-500/20"
                             }
                           >
                             {client.unit === "madre" ? "🏥 Clinica Social" : 
