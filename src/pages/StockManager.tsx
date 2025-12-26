@@ -1081,99 +1081,103 @@ export default function StockManager() {
                 />
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 sm:p-6">
               {loading ? (
                 <p className="text-center py-8">Carregando...</p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox 
-                          checked={filteredItems.length > 0 && selectedItems.size === filteredItems.length}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>Nome do Teste</TableHead>
-                      <TableHead>Folha de Resposta</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Editora</TableHead>
-                      <TableHead>Construto</TableHead>
-                      <TableHead>Qtde em Estoque</TableHead>
-                      <TableHead>Valor Unit.</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredItems.map((item) => {
-                      // Separar nome do teste e folha de resposta
-                      const parts = item.name.split(' - ');
-                      const testName = parts[0] || item.name;
-                      const responseSheet = parts[1] || '-';
-                      
-                      return (
-                        <TableRow key={item.id} className={`${item.current_quantity <= item.minimum_quantity ? 'bg-orange-50/50' : ''} ${selectedItems.has(item.id) ? 'bg-primary/10' : ''}`}>
-                          <TableCell>
-                            <Checkbox 
-                              checked={selectedItems.has(item.id)}
-                              onCheckedChange={() => handleSelectItem(item.id)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium max-w-xs">
-                            <div className="truncate" title={testName}>
-                              {testName}
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-xs">
-                            <div className="truncate text-sm" title={responseSheet}>
-                              {responseSheet}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                              {item.unit}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {item.supplier || '-'}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {item.category || '-'}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span className={`font-medium ${
-                              item.current_quantity === 0 
-                                ? 'text-red-600' 
-                                : item.current_quantity <= item.minimum_quantity 
-                                  ? 'text-orange-600' 
-                                  : 'text-green-600'
-                            }`}>
-                              {item.current_quantity}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-medium">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[900px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-10 sticky left-0 bg-background z-10">
+                          <Checkbox 
+                            checked={filteredItems.length > 0 && selectedItems.size === filteredItems.length}
+                            onCheckedChange={handleSelectAll}
+                          />
+                        </TableHead>
+                        <TableHead className="min-w-[180px]">Nome do Teste</TableHead>
+                        <TableHead className="min-w-[120px] hidden lg:table-cell">Folha de Resposta</TableHead>
+                        <TableHead className="w-20">Tipo</TableHead>
+                        <TableHead className="hidden md:table-cell w-24">Editora</TableHead>
+                        <TableHead className="hidden lg:table-cell w-24">Construto</TableHead>
+                        <TableHead className="w-16 text-center">Qtde</TableHead>
+                        <TableHead className="hidden sm:table-cell w-20 text-right">Valor</TableHead>
+                        <TableHead className="w-20">Status</TableHead>
+                        <TableHead className="w-16 text-center">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredItems.map((item) => {
+                        // Separar nome do teste e folha de resposta
+                        const parts = item.name.split(' - ');
+                        const testName = parts[0] || item.name;
+                        const responseSheet = parts[1] || '-';
+                        
+                        return (
+                          <TableRow key={item.id} className={`${item.current_quantity <= item.minimum_quantity ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${selectedItems.has(item.id) ? 'bg-primary/10' : ''}`}>
+                            <TableCell className="sticky left-0 bg-background z-10">
+                              <Checkbox 
+                                checked={selectedItems.has(item.id)}
+                                onCheckedChange={() => handleSelectItem(item.id)}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <div className="truncate max-w-[180px] lg:max-w-[250px]" title={testName}>
+                                {testName}
+                              </div>
+                              {/* Mostrar folha de resposta em mobile como sublinha */}
+                              <div className="lg:hidden text-xs text-muted-foreground truncate max-w-[180px]" title={responseSheet}>
+                                {responseSheet !== '-' && responseSheet}
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell">
+                              <div className="truncate max-w-[120px] text-sm" title={responseSheet}>
+                                {responseSheet}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full whitespace-nowrap">
+                                {item.unit}
+                              </span>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-xs text-muted-foreground truncate max-w-[80px]" title={item.supplier || '-'}>
+                              {item.supplier || '-'}
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell text-xs truncate max-w-[80px]" title={item.category || '-'}>
+                              {item.category || '-'}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={`font-bold ${
+                                item.current_quantity === 0 
+                                  ? 'text-red-600' 
+                                  : item.current_quantity <= item.minimum_quantity 
+                                    ? 'text-orange-600' 
+                                    : 'text-green-600'
+                              }`}>
+                                {item.current_quantity}
+                              </span>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell text-right text-sm">
                               R$ {item.unit_cost.toFixed(2)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {item.current_quantity === 0 ? (
-                              <Badge variant="destructive">Esgotado</Badge>
-                            ) : item.current_quantity <= item.minimum_quantity ? (
-                              <Badge variant="secondary">Baixo</Badge>
-                            ) : (
-                              <Badge variant="default">Normal</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <StockItemInlineActions item={item} onUpdate={loadStockItems} />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                            </TableCell>
+                            <TableCell>
+                              {item.current_quantity === 0 ? (
+                                <Badge variant="destructive" className="text-xs px-1.5">Esgotado</Badge>
+                              ) : item.current_quantity <= item.minimum_quantity ? (
+                                <Badge variant="secondary" className="text-xs px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">Baixo</Badge>
+                              ) : (
+                                <Badge variant="default" className="text-xs px-1.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">OK</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <StockItemInlineActions item={item} onUpdate={loadStockItems} />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
