@@ -14,6 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
+      anamnesis_questions: {
+        Row: {
+          anamnesis_type_id: string
+          created_at: string
+          id: string
+          is_required: boolean | null
+          options: Json | null
+          order_index: number
+          question_text: string
+          question_type: string
+        }
+        Insert: {
+          anamnesis_type_id: string
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          order_index?: number
+          question_text: string
+          question_type?: string
+        }
+        Update: {
+          anamnesis_type_id?: string
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          order_index?: number
+          question_text?: string
+          question_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_questions_anamnesis_type_id_fkey"
+            columns: ["anamnesis_type_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anamnesis_records: {
+        Row: {
+          anamnesis_type_id: string
+          answers: Json
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          filled_by: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          anamnesis_type_id: string
+          answers?: Json
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          filled_by: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          anamnesis_type_id?: string
+          answers?: Json
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          filled_by?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_records_anamnesis_type_id_fkey"
+            columns: ["anamnesis_type_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       anamnesis_types: {
         Row: {
           created_at: string
