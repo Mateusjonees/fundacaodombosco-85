@@ -269,29 +269,36 @@ export default function AttendanceValidationManager() {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Validação de Atendimentos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Atendimentos aguardando validação
-          </p>
+    <div className="p-4 md:p-6 space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-1.5 bg-gradient-to-b from-purple-500 via-purple-600 to-indigo-700 rounded-full" />
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+              Validação de Atendimentos
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Atendimentos aguardando validação
+            </p>
+          </div>
         </div>
-        <Badge variant="secondary" className="text-base sm:text-lg px-3 py-1 w-fit">
+        <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20 w-fit">
+          <Clock className="h-4 w-4 mr-2" />
           {pendingAttendances.length} pendente{pendingAttendances.length !== 1 ? 's' : ''}
         </Badge>
       </div>
 
       {/* Filtros */}
-      <Card>
-        <CardHeader className="p-4">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-purple-500/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Filter className="h-5 w-5 text-purple-600" />
             Filtros
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="unit-filter" className="text-sm">Unidade</Label>
               <Select value={unitFilter} onValueChange={setUnitFilter}>
@@ -330,36 +337,42 @@ export default function AttendanceValidationManager() {
       </Card>
 
       {pendingAttendances.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8">
-            <Check className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum atendimento pendente</h3>
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-green-500/5">
+          <CardContent className="text-center py-16">
+            <div className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full mx-auto w-fit mb-4">
+              <Check className="h-16 w-16 text-green-500" />
+            </div>
+            <h3 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent mb-2">
+              Nenhum atendimento pendente
+            </h3>
             <p className="text-muted-foreground">
               Todos os atendimentos foram validados ou não há atendimentos para revisar.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
           {pendingAttendances.map((attendance) => (
-            <Card key={attendance.id} className="border-l-4 border-l-yellow-500">
-              <CardHeader className="p-4">
+            <Card key={attendance.id} className="group border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-gradient-to-br from-card via-card to-yellow-500/5 border-l-4 border-l-yellow-500">
+              <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <div className="p-2 bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-lg">
+                      <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
                     <span className="truncate">{attendance.patient_name}</span>
                   </CardTitle>
-                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 w-fit">
+                  <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 border-0 w-fit">
                     <Clock className="h-3 w-3 mr-1" />
                     Pendente
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 p-4 pt-0">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 text-sm">
-                  <div className="col-span-2 sm:col-span-1">
-                    <Label className="font-medium text-xs sm:text-sm">Profissional</Label>
-                    <p className="text-muted-foreground text-xs sm:text-sm truncate">{attendance.professional_name}</p>
+              <CardContent className="space-y-4 pt-0">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <Label className="font-medium text-xs text-muted-foreground">Profissional</Label>
+                    <p className="text-sm truncate font-medium">{attendance.professional_name}</p>
                   </div>
                   <div>
                     <Label className="font-medium text-xs sm:text-sm">Unidade</Label>

@@ -394,155 +394,183 @@ export default function FeedbackControl() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Controle de Devolutiva</h1>
-          <p className="text-muted-foreground">
-            {isCoordinator 
-              ? 'Gerencie os prazos de entrega de laudos (15 dias úteis)'
-              : 'Suas devolutivas atribuídas - Anexe os laudos para concluir'
-            }
-          </p>
+    <div className="container mx-auto p-4 md:p-6 space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-1.5 bg-gradient-to-b from-orange-500 via-orange-600 to-red-600 rounded-full" />
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-orange-600 via-orange-500 to-red-500 bg-clip-text text-transparent">
+              Controle de Devolutiva
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {isCoordinator 
+                ? 'Gerencie os prazos de entrega de laudos (15 dias úteis)'
+                : 'Suas devolutivas atribuídas - Anexe os laudos para concluir'
+              }
+            </p>
+          </div>
         </div>
+        
+        <div className="flex items-center gap-3">
+          <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20">
+            <Clock className="h-4 w-4 mr-2" />
+            {filteredFeedbacks.length} pendente{filteredFeedbacks.length !== 1 ? 's' : ''}
+          </Badge>
+          
+          {isCoordinator && (
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700">
+                  <Plus className="h-4 w-4" />
+                  Adicionar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar Cliente à Devolutiva</DialogTitle>
+                  <DialogDescription>
+                    Selecione o cliente que será incluído no controle de devolutiva
+                  </DialogDescription>
+                </DialogHeader>
 
-        {isCoordinator && (
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Cliente
-              </Button>
-            </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Cliente à Devolutiva</DialogTitle>
-              <DialogDescription>
-                Selecione o cliente que será incluído no controle de devolutiva
-              </DialogDescription>
-            </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Buscar Cliente</label>
+                    <div className="relative mt-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Digite o nome ou CPF do cliente..."
+                        value={clientSearchTerm}
+                        onChange={(e) => setClientSearchTerm(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Buscar Cliente</label>
-                <div className="relative mt-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Digite o nome ou CPF do cliente..."
-                    value={clientSearchTerm}
-                    onChange={(e) => setClientSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
+                  <div>
+                    <label className="text-sm font-medium">Cliente</label>
+                    <select
+                      className="w-full mt-1 p-2 border rounded-md bg-background"
+                      value={selectedClient?.id || ''}
+                      onChange={(e) => {
+                        const client = clients.find(c => c.id === e.target.value);
+                        setSelectedClient(client);
+                      }}
+                    >
+                      <option value="">Selecione um cliente</option>
+                      {clients
+                        .filter(client => 
+                          client.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+                          (client.cpf && client.cpf.includes(clientSearchTerm))
+                        )
+                        .map(client => (
+                          <option key={client.id} value={client.id}>
+                            {client.name} {client.cpf ? `- CPF: ${client.cpf}` : ''}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Funcionário Responsável</label>
+                    <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Selecione o funcionário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map(employee => (
+                          <SelectItem key={employee.user_id} value={employee.user_id}>
+                            {employee.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Observações</label>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Observações sobre a devolutiva..."
+                      rows={3}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="text-sm font-medium">Cliente</label>
-                <select
-                  className="w-full mt-1 p-2 border rounded-md bg-background"
-                  value={selectedClient?.id || ''}
-                  onChange={(e) => {
-                    const client = clients.find(c => c.id === e.target.value);
-                    setSelectedClient(client);
-                  }}
-                >
-                  <option value="">Selecione um cliente</option>
-                  {clients
-                    .filter(client => 
-                      client.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
-                      (client.cpf && client.cpf.includes(clientSearchTerm))
-                    )
-                    .map(client => (
-                      <option key={client.id} value={client.id}>
-                        {client.name} {client.cpf ? `- CPF: ${client.cpf}` : ''}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Funcionário Responsável</label>
-                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Selecione o funcionário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(employee => (
-                      <SelectItem key={employee.user_id} value={employee.user_id}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Observações</label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Observações sobre a devolutiva..."
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={addToFeedback}>Adicionar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        )}
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou CPF..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={addToFeedback}>Adicionar</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
+
+      {/* Search */}
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-orange-500/5">
+        <CardContent className="pt-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-orange-500" />
+            <Input
+              placeholder="🔍 Buscar por nome ou CPF..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-12 bg-background/50 border-orange-500/20 focus:border-orange-500"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Carregando devolutivas...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando devolutivas...</p>
         </div>
       ) : filteredFeedbacks.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Nenhuma devolutiva encontrada</p>
-            <p className="text-sm text-muted-foreground">
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-muted/20">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="p-6 bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-full mb-4">
+              <FileText className="h-16 w-16 text-orange-500" />
+            </div>
+            <p className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-500 bg-clip-text text-transparent">
+              Nenhuma devolutiva encontrada
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
               {searchTerm ? 'Tente ajustar sua busca' : 'Adicione clientes para começar'}
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredFeedbacks.map((feedback) => {
             const remainingDays = calculateRemainingDays(feedback.deadline_date);
+            const isOverdue = remainingDays < 0;
+            const isUrgent = remainingDays <= 3 && remainingDays >= 0;
             
             return (
               <Card 
                 key={feedback.id} 
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className={`group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg overflow-hidden ${
+                  isOverdue 
+                    ? 'bg-gradient-to-br from-red-500/5 via-card to-card border-l-4 border-l-red-500' 
+                    : isUrgent 
+                      ? 'bg-gradient-to-br from-orange-500/5 via-card to-card border-l-4 border-l-orange-500'
+                      : 'bg-gradient-to-br from-card via-card to-blue-500/5 border-l-4 border-l-blue-500'
+                }`}
                 onClick={() => {
                   setSelectedFeedback(feedback);
                   setShowDetailsDialog(true);
                 }}
               >
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle>{feedback.clients?.name}</CardTitle>
+                    <div className="space-y-1 flex-1">
+                      <CardTitle className="text-lg line-clamp-1">{feedback.clients?.name}</CardTitle>
                       <CardDescription>
                         {feedback.clients?.cpf && `CPF: ${feedback.clients.cpf}`}
                       </CardDescription>
