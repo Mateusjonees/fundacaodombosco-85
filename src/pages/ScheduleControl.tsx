@@ -886,75 +886,162 @@ ${notificationMessage}
     const weekStart = startOfWeek(selectedDate, { locale: ptBR });
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'confirmed': return 'bg-emerald-500';
+        case 'scheduled': return 'bg-blue-500';
+        case 'cancelled': return 'bg-red-500';
+        case 'completed': return 'bg-slate-400';
+        default: return 'bg-amber-500';
+      }
+    };
+
+    const getStatusBg = (status: string) => {
+      switch (status) {
+        case 'confirmed': return 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800';
+        case 'scheduled': return 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800';
+        case 'cancelled': return 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800';
+        case 'completed': return 'bg-slate-50 dark:bg-slate-950/30 border-slate-200 dark:border-slate-800';
+        default: return 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800';
+      }
+    };
+
+    const getUnitStyle = (unit: string) => {
+      switch (unit) {
+        case 'madre': return 'bg-blue-600 text-white';
+        case 'floresta': return 'bg-emerald-600 text-white';
+        case 'atendimento_floresta': return 'bg-teal-600 text-white';
+        default: return 'bg-slate-500 text-white';
+      }
+    };
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
         {weekDays.map((day) => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const daySchedules = groupedSchedules[dateKey] || [];
+          const isToday = isSameDay(day, new Date());
+          const sortedSchedules = [...daySchedules].sort((a, b) => 
+            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+          );
           
           return (
-            <Card key={dateKey} className="flex flex-col">
-              <CardHeader className="p-3 pb-2">
-                <CardTitle className="text-sm font-semibold">
-                  {format(day, "EEE, dd/MM", { locale: ptBR })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 space-y-2 overflow-y-auto max-h-[600px]">
-                {daySchedules.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">Sem agendamentos</p>
+            <div key={dateKey} className="flex flex-col">
+              {/* Header do dia */}
+              <div className={cn(
+                "rounded-t-xl p-3 text-center border-b-2",
+                isToday 
+                  ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-primary" 
+                  : "bg-muted/50 border-border"
+              )}>
+                <p className={cn(
+                  "text-xs font-medium uppercase tracking-wide",
+                  isToday ? "text-primary-foreground/80" : "text-muted-foreground"
+                )}>
+                  {format(day, "EEEE", { locale: ptBR })}
+                </p>
+                <p className={cn(
+                  "text-lg font-bold",
+                  isToday ? "text-primary-foreground" : "text-foreground"
+                )}>
+                  {format(day, "dd/MM", { locale: ptBR })}
+                </p>
+              </div>
+              
+              {/* Lista de agendamentos */}
+              <div className={cn(
+                "flex-1 rounded-b-xl border border-t-0 p-2 space-y-2 min-h-[200px] max-h-[600px] overflow-y-auto",
+                isToday ? "border-primary/30 bg-primary/5" : "border-border bg-card"
+              )}>
+                {sortedSchedules.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-8 italic">
+                    Sem agendamentos
+                  </p>
                 ) : (
-                  daySchedules.map((schedule) => (
-                    <div key={schedule.id} className="text-xs p-2.5 bg-accent rounded-lg space-y-1.5 border border-border/50 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="font-semibold flex items-center gap-1 shrink-0">
-                          <Clock className="h-3 w-3" />
-                          <span className="text-[11px]">{format(new Date(schedule.start_time), 'HH:mm')}</span>
-                        </div>
-                        <div className="shrink-0">
-                          {getStatusBadge(schedule.status)}
-                        </div>
-                      </div>
-                      
-                      <button
-                        onClick={() => handleClientClick(schedule.client_id)}
-                        className="text-left w-full font-medium hover:text-primary hover:underline transition-colors line-clamp-2 text-[11px]"
-                      >
-                        {schedule.clients?.name}
-                      </button>
-                      
-                      <div className="text-muted-foreground flex items-center gap-1 truncate">
-                        <User className="h-3 w-3 shrink-0" />
-                        <span className="truncate text-[10px]">{schedule.profiles?.name}</span>
-                      </div>
-
-                      <Badge variant={
-                        schedule.unit === 'madre' ? 'default' : 
-                        schedule.unit === 'floresta' ? 'secondary' :
-                        'outline'
-                      } className="text-[9px] px-1.5 py-0.5">
-                        {schedule.unit === 'madre' ? 'MADRE' : 
-                         schedule.unit === 'floresta' ? 'Floresta' :
-                         schedule.unit === 'atendimento_floresta' ? 'Atend. Floresta' :
-                         schedule.unit || 'N/A'}
-                      </Badge>
-                      
-                      {/* Ações para diretores na visualização semanal */}
-                      {userProfile?.employee_role === 'director' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleOpenNotificationDialog(schedule)}
-                          className="w-full h-6 text-[9px] gap-1 mt-1 px-2"
-                        >
-                          <Bell className="h-3 w-3" />
-                          Notificar
-                        </Button>
+                  sortedSchedules.map((schedule) => (
+                    <div 
+                      key={schedule.id} 
+                      className={cn(
+                        "relative rounded-lg border p-2.5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer group",
+                        getStatusBg(schedule.status)
                       )}
+                    >
+                      {/* Indicador de status lateral */}
+                      <div className={cn(
+                        "absolute left-0 top-0 bottom-0 w-1 rounded-l-lg",
+                        getStatusColor(schedule.status)
+                      )} />
+                      
+                      <div className="pl-2 space-y-1.5">
+                        {/* Horário e Status */}
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-primary" />
+                            <span className="text-sm font-bold text-foreground">
+                              {format(new Date(schedule.start_time), 'HH:mm')}
+                            </span>
+                          </div>
+                          <Badge 
+                            variant={schedule.status === 'cancelled' ? 'destructive' : schedule.status === 'confirmed' ? 'default' : 'secondary'}
+                            className="text-[10px] px-1.5 py-0 h-5"
+                          >
+                            {schedule.status === 'scheduled' ? 'Agend.' : 
+                             schedule.status === 'confirmed' ? 'Conf.' : 
+                             schedule.status === 'cancelled' ? 'Canc.' : 
+                             schedule.status === 'completed' ? 'Conc.' : schedule.status}
+                          </Badge>
+                        </div>
+                        
+                        {/* Nome do paciente */}
+                        <button
+                          onClick={() => handleClientClick(schedule.client_id)}
+                          className="text-left w-full font-semibold text-xs text-foreground hover:text-primary transition-colors line-clamp-2 leading-tight"
+                        >
+                          {schedule.clients?.name || 'Paciente não identificado'}
+                        </button>
+                        
+                        {/* Profissional */}
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <User className="h-3 w-3 shrink-0" />
+                          <span className="text-[10px] truncate font-medium">
+                            {schedule.profiles?.name || 'Não atribuído'}
+                          </span>
+                        </div>
+
+                        {/* Unidade */}
+                        <Badge className={cn(
+                          "text-[9px] px-1.5 py-0.5 font-semibold",
+                          getUnitStyle(schedule.unit || '')
+                        )}>
+                          {schedule.unit === 'madre' ? 'MADRE' : 
+                           schedule.unit === 'floresta' ? 'Floresta' :
+                           schedule.unit === 'atendimento_floresta' ? 'Atend. Floresta' :
+                           schedule.unit || 'N/A'}
+                        </Badge>
+                        
+                        {/* Botão de notificação - aparece no hover */}
+                        {(userProfile?.employee_role === 'director' || 
+                          userProfile?.employee_role === 'coordinator_madre' || 
+                          userProfile?.employee_role === 'coordinator_floresta') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenNotificationDialog(schedule);
+                            }}
+                            className="w-full h-6 text-[10px] gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80"
+                          >
+                            <Bell className="h-3 w-3" />
+                            Notificar
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           );
         })}
       </div>
