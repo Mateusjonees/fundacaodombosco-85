@@ -500,9 +500,18 @@ export default function Financial() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Painel Financeiro</h1>
+    <div className="space-y-6 px-2 sm:px-0">
+      {/* Cabeçalho Moderno */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-fade-in">
+        <div className="relative">
+          <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 via-emerald-600 to-emerald-700 rounded-full" />
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+            Painel Financeiro
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Controle receitas, despesas e fluxo de caixa
+          </p>
+        </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button variant="outline" onClick={exportToCSV} className="gap-2 flex-1 sm:flex-none text-sm">
             <Download className="h-4 w-4" />
@@ -620,82 +629,107 @@ export default function Financial() {
         </div>
       </div>
 
-      {/* Financial Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      {/* Financial Summary Cards - Design Moderno */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <div className="p-2 bg-green-500/20 rounded-lg">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
               R$ {currentMonthIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Atendimentos: {currentMonthRecords.filter(r => r.type === 'income').length}
+            <p className="text-xs text-muted-foreground mt-1">
+              {currentMonthRecords.filter(r => r.type === 'income').length} atendimentos
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Despesas com Compras</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-red-500/10 via-card to-red-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Despesas</CardTitle>
+            <div className="p-2 bg-red-500/20 rounded-lg">
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
               R$ {currentMonthExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">Materiais adquiridos</p>
+            <p className="text-xs text-muted-foreground mt-1">Materiais adquiridos</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">A Receber</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <DollarSign className="h-4 w-4 text-blue-600" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
               R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {pendingPayments.length} pagamentos pendentes
+            <p className="text-xs text-muted-foreground mt-1">
+              {pendingPayments.length} pendentes
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Em Atraso</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+            <div className="p-2 bg-orange-500/20 rounded-lg">
+              <TrendingDown className="h-4 w-4 text-orange-600" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
               R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-1">
               {overduePayments.length} em atraso
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resultado Líquido</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
+        
+        <Card className={`group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${balance >= 0 ? 'bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5' : 'bg-gradient-to-br from-red-500/10 via-card to-red-500/5'}`}>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Resultado</CardTitle>
+            <div className={`p-2 ${balance >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'} rounded-lg`}>
+              <TrendingUp className={`h-4 w-4 ${balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <CardContent className="relative">
+            <div className={`text-2xl font-bold ${balance >= 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-red-600 to-red-500'} bg-clip-text text-transparent`}>
               R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">Receitas - Despesas Totais</p>
+            <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pacientes Ativos</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-600" />
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-500/10 via-card to-purple-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Atendimentos</CardTitle>
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <Calendar className="h-4 w-4 text-purple-600" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{currentMonthRecords.filter(r => r.type === 'income').length}</div>
-            <p className="text-xs text-muted-foreground">Total cadastrados</p>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
+              {currentMonthRecords.filter(r => r.type === 'income').length}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Este mês</p>
           </CardContent>
         </Card>
       </div>

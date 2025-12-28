@@ -1065,13 +1065,27 @@ ${notificationMessage}
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Controle de Agendamentos</h1>
+      {/* Cabeçalho Moderno */}
+      <div className="flex flex-col gap-4 animate-fade-in">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="relative">
+            <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 via-purple-600 to-purple-700 rounded-full" />
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400 bg-clip-text text-transparent">
+              Controle de Agendamentos
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Gerencie agendamentos, confirme consultas e monitore presença
+            </p>
+          </div>
+          <Badge className="text-lg px-6 py-3 w-fit bg-gradient-to-r from-purple-500/10 to-purple-600/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
+            <CalendarIcon className="h-4 w-4 mr-2" />
+            {schedules.length} agendamento{schedules.length !== 1 ? 's' : ''}
+          </Badge>
         </div>
 
-        {/* Filtros e navegação */}
-        <Card>
+        {/* Filtros e navegação - Card Moderno */}
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-purple-500/5 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent pointer-events-none" />
           <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Seletor de visualização */}

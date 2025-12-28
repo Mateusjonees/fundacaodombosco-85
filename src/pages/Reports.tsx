@@ -690,9 +690,18 @@ export default function Reports() {
   }
 
   return (
-      <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Relatórios de Atendimento</h1>
+    <div className="space-y-6 px-2 sm:px-0">
+      {/* Cabeçalho Moderno */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-fade-in">
+        <div className="relative">
+          <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 rounded-full" />
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-400 bg-clip-text text-transparent">
+            Relatórios de Atendimento
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Analise dados, exporte relatórios e acompanhe indicadores
+          </p>
+        </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {isDirector() && (
             <Button 
@@ -721,12 +730,81 @@ export default function Reports() {
         </div>
       </div>
 
+      {/* Cards de Estatísticas */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-indigo-500/10 via-card to-indigo-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Sessões</CardTitle>
+            <div className="p-2 bg-indigo-500/20 rounded-lg">
+              <FileText className="h-4 w-4 text-indigo-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">
+              {getTotalSessions()}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Atendimentos</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Receita</CardTitle>
+            <div className="p-2 bg-green-500/20 rounded-lg">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+              R$ {getTotalRevenue().toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Total arrecadado</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-500/10 via-card to-purple-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Duração Média</CardTitle>
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <Clock className="h-4 w-4 text-purple-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
+              {Math.round(getAverageDuration())} min
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Por sessão</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pacientes</CardTitle>
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <Users className="h-4 w-4 text-blue-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+              {getUniqueClients()}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Atendidos</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Aviso sobre geração automática de relatórios */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex items-start sm:items-center gap-2 text-blue-800">
-            <BarChart3 className="h-5 w-5 flex-shrink-0 mt-0.5 sm:mt-0" />
-            <p className="text-xs sm:text-sm font-medium">
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-indigo-500/10 via-card to-blue-500/10">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 text-indigo-700 dark:text-indigo-400">
+            <div className="p-2 bg-indigo-500/20 rounded-lg">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <p className="text-sm font-medium">
               <strong>Novo!</strong> Os relatórios são gerados automaticamente quando você completa um atendimento.
             </p>
           </div>
@@ -734,11 +812,15 @@ export default function Reports() {
       </Card>
 
       {/* Filtros Avançados */}
-      <Card>
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-            Filtros de Pesquisa
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-indigo-500/5">
+        <CardHeader className="p-4 sm:p-6 border-b border-indigo-500/10">
+          <CardTitle className="flex items-center gap-3 text-base sm:text-lg">
+            <div className="p-2 bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 rounded-lg">
+              <Search className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+            </div>
+            <span className="bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent font-bold">
+              Filtros de Pesquisa
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">

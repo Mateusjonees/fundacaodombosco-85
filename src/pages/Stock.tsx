@@ -368,9 +368,18 @@ export default function Stock() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Controle de Estoque</h1>
-        <div className="flex gap-2">
+      {/* Cabeçalho Moderno */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-fade-in">
+        <div className="relative">
+          <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 rounded-full" />
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 bg-clip-text text-transparent">
+            Controle de Estoque
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie itens, movimentações e alertas de estoque
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
           <Button 
             className="gap-2" 
             variant="outline"
@@ -423,71 +432,100 @@ export default function Stock() {
         />
       </div>
 
-      {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      {/* Resumo - Cards Modernos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-amber-500/10 via-card to-amber-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Itens</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stockItems.length}</div>
-            <p className="text-xs text-muted-foreground">Itens cadastrados</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{getLowStockItems().length}</div>
-            <p className="text-xs text-muted-foreground">Itens com estoque baixo</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              R$ {stockItems.reduce((sum, item) => sum + (item.current_quantity * item.unit_cost), 0).toFixed(2)}
+            <div className="p-2 bg-amber-500/20 rounded-lg">
+              <Package className="h-5 w-5 text-amber-600" />
             </div>
-            <p className="text-xs text-muted-foreground">Valor do estoque</p>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
+              {stockItems.length}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Itens cadastrados</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Movimentações</CardTitle>
-            <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
+            <div className="p-2 bg-orange-500/20 rounded-lg">
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">-</div>
-            <p className="text-xs text-muted-foreground">Sistema de rastreamento</p>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+              {getLowStockItems().length}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Itens com alerta</p>
+          </CardContent>
+        </Card>
+
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+            <div className="p-2 bg-green-500/20 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+              R$ {stockItems.reduce((sum, item) => sum + (item.current_quantity * item.unit_cost), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Valor em estoque</p>
+          </CardContent>
+        </Card>
+
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Movimentações</CardTitle>
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <ArrowLeftRight className="h-5 w-5 text-blue-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+              —
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Rastreamento ativo</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Alertas de Estoque Baixo */}
+      {/* Alertas de Estoque Baixo - Design Moderno */}
       {getLowStockItems().length > 0 && (
-        <Card className="border-orange-200">
-          <CardHeader>
-            <CardTitle className="text-orange-700 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Atenção: Itens com Estoque Baixo
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent pointer-events-none" />
+          <CardHeader className="relative border-b border-orange-500/20">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+              </div>
+              <span className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent font-bold">
+                Atenção: Itens com Estoque Baixo
+              </span>
+              <Badge className="ml-2 bg-orange-500/20 text-orange-700 border-orange-500/30">
+                {getLowStockItems().length} itens
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+          <CardContent className="relative pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {getLowStockItems().map(item => (
-                <div key={item.id} className="flex justify-between items-center py-2 border-b">
-                  <span className="font-medium">{item.name}</span>
-                  <Badge variant="secondary">
-                    {item.current_quantity} {item.unit} restantes
+                <div 
+                  key={item.id} 
+                  className="group flex justify-between items-center p-3 bg-gradient-to-br from-background to-orange-500/5 border border-orange-500/20 rounded-lg hover:border-orange-500/40 hover:shadow-md transition-all duration-200"
+                >
+                  <span className="font-medium truncate">{item.name}</span>
+                  <Badge variant="secondary" className="ml-2 bg-orange-500/20 text-orange-700 shrink-0">
+                    {item.current_quantity} {item.unit}
                   </Badge>
                 </div>
               ))}
