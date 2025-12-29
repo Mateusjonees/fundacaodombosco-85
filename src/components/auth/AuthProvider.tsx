@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
+import { useAppPreload } from '@/hooks/useAppPreload';
 
 interface AuthContextType {
   user: User | null;
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const { preloadCriticalData } = useAppPreload();
 
   useEffect(() => {
     // Set up auth state listener
@@ -71,6 +73,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 setMustChangePassword(true);
               } else {
                 setMustChangePassword(false);
+              }
+
+              // Pré-carregar dados críticos para performance
+              if (profile?.employee_role) {
+                preloadCriticalData(session.user.id, profile.employee_role);
               }
               
               // Continue with normal login process

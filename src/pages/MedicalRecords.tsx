@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Search, User } from 'lucide-react';
+import { FileText, Search, User, Activity, Calendar, ClipboardList } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -38,7 +38,6 @@ export default function MedicalRecords() {
     setUserProfile(profile);
   };
 
-  // Query para buscar pacientes vinculados ao profissional
   const { data: clients = [], isLoading: loadingClients } = useQuery({
     queryKey: ['my-patients-medical-records', userProfile?.user_id, userProfile?.employee_role, debouncedSearch],
     queryFn: async () => {
@@ -47,7 +46,6 @@ export default function MedicalRecords() {
       const isDirector = userProfile.employee_role === 'director';
       const isCoordinator = ['coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userProfile.employee_role);
 
-      // Diretores e coordenadores veem todos os pacientes
       if (isDirector || isCoordinator) {
         let query = supabase
           .from('clients')
@@ -66,7 +64,6 @@ export default function MedicalRecords() {
         return data || [];
       }
 
-      // Outros profissionais veem apenas pacientes vinculados
       const { data: assignments, error: assignError } = await supabase
         .from('client_assignments')
         .select('client_id')
@@ -104,34 +101,57 @@ export default function MedicalRecords() {
     setSelectedClientId(client.id);
   };
 
-  const isGodMode = () => userProfile?.employee_role === 'director';
+  const getUnitStyle = (unit: string) => {
+    switch (unit?.toLowerCase()) {
+      case 'madre':
+        return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'floresta':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400';
+      case 'atendimento_floresta':
+        return 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900/30 dark:text-teal-400';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-400';
+    }
+  };
 
   return (
     <div className="container mx-auto p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2">
-            <FileText className="w-6 h-6 sm:w-8 sm:h-8" />
-            Prontuários
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Sistema completo de prontuários e histórico clínico
-          </p>
+      {/* Header moderno com gradiente */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 text-white shadow-lg">
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+              <FileText className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Prontuários</h1>
+              <p className="text-blue-100 mt-1">
+                Sistema completo de prontuários e histórico clínico
+              </p>
+            </div>
+          </div>
+          <Badge className="bg-white/20 text-white border-white/30 text-sm px-4 py-2">
+            {clients.length} pacientes
+          </Badge>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Lista de Pacientes */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-lg">Meus Pacientes</CardTitle>
+        <Card className="lg:col-span-1 border-0 shadow-lg bg-gradient-to-b from-card to-muted/20">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-t-lg">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="w-5 h-5 text-blue-600" />
+              Meus Pacientes
+            </CardTitle>
             <div className="relative mt-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Buscar paciente..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-background/80 backdrop-blur-sm"
               />
             </div>
           </CardHeader>
@@ -154,8 +174,10 @@ export default function MedicalRecords() {
                     <button
                       key={client.id}
                       onClick={() => handleClientSelect(client)}
-                      className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${
-                        selectedClientId === client.id ? 'bg-muted' : ''
+                      className={`w-full p-4 text-left transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent dark:hover:from-blue-950/30 ${
+                        selectedClientId === client.id 
+                          ? 'bg-gradient-to-r from-blue-100 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/30 border-l-4 border-blue-500' 
+                          : ''
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -166,7 +188,7 @@ export default function MedicalRecords() {
                           </p>
                         </div>
                         {client.unit && (
-                          <Badge variant="outline" className="ml-2">
+                          <Badge variant="outline" className={`ml-2 ${getUnitStyle(client.unit)}`}>
                             {client.unit}
                           </Badge>
                         )}
@@ -182,25 +204,33 @@ export default function MedicalRecords() {
         {/* Prontuário Detalhado */}
         <div className="lg:col-span-2">
           {!selectedClient ? (
-            <Card className="h-[600px] flex items-center justify-center">
+            <Card className="h-[600px] flex items-center justify-center border-0 shadow-lg bg-gradient-to-br from-card via-card to-muted/20">
               <CardContent className="text-center">
-                <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">Selecione um Paciente</h3>
+                <div className="p-6 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 inline-block mb-4">
+                  <FileText className="w-16 h-16 text-blue-500" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Selecione um Paciente</h3>
                 <p className="text-muted-foreground">
                   Escolha um paciente na lista ao lado para visualizar seu prontuário
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30 rounded-t-lg">
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-2xl">{selectedClient.name}</CardTitle>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <User className="w-5 h-5 text-blue-600" />
+                      </div>
+                      {selectedClient.name}
+                    </CardTitle>
                     <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                       {selectedClient.birth_date && (
-                        <span>
-                          Nascimento: {new Date(selectedClient.birth_date).toLocaleDateString('pt-BR')}
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(selectedClient.birth_date).toLocaleDateString('pt-BR')}
                         </span>
                       )}
                       {selectedClient.cpf && <span>CPF: {selectedClient.cpf}</span>}
@@ -214,12 +244,21 @@ export default function MedicalRecords() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <Tabs defaultValue="timeline" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                    <TabsTrigger value="info">Informações</TabsTrigger>
-                    <TabsTrigger value="history">Histórico</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+                    <TabsTrigger value="timeline" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
+                      <Activity className="w-4 h-4 mr-2" />
+                      Timeline
+                    </TabsTrigger>
+                    <TabsTrigger value="info" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
+                      <User className="w-4 h-4 mr-2" />
+                      Informações
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
+                      <ClipboardList className="w-4 h-4 mr-2" />
+                      Histórico
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="timeline" className="space-y-4 mt-6">
@@ -235,44 +274,44 @@ export default function MedicalRecords() {
                   </TabsContent>
 
                   <TabsContent value="info" className="space-y-4 mt-6">
-                    <Card>
+                    <Card className="bg-gradient-to-br from-card to-muted/10">
                       <CardHeader>
-                        <CardTitle>Informações do Paciente</CardTitle>
+                        <CardTitle className="text-lg">Informações do Paciente</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
+                          <div className="p-3 rounded-lg bg-muted/30">
                             <p className="text-sm font-medium text-muted-foreground">Nome</p>
                             <p className="font-medium">{selectedClient.name}</p>
                           </div>
-                          <div>
+                          <div className="p-3 rounded-lg bg-muted/30">
                             <p className="text-sm font-medium text-muted-foreground">CPF</p>
                             <p className="font-medium">{selectedClient.cpf || '-'}</p>
                           </div>
-                          <div>
+                          <div className="p-3 rounded-lg bg-muted/30">
                             <p className="text-sm font-medium text-muted-foreground">Telefone</p>
                             <p className="font-medium">{selectedClient.phone || '-'}</p>
                           </div>
-                          <div>
+                          <div className="p-3 rounded-lg bg-muted/30">
                             <p className="text-sm font-medium text-muted-foreground">Email</p>
                             <p className="font-medium">{selectedClient.email || '-'}</p>
                           </div>
-                          <div className="col-span-2">
+                          <div className="col-span-2 p-3 rounded-lg bg-muted/30">
                             <p className="text-sm font-medium text-muted-foreground">Endereço</p>
                             <p className="font-medium">{selectedClient.address || '-'}</p>
                           </div>
                         </div>
 
                         {selectedClient.diagnosis && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Diagnóstico</p>
+                          <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                            <p className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-1">Diagnóstico</p>
                             <p className="text-sm">{selectedClient.diagnosis}</p>
                           </div>
                         )}
 
                         {selectedClient.medical_history && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Histórico Médico</p>
+                          <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
+                            <p className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-1">Histórico Médico</p>
                             <p className="text-sm whitespace-pre-wrap">{selectedClient.medical_history}</p>
                           </div>
                         )}
@@ -281,31 +320,30 @@ export default function MedicalRecords() {
                   </TabsContent>
 
                   <TabsContent value="history" className="space-y-4 mt-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Estatísticas</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="text-center">
-                            <p className="text-3xl font-bold text-primary">{medicalRecords.length}</p>
-                            <p className="text-sm text-muted-foreground">Registros</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-3xl font-bold text-green-600">
-                              {medicalRecords.filter(r => r.status === 'completed').length}
-                            </p>
-                            <p className="text-sm text-muted-foreground">Completos</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-3xl font-bold text-blue-600">
-                              {medicalRecords[0] ? new Date(medicalRecords[0].session_date).toLocaleDateString('pt-BR') : '-'}
-                            </p>
-                            <p className="text-sm text-muted-foreground">Último Atendimento</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{medicalRecords.length}</p>
+                          <p className="text-sm text-blue-700 dark:text-blue-300">Registros</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/30 border-green-200 dark:border-green-800">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                            {medicalRecords.filter(r => r.status === 'completed').length}
+                          </p>
+                          <p className="text-sm text-green-700 dark:text-green-300">Completos</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                            {medicalRecords[0] ? new Date(medicalRecords[0].session_date).toLocaleDateString('pt-BR') : '-'}
+                          </p>
+                          <p className="text-sm text-purple-700 dark:text-purple-300">Último Atend.</p>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </CardContent>
