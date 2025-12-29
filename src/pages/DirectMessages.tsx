@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Search, MessageCircle, Users } from 'lucide-react';
+import { Send, Search, MessageCircle, Users, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -66,12 +66,10 @@ export default function DirectMessages() {
     }
   }, [selectedUser]);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Realtime subscription for new messages
   useEffect(() => {
     const channel = supabase
       .channel('direct-messages-updates')
@@ -84,18 +82,11 @@ export default function DirectMessages() {
           filter: `recipient_id=eq.${user?.id}`
         },
         (payload) => {
-          console.log('Nova mensagem recebida:', payload);
-          
-          // Se a mensagem é do usuário selecionado, adicionar à lista
           if (payload.new.sender_id === selectedUser?.user_id) {
             loadMessages(selectedUser.user_id);
             markMessagesAsRead(selectedUser.user_id);
           }
-          
-          // Atualizar lista de conversas
           loadConversations();
-          
-          // Notificação
           toast({
             title: "Nova mensagem",
             description: "Você recebeu uma nova mensagem",
@@ -115,7 +106,6 @@ export default function DirectMessages() {
 
   const loadUsers = async () => {
     try {
-      console.log('🔍 Carregando usuários disponíveis...');
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, name, employee_role, is_active')
@@ -123,26 +113,15 @@ export default function DirectMessages() {
         .neq('user_id', user?.id)
         .order('name');
 
-      if (error) {
-        console.error('❌ Erro ao carregar usuários:', error);
-        throw error;
-      }
-      
-      console.log('✅ Usuários carregados:', data?.length || 0, data);
+      if (error) throw error;
       setUsers(data || []);
     } catch (error) {
-      console.error('❌ Erro ao carregar usuários:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar usuários",
-        description: "Não foi possível carregar a lista de usuários disponíveis.",
-      });
+      console.error('Erro ao carregar usuários:', error);
     }
   };
 
   const loadConversations = async () => {
     try {
-      // Buscar todas as mensagens onde o usuário é remetente ou destinatário
       const { data: messagesData, error } = await supabase
         .from('internal_messages')
         .select('*')
@@ -156,7 +135,6 @@ export default function DirectMessages() {
         return;
       }
 
-      // Buscar informações dos usuários envolvidos
       const userIds = [...new Set([
         ...messagesData.map(m => m.sender_id),
         ...messagesData.map(m => m.recipient_id)
@@ -169,7 +147,6 @@ export default function DirectMessages() {
 
       const usersMap = new Map(usersData?.map(u => [u.user_id, u]));
 
-      // Agrupar por conversação
       const conversationsMap = new Map<string, Conversation>();
       
       messagesData.forEach((msg) => {
@@ -186,7 +163,6 @@ export default function DirectMessages() {
           });
         }
         
-        // Contar mensagens não lidas
         if (msg.recipient_id === user?.id && !msg.is_read) {
           const conv = conversationsMap.get(otherUserId);
           if (conv) {
@@ -212,7 +188,6 @@ export default function DirectMessages() {
 
       if (error) throw error;
       
-      // Buscar informações dos remetentes
       if (data && data.length > 0) {
         const senderIds = [...new Set(data.map(m => m.sender_id))];
         const { data: sendersData } = await supabase
@@ -254,32 +229,10 @@ export default function DirectMessages() {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedUser) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Por favor, digite uma mensagem",
-      });
-      return;
-    }
-
-    if (!user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Usuário não autenticado",
-      });
-      return;
-    }
+    if (!newMessage.trim() || !selectedUser || !user?.id) return;
 
     try {
-      console.log('Enviando mensagem:', {
-        sender_id: user.id,
-        recipient_id: selectedUser.user_id,
-        message_body: newMessage.trim()
-      });
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('internal_messages')
         .insert({
           sender_id: user.id,
@@ -288,30 +241,18 @@ export default function DirectMessages() {
           message_body: newMessage.trim(),
           message_type: 'general',
           priority: 'normal'
-        })
-        .select();
+        });
 
-      if (error) {
-        console.error('Erro detalhado ao enviar mensagem:', error);
-        throw error;
-      }
-
-      console.log('Mensagem enviada com sucesso:', data);
+      if (error) throw error;
 
       setNewMessage('');
       await loadMessages(selectedUser.user_id);
       await loadConversations();
-      
-      toast({
-        title: "Mensagem enviada",
-        description: `Mensagem enviada para ${selectedUser.name}`,
-      });
     } catch (error: any) {
-      console.error('Erro ao enviar mensagem:', error);
       toast({
         variant: "destructive",
         title: "Erro ao enviar mensagem",
-        description: error.message || "Não foi possível enviar a mensagem. Tente novamente.",
+        description: error.message || "Não foi possível enviar a mensagem.",
       });
     }
   };
@@ -336,22 +277,49 @@ export default function DirectMessages() {
       .slice(0, 2);
   };
 
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500',
+      'bg-orange-500', 'bg-teal-500', 'bg-indigo-500', 'bg-rose-500'
+    ];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
+  const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
+
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <MessageCircle className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold">Mensagens Diretas</h1>
-          <p className="text-muted-foreground">Converse com outros usuários do sistema</p>
+    <div className="container mx-auto p-2 sm:p-4 lg:p-6 space-y-6">
+      {/* Header moderno com gradiente */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 p-6 text-white shadow-lg">
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+              <MessageCircle className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Mensagens Diretas</h1>
+              <p className="text-purple-100 mt-1">
+                Converse com outros usuários do sistema
+              </p>
+            </div>
+          </div>
+          {totalUnread > 0 && (
+            <Badge className="bg-white text-purple-600 text-sm px-4 py-2 shadow-lg">
+              <Mail className="w-4 h-4 mr-2" />
+              {totalUnread} não lidas
+            </Badge>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lista de Conversas */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+        <Card className="lg:col-span-1 border-0 shadow-lg overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/30 dark:to-fuchsia-950/30">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Users className="h-5 w-5 text-purple-600" />
               Conversas
             </CardTitle>
             <div className="relative mt-2">
@@ -360,7 +328,7 @@ export default function DirectMessages() {
                 placeholder="Buscar usuário..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-background/80"
               />
             </div>
           </CardHeader>
@@ -369,37 +337,32 @@ export default function DirectMessages() {
               {/* Conversas existentes */}
               {conversations.length > 0 && (
                 <div className="border-b">
-                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground">
+                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted/30">
                     CONVERSAS RECENTES
                   </div>
                   {conversations.map((conv) => (
                     <button
                       key={conv.user.user_id}
                       onClick={() => setSelectedUser(conv.user)}
-                      className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors ${
-                        selectedUser?.user_id === conv.user.user_id ? 'bg-muted' : ''
+                      className={`w-full px-4 py-3 flex items-center gap-3 transition-all duration-200 hover:bg-gradient-to-r hover:from-purple-50 hover:to-transparent dark:hover:from-purple-950/30 ${
+                        selectedUser?.user_id === conv.user.user_id 
+                          ? 'bg-gradient-to-r from-purple-100 to-fuchsia-50 dark:from-purple-950/50 border-l-4 border-purple-500' 
+                          : ''
                       }`}
                     >
-                      <Avatar>
-                        <AvatarFallback className="bg-primary text-primary-foreground">
+                      <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm">
+                        <AvatarFallback className={`${getAvatarColor(conv.user.name)} text-white font-medium`}>
                           {getInitials(conv.user.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 text-left">
+                      <div className="flex-1 text-left min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium">{conv.user.name}</p>
-                          <div className="flex items-center gap-1">
-                            {conv.lastMessage?.message_type === 'appointment_notification' && (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400">
-                                🔔
-                              </Badge>
-                            )}
-                            {conv.unreadCount > 0 && (
-                              <Badge variant="destructive">
-                                {conv.unreadCount}
-                              </Badge>
-                            )}
-                          </div>
+                          <p className="font-medium truncate">{conv.user.name}</p>
+                          {conv.unreadCount > 0 && (
+                            <Badge className="bg-purple-500 text-white text-xs shrink-0">
+                              {conv.unreadCount}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground truncate">
                           {conv.lastMessage?.message_body}
@@ -412,7 +375,7 @@ export default function DirectMessages() {
 
               {/* Todos os usuários */}
               <div>
-                <div className="px-4 py-2 text-xs font-semibold text-muted-foreground">
+                <div className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted/30">
                   TODOS OS USUÁRIOS ({filteredUsers.length})
                 </div>
                 {filteredUsers.length === 0 && (
@@ -424,12 +387,12 @@ export default function DirectMessages() {
                   <button
                     key={u.user_id}
                     onClick={() => setSelectedUser(u)}
-                    className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors ${
+                    className={`w-full px-4 py-3 flex items-center gap-3 transition-all duration-200 hover:bg-muted/50 ${
                       selectedUser?.user_id === u.user_id ? 'bg-muted' : ''
                     }`}
                   >
-                    <Avatar>
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm">
+                      <AvatarFallback className={`${getAvatarColor(u.name)} text-white font-medium`}>
                         {getInitials(u.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -445,81 +408,59 @@ export default function DirectMessages() {
         </Card>
 
         {/* Área de Chat */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 border-0 shadow-lg overflow-hidden">
           {selectedUser ? (
             <>
-              <CardHeader className="border-b">
+              <CardHeader className="border-b bg-gradient-to-r from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950/30 dark:via-fuchsia-950/30 dark:to-pink-950/30">
                 <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+                  <Avatar className="h-12 w-12 ring-2 ring-white shadow-md">
+                    <AvatarFallback className={`${getAvatarColor(selectedUser.name)} text-white font-semibold text-lg`}>
                       {getInitials(selectedUser.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle>{selectedUser.name}</CardTitle>
+                    <CardTitle className="text-lg">{selectedUser.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">{selectedUser.employee_role}</p>
                   </div>
                 </div>
               </CardHeader>
               
-              <CardContent className="p-0">
-                <ScrollArea className="h-[500px] p-4" ref={scrollAreaRef}>
+              <CardContent className="p-0 flex flex-col h-[500px]">
+                <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                   {loading ? (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-muted-foreground">Carregando mensagens...</p>
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">Nenhuma mensagem ainda. Comece a conversar!</p>
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <div className="p-4 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-4">
+                        <MessageCircle className="w-8 h-8 text-purple-500" />
+                      </div>
+                      <p className="text-muted-foreground">Nenhuma mensagem ainda.</p>
+                      <p className="text-sm text-muted-foreground">Comece a conversar!</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isOwn = msg.sender_id === user?.id;
-                        const isNotification = msg.message_type === 'appointment_notification';
                         
                         return (
                           <div
                             key={msg.id}
-                            className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                            className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-fade-in`}
                           >
-                            {isNotification && !isOwn ? (
-                              // Mensagem de notificação especial
-                              <div className="max-w-[85%] rounded-lg border-2 border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/30 p-4 shadow-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Badge variant="default" className="bg-blue-600">
-                                    🔔 Notificação de Agendamento
-                                  </Badge>
-                                  {msg.priority === 'high' && (
-                                    <Badge variant="destructive" className="text-xs">
-                                      Importante
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="prose prose-sm dark:prose-invert max-w-none">
-                                  <pre className="whitespace-pre-wrap font-sans text-sm bg-white/50 dark:bg-black/20 p-3 rounded">
-                                    {msg.message_body}
-                                  </pre>
-                                </div>
-                                <p className="text-xs mt-2 text-muted-foreground">
-                                  {format(new Date(msg.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                </p>
-                              </div>
-                            ) : (
-                              // Mensagem normal
-                              <div
-                                className={`max-w-[70%] rounded-lg p-3 ${
-                                  isOwn
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted'
-                                }`}
-                              >
-                                <p className="text-sm whitespace-pre-wrap">{msg.message_body}</p>
-                                <p className="text-xs mt-1 opacity-70">
-                                  {format(new Date(msg.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                </p>
-                              </div>
-                            )}
+                            <div
+                              className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${
+                                isOwn 
+                                  ? 'bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white rounded-tr-none' 
+                                  : 'bg-muted rounded-tl-none'
+                              }`}
+                            >
+                              <p className="text-sm whitespace-pre-wrap">{msg.message_body}</p>
+                              <p className={`text-xs mt-2 ${isOwn ? 'text-purple-100' : 'text-muted-foreground'}`}>
+                                {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                              </p>
+                            </div>
                           </div>
                         );
                       })}
@@ -528,16 +469,20 @@ export default function DirectMessages() {
                   )}
                 </ScrollArea>
 
-                <div className="border-t p-4">
+                <div className="p-4 border-t bg-muted/30">
                   <div className="flex gap-2">
                     <Input
                       placeholder="Digite sua mensagem..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      className="flex-1"
+                      className="flex-1 bg-background"
                     />
-                    <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                    <Button 
+                      onClick={sendMessage} 
+                      disabled={!newMessage.trim()}
+                      className="bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-600 hover:to-fuchsia-600"
+                    >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
@@ -545,12 +490,15 @@ export default function DirectMessages() {
               </CardContent>
             </>
           ) : (
-            <CardContent className="flex items-center justify-center h-[600px]">
-              <div className="text-center text-muted-foreground">
-                <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p>Selecione uma conversa para começar</p>
+            <div className="flex flex-col items-center justify-center h-[600px] text-center p-8">
+              <div className="p-6 rounded-full bg-gradient-to-br from-purple-100 to-fuchsia-100 dark:from-purple-900/30 dark:to-fuchsia-900/30 mb-4">
+                <MessageCircle className="w-16 h-16 text-purple-500" />
               </div>
-            </CardContent>
+              <h3 className="text-xl font-semibold mb-2">Selecione uma conversa</h3>
+              <p className="text-muted-foreground max-w-sm">
+                Escolha um usuário na lista ao lado para iniciar ou continuar uma conversa
+              </p>
+            </div>
           )}
         </Card>
       </div>
