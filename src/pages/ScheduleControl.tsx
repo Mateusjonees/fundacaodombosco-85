@@ -755,127 +755,223 @@ ${notificationMessage}
 
     const sortedHours = Object.keys(schedulesByHour).sort();
 
+    // Estatísticas do dia
+    const dayStats = {
+      total: schedules.length,
+      confirmed: schedules.filter(s => s.status === 'confirmed').length,
+      scheduled: schedules.filter(s => s.status === 'scheduled').length,
+      cancelled: schedules.filter(s => s.status === 'cancelled').length,
+    };
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'confirmed': return 'border-l-emerald-500 bg-emerald-500/5';
+        case 'scheduled': return 'border-l-blue-500 bg-blue-500/5';
+        case 'cancelled': return 'border-l-red-500 bg-red-500/5';
+        case 'completed': return 'border-l-slate-400 bg-slate-400/5';
+        default: return 'border-l-amber-500 bg-amber-500/5';
+      }
+    };
+
+    const getPeriod = (hour: string) => {
+      const h = parseInt(hour.split(':')[0]);
+      if (h < 12) return 'morning';
+      if (h < 18) return 'afternoon';
+      return 'evening';
+    };
+
+    let lastPeriod = '';
+
     return (
       <div className="space-y-6">
+        {/* Cards de Resumo do Dia */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{dayStats.total}</div>
+              <div className="text-sm text-muted-foreground font-medium">Total</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{dayStats.confirmed}</div>
+              <div className="text-sm text-muted-foreground font-medium">Confirmados</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{dayStats.scheduled}</div>
+              <div className="text-sm text-muted-foreground font-medium">Agendados</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">{dayStats.cancelled}</div>
+              <div className="text-sm text-muted-foreground font-medium">Cancelados</div>
+            </CardContent>
+          </Card>
+        </div>
+
         {schedules.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              Nenhum agendamento encontrado para esta data.
+          <Card className="border-dashed border-2">
+            <CardContent className="p-12 text-center">
+              <CalendarIcon className="h-16 w-16 mx-auto text-muted-foreground/40 mb-4" />
+              <h3 className="text-lg font-semibold text-muted-foreground">Nenhum agendamento</h3>
+              <p className="text-sm text-muted-foreground/70 mt-1">
+                Não há agendamentos para {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+              </p>
             </CardContent>
           </Card>
         ) : (
-          sortedHours.map((hour) => (
-            <div key={hour}>
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">{hour}</h3>
-                <div className="flex-1 h-px bg-border ml-2" />
-              </div>
-              <div className="space-y-3">
-                {schedulesByHour[hour].map((schedule) => (
-                  <Card key={schedule.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-primary" />
-                            <span className="font-semibold text-base">
-                              {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })} - {format(new Date(schedule.end_time), 'HH:mm', { locale: ptBR })}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              ({Math.round((new Date(schedule.end_time).getTime() - new Date(schedule.start_time).getTime()) / 60000)} min)
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <button
-                              onClick={() => handleClientClick(schedule.client_id)}
-                              className="font-medium text-base hover:text-primary hover:underline transition-colors"
-                            >
-                              {schedule.clients?.name || 'Paciente não identificado'}
-                            </button>
-                          </div>
+          <div className="relative">
+            {/* Timeline Line */}
+            <div className="absolute left-[23px] top-8 bottom-8 w-0.5 bg-gradient-to-b from-purple-500/50 via-purple-400/30 to-transparent" />
+            
+            <div className="space-y-6">
+              {sortedHours.map((hour, hourIndex) => {
+                const currentPeriod = getPeriod(hour);
+                const showPeriodHeader = currentPeriod !== lastPeriod;
+                lastPeriod = currentPeriod;
 
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              {schedule.profiles?.name || 'Profissional não atribuído'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <Badge variant={
-                              schedule.unit === 'madre' ? 'default' : 
-                              schedule.unit === 'floresta' ? 'secondary' :
-                              'outline'
-                            }>
-                              {schedule.unit === 'madre' ? 'MADRE' : 
-                               schedule.unit === 'floresta' ? 'Floresta' :
-                               schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
-                               schedule.unit || 'N/A'}
-                            </Badge>
-                          </div>
-
-                          {schedule.title && (
-                            <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">
-                              <strong>Tipo:</strong> {schedule.title}
-                            </div>
-                          )}
-
-                          {/* Observações adicionais para o diretor */}
-                          {userProfile?.employee_role === 'director' && schedule.status === 'cancelled' && (
-                            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 p-2 rounded">
-                              <AlertCircle className="h-3 w-3" />
-                              <span>Atendimento cancelado</span>
-                            </div>
-                          )}
-
-                          {schedule.notes && (
-                            <div className="text-sm bg-blue-50 dark:bg-blue-950/20 p-3 rounded border-l-2 border-blue-500">
-                              <strong>Observações:</strong> {schedule.notes}
-                            </div>
-                          )}
-
-                          {schedule.status === 'cancelled' && schedule.cancellation_reason && (
-                            <div className="text-sm bg-destructive/10 text-destructive p-3 rounded border-l-2 border-destructive">
-                              <strong>Motivo do cancelamento:</strong> {schedule.cancellation_reason}
-                            </div>
-                          )}
+                return (
+                  <div key={hour} className="animate-fade-in" style={{ animationDelay: `${hourIndex * 50}ms` }}>
+                    {/* Period Separator */}
+                    {showPeriodHeader && (
+                      <div className="flex items-center gap-3 mb-4 ml-12">
+                        <div className={cn(
+                          "px-4 py-1.5 rounded-full text-sm font-semibold",
+                          currentPeriod === 'morning' && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+                          currentPeriod === 'afternoon' && "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+                          currentPeriod === 'evening' && "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+                        )}>
+                          {currentPeriod === 'morning' ? '☀️ Manhã' : currentPeriod === 'afternoon' ? '🌤️ Tarde' : '🌙 Noite'}
                         </div>
-
-                        <div className="flex flex-col items-end gap-2">
-                          {getStatusBadge(schedule.status)}
-                          {schedule.patient_arrived && (
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Paciente chegou
-                            </Badge>
-                          )}
-                          
-                          {/* Botão de notificação para diretores e coordenadores */}
-                          {(userProfile?.employee_role === 'director' || 
-                            userProfile?.employee_role === 'coordinator_madre' || 
-                            userProfile?.employee_role === 'coordinator_floresta') && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleOpenNotificationDialog(schedule)}
-                              className="gap-2"
-                            >
-                              <Bell className="h-3 w-3" />
-                              Notificar Profissional
-                            </Button>
-                          )}
-                        </div>
+                        <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    )}
+
+                    {/* Hour Marker */}
+                    <div className="flex items-start gap-4">
+                      <div className="relative z-10 flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25">
+                        <span className="text-sm font-bold">{hour.split(':')[0]}</span>
+                      </div>
+
+                      <div className="flex-1 space-y-3">
+                        {schedulesByHour[hour].map((schedule, scheduleIndex) => (
+                          <Card 
+                            key={schedule.id} 
+                            className={cn(
+                              "border-l-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] group",
+                              getStatusColor(schedule.status)
+                            )}
+                            style={{ animationDelay: `${(hourIndex * 50) + (scheduleIndex * 30)}ms` }}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 space-y-3">
+                                  {/* Time */}
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10">
+                                      <Clock className="h-4 w-4 text-primary" />
+                                      <span className="font-bold text-primary">
+                                        {format(new Date(schedule.start_time), 'HH:mm')} - {format(new Date(schedule.end_time), 'HH:mm')}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                                      {Math.round((new Date(schedule.end_time).getTime() - new Date(schedule.start_time).getTime()) / 60000)} min
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Patient */}
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
+                                      {(schedule.clients?.name || 'P')[0].toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <button
+                                        onClick={() => handleClientClick(schedule.client_id)}
+                                        className="font-semibold text-base hover:text-primary transition-colors"
+                                      >
+                                        {schedule.clients?.name || 'Paciente não identificado'}
+                                      </button>
+                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <User className="h-3.5 w-3.5" />
+                                        <span>{schedule.profiles?.name || 'Profissional não atribuído'}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Unit Badge */}
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                    <Badge variant={
+                                      schedule.unit === 'madre' ? 'default' : 
+                                      schedule.unit === 'floresta' ? 'secondary' :
+                                      'outline'
+                                    } className="font-medium">
+                                      {schedule.unit === 'madre' ? 'MADRE' : 
+                                       schedule.unit === 'floresta' ? 'Floresta' :
+                                       schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
+                                       schedule.unit || 'N/A'}
+                                    </Badge>
+                                    {schedule.title && (
+                                      <Badge variant="outline" className="bg-background">
+                                        {schedule.title}
+                                      </Badge>
+                                    )}
+                                  </div>
+
+                                  {/* Notes & Cancellation */}
+                                  {schedule.notes && (
+                                    <div className="text-sm bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+                                      <span className="font-medium text-blue-700 dark:text-blue-300">Observações:</span>{' '}
+                                      <span className="text-blue-600 dark:text-blue-400">{schedule.notes}</span>
+                                    </div>
+                                  )}
+
+                                  {schedule.status === 'cancelled' && schedule.cancellation_reason && (
+                                    <div className="text-sm bg-red-50 dark:bg-red-950/30 p-3 rounded-lg border border-red-200/50 dark:border-red-800/50">
+                                      <span className="font-medium text-red-700 dark:text-red-300">Motivo do cancelamento:</span>{' '}
+                                      <span className="text-red-600 dark:text-red-400">{schedule.cancellation_reason}</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-col items-end gap-2">
+                                  {getStatusBadge(schedule.status)}
+                                  {schedule.patient_arrived && (
+                                    <Badge variant="outline" className="flex items-center gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800">
+                                      <CheckCircle2 className="h-3 w-3" />
+                                      Paciente chegou
+                                    </Badge>
+                                  )}
+                                  
+                                  {/* Notification Button */}
+                                  {(userProfile?.employee_role === 'director' || 
+                                    userProfile?.employee_role === 'coordinator_madre' || 
+                                    userProfile?.employee_role === 'coordinator_floresta') && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleOpenNotificationDialog(schedule)}
+                                      className="gap-2 opacity-70 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <Bell className="h-3 w-3" />
+                                      Notificar
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))
+          </div>
         )}
       </div>
     );
@@ -1050,103 +1146,259 @@ ${notificationMessage}
 
   const renderMonthView = () => {
     const groupedSchedules = groupSchedulesByDate();
+    const monthStart = startOfMonth(selectedDate);
+    const monthEnd = endOfMonth(selectedDate);
+    const startDate = startOfWeek(monthStart, { locale: ptBR });
+    const endDate = endOfWeek(monthEnd, { locale: ptBR });
     
+    // Generate all days for the calendar grid
+    const calendarDays: Date[] = [];
+    let currentDay = startDate;
+    while (currentDay <= endDate) {
+      calendarDays.push(currentDay);
+      currentDay = addDays(currentDay, 1);
+    }
+
+    // Split into weeks
+    const weeks: Date[][] = [];
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      weeks.push(calendarDays.slice(i, i + 7));
+    }
+
+    const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+    const getSchedulesForDay = (date: Date) => {
+      const dateKey = format(date, 'yyyy-MM-dd');
+      return groupedSchedules[dateKey] || [];
+    };
+
+    const getStatusDot = (status: string) => {
+      switch (status) {
+        case 'confirmed': return 'bg-emerald-500';
+        case 'scheduled': return 'bg-blue-500';
+        case 'cancelled': return 'bg-red-500';
+        case 'completed': return 'bg-slate-400';
+        default: return 'bg-amber-500';
+      }
+    };
+
+    // Month Stats
+    const monthStats = {
+      total: schedules.length,
+      confirmed: schedules.filter(s => s.status === 'confirmed').length,
+      scheduled: schedules.filter(s => s.status === 'scheduled').length,
+      cancelled: schedules.filter(s => s.status === 'cancelled').length,
+    };
+
     return (
-      <Card>
-        <CardContent className="p-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Paciente</TableHead>
-                <TableHead>Profissional</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead>Status</TableHead>
-                {(userProfile?.employee_role === 'director' || 
-                  userProfile?.employee_role === 'coordinator_madre' || 
-                  userProfile?.employee_role === 'coordinator_floresta') && (
-                  <TableHead>Ações</TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {schedules.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={(userProfile?.employee_role === 'director' || 
-                                      userProfile?.employee_role === 'coordinator_madre' || 
-                                      userProfile?.employee_role === 'coordinator_floresta') ? 7 : 6} className="text-center text-muted-foreground">
-                    Nenhum agendamento encontrado para este mês.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                schedules.map((schedule) => (
-                  <TableRow key={schedule.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">
-                      {format(new Date(schedule.start_time), "dd/MM/yyyy", { locale: ptBR })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        {format(new Date(schedule.start_time), 'HH:mm')} - {format(new Date(schedule.end_time), 'HH:mm')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        onClick={() => handleClientClick(schedule.client_id)}
-                        className="hover:text-primary hover:underline transition-colors font-medium"
-                      >
-                        {schedule.clients?.name || 'N/A'}
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      {schedule.profiles?.name || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        schedule.unit === 'madre' ? 'default' : 
-                        schedule.unit === 'floresta' ? 'secondary' :
-                        'outline'
-                      }>
-                        {schedule.unit === 'madre' ? 'MADRE' : 
-                         schedule.unit === 'floresta' ? 'Floresta' :
-                         schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' :
-                         schedule.unit || 'N/A'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {getStatusBadge(schedule.status)}
-                        {schedule.patient_arrived && (
-                          <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Chegou
-                          </Badge>
+      <div className="space-y-6">
+        {/* Month Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">{monthStats.total}</div>
+              <div className="text-sm text-muted-foreground font-medium">Total do Mês</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{monthStats.confirmed}</div>
+              <div className="text-sm text-muted-foreground font-medium">Confirmados</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{monthStats.scheduled}</div>
+              <div className="text-sm text-muted-foreground font-medium">Agendados</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">{monthStats.cancelled}</div>
+              <div className="text-sm text-muted-foreground font-medium">Cancelados</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-emerald-500" />
+            <span className="text-muted-foreground">Confirmado</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            <span className="text-muted-foreground">Agendado</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-500" />
+            <span className="text-muted-foreground">Cancelado</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-amber-500" />
+            <span className="text-muted-foreground">Pendente</span>
+          </div>
+        </div>
+
+        {/* Calendar Grid */}
+        <Card className="overflow-hidden border-0 shadow-xl">
+          <CardContent className="p-0">
+            {/* Week Days Header */}
+            <div className="grid grid-cols-7 bg-gradient-to-r from-purple-600 to-purple-500 text-white">
+              {weekDays.map((day, index) => (
+                <div 
+                  key={day} 
+                  className={cn(
+                    "py-3 text-center font-semibold text-sm",
+                    index === 0 && "text-red-200",
+                    index === 6 && "text-red-200"
+                  )}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Days */}
+            <div className="divide-y divide-border">
+              {weeks.map((week, weekIndex) => (
+                <div key={weekIndex} className="grid grid-cols-7 divide-x divide-border">
+                  {week.map((day, dayIndex) => {
+                    const daySchedules = getSchedulesForDay(day);
+                    const isToday = isSameDay(day, new Date());
+                    const isCurrentMonth = isSameMonth(day, selectedDate);
+                    const hasSchedules = daySchedules.length > 0;
+
+                    return (
+                      <Popover key={dayIndex}>
+                        <PopoverTrigger asChild>
+                          <div 
+                            className={cn(
+                              "min-h-[100px] p-2 cursor-pointer transition-all duration-200 hover:bg-muted/50",
+                              !isCurrentMonth && "bg-muted/30 opacity-50",
+                              isToday && "bg-gradient-to-br from-purple-500/10 to-purple-600/5 ring-2 ring-purple-500/30",
+                              hasSchedules && "hover:shadow-inner"
+                            )}
+                          >
+                            {/* Day Number */}
+                            <div className={cn(
+                              "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold mb-2",
+                              isToday && "bg-purple-600 text-white shadow-lg",
+                              !isToday && dayIndex === 0 && "text-red-500",
+                              !isToday && dayIndex === 6 && "text-red-500",
+                              !isCurrentMonth && "text-muted-foreground"
+                            )}>
+                              {format(day, 'd')}
+                            </div>
+
+                            {/* Schedule Indicators */}
+                            {hasSchedules && (
+                              <div className="space-y-1">
+                                {/* Status Dots */}
+                                <div className="flex flex-wrap gap-1 mb-1">
+                                  {daySchedules.slice(0, 6).map((schedule, i) => (
+                                    <div 
+                                      key={i}
+                                      className={cn("w-2 h-2 rounded-full", getStatusDot(schedule.status))}
+                                    />
+                                  ))}
+                                  {daySchedules.length > 6 && (
+                                    <span className="text-[10px] text-muted-foreground">+{daySchedules.length - 6}</span>
+                                  )}
+                                </div>
+
+                                {/* Preview of first schedules */}
+                                <div className="space-y-0.5">
+                                  {daySchedules.slice(0, 2).map((schedule, i) => (
+                                    <div 
+                                      key={i}
+                                      className={cn(
+                                        "text-[10px] px-1.5 py-0.5 rounded truncate border-l-2",
+                                        schedule.status === 'confirmed' && "bg-emerald-100 dark:bg-emerald-900/30 border-emerald-500 text-emerald-700 dark:text-emerald-300",
+                                        schedule.status === 'scheduled' && "bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300",
+                                        schedule.status === 'cancelled' && "bg-red-100 dark:bg-red-900/30 border-red-500 text-red-700 dark:text-red-300 line-through",
+                                        !['confirmed', 'scheduled', 'cancelled'].includes(schedule.status) && "bg-amber-100 dark:bg-amber-900/30 border-amber-500 text-amber-700 dark:text-amber-300"
+                                      )}
+                                    >
+                                      {format(new Date(schedule.start_time), 'HH:mm')} {schedule.clients?.name?.split(' ')[0]}
+                                    </div>
+                                  ))}
+                                  {daySchedules.length > 2 && (
+                                    <div className="text-[10px] text-muted-foreground font-medium px-1.5">
+                                      +{daySchedules.length - 2} mais
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </PopoverTrigger>
+                        
+                        {/* Day Detail Popover */}
+                        {hasSchedules && (
+                          <PopoverContent className="w-80 p-0" align="start">
+                            <div className="bg-gradient-to-r from-purple-600 to-purple-500 text-white p-3 rounded-t-lg">
+                              <div className="font-semibold">
+                                {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                              </div>
+                              <div className="text-sm text-purple-100">
+                                {daySchedules.length} agendamento{daySchedules.length !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto p-2 space-y-2">
+                              {daySchedules.map((schedule) => (
+                                <div 
+                                  key={schedule.id}
+                                  className={cn(
+                                    "p-2 rounded-lg border-l-4 text-sm",
+                                    schedule.status === 'confirmed' && "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500",
+                                    schedule.status === 'scheduled' && "bg-blue-50 dark:bg-blue-900/20 border-blue-500",
+                                    schedule.status === 'cancelled' && "bg-red-50 dark:bg-red-900/20 border-red-500",
+                                    !['confirmed', 'scheduled', 'cancelled'].includes(schedule.status) && "bg-amber-50 dark:bg-amber-900/20 border-amber-500"
+                                  )}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-semibold">
+                                      {format(new Date(schedule.start_time), 'HH:mm')} - {format(new Date(schedule.end_time), 'HH:mm')}
+                                    </span>
+                                    {getStatusBadge(schedule.status)}
+                                  </div>
+                                  <button
+                                    onClick={() => handleClientClick(schedule.client_id)}
+                                    className="font-medium hover:text-primary transition-colors truncate block mt-1"
+                                  >
+                                    {schedule.clients?.name || 'Paciente'}
+                                  </button>
+                                  <div className="text-xs text-muted-foreground mt-0.5">
+                                    {schedule.profiles?.name || 'Profissional'}
+                                  </div>
+                                  {(userProfile?.employee_role === 'director' || 
+                                    userProfile?.employee_role === 'coordinator_madre' || 
+                                    userProfile?.employee_role === 'coordinator_floresta') && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleOpenNotificationDialog(schedule)}
+                                      className="w-full mt-2 h-7 text-xs gap-1"
+                                    >
+                                      <Bell className="h-3 w-3" />
+                                      Notificar Profissional
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </PopoverContent>
                         )}
-                      </div>
-                    </TableCell>
-                    {(userProfile?.employee_role === 'director' || 
-                      userProfile?.employee_role === 'coordinator_madre' || 
-                      userProfile?.employee_role === 'coordinator_floresta') && (
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleOpenNotificationDialog(schedule)}
-                          className="gap-2"
-                        >
-                          <Bell className="h-3 w-3" />
-                          Notificar
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      </Popover>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   };
 
