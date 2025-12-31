@@ -267,11 +267,108 @@
     }
   }
 
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      height: 0;
+    }
+    to {
+      opacity: 1;
+      height: var(--radix-collapsible-content-height);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 1;
+      height: var(--radix-collapsible-content-height);
+    }
+    to {
+      opacity: 0;
+      height: 0;
+    }
+  }
+
+  @keyframes gradient {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
   .animate-slide-in {
     animation: slide-in 0.3s ease-out;
   }
 
   .animate-pulse-gentle {
     animation: pulse-gentle 2s ease-in-out infinite;
+  }
+
+  .animate-slideDown {
+    animation: slideDown 0.2s ease-out forwards;
+  }
+
+  .animate-slideUp {
+    animation: slideUp 0.2s ease-out forwards;
+  }
+
+  .animate-gradient {
+    animation: gradient 8s ease infinite;
+    background-size: 200% 200%;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+
+  /* Sidebar specific styles */
+  .sidebar-container {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .sidebar-nav-item {
+    @apply relative overflow-hidden;
+  }
+
+  .sidebar-nav-active {
+    @apply relative;
+  }
+
+  .sidebar-nav-active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full;
+    background: linear-gradient(to bottom, hsl(var(--primary-foreground)), hsl(var(--primary-foreground) / 0.6));
+  }
+
+  .sidebar-category-header {
+    @apply relative overflow-hidden;
+  }
+
+  .sidebar-category-header::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-300;
+  }
+
+  .sidebar-category-header:hover::after {
+    @apply opacity-100;
+  }
+
+  .sidebar-user-card {
+    @apply relative transition-all duration-300;
+  }
+
+  .sidebar-user-card:hover {
+    @apply shadow-sm;
   }
 }
