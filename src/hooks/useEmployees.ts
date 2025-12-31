@@ -5,10 +5,15 @@ interface EmployeeFilters {
   unit?: string;
   role?: string;
   isActive?: boolean;
+  limit?: number;
 }
+
+// Colunas otimizadas para listagem
+const LIST_COLUMNS = 'user_id, id, name, employee_role, department, unit, phone, email, is_active';
 
 /**
  * Hook otimizado para carregar funcionários com cache
+ * Usa select específico para reduzir payload
  */
 export const useEmployees = (userProfile?: any, filters?: EmployeeFilters) => {
   return useQuery({
@@ -16,7 +21,7 @@ export const useEmployees = (userProfile?: any, filters?: EmployeeFilters) => {
     queryFn: async () => {
       let query = supabase
         .from('profiles')
-        .select('user_id, id, name, employee_role, department, unit')
+        .select(LIST_COLUMNS)
         .eq('is_active', true)
         .not('employee_role', 'is', null)
         .order('name');
@@ -42,11 +47,37 @@ export const useEmployees = (userProfile?: any, filters?: EmployeeFilters) => {
         query = query.eq('unit', filters.unit);
       }
 
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
     staleTime: 300000, // 5 minutos
     enabled: !!userProfile,
+    gcTime: 10 * 60 * 1000, // Mantém em cache por 10 minutos
   });
 };
+
+/**
+ * Hook para contagem de funcionários ativos
+ */
+export const useEmployeesCount = () => {
+  return useQuery({
+    queryKey: ['employees', 'count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .not('employee_role', 'is', null);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    staleTime: 300000,
+  });
+};
+
