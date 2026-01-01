@@ -9,9 +9,11 @@ import {
   Power, 
   Phone, 
   Calendar, 
-  MapPin,
   User,
-  Stethoscope
+  Building2,
+  Brain,
+  Stethoscope as StethoscopeIcon,
+  Clipboard
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 
@@ -45,38 +47,38 @@ const getUnitConfig = (unit?: string) => {
     case "madre":
       return {
         label: "Clínica Social",
-        icon: "🏥",
-        bgColor: "bg-blue-500/10",
-        borderColor: "border-blue-500/30",
-        textColor: "text-blue-600 dark:text-blue-400",
-        accentColor: "bg-blue-500"
+        Icon: Building2,
+        gradient: "from-blue-500 to-cyan-500",
+        bgLight: "bg-blue-50 dark:bg-blue-950/30",
+        textColor: "text-blue-700 dark:text-blue-300",
+        borderColor: "border-blue-200 dark:border-blue-800"
       };
     case "floresta":
       return {
         label: "Neuroavaliação",
-        icon: "🧠",
-        bgColor: "bg-emerald-500/10",
-        borderColor: "border-emerald-500/30",
-        textColor: "text-emerald-600 dark:text-emerald-400",
-        accentColor: "bg-emerald-500"
+        Icon: Brain,
+        gradient: "from-violet-500 to-purple-500",
+        bgLight: "bg-violet-50 dark:bg-violet-950/30",
+        textColor: "text-violet-700 dark:text-violet-300",
+        borderColor: "border-violet-200 dark:border-violet-800"
       };
     case "atendimento_floresta":
       return {
         label: "Atend. Floresta",
-        icon: "🩺",
-        bgColor: "bg-purple-500/10",
-        borderColor: "border-purple-500/30",
-        textColor: "text-purple-600 dark:text-purple-400",
-        accentColor: "bg-purple-500"
+        Icon: StethoscopeIcon,
+        gradient: "from-emerald-500 to-teal-500",
+        bgLight: "bg-emerald-50 dark:bg-emerald-950/30",
+        textColor: "text-emerald-700 dark:text-emerald-300",
+        borderColor: "border-emerald-200 dark:border-emerald-800"
       };
     default:
       return {
         label: "Não definido",
-        icon: "📋",
-        bgColor: "bg-muted",
-        borderColor: "border-border",
+        Icon: Clipboard,
+        gradient: "from-gray-400 to-gray-500",
+        bgLight: "bg-muted/50",
         textColor: "text-muted-foreground",
-        accentColor: "bg-muted-foreground"
+        borderColor: "border-border"
       };
   }
 };
@@ -106,26 +108,30 @@ export function PatientCard({
 }: PatientCardProps) {
   const unitConfig = getUnitConfig(client.unit);
   const age = calculateAge(client.birth_date);
+  const UnitIcon = unitConfig.Icon;
 
   return (
     <Card 
       className={`
-        relative overflow-hidden transition-all duration-300 hover:shadow-lg
-        ${isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}
-        ${!client.is_active ? 'opacity-75' : ''}
+        relative overflow-hidden transition-all duration-300 
+        border-0 shadow-sm hover:shadow-xl hover:-translate-y-1
+        bg-gradient-to-br from-card via-card to-muted/20
+        ${isSelected ? 'ring-2 ring-primary shadow-xl -translate-y-1' : ''}
+        ${!client.is_active ? 'opacity-60 grayscale-[30%]' : ''}
         group cursor-pointer
       `}
       onClick={onView}
     >
-      {/* Barra colorida no topo baseada na unidade */}
-      <div className={`absolute top-0 left-0 right-0 h-1 ${unitConfig.accentColor}`} />
+      {/* Header com gradiente */}
+      <div className={`h-2 bg-gradient-to-r ${unitConfig.gradient}`} />
       
-      <CardContent className="p-4 pt-5">
-        <div className="flex items-start gap-3">
-          {/* Checkbox para seleção */}
+      <CardContent className="p-5">
+        {/* Topo: Avatar + Info Principal */}
+        <div className="flex items-start gap-4">
+          {/* Checkbox */}
           {showCheckbox && (
             <div 
-              className="pt-1"
+              className="pt-2"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect?.();
@@ -134,142 +140,137 @@ export function PatientCard({
               <Checkbox 
                 checked={isSelected}
                 onCheckedChange={onSelect}
-                className="data-[state=checked]:bg-primary"
+                className="h-5 w-5 rounded-full border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
             </div>
           )}
 
-          {/* Avatar */}
-          <UserAvatar 
-            name={client.name} 
-            size="lg"
-            className={`${unitConfig.bgColor} ${unitConfig.textColor} ring-2 ring-background shadow-sm`}
-          />
+          {/* Avatar com anel de gradiente */}
+          <div className="relative">
+            <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${unitConfig.gradient} blur-sm opacity-50`} />
+            <UserAvatar 
+              name={client.name} 
+              size="lg"
+              className="relative ring-2 ring-background shadow-lg"
+            />
+          </div>
 
           {/* Informações principais */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-foreground truncate leading-tight">
-                  {client.name}
-                </h3>
-                
-                {/* Badges de status e unidade */}
-                <div className="flex flex-wrap gap-1.5 mt-1.5">
-                  <Badge 
-                    variant="outline" 
-                    className={`text-xs px-2 py-0 ${unitConfig.bgColor} ${unitConfig.borderColor} ${unitConfig.textColor}`}
-                  >
-                    {unitConfig.icon} {unitConfig.label}
-                  </Badge>
-                  
-                  <Badge 
-                    variant={client.is_active ? "default" : "secondary"}
-                    className={`text-xs px-2 py-0 ${
-                      client.is_active 
-                        ? 'bg-green-500/90 text-white border-0' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {client.is_active ? '● Ativo' : '○ Inativo'}
-                  </Badge>
-                </div>
-              </div>
+          <div className="flex-1 min-w-0 space-y-2">
+            {/* Nome */}
+            <h3 className="font-bold text-base text-foreground truncate leading-tight group-hover:text-primary transition-colors">
+              {client.name}
+            </h3>
+            
+            {/* Badge de Unidade */}
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${unitConfig.bgLight} ${unitConfig.textColor} border ${unitConfig.borderColor}`}>
+              <UnitIcon className="h-3.5 w-3.5" />
+              <span>{unitConfig.label}</span>
             </div>
 
-            {/* Informações adicionais */}
-            <div className="mt-3 space-y-1.5 text-sm">
-              {client.phone && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span className="truncate">{client.phone}</span>
-                </div>
-              )}
-              
-              {age !== null && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <User className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span>{age} anos</span>
-                  {age < 18 && (
-                    <Badge variant="outline" className="text-xs px-1.5 py-0 bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400">
-                      Menor
-                    </Badge>
-                  )}
-                </div>
-              )}
+            {/* Status */}
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                client.is_active 
+                  ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${client.is_active ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                {client.is_active ? 'Ativo' : 'Inativo'}
+              </span>
 
-              {client.diagnosis && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Stethoscope className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span className="truncate text-xs">{client.diagnosis}</span>
-                </div>
+              {age !== null && age < 18 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400">
+                  Menor
+                </span>
               )}
-
-              <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                <Calendar className="h-3 w-3 flex-shrink-0" />
-                <span>Cadastro: {new Date(client.created_at).toLocaleDateString("pt-BR")}</span>
-              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Informações Secundárias */}
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {client.phone && (
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 group/item hover:bg-muted transition-colors">
+              <Phone className="h-3.5 w-3.5 text-muted-foreground group-hover/item:text-primary transition-colors" />
+              <span className="text-xs text-muted-foreground truncate">{client.phone}</span>
+            </div>
+          )}
+          
+          {age !== null && (
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">{age} anos</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 col-span-2">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              Cadastro: {new Date(client.created_at).toLocaleDateString("pt-BR")}
+            </span>
           </div>
         </div>
 
         {/* Ações */}
         {showActions && (
           <div 
-            className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-border/50"
+            className="flex items-center justify-between mt-4 pt-4 border-t border-border/50"
             onClick={(e) => e.stopPropagation()}
           >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onView}
-              className="h-8 px-2.5 hover:bg-blue-500/10 hover:text-blue-600"
-              title="Visualizar"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline text-xs">Ver</span>
-            </Button>
-            
-            {onEdit && (
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onEdit}
-                className="h-8 px-2.5 hover:bg-orange-500/10 hover:text-orange-600"
-                title="Editar"
+                onClick={onView}
+                className="h-9 px-3 gap-1.5 text-xs font-medium hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
               >
-                <Edit className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline text-xs">Editar</span>
+                <Eye className="h-4 w-4" />
+                Ver
               </Button>
-            )}
+              
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onEdit}
+                  className="h-9 px-3 gap-1.5 text-xs font-medium hover:bg-orange-500/10 hover:text-orange-600 rounded-lg transition-all"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar
+                </Button>
+              )}
+            </div>
             
-            {onReport && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onReport}
-                className="h-8 px-2.5 hover:bg-purple-500/10 hover:text-purple-600"
-                title="Relatório"
-              >
-                <FileText className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {onToggleStatus && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onToggleStatus}
-                className={`h-8 px-2.5 ${
-                  client.is_active 
-                    ? 'hover:bg-red-500/10 hover:text-red-600' 
-                    : 'hover:bg-green-500/10 hover:text-green-600'
-                }`}
-                title={client.is_active ? "Desativar" : "Ativar"}
-              >
-                <Power className="h-4 w-4" />
-              </Button>
-            )}
+            <div className="flex items-center gap-1">
+              {onReport && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onReport}
+                  className="h-9 w-9 hover:bg-violet-500/10 hover:text-violet-600 rounded-lg transition-all"
+                  title="Relatório"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onToggleStatus && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onToggleStatus}
+                  className={`h-9 w-9 rounded-lg transition-all ${
+                    client.is_active 
+                      ? 'hover:bg-red-500/10 hover:text-red-600' 
+                      : 'hover:bg-green-500/10 hover:text-green-600'
+                  }`}
+                  title={client.is_active ? "Desativar" : "Ativar"}
+                >
+                  <Power className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
