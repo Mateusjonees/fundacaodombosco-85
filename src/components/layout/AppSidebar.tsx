@@ -350,9 +350,9 @@ const SidebarNavItem = memo(({
     <NavLink 
       to={item.url} 
       className={cn(
-        "sidebar-nav-item group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-100",
+        "sidebar-nav-item group relative flex items-center gap-3 px-3 py-2.5 rounded-xl",
         isActive 
-          ? "sidebar-nav-active bg-primary text-primary-foreground shadow-md" 
+          ? "sidebar-nav-active bg-primary text-primary-foreground" 
           : cn(
             "text-muted-foreground hover:text-foreground",
             config?.hoverBg || "hover:bg-muted/80"
