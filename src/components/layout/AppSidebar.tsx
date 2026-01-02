@@ -350,9 +350,9 @@ const SidebarNavItem = memo(({
     <NavLink 
       to={item.url} 
       className={cn(
-        "sidebar-nav-item group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300",
+        "sidebar-nav-item group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-100",
         isActive 
-          ? "sidebar-nav-active bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25" 
+          ? "sidebar-nav-active bg-primary text-primary-foreground shadow-md" 
           : cn(
             "text-muted-foreground hover:text-foreground",
             config?.hoverBg || "hover:bg-muted/80"
@@ -360,16 +360,15 @@ const SidebarNavItem = memo(({
         collapsed && "justify-center px-2"
       )}
     >
-      {/* Icon with gradient background */}
+      {/* Icon */}
       <span className={cn(
-        "flex items-center justify-center shrink-0 rounded-lg transition-all duration-300",
+        "flex items-center justify-center shrink-0 rounded-lg",
         collapsed ? "h-8 w-8" : "h-7 w-7",
         isActive 
           ? "bg-white/20" 
           : config?.iconBg || "bg-muted"
       )}>
         {IconComponent && <IconComponent className={cn(
-          "transition-transform duration-300 group-hover:scale-110",
           collapsed ? "h-4 w-4" : "h-3.5 w-3.5",
           isActive && "text-primary-foreground"
         )} />}
@@ -379,17 +378,9 @@ const SidebarNavItem = memo(({
         <>
           <span className="text-sm font-medium truncate">{item.title}</span>
           {isActive && (
-            <span className="ml-auto flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary-foreground/60"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-foreground"></span>
-            </span>
+            <span className="ml-auto h-2 w-2 rounded-full bg-primary-foreground" />
           )}
         </>
-      )}
-      
-      {/* Hover glow effect */}
-      {!isActive && (
-        <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       )}
     </NavLink>
   );

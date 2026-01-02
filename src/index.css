@@ -259,7 +259,7 @@
   @keyframes slide-in {
     from {
       opacity: 0;
-      transform: translateX(-20px);
+      transform: translateX(-10px);
     }
     to {
       opacity: 1;
@@ -308,7 +308,7 @@
   }
 
   .animate-slide-in {
-    animation: slide-in 0.3s ease-out;
+    animation: slide-in 0.15s ease-out;
   }
 
   .animate-pulse-gentle {
@@ -316,15 +316,14 @@
   }
 
   .animate-slideDown {
-    animation: slideDown 0.2s ease-out forwards;
+    animation: slideDown 0.12s ease-out forwards;
   }
 
   .animate-slideUp {
-    animation: slideUp 0.2s ease-out forwards;
+    animation: slideUp 0.1s ease-out forwards;
   }
 
   .animate-gradient {
-    animation: gradient 8s ease infinite;
     background-size: 200% 200%;
   }
 
@@ -332,13 +331,14 @@
     animation: shimmer 2s infinite;
   }
 
-  /* Sidebar specific styles */
+  /* Sidebar specific styles - Optimized for performance */
   .sidebar-container {
-    @apply transition-all duration-300 ease-in-out;
+    @apply transition-all duration-150 ease-out;
+    will-change: width;
   }
 
   .sidebar-nav-item {
-    @apply relative overflow-hidden;
+    @apply relative overflow-hidden transition-colors duration-100;
   }
 
   .sidebar-nav-active {
@@ -347,25 +347,15 @@
 
   .sidebar-nav-active::before {
     content: '';
-    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full;
-    background: linear-gradient(to bottom, hsl(var(--primary-foreground)), hsl(var(--primary-foreground) / 0.6));
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-primary-foreground;
   }
 
   .sidebar-category-header {
-    @apply relative overflow-hidden;
-  }
-
-  .sidebar-category-header::after {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-300;
-  }
-
-  .sidebar-category-header:hover::after {
-    @apply opacity-100;
+    @apply relative;
   }
 
   .sidebar-user-card {
-    @apply relative transition-all duration-300;
+    @apply relative transition-shadow duration-150;
   }
 
   .sidebar-user-card:hover {

@@ -429,86 +429,96 @@ const MyPatients: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredClients.map((client) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {filteredClients.map((client, index) => {
                 const age = calculateAge(client.birth_date);
                 const daysSince = daysSinceLastSession(client.last_session_date);
                 const isMinor = age !== null && age < 18;
+                
+                // Configuração de cores por unidade
+                const unitConfig = {
+                  madre: { 
+                    gradient: 'from-blue-500 to-blue-600', 
+                    bg: 'bg-blue-50 dark:bg-blue-950/30',
+                    text: 'text-blue-700 dark:text-blue-300',
+                    icon: '🏥'
+                  },
+                  floresta: { 
+                    gradient: 'from-emerald-500 to-emerald-600', 
+                    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+                    text: 'text-emerald-700 dark:text-emerald-300',
+                    icon: '🌳'
+                  },
+                  atendimento_floresta: { 
+                    gradient: 'from-teal-500 to-teal-600', 
+                    bg: 'bg-teal-50 dark:bg-teal-950/30',
+                    text: 'text-teal-700 dark:text-teal-300',
+                    icon: '🌿'
+                  }
+                };
+                const config = unitConfig[client.unit as keyof typeof unitConfig] || unitConfig.madre;
 
                 return (
                   <Card 
                     key={client.id} 
-                    className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-gradient-to-br from-card via-card to-blue-500/5 cursor-pointer"
+                    className="group relative overflow-hidden border shadow-sm hover:shadow-lg transition-shadow duration-200 bg-card"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <CardHeader className="relative pb-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-                          {client.name}
-                        </CardTitle>
+                    {/* Header com gradiente da unidade */}
+                    <div className={`h-1.5 bg-gradient-to-r ${config.gradient}`} />
+                    
+                    <CardHeader className="pb-3 pt-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg font-semibold text-foreground truncate">
+                            {client.name}
+                          </CardTitle>
+                          {age !== null && (
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              {age} anos {isMinor && <span className="text-amber-600 dark:text-amber-400">(Menor)</span>}
+                            </p>
+                          )}
+                        </div>
                         <Badge 
-                          variant={
-                            client.unit === 'madre' ? 'default' : 
-                            client.unit === 'floresta' ? 'secondary' :
-                            'outline'
-                          }
-                          className={`text-xs font-semibold ${
-                            client.unit === 'madre' 
-                              ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' 
-                              : client.unit === 'floresta'
-                              ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
-                              : 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20'
-                          }`}
+                          variant="outline"
+                          className={`shrink-0 text-xs font-medium ${config.bg} ${config.text} border-0`}
                         >
-                          🏥 {client.unit === 'madre' ? 'Madre' : 
+                          {config.icon} {client.unit === 'madre' ? 'Madre' : 
                               client.unit === 'floresta' ? 'Floresta' :
-                              client.unit === 'atendimento_floresta' ? 'Atend. Floresta' :
-                              client.unit || 'N/A'}
+                              client.unit === 'atendimento_floresta' ? 'Atend.' :
+                              'N/A'}
                         </Badge>
                       </div>
-                      {age !== null && (
-                        <div className="flex items-center gap-2 bg-gradient-to-r from-muted/50 to-transparent px-3 py-1.5 rounded-lg">
-                          <User className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-medium">
-                            {age} anos {isMinor && '(Menor)'}
-                          </span>
-                        </div>
-                      )}
                     </CardHeader>
                     
-                    <CardContent className="relative space-y-3">
-                      {/* Contato */}
+                    <CardContent className="space-y-2.5 pb-4">
+                      {/* Telefone */}
                       {(client.phone || client.responsible_phone) && (
-                        <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-blue-500/5 to-transparent rounded-lg">
-                          <div className="p-1.5 bg-blue-500/10 rounded-md">
-                            <Phone className="h-4 w-4 text-blue-500" />
-                          </div>
-                          <span className="text-sm font-medium">
+                        <div className="flex items-center gap-2.5 text-sm">
+                          <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-foreground truncate">
                             {isMinor && client.responsible_phone 
                               ? client.responsible_phone 
-                              : client.phone || 'Não informado'
-                            }
+                              : client.phone || 'Não informado'}
                           </span>
                         </div>
                       )}
 
-                      {/* Responsável (apenas para menores) */}
+                      {/* Responsável */}
                       {isMinor && client.responsible_name && (
-                        <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-green-500/5 to-transparent rounded-lg">
-                          <div className="p-1.5 bg-green-500/10 rounded-md">
-                            <User className="h-4 w-4 text-green-500" />
-                          </div>
-                          <span className="text-sm font-medium">Resp.: {client.responsible_name}</span>
+                        <div className="flex items-center gap-2.5 text-sm">
+                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-foreground truncate">
+                            Resp.: {client.responsible_name}
+                          </span>
                         </div>
                       )}
 
                       {/* Endereço */}
                       {client.address && (
-                        <div className="flex items-start gap-3 p-2 bg-gradient-to-r from-purple-500/5 to-transparent rounded-lg">
-                          <div className="p-1.5 bg-purple-500/10 rounded-md mt-0.5">
-                            <MapPin className="h-4 w-4 text-purple-500" />
-                          </div>
-                          <span className="text-sm text-muted-foreground line-clamp-2">
+                        <div className="flex items-start gap-2.5 text-sm">
+                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground line-clamp-1">
                             {client.address}
                           </span>
                         </div>
@@ -516,21 +526,20 @@ const MyPatients: React.FC = () => {
 
                       {/* Última sessão */}
                       {client.last_session_date && daysSince !== null && (
-                        <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-orange-500/5 to-transparent rounded-lg">
-                          <div className="p-1.5 bg-orange-500/10 rounded-md">
-                            <Clock className="h-4 w-4 text-orange-500" />
-                          </div>
-                          <span className="text-sm font-medium">
-                            Última sessão: {daysSince} dia{daysSince !== 1 ? 's' : ''} atrás
+                        <div className="flex items-center gap-2.5 text-sm">
+                          <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className={daysSince > 30 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}>
+                            Última sessão: {daysSince} dia{daysSince !== 1 ? 's' : ''}
                           </span>
                         </div>
                       )}
 
-                      <div className="flex gap-2 pt-3">
+                      {/* Botões */}
+                      <div className="flex gap-2 pt-3 border-t border-border/50">
                         <Button 
                           size="sm" 
                           onClick={() => setSelectedClient(client)}
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-md hover:shadow-lg transition-all duration-300"
+                          className="flex-1"
                         >
                           Ver Detalhes
                         </Button>
@@ -538,10 +547,8 @@ const MyPatients: React.FC = () => {
                           size="sm" 
                           variant="outline"
                           onClick={() => {
-                            // Navegar para agendamento
                             window.location.href = `/schedule?client=${client.id}`;
                           }}
-                          className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
                         >
                           <CalendarIcon className="h-4 w-4" />
                         </Button>
