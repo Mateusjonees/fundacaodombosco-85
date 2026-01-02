@@ -257,88 +257,40 @@
   }
 
   @keyframes slide-in {
-    from {
-      opacity: 0;
-      transform: translateX(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(-4px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   @keyframes slideDown {
-    from {
-      opacity: 0;
-      height: 0;
-    }
-    to {
-      opacity: 1;
-      height: var(--radix-collapsible-content-height);
-    }
+    from { opacity: 0; height: 0; }
+    to { opacity: 1; height: var(--radix-collapsible-content-height); }
   }
 
   @keyframes slideUp {
-    from {
-      opacity: 1;
-      height: var(--radix-collapsible-content-height);
-    }
-    to {
-      opacity: 0;
-      height: 0;
-    }
-  }
-
-  @keyframes gradient {
-    0%, 100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-  }
-
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
+    from { opacity: 1; height: var(--radix-collapsible-content-height); }
+    to { opacity: 0; height: 0; }
   }
 
   .animate-slide-in {
-    animation: slide-in 0.15s ease-out;
-  }
-
-  .animate-pulse-gentle {
-    animation: pulse-gentle 2s ease-in-out infinite;
+    animation: slide-in 0.08s ease-out;
   }
 
   .animate-slideDown {
-    animation: slideDown 0.12s ease-out forwards;
+    animation: slideDown 0.08s ease-out forwards;
   }
 
   .animate-slideUp {
-    animation: slideUp 0.1s ease-out forwards;
+    animation: slideUp 0.05s ease-out forwards;
   }
 
-  .animate-gradient {
-    background-size: 200% 200%;
-  }
-
-  .animate-shimmer {
-    animation: shimmer 2s infinite;
-  }
-
-  /* Sidebar specific styles - Optimized for performance */
+  /* Sidebar specific styles - Ultra fast */
   .sidebar-container {
-    @apply transition-all duration-150 ease-out;
-    will-change: width;
+    @apply transition-[width] duration-75 ease-out;
   }
 
   .sidebar-nav-item {
-    @apply relative overflow-hidden transition-colors duration-100;
+    @apply relative overflow-hidden;
+    transition: background-color 0.05s ease-out, color 0.05s ease-out;
   }
 
   .sidebar-nav-active {
@@ -355,7 +307,8 @@
   }
 
   .sidebar-user-card {
-    @apply relative transition-shadow duration-150;
+    @apply relative;
+    transition: box-shadow 0.05s ease-out;
   }
 
   .sidebar-user-card:hover {
