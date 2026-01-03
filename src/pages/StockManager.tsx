@@ -1069,10 +1069,10 @@ export default function StockManager() {
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Todos os Itens</CardTitle>
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <CardTitle className="text-lg">Todos os Itens</CardTitle>
                 <Input
                   placeholder="Buscar itens..."
                   value={searchTerm}
@@ -1081,7 +1081,7 @@ export default function StockManager() {
                 />
               </div>
             </CardHeader>
-            <CardContent className="p-0 sm:p-6">
+            <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
               {loading ? (
                 <p className="text-center py-8">Carregando...</p>
               ) : (
