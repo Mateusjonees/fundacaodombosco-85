@@ -48,22 +48,22 @@ export const PageBreadcrumb = () => {
   const currentLabel = ROUTE_LABELS[currentPath] || 'Página';
 
   return (
-    <Breadcrumb className="mb-4 animate-fade-in">
-      <BreadcrumbList>
+    <Breadcrumb className="mb-6">
+      <BreadcrumbList className="flex items-center gap-1.5 text-sm">
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
             <Link 
               to="/" 
-              className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+              className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors duration-100"
             >
-              <Home className="h-4 w-4" />
-              <span className="hidden sm:inline">Início</span>
+              <Home className="h-3.5 w-3.5" />
+              <span>Início</span>
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         
-        <BreadcrumbSeparator>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+        <BreadcrumbSeparator className="mx-1">
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
         </BreadcrumbSeparator>
         
         <BreadcrumbItem>
