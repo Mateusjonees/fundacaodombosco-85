@@ -1349,34 +1349,76 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                       </CardContent>
                     </Card>
 
-                    {/* Clinical Info */}
+                    {/* Clinical Info Cards */}
                     <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-4">
-                        <div className="p-4 rounded-lg bg-muted/50">
-                          <h4 className="font-medium text-sm mb-2">Histórico Médico</h4>
-                          <p className="text-sm">{client.medical_history || 'Não informado'}</p>
-                        </div>
-                        
-                        <div className="p-4 rounded-lg bg-muted/50">
-                          <h4 className="font-medium text-sm mb-2">Queixa Neuropsicológica</h4>
-                          <p className="text-sm">{client.neuropsych_complaint || 'Não informado'}</p>
-                        </div>
-                      </div>
+                      {/* Histórico Médico */}
+                      <Card className="border hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                            <div className="p-1.5 rounded-lg bg-rose-500/10">
+                              <Heart className="h-4 w-4 text-rose-500" />
+                            </div>
+                            Histórico Médico
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className={`text-sm ${client.medical_history ? '' : 'text-muted-foreground italic'}`}>
+                            {client.medical_history || 'Nenhum histórico registrado'}
+                          </p>
+                        </CardContent>
+                      </Card>
                       
-                      <div className="space-y-4">
-                        <div className="p-4 rounded-lg bg-muted/50">
-                          <h4 className="font-medium text-sm mb-2">Expectativas do Tratamento</h4>
-                          <p className="text-sm">{client.treatment_expectations || 'Não informado'}</p>
-                        </div>
-                      </div>
+                      {/* Queixa Neuropsicológica */}
+                      <Card className="border hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                            <div className="p-1.5 rounded-lg bg-purple-500/10">
+                              <Brain className="h-4 w-4 text-purple-500" />
+                            </div>
+                            Queixa Principal
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className={`text-sm ${client.neuropsych_complaint ? '' : 'text-muted-foreground italic'}`}>
+                            {client.neuropsych_complaint || 'Nenhuma queixa registrada'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Expectativas do Tratamento */}
+                      <Card className="border hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                            <div className="p-1.5 rounded-lg bg-sky-500/10">
+                              <Activity className="h-4 w-4 text-sky-500" />
+                            </div>
+                            Expectativas do Tratamento
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className={`text-sm ${client.treatment_expectations ? '' : 'text-muted-foreground italic'}`}>
+                            {client.treatment_expectations || 'Nenhuma expectativa registrada'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Observações Clínicas */}
+                      <Card className="border hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                            <div className="p-1.5 rounded-lg bg-amber-500/10">
+                              <Stethoscope className="h-4 w-4 text-amber-500" />
+                            </div>
+                            Observações Clínicas
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className={`text-sm whitespace-pre-wrap ${client.clinical_observations ? '' : 'text-muted-foreground italic'}`}>
+                            {client.clinical_observations || 'Nenhuma observação registrada'}
+                          </p>
+                        </CardContent>
+                      </Card>
                     </div>
-
-                    {client.clinical_observations && (
-                      <div className="p-4 rounded-lg bg-muted/50">
-                        <h4 className="font-medium text-sm mb-2">Observações Clínicas</h4>
-                        <p className="text-sm whitespace-pre-wrap">{client.clinical_observations}</p>
-                      </div>
-                    )}
 
                     {/* Notes Section */}
                     <div>
