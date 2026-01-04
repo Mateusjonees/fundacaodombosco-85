@@ -11,8 +11,28 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { AlertCircle, Calendar, Clock, FileText, Plus, Search, User } from 'lucide-react';
-import { format, differenceInBusinessDays } from 'date-fns';
+import { format, differenceInBusinessDays, addDays, isWeekend, isSaturday, isSunday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Função para calcular 15 dias úteis a partir de uma data
+const calculateBusinessDaysDeadline = (startDate: Date, businessDays: number = 15): Date => {
+  let currentDate = addDays(startDate, 1); // Começa a partir do dia seguinte
+  let daysAdded = 0;
+  
+  while (daysAdded < businessDays) {
+    // Pula sábados (6) e domingos (0)
+    if (!isWeekend(currentDate)) {
+      daysAdded++;
+    }
+    
+    // Se ainda não completou os dias úteis, avança para o próximo dia
+    if (daysAdded < businessDays) {
+      currentDate = addDays(currentDate, 1);
+    }
+  }
+  
+  return currentDate;
+};
 
 interface FeedbackControl {
   id: string;
@@ -228,6 +248,14 @@ export default function FeedbackControl() {
     }
 
     try {
+      // Calcular o prazo de 15 dias úteis a partir de hoje
+      const today = new Date();
+      const deadlineDate = calculateBusinessDaysDeadline(today, 15);
+      const deadlineDateString = format(deadlineDate, 'yyyy-MM-dd');
+      
+      console.log('🗓️ Data de início:', format(today, 'dd/MM/yyyy'));
+      console.log('🗓️ Prazo calculado (15 dias úteis):', format(deadlineDate, 'dd/MM/yyyy'));
+
       const { error } = await supabase
         .from('client_feedback_control')
         .insert([{
@@ -235,12 +263,12 @@ export default function FeedbackControl() {
           assigned_to: selectedEmployee,
           created_by: user?.id || '',
           notes: notes || null,
-          deadline_date: new Date().toISOString().split('T')[0], // será sobrescrito pelo trigger
+          deadline_date: deadlineDateString,
         }]);
 
       if (error) throw error;
 
-      toast.success('Cliente adicionado ao controle de devolutiva');
+      toast.success(`Cliente adicionado! Prazo: ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })}`);
       setShowAddDialog(false);
       setSelectedClient(null);
       setSelectedEmployee('');
