@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { Package, Plus, AlertTriangle, TrendingUp, ArrowLeftRight, Search, FileDown } from 'lucide-react';
+import { Package, Plus, AlertTriangle, TrendingUp, ArrowLeftRight, Search, FileDown, LayoutList, LayoutGrid, MapPin, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import StockItemActions from '@/components/StockItemActions';
@@ -52,6 +53,7 @@ export default function Stock() {
   const [isImporting, setIsImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const { toast } = useToast();
   const { userRole, loading: roleLoading } = useRolePermissions();
   const customPermissions = useCustomPermissions();
@@ -594,7 +596,7 @@ export default function Stock() {
 
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
                 <CardTitle>Itens em Estoque</CardTitle>
                 <div className="flex items-center gap-3">
                   <div className="relative w-72">
@@ -606,70 +608,164 @@ export default function Stock() {
                       className="pl-10"
                     />
                   </div>
+                  <ToggleGroup 
+                    type="single" 
+                    value={viewMode} 
+                    onValueChange={(value) => value && setViewMode(value as 'list' | 'grid')}
+                    className="border rounded-lg p-1"
+                  >
+                    <ToggleGroupItem value="list" aria-label="Visualização em lista" className="px-3">
+                      <LayoutList className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="grid" aria-label="Visualização em cards" className="px-3">
+                      <LayoutGrid className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
                 </div>
               </div>
             </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox 
-                      checked={getFilteredItems().length > 0 && selectedItems.size === getFilteredItems().length}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Quantidade</TableHead>
-                  <TableHead>Unidade</TableHead>
-                  <TableHead>Valor Unit.</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Localização</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {getFilteredItems().length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                      {searchTerm ? 'Nenhum item encontrado com os termos de busca.' : 'Nenhum item cadastrado.'}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getFilteredItems().map((item) => {
-                    const status = getStockStatus(item);
-                    return (
-                      <TableRow key={item.id} className={selectedItems.has(item.id) ? 'bg-muted/50' : ''}>
-                        <TableCell>
-                          <Checkbox 
-                            checked={selectedItems.has(item.id)}
-                            onCheckedChange={() => handleSelectItem(item.id)}
-                          />
+            <CardContent>
+              {viewMode === 'list' ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox 
+                          checked={getFilteredItems().length > 0 && selectedItems.size === getFilteredItems().length}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Quantidade</TableHead>
+                      <TableHead>Unidade</TableHead>
+                      <TableHead>Valor Unit.</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Localização</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getFilteredItems().length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                          {searchTerm ? 'Nenhum item encontrado com os termos de busca.' : 'Nenhum item cadastrado.'}
                         </TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.category || '-'}</TableCell>
-                        <TableCell>{item.current_quantity}</TableCell>
-                        <TableCell>{item.unit}</TableCell>
-                        <TableCell>R$ {item.unit_cost.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge variant={status.variant}>{status.label}</Badge>
-                        </TableCell>
-                        <TableCell>{item.location || '-'}</TableCell>
-                         <TableCell>
-                           <StockItemActions 
-                             item={item} 
-                             onUpdate={loadStockItems}
-                           />
-                         </TableCell>
                       </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    ) : (
+                      getFilteredItems().map((item) => {
+                        const status = getStockStatus(item);
+                        return (
+                          <TableRow key={item.id} className={selectedItems.has(item.id) ? 'bg-muted/50' : ''}>
+                            <TableCell>
+                              <Checkbox 
+                                checked={selectedItems.has(item.id)}
+                                onCheckedChange={() => handleSelectItem(item.id)}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell>{item.category || '-'}</TableCell>
+                            <TableCell>{item.current_quantity}</TableCell>
+                            <TableCell>{item.unit}</TableCell>
+                            <TableCell>R$ {item.unit_cost.toFixed(2)}</TableCell>
+                            <TableCell>
+                              <Badge variant={status.variant}>{status.label}</Badge>
+                            </TableCell>
+                            <TableCell>{item.location || '-'}</TableCell>
+                            <TableCell>
+                              <StockItemActions 
+                                item={item} 
+                                onUpdate={loadStockItems}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {getFilteredItems().length === 0 ? (
+                    <div className="col-span-full text-center text-muted-foreground py-8">
+                      {searchTerm ? 'Nenhum item encontrado com os termos de busca.' : 'Nenhum item cadastrado.'}
+                    </div>
+                  ) : (
+                    getFilteredItems().map((item) => {
+                      const status = getStockStatus(item);
+                      const statusColors = {
+                        'Esgotado': 'border-red-500/50 bg-gradient-to-br from-red-500/10 via-card to-red-500/5',
+                        'Baixo': 'border-orange-500/50 bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5',
+                        'Normal': 'border-green-500/30 bg-gradient-to-br from-green-500/5 via-card to-green-500/5'
+                      };
+                      
+                      return (
+                        <Card 
+                          key={item.id} 
+                          className={`group relative overflow-hidden border shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer ${statusColors[status.label]} ${selectedItems.has(item.id) ? 'ring-2 ring-primary' : ''}`}
+                          onClick={() => handleSelectItem(item.id)}
+                        >
+                          <div className="absolute top-3 left-3">
+                            <Checkbox 
+                              checked={selectedItems.has(item.id)}
+                              onCheckedChange={() => handleSelectItem(item.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div className="absolute top-3 right-3">
+                            <Badge variant={status.variant} className="text-xs">
+                              {status.label}
+                            </Badge>
+                          </div>
+                          
+                          <CardContent className="pt-10 pb-4">
+                            <div className="space-y-3">
+                              <div>
+                                <Badge variant="outline" className="text-xs mb-2">
+                                  {item.category || 'Outros'}
+                                </Badge>
+                                <h3 className="font-semibold text-base line-clamp-2 group-hover:text-primary transition-colors">
+                                  {item.name}
+                                </h3>
+                              </div>
+                              
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Package className="h-3.5 w-3.5" />
+                                  <span>
+                                    <span className="font-medium text-foreground">{item.current_quantity}</span>
+                                    /{item.minimum_quantity} {item.unit}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 font-medium text-green-600">
+                                  <DollarSign className="h-3.5 w-3.5" />
+                                  <span>R$ {item.unit_cost.toFixed(2)}</span>
+                                </div>
+                              </div>
+                              
+                              {item.location && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <MapPin className="h-3 w-3" />
+                                  <span className="truncate">{item.location}</span>
+                                </div>
+                              )}
+                              
+                              <div className="pt-2 border-t flex justify-end" onClick={(e) => e.stopPropagation()}>
+                                <StockItemActions 
+                                  item={item} 
+                                  onUpdate={loadStockItems}
+                                />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
 
