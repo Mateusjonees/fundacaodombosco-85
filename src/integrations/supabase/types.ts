@@ -2030,6 +2030,66 @@ export type Database = {
           },
         ]
       }
+      prescriptions: {
+        Row: {
+          client_id: string
+          created_at: string
+          diagnosis: string | null
+          employee_id: string
+          follow_up_notes: string | null
+          general_instructions: string | null
+          id: string
+          medications: Json | null
+          prescription_date: string
+          schedule_id: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          diagnosis?: string | null
+          employee_id: string
+          follow_up_notes?: string | null
+          general_instructions?: string | null
+          id?: string
+          medications?: Json | null
+          prescription_date?: string
+          schedule_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          diagnosis?: string | null
+          employee_id?: string
+          follow_up_notes?: string | null
+          general_instructions?: string | null
+          id?: string
+          medications?: Json | null
+          prescription_date?: string
+          schedule_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
