@@ -42,11 +42,13 @@ import {
   Brain,
   ClipboardCheck,
   FileCheck2,
-  AlertCircle
+  AlertCircle,
+  Pill
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
 import ClientPaymentManager from './ClientPaymentManager';
+import PrescriptionManager from './PrescriptionManager';
 
 interface Client {
   id: string;
@@ -1245,7 +1247,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
             <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">
                 <Tabs defaultValue="clinical" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-6">
+                  <TabsList className="grid w-full grid-cols-5 mb-6">
                     <TabsTrigger value="clinical" className="text-xs md:text-sm">
                       <Stethoscope className="h-4 w-4 mr-1 hidden md:inline" />
                       Clínico
@@ -1253,6 +1255,10 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                     <TabsTrigger value="history" className="text-xs md:text-sm">
                       <Activity className="h-4 w-4 mr-1 hidden md:inline" />
                       Atendimentos
+                    </TabsTrigger>
+                    <TabsTrigger value="prescriptions" className="text-xs md:text-sm">
+                      <Pill className="h-4 w-4 mr-1 hidden md:inline" />
+                      Receita
                     </TabsTrigger>
                     <TabsTrigger value="financial" className="text-xs md:text-sm">
                       <CreditCard className="h-4 w-4 mr-1 hidden md:inline" />
@@ -1483,6 +1489,11 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                   {/* History Tab */}
                   <TabsContent value="history">
                     <ServiceHistory clientId={client.id} />
+                  </TabsContent>
+
+                  {/* Prescriptions Tab */}
+                  <TabsContent value="prescriptions">
+                    <PrescriptionManager client={client} />
                   </TabsContent>
 
                   {/* Financial Tab */}
