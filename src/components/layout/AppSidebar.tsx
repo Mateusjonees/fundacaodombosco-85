@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
   Home, UserPlus, Users, Calendar, ClipboardList, UserCheck, FolderOpen, 
@@ -657,14 +657,11 @@ export function AppSidebar() {
 // Memoized user avatar footer component with dropdown
 const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; onLogout: () => void }) => {
   const { userName, userRole, avatarUrl } = useCurrentUser();
-  const [open, setOpen] = useState(false);
-  
-  const DropdownMenu = require('@radix-ui/react-dropdown-menu');
   
   if (collapsed) {
     return (
-      <DropdownMenu.Root open={open} onOpenChange={setOpen}>
-        <DropdownMenu.Trigger asChild>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button className="flex justify-center py-1 w-full">
             <div className="relative cursor-pointer">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-secondary/50 rounded-full blur-sm opacity-50" />
@@ -676,46 +673,35 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
               />
             </div>
           </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content 
-            side="right" 
-            align="end"
-            className="z-50 min-w-[180px] rounded-xl border bg-popover p-1.5 shadow-lg animate-in fade-in-0 zoom-in-95"
-          >
-            <div className="px-2 py-1.5 mb-1">
-              <p className="font-medium text-sm">{userName || 'Usuário'}</p>
-              <p className="text-xs text-muted-foreground">{userRole}</p>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="end" className="min-w-[180px]">
+          <div className="px-2 py-1.5 mb-1">
+            <p className="font-medium text-sm">{userName || 'Usuário'}</p>
+            <p className="text-xs text-muted-foreground">{userRole}</p>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <div className="px-2 py-1.5">
+              <ThemeToggle collapsed={false} />
             </div>
-            <DropdownMenu.Separator className="h-px bg-border my-1" />
-            <DropdownMenu.Item asChild>
-              <div className="px-2 py-1.5">
-                <ThemeToggle collapsed={false} />
-              </div>
-            </DropdownMenu.Item>
-            <DropdownMenu.Separator className="h-px bg-border my-1" />
-            <DropdownMenu.Item asChild>
-              <button 
-                onClick={onLogout}
-                className="flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded-lg text-destructive hover:bg-destructive/10 cursor-pointer"
-              >
-                <LogOut className="h-4 w-4" />
-                Sair
-              </button>
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={onLogout}
+            className="text-destructive focus:text-destructive cursor-pointer"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
   
   return (
-    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
-      <DropdownMenu.Trigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <button className="sidebar-user-card relative overflow-hidden flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-muted/80 to-muted/40 border border-border/30 w-full text-left cursor-pointer hover:bg-muted/60 transition-colors">
-          {/* Subtle glow effect */}
-          <div className="absolute -inset-px bg-gradient-to-r from-primary/10 via-transparent to-secondary/10 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-500" />
-          
           <div className="relative">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/40 to-secondary/40 rounded-full blur-sm opacity-60" />
             <UserAvatar 
@@ -732,34 +718,25 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
               {userRole || 'Carregando...'}
             </p>
           </div>
-          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content 
-          side="top" 
-          align="start"
-          sideOffset={8}
-          className="z-50 min-w-[200px] rounded-xl border bg-popover p-1.5 shadow-lg animate-in fade-in-0 zoom-in-95"
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-[200px]">
+        <DropdownMenuItem asChild>
+          <div className="px-2 py-1.5">
+            <ThemeToggle collapsed={false} />
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={onLogout}
+          className="text-destructive focus:text-destructive cursor-pointer"
         >
-          <DropdownMenu.Item asChild>
-            <div className="px-2 py-1.5">
-              <ThemeToggle collapsed={false} />
-            </div>
-          </DropdownMenu.Item>
-          <DropdownMenu.Separator className="h-px bg-border my-1" />
-          <DropdownMenu.Item asChild>
-            <button 
-              onClick={onLogout}
-              className="flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded-lg text-destructive hover:bg-destructive/10 cursor-pointer"
-            >
-              <LogOut className="h-4 w-4" />
-              Sair
-            </button>
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+          <LogOut className="h-4 w-4 mr-2" />
+          Sair
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 });
 
