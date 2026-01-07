@@ -63,14 +63,20 @@ export const generatePrescriptionPdf = async (
     doc.addImage(timbradoBase64, 'JPEG', x, y, w, h);
   };
 
-  const addLogo = () => {
+  const addLogoAndTitle = () => {
     if (!logoBase64) return;
-    // Add logo centered at the top (35mm wide, ~28mm height, keeping aspect ratio)
+    // Logo centralizado com título RECEITUÁRIO abaixo
     const logoWidth = 35;
     const logoHeight = 28;
-    const logoX = (pageWidth - logoWidth) / 2 + 2; // +2mm offset para centralizar melhor
-    const logoY = 3;
+    const logoX = (pageWidth - logoWidth) / 2;
+    const logoY = 5;
     doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    
+    // Título RECEITUÁRIO centralizado logo abaixo da logo
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 102, 153);
+    doc.text('RECEITUÁRIO', pageWidth / 2, logoY + logoHeight + 6, { align: 'center' });
   };
 
   // Add letterhead background (full page)
@@ -81,20 +87,13 @@ export const generatePrescriptionPdf = async (
     console.error('Error loading letterhead:', error);
   }
 
-  // Add logo at the top
+  // Add logo and title centered
   try {
     logoBase64 = await loadImageAsBase64(fundacaoLogo);
-    addLogo();
+    addLogoAndTitle();
   } catch (error) {
     console.error('Error loading logo:', error);
   }
-
-  // Title - RECEITUÁRIO (below logo)
-  yPosition = 40;
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 102, 153);
-  doc.text('RECEITUÁRIO', pageWidth / 2, yPosition, { align: 'center' });
 
   // Service type label removed (SUS/Privativo)
   yPosition += 10;
@@ -126,9 +125,9 @@ export const generatePrescriptionPdf = async (
   if (client.birth_date) {
     const birthDate = new Date(client.birth_date).toLocaleDateString('pt-BR');
     doc.setFont('helvetica', 'bold');
-    doc.text('Data de Nasc.:', margin + 70, yPosition);
+    doc.text('Data de Nascimento:', margin + 70, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(birthDate, margin + 98, yPosition);
+    doc.text(birthDate, margin + 108, yPosition);
   }
 
   yPosition += 5;
@@ -177,7 +176,7 @@ export const generatePrescriptionPdf = async (
     if (yPosition > maxContentY) {
       doc.addPage();
       addLetterhead();
-      addLogo();
+      addLogoAndTitle();
       yPosition = 50;
     }
 
