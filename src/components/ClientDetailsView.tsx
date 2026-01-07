@@ -81,6 +81,7 @@ interface ClientNote {
   note_text: string;
   note_type: string;
   created_at: string;
+  service_type?: string;
   profiles?: { name: string };
 }
 
@@ -350,7 +351,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
     try {
       const { data: notesData, error } = await supabase
         .from('client_notes')
-        .select('id, note_text, note_type, created_at, created_by')
+        .select('id, note_text, note_type, created_at, created_by, service_type')
         .eq('client_id', client.id)
         .order('created_at', { ascending: false });
 
@@ -1529,7 +1530,15 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                           {notes.map((note) => (
                             <div key={note.id} className={`border-l-4 ${unitColors.border} pl-4 py-3 bg-muted/30 rounded-r-lg`}>
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium">{note.profiles?.name || 'Usuário'}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium">{note.profiles?.name || 'Usuário'}</span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={note.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'}
+                                  >
+                                    {note.service_type === 'sus' ? 'SUS' : 'Privativo'}
+                                  </Badge>
+                                </div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-muted-foreground">{formatDateTime(note.created_at)}</span>
                                   <Tooltip>

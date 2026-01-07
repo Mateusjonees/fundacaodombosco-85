@@ -766,6 +766,7 @@ export type Database = {
           is_private: boolean | null
           note_text: string
           note_type: string | null
+          service_type: string | null
           updated_at: string
         }
         Insert: {
@@ -776,6 +777,7 @@ export type Database = {
           is_private?: boolean | null
           note_text: string
           note_type?: string | null
+          service_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -786,6 +788,7 @@ export type Database = {
           is_private?: boolean | null
           note_text?: string
           note_type?: string | null
+          service_type?: string | null
           updated_at?: string
         }
         Relationships: [
