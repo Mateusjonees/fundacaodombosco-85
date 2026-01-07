@@ -125,7 +125,7 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
                           </Badge>
                         ) : (
                           <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30">
-                            Privativo
+                            Demanda Própria
                           </Badge>
                         )}
                         {prescription.status === 'active' ? (
@@ -202,7 +202,7 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
                   </Badge>
                 ) : (
                   <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30">
-                    Privativo
+                    Demanda Própria
                   </Badge>
                 )}
               </div>

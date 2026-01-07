@@ -1624,7 +1624,7 @@ export default function Reports() {
                     <p className="text-2xl font-bold text-green-600">
                       {allPrescriptions.filter(p => p.service_type === 'private' || !p.service_type).length}
                     </p>
-                    <p className="text-xs text-muted-foreground">Privativo</p>
+                    <p className="text-xs text-muted-foreground">Demanda Própria</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-muted/50">
@@ -1666,7 +1666,7 @@ export default function Reports() {
                         <TableCell>{prescription.employee?.name || 'N/A'}</TableCell>
                         <TableCell>
                           <Badge variant={prescription.service_type === 'sus' ? 'default' : 'secondary'}>
-                            {prescription.service_type === 'sus' ? 'SUS' : 'Privativo'}
+                            {prescription.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-xs">

@@ -221,7 +221,7 @@ export default function AddAnamnesisDialog({
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="private">Privativo</SelectItem>
+                <SelectItem value="private">Demanda Própria</SelectItem>
                 <SelectItem value="sus">SUS</SelectItem>
               </SelectContent>
             </Select>
