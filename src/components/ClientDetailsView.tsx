@@ -1694,46 +1694,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
 
                     {/* Laudo Section */}
                     <div className="border-t pt-6">
-                      <h4 className="font-medium mb-4 flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        Laudo
-                      </h4>
-                      
-                      {loadingLaudo ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                        </div>
-                      ) : laudoInfo ? (
-                        <div className={`flex items-center justify-between p-4 rounded-lg ${unitColors.bg} border ${unitColors.border}`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-full ${unitColors.avatar}`}>
-                              <FileText className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">Laudo Disponível</p>
-                              <p className="text-xs text-muted-foreground">
-                                Finalizado em {new Date(laudoInfo.completed_at).toLocaleDateString('pt-BR')}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={handleViewLaudo}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              Ver
-                            </Button>
-                            <Button size="sm" onClick={handleDownloadLaudo}>
-                              <Download className="h-4 w-4 mr-1" />
-                              Baixar
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                          <p className="text-sm text-muted-foreground">Nenhum laudo anexado</p>
-                          <p className="text-xs text-muted-foreground">O laudo é anexado através do controle de devolutiva</p>
-                        </div>
-                      )}
+                      <ClientLaudoManager client={client} />
                     </div>
                   </TabsContent>
                 </Tabs>
