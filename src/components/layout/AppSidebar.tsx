@@ -645,49 +645,28 @@ export function AppSidebar() {
           </div>
         </ScrollArea>
         
-        {/* Footer Section with glassmorphism */}
-        <div className="sidebar-footer mt-auto border-t border-sidebar-border/30 p-3 space-y-2 bg-gradient-to-t from-sidebar-accent/40 to-transparent backdrop-blur-sm">
-          {/* User Avatar Section */}
-          <UserAvatarFooter collapsed={collapsed} />
-          
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <ThemeToggle collapsed={collapsed} />
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <button 
-                  onClick={handleLogout} 
-                  className={cn(
-                    "sidebar-logout-btn group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-300",
-                    "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
-                    collapsed && "justify-center px-2"
-                  )}
-                >
-                  <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-muted/50 group-hover:bg-destructive/20 transition-colors duration-300">
-                    <LogOut className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
-                  </span>
-                  {!collapsed && <span className="text-sm font-medium">Sair</span>}
-                </button>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+        {/* Footer Section - Compact */}
+        <div className="sidebar-footer mt-auto border-t border-sidebar-border/30 p-3 bg-gradient-to-t from-sidebar-accent/40 to-transparent backdrop-blur-sm">
+          <UserAvatarFooter collapsed={collapsed} onLogout={handleLogout} />
         </div>
       </SidebarContent>
     </Sidebar>
   );
 }
 
-// Memoized user avatar footer component
-const UserAvatarFooter = memo(({ collapsed }: { collapsed: boolean }) => {
+// Memoized user avatar footer component with dropdown
+const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; onLogout: () => void }) => {
   const { userName, userRole, avatarUrl } = useCurrentUser();
+  const [open, setOpen] = useState(false);
+  
+  const DropdownMenu = require('@radix-ui/react-dropdown-menu');
   
   if (collapsed) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex justify-center py-1">
-            <div className="relative">
+      <DropdownMenu.Root open={open} onOpenChange={setOpen}>
+        <DropdownMenu.Trigger asChild>
+          <button className="flex justify-center py-1 w-full">
+            <div className="relative cursor-pointer">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-secondary/50 rounded-full blur-sm opacity-50" />
               <UserAvatar 
                 name={userName}
@@ -696,38 +675,91 @@ const UserAvatarFooter = memo(({ collapsed }: { collapsed: boolean }) => {
                 size="sm"
               />
             </div>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right">
-          <p className="font-medium">{userName || 'Usuário'}</p>
-          <p className="text-xs text-muted-foreground">{userRole}</p>
-        </TooltipContent>
-      </Tooltip>
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content 
+            side="right" 
+            align="end"
+            className="z-50 min-w-[180px] rounded-xl border bg-popover p-1.5 shadow-lg animate-in fade-in-0 zoom-in-95"
+          >
+            <div className="px-2 py-1.5 mb-1">
+              <p className="font-medium text-sm">{userName || 'Usuário'}</p>
+              <p className="text-xs text-muted-foreground">{userRole}</p>
+            </div>
+            <DropdownMenu.Separator className="h-px bg-border my-1" />
+            <DropdownMenu.Item asChild>
+              <div className="px-2 py-1.5">
+                <ThemeToggle collapsed={false} />
+              </div>
+            </DropdownMenu.Item>
+            <DropdownMenu.Separator className="h-px bg-border my-1" />
+            <DropdownMenu.Item asChild>
+              <button 
+                onClick={onLogout}
+                className="flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded-lg text-destructive hover:bg-destructive/10 cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
     );
   }
   
   return (
-    <div className="sidebar-user-card relative overflow-hidden flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-muted/80 to-muted/40 border border-border/30">
-      {/* Subtle glow effect */}
-      <div className="absolute -inset-px bg-gradient-to-r from-primary/10 via-transparent to-secondary/10 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-500" />
-      
-      <div className="relative">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/40 to-secondary/40 rounded-full blur-sm opacity-60" />
-        <UserAvatar 
-          name={userName}
-          avatarUrl={avatarUrl}
-          role={userRole}
-          size="sm"
-        />
-      </div>
-      <div className="relative flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate text-foreground">{userName || 'Usuário'}</p>
-        <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          {userRole || 'Carregando...'}
-        </p>
-      </div>
-    </div>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
+      <DropdownMenu.Trigger asChild>
+        <button className="sidebar-user-card relative overflow-hidden flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-muted/80 to-muted/40 border border-border/30 w-full text-left cursor-pointer hover:bg-muted/60 transition-colors">
+          {/* Subtle glow effect */}
+          <div className="absolute -inset-px bg-gradient-to-r from-primary/10 via-transparent to-secondary/10 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-500" />
+          
+          <div className="relative">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/40 to-secondary/40 rounded-full blur-sm opacity-60" />
+            <UserAvatar 
+              name={userName}
+              avatarUrl={avatarUrl}
+              role={userRole}
+              size="sm"
+            />
+          </div>
+          <div className="relative flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate text-foreground">{userName || 'Usuário'}</p>
+            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {userRole || 'Carregando...'}
+            </p>
+          </div>
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content 
+          side="top" 
+          align="start"
+          sideOffset={8}
+          className="z-50 min-w-[200px] rounded-xl border bg-popover p-1.5 shadow-lg animate-in fade-in-0 zoom-in-95"
+        >
+          <DropdownMenu.Item asChild>
+            <div className="px-2 py-1.5">
+              <ThemeToggle collapsed={false} />
+            </div>
+          </DropdownMenu.Item>
+          <DropdownMenu.Separator className="h-px bg-border my-1" />
+          <DropdownMenu.Item asChild>
+            <button 
+              onClick={onLogout}
+              className="flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded-lg text-destructive hover:bg-destructive/10 cursor-pointer"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </button>
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 });
 
