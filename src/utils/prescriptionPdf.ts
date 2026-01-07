@@ -8,6 +8,12 @@ interface Client {
   birth_date?: string;
 }
 
+type PrescriptionPdfOptions = {
+  // Move the background image slightly to avoid printer cutting
+  letterheadOffsetXmm?: number;
+  letterheadOffsetYmm?: number;
+};
+
 // Helper to load image as base64
 const loadImageAsBase64 = (src: string): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -30,9 +36,10 @@ export const generatePrescriptionPdf = async (
   prescription: Prescription,
   client: Client,
   professionalName: string,
-  professionalLicense?: string
+  professionalLicense?: string,
+  options?: PrescriptionPdfOptions
 ): Promise<jsPDF> => {
-  const doc = new jsPDF();
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
@@ -43,8 +50,12 @@ export const generatePrescriptionPdf = async (
 
   const addLetterhead = () => {
     if (!timbradoBase64) return;
-    // Fill entire A4 page with letterhead
-    doc.addImage(timbradoBase64, 'JPEG', 0, 0, pageWidth, pageHeight);
+
+    const offsetX = options?.letterheadOffsetXmm ?? 0;
+    const offsetY = options?.letterheadOffsetYmm ?? 0;
+
+    // Fill entire A4 page with letterhead (optionally shifted)
+    doc.addImage(timbradoBase64, 'JPEG', offsetX, offsetY, pageWidth, pageHeight);
   };
 
   // Add letterhead background (full page)
@@ -253,13 +264,19 @@ export const printPrescriptionPdf = async (
   professionalName: string,
   professionalLicense?: string
 ) => {
-  const doc = await generatePrescriptionPdf(prescription, client, professionalName, professionalLicense);
+  // Shift background slightly up for printing to reduce cutting by printer margins
+  const doc = await generatePrescriptionPdf(prescription, client, professionalName, professionalLicense, {
+    letterheadOffsetYmm: -6,
+  });
   const pdfBlob = doc.output('blob');
   const url = URL.createObjectURL(pdfBlob);
   const printWindow = window.open(url);
   if (printWindow) {
     printWindow.onload = () => {
-      printWindow.print();
+      printWindow.focus();
+      window.setTimeout(() => {
+        printWindow.print();
+      }, 700);
     };
   }
 };
