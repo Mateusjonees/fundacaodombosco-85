@@ -68,6 +68,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [clientNotes, setClientNotes] = useState<any[]>([]);
   const [scheduleHistory, setScheduleHistory] = useState<any[]>([]);
+  const [laudos, setLaudos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -278,6 +279,32 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
         setScheduleHistory(schedulesEnriched);
       } else {
         setScheduleHistory([]);
+      }
+
+      // Carregar laudos do cliente
+      const { data: laudosData, error: laudosError } = await supabase
+        .from('client_laudos')
+        .select('id, laudo_date, laudo_type, title, description, status, file_path, employee_id')
+        .eq('client_id', client.id)
+        .order('laudo_date', { ascending: false });
+
+      if (laudosError) throw laudosError;
+
+      // Buscar nomes dos profissionais dos laudos
+      if (laudosData && laudosData.length > 0) {
+        const laudoEmployeeIds = [...new Set(laudosData.map(l => l.employee_id).filter(Boolean))];
+        const { data: laudoProfiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', laudoEmployeeIds);
+        
+        const laudosEnriched = laudosData.map(l => ({
+          ...l,
+          professional_name: laudoProfiles?.find(p => p.user_id === l.employee_id)?.name || 'Profissional'
+        }));
+        setLaudos(laudosEnriched);
+      } else {
+        setLaudos([]);
       }
 
       setAttendanceRecords((attendanceData || []).map(record => ({
@@ -1080,6 +1107,57 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
                       <div className="mb-3">
                         <div className="font-medium text-gray-600 text-sm mb-1">Notas de Acompanhamento:</div>
                         <div className="text-sm bg-gray-50 p-2 rounded">{prescription.follow_up_notes}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Laudos */}
+          {laudos.length > 0 && (
+            <div className="report-section">
+              <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
+                LAUDOS
+              </h2>
+              <div className="space-y-4">
+                {laudos.map((laudo) => (
+                  <div key={laudo.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-800">{laudo.title || 'Laudo'}</h3>
+                      <Badge variant="secondary">
+                        {formatDate(laudo.laudo_date)} - {laudo.professional_name}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      {laudo.laudo_type && (
+                        <div>
+                          <span className="font-medium text-gray-600">Tipo:</span> {laudo.laudo_type}
+                        </div>
+                      )}
+                      {laudo.status && (
+                        <div>
+                          <span className="font-medium text-gray-600">Status:</span> {
+                            laudo.status === 'completed' ? 'Concluído' :
+                            laudo.status === 'pending' ? 'Pendente' :
+                            laudo.status === 'in_progress' ? 'Em Andamento' : laudo.status
+                          }
+                        </div>
+                      )}
+                    </div>
+
+                    {laudo.description && (
+                      <div className="mb-3">
+                        <div className="font-medium text-gray-600 text-sm mb-1">Descrição:</div>
+                        <div className="text-sm bg-gray-50 p-2 rounded whitespace-pre-wrap">{laudo.description}</div>
+                      </div>
+                    )}
+
+                    {laudo.file_path && (
+                      <div className="text-sm text-blue-600">
+                        📎 Arquivo anexado
                       </div>
                     )}
                   </div>
