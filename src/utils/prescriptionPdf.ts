@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { Medication, Prescription } from '@/hooks/usePrescriptions';
 import prescriptionTimbrado from '@/assets/prescription-timbrado-full.jpg';
+import fundacaoLogo from '@/assets/fundacao-dom-bosco-saude-logo.png';
 
 interface Client {
   name: string;
@@ -47,6 +48,7 @@ export const generatePrescriptionPdf = async (
 
   // Full page letterhead - no margins
   let timbradoBase64: string | null = null;
+  let logoBase64: string | null = null;
 
   const addLetterhead = () => {
     if (!timbradoBase64) return;
@@ -58,6 +60,16 @@ export const generatePrescriptionPdf = async (
     doc.addImage(timbradoBase64, 'JPEG', offsetX, offsetY, pageWidth, pageHeight);
   };
 
+  const addLogo = () => {
+    if (!logoBase64) return;
+    // Add logo centered at the top (30mm wide, ~25mm height, keeping aspect ratio)
+    const logoWidth = 30;
+    const logoHeight = 25;
+    const logoX = (pageWidth - logoWidth) / 2;
+    const logoY = 5;
+    doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+  };
+
   // Add letterhead background (full page)
   try {
     timbradoBase64 = await loadImageAsBase64(prescriptionTimbrado);
@@ -66,8 +78,16 @@ export const generatePrescriptionPdf = async (
     console.error('Error loading letterhead:', error);
   }
 
-  // Title - RECEITUÁRIO
-  yPosition = 25;
+  // Add logo at the top
+  try {
+    logoBase64 = await loadImageAsBase64(fundacaoLogo);
+    addLogo();
+  } catch (error) {
+    console.error('Error loading logo:', error);
+  }
+
+  // Title - RECEITUÁRIO (below logo)
+  yPosition = 35;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 102, 153);
@@ -160,7 +180,8 @@ export const generatePrescriptionPdf = async (
     if (yPosition > maxContentY) {
       doc.addPage();
       addLetterhead();
-      yPosition = 30;
+      addLogo();
+      yPosition = 40;
     }
 
     doc.setFont('helvetica', 'bold');
