@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,18 +8,61 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { ClipboardList } from 'lucide-react';
 
+interface ClientNote {
+  id: string;
+  note_text: string;
+  note_type: string;
+  created_at: string;
+}
+
 interface AddAnamnesisDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientId: string;
   onSuccess: () => void;
+  editingNote?: ClientNote | null;
 }
+
+// Helper to parse note text back into form fields
+const parseNoteText = (noteText: string) => {
+  const result = {
+    queixaPrincipal: '',
+    hma: '',
+    hpp: '',
+    exameFisico: '',
+    hd: '',
+    conduta: ''
+  };
+
+  const sections = noteText.split(/\*\*[^*]+\*\*:?\n?/);
+  const headers = noteText.match(/\*\*([^*]+)\*\*:?/g) || [];
+
+  headers.forEach((header, index) => {
+    const content = sections[index + 1]?.trim() || '';
+    if (header.includes('QUEIXA PRINCIPAL')) {
+      result.queixaPrincipal = content;
+    } else if (header.includes('HMA')) {
+      result.hma = content;
+    } else if (header.includes('HPP')) {
+      result.hpp = content;
+    } else if (header.includes('EXAME FÍSICO')) {
+      result.exameFisico = content;
+    } else if (header.includes('HD')) {
+      result.hd = content;
+    } else if (header.includes('CONDUTA')) {
+      result.conduta = content;
+    }
+  });
+
+  return result;
+};
 
 export default function AddAnamnesisDialog({ 
   open, 
   onOpenChange, 
   clientId, 
-  onSuccess 
+  onSuccess,
+  editingNote 
 }: AddAnamnesisDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -33,6 +76,23 @@ export default function AddAnamnesisDialog({
     hd: '',
     conduta: ''
   });
+
+  // Load data when editing
+  useEffect(() => {
+    if (editingNote) {
+      const parsed = parseNoteText(editingNote.note_text);
+      setFormData(parsed);
+    } else {
+      setFormData({
+        queixaPrincipal: '',
+        hma: '',
+        hpp: '',
+        exameFisico: '',
+        hd: '',
+        conduta: ''
+      });
+    }
+  }, [editingNote, open]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -75,21 +135,37 @@ export default function AddAnamnesisDialog({
 
       const noteText = sections.join('\n\n');
 
-      const { error } = await supabase
-        .from('client_notes')
-        .insert({
-          client_id: clientId,
-          note_text: noteText,
-          note_type: 'anamnesis',
-          created_by: user?.id
+      if (editingNote) {
+        // Update existing note
+        const { error } = await supabase
+          .from('client_notes')
+          .update({ note_text: noteText, updated_at: new Date().toISOString() })
+          .eq('id', editingNote.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Anamnese atualizada com sucesso!",
         });
+      } else {
+        // Create new note
+        const { error } = await supabase
+          .from('client_notes')
+          .insert({
+            client_id: clientId,
+            note_text: noteText,
+            note_type: 'anamnesis',
+            created_by: user?.id
+          });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Sucesso",
-        description: "Anamnese registrada com sucesso!",
-      });
+        toast({
+          title: "Sucesso",
+          description: "Anamnese registrada com sucesso!",
+        });
+      }
 
       // Limpa o formulário
       setFormData({
@@ -121,7 +197,7 @@ export default function AddAnamnesisDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5" />
-            Nova Anamnese
+            {editingNote ? 'Editar Anamnese' : 'Nova Anamnese'}
           </DialogTitle>
         </DialogHeader>
 
@@ -208,7 +284,7 @@ export default function AddAnamnesisDialog({
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Salvando...' : 'Salvar Anamnese'}
+            {loading ? 'Salvando...' : (editingNote ? 'Atualizar' : 'Salvar Anamnese')}
           </Button>
         </DialogFooter>
       </DialogContent>

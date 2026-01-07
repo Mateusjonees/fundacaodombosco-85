@@ -44,7 +44,9 @@ import {
   FileCheck2,
   AlertCircle,
   Pill,
-  ClipboardList
+  ClipboardList,
+  Trash2,
+  Pencil
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
@@ -121,6 +123,9 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const [newNote, setNewNote] = useState('');
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [addAnamnesisDialogOpen, setAddAnamnesisDialogOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<ClientNote | null>(null);
+  const [deleteNoteDialogOpen, setDeleteNoteDialogOpen] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<ClientNote | null>(null);
   const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState('');
@@ -464,6 +469,50 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteNote = async () => {
+    if (!noteToDelete) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('client_notes')
+        .delete()
+        .eq('id', noteToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Anamnese excluída com sucesso!",
+      });
+
+      setNoteToDelete(null);
+      setDeleteNoteDialogOpen(false);
+      loadNotes();
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível excluir a nota.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditNote = (note: ClientNote) => {
+    setEditingNote(note);
+    setAddAnamnesisDialogOpen(true);
+  };
+
+  const handleCloseAnamnesisDialog = (open: boolean) => {
+    setAddAnamnesisDialogOpen(open);
+    if (!open) {
+      setEditingNote(null);
     }
   };
 
@@ -1444,10 +1493,31 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
 
                       <AddAnamnesisDialog
                         open={addAnamnesisDialogOpen}
-                        onOpenChange={setAddAnamnesisDialogOpen}
+                        onOpenChange={handleCloseAnamnesisDialog}
                         clientId={client.id}
                         onSuccess={loadNotes}
+                        editingNote={editingNote}
                       />
+
+                      {/* Delete Confirmation Dialog */}
+                      <Dialog open={deleteNoteDialogOpen} onOpenChange={setDeleteNoteDialogOpen}>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Confirmar Exclusão</DialogTitle>
+                          </DialogHeader>
+                          <p className="text-sm text-muted-foreground py-4">
+                            Tem certeza que deseja excluir esta anamnese? Esta ação não pode ser desfeita.
+                          </p>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setDeleteNoteDialogOpen(false)}>
+                              Cancelar
+                            </Button>
+                            <Button variant="destructive" onClick={handleDeleteNote} disabled={loading}>
+                              {loading ? 'Excluindo...' : 'Excluir'}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                       
                       {notes.length > 0 ? (
                         <div className="space-y-3 max-h-[400px] overflow-y-auto">
@@ -1455,7 +1525,38 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                             <div key={note.id} className={`border-l-4 ${unitColors.border} pl-4 py-3 bg-muted/30 rounded-r-lg`}>
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-medium">{note.profiles?.name || 'Usuário'}</span>
-                                <span className="text-xs text-muted-foreground">{formatDateTime(note.created_at)}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">{formatDateTime(note.created_at)}</span>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="h-7 w-7 p-0"
+                                        onClick={() => handleEditNote(note)}
+                                      >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Editar</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                        onClick={() => {
+                                          setNoteToDelete(note);
+                                          setDeleteNoteDialogOpen(true);
+                                        }}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Excluir</TooltipContent>
+                                  </Tooltip>
+                                </div>
                               </div>
                               <p className="text-sm whitespace-pre-wrap">{note.note_text}</p>
                             </div>
