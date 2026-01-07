@@ -137,6 +137,9 @@ export const generatePrescriptionPdf = async (
     doc.text('Data da Prescrição:', margin, yPosition);
     doc.setFont('helvetica', 'normal');
     doc.text(new Date(prescription.prescription_date).toLocaleDateString('pt-BR'), margin + 38, yPosition);
+  } else {
+    // Manter espaçamento mínimo mesmo sem a data
+    yPosition += 3;
   }
 
   // Line separator
