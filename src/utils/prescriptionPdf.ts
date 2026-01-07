@@ -10,7 +10,9 @@ interface Client {
 }
 
 type PrescriptionPdfOptions = {
-  // Move the background image slightly to avoid printer cutting
+  // Margem de segurança interna para evitar corte em impressoras (padrão: 5mm)
+  letterheadInsetMm?: number;
+  // Offset vertical adicional para ajuste fino
   letterheadOffsetYmm?: number;
 };
 
@@ -51,9 +53,14 @@ export const generatePrescriptionPdf = async (
 
   const addLetterhead = () => {
     if (!timbradoBase64) return;
-    // Timbrado ocupa 100% da página, sem escala, apenas offset vertical opcional
+    // Área segura de impressão: inset de 5mm por padrão evita corte em impressoras
+    const inset = options?.letterheadInsetMm ?? 5;
     const offsetY = options?.letterheadOffsetYmm ?? 0;
-    doc.addImage(timbradoBase64, 'JPEG', 0, offsetY, pageWidth, pageHeight);
+    const x = inset;
+    const y = inset + offsetY;
+    const w = pageWidth - inset * 2;
+    const h = pageHeight - inset * 2;
+    doc.addImage(timbradoBase64, 'JPEG', x, y, w, h);
   };
 
   const addLogo = () => {
@@ -275,19 +282,47 @@ export const printPrescriptionPdf = async (
   professionalName: string,
   professionalLicense?: string
 ) => {
-  // Timbrado em tela cheia, sem offset (ajustar se a impressora cortar)
+  // Área segura de 5mm para evitar corte nas bordas
   const doc = await generatePrescriptionPdf(prescription, client, professionalName, professionalLicense, {
+    letterheadInsetMm: 5,
     letterheadOffsetYmm: 0,
   });
+  
   const pdfBlob = doc.output('blob');
   const url = URL.createObjectURL(pdfBlob);
-  const printWindow = window.open(url);
-  if (printWindow) {
-    printWindow.onload = () => {
-      printWindow.focus();
-      window.setTimeout(() => {
-        printWindow.print();
-      }, 700);
-    };
-  }
+  
+  // Usar iframe invisível para impressão - evita que usuário use Ctrl+P na tela errada
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = 'none';
+  iframe.src = url;
+  
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (e) {
+        // Fallback: abrir em nova janela se iframe não funcionar
+        const printWindow = window.open(url);
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 500);
+          };
+        }
+      }
+      // Limpar iframe após impressão
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }, 500);
+  };
+  
+  document.body.appendChild(iframe);
 };
