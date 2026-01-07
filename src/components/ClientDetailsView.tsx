@@ -55,6 +55,7 @@ import PrescriptionManager from './PrescriptionManager';
 import AddAnamnesisDialog from './AddAnamnesisDialog';
 import ClientLaudoManager from './ClientLaudoManager';
 import { PatientReportGenerator } from './PatientReportGenerator';
+import { ClientEditTab } from './ClientEditTab';
 
 interface Client {
   id: string;
@@ -1245,7 +1246,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
             <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">
                 <Tabs defaultValue="clinical" className="w-full">
-                  <TabsList className="grid w-full grid-cols-6 mb-6">
+                  <TabsList className="grid w-full grid-cols-7 mb-6">
+                    <TabsTrigger value="registration" className="text-xs md:text-sm">
+                      <Edit className="h-4 w-4 mr-1 hidden md:inline" />
+                      Cadastro
+                    </TabsTrigger>
                     <TabsTrigger value="clinical" className="text-xs md:text-sm">
                       <ClipboardList className="h-4 w-4 mr-1 hidden md:inline" />
                       Anamnese
@@ -1271,6 +1276,16 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
                       Documentos
                     </TabsTrigger>
                   </TabsList>
+
+                  {/* Registration Tab - Edição de Dados Cadastrais */}
+                  <TabsContent value="registration">
+                    <ClientEditTab 
+                      client={client} 
+                      onSuccess={() => {
+                        if (onRefresh) onRefresh();
+                      }} 
+                    />
+                  </TabsContent>
 
                   {/* Clinical Tab */}
                   <TabsContent value="clinical" className="space-y-6">
