@@ -1536,7 +1536,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                                     variant="outline" 
                                     className={noteItem.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'}
                                   >
-                                    {noteItem.service_type === 'sus' ? 'SUS' : 'Privativo'}
+                                    {noteItem.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-2">

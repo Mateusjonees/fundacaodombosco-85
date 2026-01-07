@@ -111,7 +111,7 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="private">Privativo</SelectItem>
+                  <SelectItem value="private">Demanda Própria</SelectItem>
                   <SelectItem value="sus">SUS</SelectItem>
                 </SelectContent>
               </Select>
