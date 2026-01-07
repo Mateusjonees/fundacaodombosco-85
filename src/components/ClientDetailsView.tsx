@@ -1527,27 +1527,27 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                       
                       {notes.length > 0 ? (
                         <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                          {notes.map((note) => (
-                            <div key={note.id} className={`border-l-4 ${unitColors.border} pl-4 py-3 bg-muted/30 rounded-r-lg`}>
+                          {notes.map((noteItem) => (
+                            <div key={noteItem.id} className={`border-l-4 ${unitColors.border} pl-4 py-3 bg-muted/30 rounded-r-lg`}>
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">{note.profiles?.name || 'Usuário'}</span>
+                                  <span className="text-sm font-medium">{noteItem.profiles?.name || 'Usuário'}</span>
                                   <Badge 
                                     variant="outline" 
-                                    className={note.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'}
+                                    className={noteItem.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'}
                                   >
-                                    {note.service_type === 'sus' ? 'SUS' : 'Privativo'}
+                                    {noteItem.service_type === 'sus' ? 'SUS' : 'Privativo'}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs text-muted-foreground">{formatDateTime(note.created_at)}</span>
+                                  <span className="text-xs text-muted-foreground">{formatDateTime(noteItem.created_at)}</span>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button 
                                         size="sm" 
                                         variant="ghost" 
                                         className="h-7 w-7 p-0"
-                                        onClick={() => handleEditNote(note)}
+                                        onClick={() => handleEditNote(noteItem)}
                                       >
                                         <Pencil className="h-3.5 w-3.5" />
                                       </Button>
@@ -1561,7 +1561,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                                         variant="ghost" 
                                         className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                                         onClick={() => {
-                                          setNoteToDelete(note);
+                                          setNoteToDelete(noteItem);
                                           setDeleteNoteDialogOpen(true);
                                         }}
                                       >
@@ -1572,7 +1572,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                                   </Tooltip>
                                 </div>
                               </div>
-                              <p className="text-sm whitespace-pre-wrap">{note.note_text}</p>
+                              <p className="text-sm whitespace-pre-wrap">{noteItem.note_text}</p>
                             </div>
                           ))}
                         </div>
