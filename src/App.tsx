@@ -7,16 +7,19 @@ import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { MainApp } from "@/components/MainApp";
+import { ChangeOwnPasswordDialog } from "@/components/ChangeOwnPasswordDialog";
 import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 
 const AppContent = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, mustChangePassword, setMustChangePassword } = useAuth();
   const [showApp, setShowApp] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [userName, setUserName] = useState<string | undefined>();
 
   useEffect(() => {
     if (!loading) {
@@ -24,6 +27,25 @@ const AppContent = () => {
       setShowApp(shouldShowApp);
     }
   }, [user, loading]);
+
+  // Fetch user name for the password change dialog
+  useEffect(() => {
+    if (user) {
+      // First try user metadata, then fetch from profiles
+      if (user.user_metadata?.name) {
+        setUserName(user.user_metadata.name);
+      } else {
+        supabase
+          .from('profiles')
+          .select('name')
+          .eq('user_id', user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.name) setUserName(data.name);
+          });
+      }
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -58,7 +80,16 @@ const AppContent = () => {
     );
   }
 
-  return <MainApp />;
+  return (
+    <>
+      <MainApp />
+      <ChangeOwnPasswordDialog
+        isOpen={mustChangePassword}
+        onSuccess={() => setMustChangePassword(false)}
+        userName={userName}
+      />
+    </>
+  );
 };
 
 const App = () => (
