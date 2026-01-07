@@ -119,6 +119,15 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
                           <User className="h-3.5 w-3.5" />
                           {prescription.employee?.name || 'Profissional'}
                         </div>
+                        {prescription.service_type === 'sus' ? (
+                          <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30">
+                            SUS
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30">
+                            Privativo
+                          </Badge>
+                        )}
                         {prescription.status === 'active' ? (
                           <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
                             Ativo
@@ -187,6 +196,15 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
                   <User className="h-4 w-4" />
                   {selectedPrescription.employee?.name}
                 </div>
+                {selectedPrescription.service_type === 'sus' ? (
+                  <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30">
+                    SUS
+                  </Badge>
+                ) : (
+                  <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30">
+                    Privativo
+                  </Badge>
+                )}
               </div>
 
               {selectedPrescription.diagnosis && (

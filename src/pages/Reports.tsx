@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown } from 'lucide-react';
+import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown, Pill, ClipboardList, FileCheck2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -52,6 +52,9 @@ interface Profile {
 export default function Reports() {
   const [attendanceReports, setAttendanceReports] = useState<any[]>([]);
   const [employeeReports, setEmployeeReports] = useState<EmployeeReport[]>([]);
+  const [allPrescriptions, setAllPrescriptions] = useState<any[]>([]);
+  const [allAnamnesis, setAllAnamnesis] = useState<any[]>([]);
+  const [allLaudos, setAllLaudos] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
@@ -122,7 +125,10 @@ export default function Reports() {
           loadEmployees(),
           loadClients(),
           loadAttendanceReports(),
-          loadEmployeeReports()
+          loadEmployeeReports(),
+          loadAllPrescriptions(),
+          loadAllAnamnesis(),
+          loadAllLaudos()
         ]);
       } finally {
         setLoading(false);
@@ -313,6 +319,170 @@ export default function Reports() {
         description: "Não foi possível carregar os relatórios."
       });
       setEmployeeReports([]);
+    }
+  };
+
+  const loadAllPrescriptions = async () => {
+    try {
+      let query = supabase
+        .from('prescriptions')
+        .select('*')
+        .order('prescription_date', { ascending: false })
+        .limit(100);
+
+      if (selectedMonth && !dateFrom && !dateTo) {
+        const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
+        const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
+        query = query.gte('prescription_date', format(monthStart, 'yyyy-MM-dd'))
+                    .lte('prescription_date', format(monthEnd, 'yyyy-MM-dd'));
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Fetch client and employee names
+        const clientIds = [...new Set(data.map(p => p.client_id))];
+        const employeeIds = [...new Set(data.map(p => p.employee_id))];
+
+        const { data: clientsData } = await supabase
+          .from('clients')
+          .select('id, name, unit')
+          .in('id', clientIds);
+
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', employeeIds);
+
+        let filteredData = data.map(p => ({
+          ...p,
+          client: clientsData?.find(c => c.id === p.client_id),
+          employee: profilesData?.find(e => e.user_id === p.employee_id)
+        }));
+
+        // Filter by unit
+        if (coordinatorUnit) {
+          filteredData = filteredData.filter(p => p.client?.unit === coordinatorUnit);
+        } else if (selectedUnit !== 'all') {
+          filteredData = filteredData.filter(p => p.client?.unit === selectedUnit);
+        }
+
+        setAllPrescriptions(filteredData);
+      } else {
+        setAllPrescriptions([]);
+      }
+    } catch (error) {
+      console.error('Error loading prescriptions:', error);
+      setAllPrescriptions([]);
+    }
+  };
+
+  const loadAllAnamnesis = async () => {
+    try {
+      let query = supabase
+        .from('client_notes')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (selectedMonth && !dateFrom && !dateTo) {
+        const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
+        const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
+        query = query.gte('created_at', format(monthStart, 'yyyy-MM-dd'))
+                    .lte('created_at', format(monthEnd, 'yyyy-MM-dd') + 'T23:59:59');
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const clientIds = [...new Set(data.map(n => n.client_id))];
+        const creatorIds = [...new Set(data.map(n => n.created_by))];
+
+        const { data: clientsData } = await supabase
+          .from('clients')
+          .select('id, name, unit')
+          .in('id', clientIds);
+
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', creatorIds);
+
+        let filteredData = data.map(n => ({
+          ...n,
+          client: clientsData?.find(c => c.id === n.client_id),
+          creator: profilesData?.find(p => p.user_id === n.created_by)
+        }));
+
+        if (coordinatorUnit) {
+          filteredData = filteredData.filter(n => n.client?.unit === coordinatorUnit);
+        } else if (selectedUnit !== 'all') {
+          filteredData = filteredData.filter(n => n.client?.unit === selectedUnit);
+        }
+
+        setAllAnamnesis(filteredData);
+      } else {
+        setAllAnamnesis([]);
+      }
+    } catch (error) {
+      console.error('Error loading anamnesis:', error);
+      setAllAnamnesis([]);
+    }
+  };
+
+  const loadAllLaudos = async () => {
+    try {
+      let query = supabase
+        .from('client_laudos')
+        .select('*')
+        .order('laudo_date', { ascending: false })
+        .limit(100);
+
+      if (selectedMonth && !dateFrom && !dateTo) {
+        const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
+        const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
+        query = query.gte('laudo_date', format(monthStart, 'yyyy-MM-dd'))
+                    .lte('laudo_date', format(monthEnd, 'yyyy-MM-dd'));
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const clientIds = [...new Set(data.map(l => l.client_id))];
+        const employeeIds = [...new Set(data.map(l => l.employee_id))];
+
+        const { data: clientsData } = await supabase
+          .from('clients')
+          .select('id, name, unit')
+          .in('id', clientIds);
+
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', employeeIds);
+
+        let filteredData = data.map(l => ({
+          ...l,
+          client: clientsData?.find(c => c.id === l.client_id),
+          employee: profilesData?.find(e => e.user_id === l.employee_id)
+        }));
+
+        if (coordinatorUnit) {
+          filteredData = filteredData.filter(l => l.client?.unit === coordinatorUnit);
+        } else if (selectedUnit !== 'all') {
+          filteredData = filteredData.filter(l => l.client?.unit === selectedUnit);
+        }
+
+        setAllLaudos(filteredData);
+      } else {
+        setAllLaudos([]);
+      }
+    } catch (error) {
+      console.error('Error loading laudos:', error);
+      setAllLaudos([]);
     }
   };
 
@@ -1029,9 +1199,12 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="attendance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="attendance">Relatórios de Atendimento</TabsTrigger>
-          <TabsTrigger value="sessions">Sessões Detalhadas</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="attendance">Atendimentos</TabsTrigger>
+          <TabsTrigger value="sessions">Sessões</TabsTrigger>
+          <TabsTrigger value="anamnesis">Anamneses</TabsTrigger>
+          <TabsTrigger value="prescriptions">Receitas</TabsTrigger>
+          <TabsTrigger value="laudos">Laudos</TabsTrigger>
           <TabsTrigger value="performance">Desempenho</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>

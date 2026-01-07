@@ -707,6 +707,56 @@ export type Database = {
           },
         ]
       }
+      client_laudos: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          employee_id: string
+          file_path: string | null
+          id: string
+          laudo_date: string
+          laudo_type: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          employee_id: string
+          file_path?: string | null
+          id?: string
+          laudo_date?: string
+          laudo_type?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          employee_id?: string
+          file_path?: string | null
+          id?: string
+          laudo_date?: string
+          laudo_type?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_laudos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_notes: {
         Row: {
           client_id: string | null
@@ -2042,6 +2092,7 @@ export type Database = {
           medications: Json | null
           prescription_date: string
           schedule_id: string | null
+          service_type: string | null
           status: string | null
           updated_at: string
         }
@@ -2056,6 +2107,7 @@ export type Database = {
           medications?: Json | null
           prescription_date?: string
           schedule_id?: string | null
+          service_type?: string | null
           status?: string | null
           updated_at?: string
         }
@@ -2070,6 +2122,7 @@ export type Database = {
           medications?: Json | null
           prescription_date?: string
           schedule_id?: string | null
+          service_type?: string | null
           status?: string | null
           updated_at?: string
         }
