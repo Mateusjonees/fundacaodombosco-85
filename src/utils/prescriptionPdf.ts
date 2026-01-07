@@ -87,7 +87,7 @@ export const generatePrescriptionPdf = async (
   }
 
   // Title - RECEITUÁRIO (below logo)
-  yPosition = 33;
+  yPosition = 45;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 102, 153);
@@ -175,7 +175,7 @@ export const generatePrescriptionPdf = async (
       doc.addPage();
       addLetterhead();
       addLogo();
-      yPosition = 40;
+      yPosition = 50;
     }
 
     doc.setFont('helvetica', 'bold');
@@ -281,7 +281,8 @@ export const printPrescriptionPdf = async (
 ) => {
   // Shift background slightly up for printing to reduce cutting by printer margins
   const doc = await generatePrescriptionPdf(prescription, client, professionalName, professionalLicense, {
-    letterheadOffsetYmm: -18,
+    // Subir o timbrado ~3cm para evitar corte no rodapé
+    letterheadOffsetYmm: -48,
   });
   const pdfBlob = doc.output('blob');
   const url = URL.createObjectURL(pdfBlob);
