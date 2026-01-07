@@ -65,6 +65,9 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
   const [employeeReports, setEmployeeReports] = useState<any[]>([]);
   const [medicalRecords, setMedicalRecords] = useState<any[]>([]);
   const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [clientNotes, setClientNotes] = useState<any[]>([]);
+  const [scheduleHistory, setScheduleHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -179,6 +182,103 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
         .order('created_at', { ascending: false });
 
       if (paymentError) throw paymentError;
+
+      // Carregar prescrições médicas
+      const { data: prescriptionData, error: prescriptionError } = await supabase
+        .from('prescriptions')
+        .select(`
+          id,
+          prescription_date,
+          diagnosis,
+          medications,
+          general_instructions,
+          follow_up_notes,
+          status,
+          service_type
+        `)
+        .eq('client_id', client.id)
+        .order('prescription_date', { ascending: false });
+
+      if (prescriptionError) throw prescriptionError;
+
+      // Buscar nomes dos profissionais das prescrições
+      if (prescriptionData && prescriptionData.length > 0) {
+        const prescriptionIds = prescriptionData.map(p => p.id);
+        const { data: prescriptionsWithEmployee } = await supabase
+          .from('prescriptions')
+          .select('id, employee_id')
+          .in('id', prescriptionIds);
+        
+        if (prescriptionsWithEmployee) {
+          const employeeIds = [...new Set(prescriptionsWithEmployee.map(p => p.employee_id).filter(Boolean))];
+          const { data: employeeProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', employeeIds);
+          
+          const prescriptionsEnriched = prescriptionData.map(p => {
+            const prescWithEmp = prescriptionsWithEmployee.find(pe => pe.id === p.id);
+            const profile = employeeProfiles?.find(prof => prof.user_id === prescWithEmp?.employee_id);
+            return { ...p, professional_name: profile?.name || 'Profissional' };
+          });
+          setPrescriptions(prescriptionsEnriched);
+        }
+      } else {
+        setPrescriptions([]);
+      }
+
+      // Carregar notas/anamneses do cliente
+      const { data: notesData, error: notesError } = await supabase
+        .from('client_notes')
+        .select('id, note_text, note_type, service_type, created_at, created_by')
+        .eq('client_id', client.id)
+        .order('created_at', { ascending: false });
+
+      if (notesError) throw notesError;
+
+      // Buscar nomes dos criadores das notas
+      if (notesData && notesData.length > 0) {
+        const creatorIds = [...new Set(notesData.map(n => n.created_by).filter(Boolean))];
+        const { data: creatorProfiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', creatorIds);
+        
+        const notesEnriched = notesData.map(n => ({
+          ...n,
+          professional_name: creatorProfiles?.find(p => p.user_id === n.created_by)?.name || 'Usuário'
+        }));
+        setClientNotes(notesEnriched);
+      } else {
+        setClientNotes([]);
+      }
+
+      // Carregar histórico de agendamentos (concluídos, em andamento, confirmados)
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('schedules')
+        .select('id, start_time, end_time, status, title, notes, employee_id')
+        .eq('client_id', client.id)
+        .in('status', ['completed', 'in_progress', 'confirmed', 'attended'])
+        .order('start_time', { ascending: false });
+
+      if (scheduleError) throw scheduleError;
+
+      // Buscar nomes dos profissionais dos agendamentos
+      if (scheduleData && scheduleData.length > 0) {
+        const scheduleEmployeeIds = [...new Set(scheduleData.map(s => s.employee_id).filter(Boolean))];
+        const { data: scheduleProfiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', scheduleEmployeeIds);
+        
+        const schedulesEnriched = scheduleData.map(s => ({
+          ...s,
+          professional_name: scheduleProfiles?.find(p => p.user_id === s.employee_id)?.name || 'Profissional'
+        }));
+        setScheduleHistory(schedulesEnriched);
+      } else {
+        setScheduleHistory([]);
+      }
 
       setAttendanceRecords((attendanceData || []).map(record => ({
         ...record,
@@ -875,6 +975,173 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
                       Nenhum atendimento registrado ainda.
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notas Clínicas / Anamneses */}
+          {clientNotes.length > 0 && (
+            <div className="report-section">
+              <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
+                NOTAS CLÍNICAS E ANAMNESES
+              </h2>
+              <div className="space-y-4">
+                {clientNotes.map((note) => (
+                  <div key={note.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <Badge variant="outline">
+                        {note.note_type === 'anamnesis' ? 'Anamnese' : 
+                         note.note_type === 'clinical' ? 'Nota Clínica' :
+                         note.note_type === 'evolution' ? 'Evolução' : 'Nota Geral'}
+                      </Badge>
+                      <span className="text-sm text-gray-500">
+                        {formatDate(note.created_at)} - {note.professional_name}
+                      </span>
+                    </div>
+                    {note.service_type && (
+                      <div className="text-sm mb-2">
+                        <span className="font-medium text-gray-600">Serviço:</span> {note.service_type}
+                      </div>
+                    )}
+                    <div className="text-sm bg-gray-50 p-3 rounded">{note.note_text}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Prescrições Médicas */}
+          {prescriptions.length > 0 && (
+            <div className="report-section">
+              <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
+                PRESCRIÇÕES MÉDICAS
+              </h2>
+              <div className="space-y-4">
+                {prescriptions.map((prescription) => (
+                  <div key={prescription.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-800">Prescrição</h3>
+                      <Badge variant={
+                        prescription.status === 'active' ? 'default' :
+                        prescription.status === 'completed' ? 'secondary' : 'outline'
+                      }>
+                        {formatDate(prescription.prescription_date)} - {prescription.professional_name}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      {prescription.service_type && (
+                        <div>
+                          <span className="font-medium text-gray-600">Tipo de Serviço:</span> {prescription.service_type}
+                        </div>
+                      )}
+                      {prescription.status && (
+                        <div>
+                          <span className="font-medium text-gray-600">Status:</span> {
+                            prescription.status === 'active' ? 'Ativa' :
+                            prescription.status === 'completed' ? 'Concluída' : prescription.status
+                          }
+                        </div>
+                      )}
+                    </div>
+
+                    {prescription.diagnosis && (
+                      <div className="mb-3">
+                        <div className="font-medium text-gray-600 text-sm mb-1">Diagnóstico:</div>
+                        <div className="text-sm bg-gray-50 p-2 rounded">{prescription.diagnosis}</div>
+                      </div>
+                    )}
+
+                    {prescription.medications && Array.isArray(prescription.medications) && prescription.medications.length > 0 && (
+                      <div className="mb-3">
+                        <div className="font-medium text-gray-600 text-sm mb-1">Medicamentos:</div>
+                        <div className="space-y-2">
+                          {prescription.medications.map((med: any, idx: number) => (
+                            <div key={idx} className="text-sm bg-gray-50 p-2 rounded">
+                              <div className="font-medium">{med.name || med.medication || med}</div>
+                              {med.dosage && <div className="text-gray-600">Dosagem: {med.dosage}</div>}
+                              {med.frequency && <div className="text-gray-600">Frequência: {med.frequency}</div>}
+                              {med.instructions && <div className="text-gray-600">Instruções: {med.instructions}</div>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {prescription.general_instructions && (
+                      <div className="mb-3">
+                        <div className="font-medium text-gray-600 text-sm mb-1">Instruções Gerais:</div>
+                        <div className="text-sm bg-gray-50 p-2 rounded">{prescription.general_instructions}</div>
+                      </div>
+                    )}
+
+                    {prescription.follow_up_notes && (
+                      <div className="mb-3">
+                        <div className="font-medium text-gray-600 text-sm mb-1">Notas de Acompanhamento:</div>
+                        <div className="text-sm bg-gray-50 p-2 rounded">{prescription.follow_up_notes}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Histórico de Agendamentos */}
+          {scheduleHistory.length > 0 && (
+            <div className="report-section">
+              <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
+                HISTÓRICO DE AGENDAMENTOS
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border border-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left border-b">Data</th>
+                      <th className="px-3 py-2 text-left border-b">Horário</th>
+                      <th className="px-3 py-2 text-left border-b">Tipo</th>
+                      <th className="px-3 py-2 text-left border-b">Profissional</th>
+                      <th className="px-3 py-2 text-left border-b">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scheduleHistory.map((schedule) => (
+                      <tr key={schedule.id} className="border-b">
+                        <td className="px-3 py-2">{formatDate(schedule.start_time)}</td>
+                        <td className="px-3 py-2">
+                          {new Date(schedule.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          {' - '}
+                          {new Date(schedule.end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-3 py-2">{schedule.title || 'Consulta'}</td>
+                        <td className="px-3 py-2">{schedule.professional_name}</td>
+                        <td className="px-3 py-2">
+                          <Badge variant={
+                            schedule.status === 'completed' ? 'default' :
+                            schedule.status === 'attended' ? 'default' :
+                            schedule.status === 'confirmed' ? 'secondary' :
+                            schedule.status === 'in_progress' ? 'secondary' : 'outline'
+                          } className="text-[10px]">
+                            {schedule.status === 'completed' ? 'Concluído' :
+                             schedule.status === 'attended' ? 'Atendido' :
+                             schedule.status === 'confirmed' ? 'Confirmado' :
+                             schedule.status === 'in_progress' ? 'Em Andamento' : schedule.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {scheduleHistory.some(s => s.notes) && (
+                <div className="mt-4 space-y-2">
+                  <div className="font-medium text-gray-600 text-sm">Observações dos Agendamentos:</div>
+                  {scheduleHistory.filter(s => s.notes).map((schedule) => (
+                    <div key={`note_${schedule.id}`} className="text-sm bg-gray-50 p-2 rounded">
+                      <span className="font-medium">{formatDate(schedule.start_time)}:</span> {schedule.notes}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

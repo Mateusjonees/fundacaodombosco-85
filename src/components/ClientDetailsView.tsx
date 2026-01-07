@@ -54,6 +54,7 @@ import ClientPaymentManager from './ClientPaymentManager';
 import PrescriptionManager from './PrescriptionManager';
 import AddAnamnesisDialog from './AddAnamnesisDialog';
 import ClientLaudoManager from './ClientLaudoManager';
+import { PatientReportGenerator } from './PatientReportGenerator';
 
 interface Client {
   id: string;
@@ -141,6 +142,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const [laudoInfo, setLaudoInfo] = useState<{ file_path: string; completed_at: string } | null>(null);
   const [loadingLaudo, setLoadingLaudo] = useState(false);
   const [nextAppointment, setNextAppointment] = useState<{ date: string; time: string } | null>(null);
+  const [showReportGenerator, setShowReportGenerator] = useState(false);
 
   // Helper function to check if user is coordinator or director
   const isCoordinatorOrDirector = () => {
@@ -824,65 +826,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   };
 
   const handleGenerateReport = () => {
-    const reportContent = `
-RELATÓRIO DO CLIENTE
-====================
-
-Nome: ${client.name}
-ID: ${client.id}
-CPF: ${client.cpf || 'Não informado'}
-Data de Nascimento: ${client.birth_date ? formatDate(client.birth_date) : 'Não informado'}
-Email: ${client.email || 'Não informado'}
-Telefone: ${client.phone || 'Não informado'}
-
-DADOS CLÍNICOS
-==============
-
-Diagnóstico: ${client.diagnosis || 'Nenhum'}
-Histórico Médico: ${client.medical_history || 'Nenhum'}
-Queixa Neuropsicológica: ${client.neuropsych_complaint || 'Nenhum'}
-Expectativas do Tratamento: ${client.treatment_expectations || 'Não informado'}
-
-OBSERVAÇÕES
-===========
-
-${client.clinical_observations || 'Nenhuma observação registrada'}
-
-NOTAS REGISTRADAS
-=================
-
-${notes.map(note => `
-Data: ${formatDateTime(note.created_at)}
-Criado por: ${note.profiles?.name || 'Usuário'}
-Nota: ${note.note_text}
-`).join('\n')}
-
-DOCUMENTOS ANEXADOS
-==================
-
-${documents.map(doc => `
-- ${doc.document_name} (${doc.document_type || 'Documento'})
-  Enviado em: ${formatDateTime(doc.uploaded_at)}
-  Por: ${doc.profiles?.name || 'Usuário'}
-`).join('\n')}
-
-Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
-    `;
-
-    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio-${client.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.txt`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast({
-      title: "Relatório Gerado",
-      description: "O relatório foi baixado com sucesso!",
-    });
+    setShowReportGenerator(true);
   };
 
   const handleFileUpload = async () => {
@@ -1828,6 +1772,13 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Gerador de Relatório Completo */}
+        <PatientReportGenerator 
+          client={client} 
+          isOpen={showReportGenerator} 
+          onClose={() => setShowReportGenerator(false)} 
+        />
       </div>
     </TooltipProvider>
   );
