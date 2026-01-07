@@ -8,11 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { Search, Users, Power, UserCheck, UserX, Plus, Edit, Eye, EyeOff, Building2 } from 'lucide-react';
+import { UNITS } from '@/utils/unitUtils';
 
 interface Employee {
   id: string;
@@ -23,6 +25,7 @@ interface Employee {
   phone?: string;
   department?: string;
   unit?: string;
+  units?: string[];
   is_active: boolean;
   created_at: string;
   hire_date?: string;
@@ -62,7 +65,7 @@ export default function EmployeesNew() {
     employee_role: 'staff',
     phone: '',
     department: '',
-    unit: ''
+    units: [] as string[]
   });
   const { toast } = useToast();
 
@@ -111,11 +114,11 @@ export default function EmployeesNew() {
   };
 
   const handleCreateEmployee = async () => {
-    if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim() || !newEmployee.unit.trim()) {
+    if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim() || newEmployee.units.length === 0) {
       toast({
         variant: "destructive",
         title: "Campos obrigatórios",
-        description: "Nome, email, senha e unidade são obrigatórios.",
+        description: "Nome, email, senha e pelo menos uma unidade são obrigatórios.",
       });
       return;
     }
@@ -140,7 +143,8 @@ export default function EmployeesNew() {
             employee_role: newEmployee.employee_role,
             phone: newEmployee.phone || null,
             department: newEmployee.department || null,
-            unit: newEmployee.unit === 'none' ? null : (newEmployee.unit || null),
+            unit: newEmployee.units[0] || null,
+            units: newEmployee.units.length > 0 ? newEmployee.units : null,
             document_cpf: newEmployee.cpf || null
           }
         }
@@ -191,7 +195,9 @@ export default function EmployeesNew() {
   };
 
   const handleEditEmployee = (employee: Employee) => {
-    setEditingEmployee({ ...employee, unit: employee.unit || 'none' });
+    // Inicializa units baseado no campo units existente ou unit legado
+    const currentUnits = employee.units || (employee.unit ? [employee.unit] : []);
+    setEditingEmployee({ ...employee, units: currentUnits });
     setIsEditDialogOpen(true);
   };
 
@@ -199,6 +205,7 @@ export default function EmployeesNew() {
     if (!editingEmployee) return;
 
     try {
+      const unitsToSave = editingEmployee.units || [];
       const { data, error } = await supabase
         .from('profiles')
         .update({
@@ -206,7 +213,8 @@ export default function EmployeesNew() {
           employee_role: editingEmployee.employee_role as any,
           phone: editingEmployee.phone,
           department: editingEmployee.department,
-          unit: editingEmployee.unit === 'none' ? null : editingEmployee.unit
+          unit: unitsToSave[0] || null,
+          units: unitsToSave.length > 0 ? unitsToSave : null
         })
         .eq('user_id', editingEmployee.user_id)
         .select();
@@ -249,7 +257,7 @@ export default function EmployeesNew() {
       employee_role: 'staff',
       phone: '',
       department: '',
-      unit: ''
+      units: []
     });
   };
 
@@ -456,17 +464,27 @@ export default function EmployeesNew() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="unit">Unidade *</Label>
-                  <Select value={newEmployee.unit} onValueChange={(value) => setNewEmployee({ ...newEmployee, unit: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma unidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
-                      <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
-                      <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Unidades *</Label>
+                  <div className="grid gap-2 border rounded-md p-3 bg-muted/20">
+                    {UNITS.map((unit) => (
+                      <div key={unit.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`new-unit-${unit.value}`}
+                          checked={newEmployee.units.includes(unit.value)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setNewEmployee({ ...newEmployee, units: [...newEmployee.units, unit.value] });
+                            } else {
+                              setNewEmployee({ ...newEmployee, units: newEmployee.units.filter(u => u !== unit.value) });
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`new-unit-${unit.value}`} className="text-sm cursor-pointer">
+                          {unit.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2">
@@ -593,10 +611,14 @@ export default function EmployeesNew() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {employee.unit ? (
-                          <Badge variant="outline" className={getUnitStyle(employee.unit)}>
-                            {employee.unit}
-                          </Badge>
+                        {(employee.units?.length || employee.unit) ? (
+                          <div className="flex flex-wrap gap-1">
+                            {(employee.units || (employee.unit ? [employee.unit] : [])).map((u) => (
+                              <Badge key={u} variant="outline" className={getUnitStyle(u)}>
+                                {UNITS.find(unit => unit.value === u)?.shortLabel || u}
+                              </Badge>
+                            ))}
+                          </div>
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
                         )}
@@ -700,21 +722,28 @@ export default function EmployeesNew() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Unidade</Label>
-                <Select 
-                  value={editingEmployee.unit || 'none'} 
-                  onValueChange={(value) => setEditingEmployee({ ...editingEmployee, unit: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sem unidade</SelectItem>
-                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
-                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
-                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Unidades</Label>
+                <div className="grid gap-2 border rounded-md p-3 bg-muted/20">
+                  {UNITS.map((unit) => (
+                    <div key={unit.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`edit-unit-${unit.value}`}
+                        checked={editingEmployee.units?.includes(unit.value) || false}
+                        onCheckedChange={(checked) => {
+                          const currentUnits = editingEmployee.units || [];
+                          if (checked) {
+                            setEditingEmployee({ ...editingEmployee, units: [...currentUnits, unit.value] });
+                          } else {
+                            setEditingEmployee({ ...editingEmployee, units: currentUnits.filter(u => u !== unit.value) });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`edit-unit-${unit.value}`} className="text-sm cursor-pointer">
+                        {unit.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
