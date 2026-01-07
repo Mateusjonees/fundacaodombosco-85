@@ -1498,6 +1498,295 @@ export default function Reports() {
           </div>
         </TabsContent>
 
+        {/* Aba de Anamneses */}
+        <TabsContent value="anamnesis">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Relatório de Anamneses
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Listagem de todas as anamneses registradas no período
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-primary">{allAnamnesis.length}</p>
+                    <p className="text-xs text-muted-foreground">Total de Anamneses</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-green-600">
+                      {new Set(allAnamnesis.map(a => a.client_id)).size}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Pacientes</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-blue-600">
+                      {new Set(allAnamnesis.map(a => a.created_by)).size}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Profissionais</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-purple-600">
+                      {allAnamnesis.filter(a => a.note_type === 'evolution').length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Evoluções</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {allAnamnesis.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma anamnese encontrada no período.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Paciente</TableHead>
+                      <TableHead>Profissional</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Conteúdo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allAnamnesis.slice(0, 50).map((anamnese) => (
+                      <TableRow key={anamnese.id}>
+                        <TableCell>
+                          {format(new Date(anamnese.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {anamnese.client?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell>{anamnese.creator?.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {anamnese.note_type === 'evolution' ? 'Evolução' :
+                             anamnese.note_type === 'anamnesis' ? 'Anamnese' :
+                             anamnese.note_type || 'Nota'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-md">
+                          <p className="truncate text-sm" title={anamnese.note_text}>
+                            {anamnese.note_text}
+                          </p>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Aba de Receitas */}
+        <TabsContent value="prescriptions">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Pill className="h-5 w-5" />
+                Relatório de Receitas
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Listagem de todas as receitas emitidas no período
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-primary">{allPrescriptions.length}</p>
+                    <p className="text-xs text-muted-foreground">Total de Receitas</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-blue-600">
+                      {allPrescriptions.filter(p => p.service_type === 'sus').length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">SUS</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-green-600">
+                      {allPrescriptions.filter(p => p.service_type === 'private' || !p.service_type).length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Privativo</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-purple-600">
+                      {new Set(allPrescriptions.map(p => p.client_id)).size}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Pacientes</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {allPrescriptions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Pill className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma receita encontrada no período.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Paciente</TableHead>
+                      <TableHead>Profissional</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Diagnóstico</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allPrescriptions.slice(0, 50).map((prescription) => (
+                      <TableRow key={prescription.id}>
+                        <TableCell>
+                          {format(new Date(prescription.prescription_date), 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {prescription.client?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell>{prescription.employee?.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge variant={prescription.service_type === 'sus' ? 'default' : 'secondary'}>
+                            {prescription.service_type === 'sus' ? 'SUS' : 'Privativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <p className="truncate text-sm" title={prescription.diagnosis || ''}>
+                            {prescription.diagnosis || '-'}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={prescription.status === 'active' ? 'default' : 'secondary'}>
+                            {prescription.status === 'active' ? 'Ativo' : prescription.status || 'N/A'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Aba de Laudos */}
+        <TabsContent value="laudos">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileCheck2 className="h-5 w-5" />
+                Relatório de Laudos
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Listagem de todos os laudos registrados no período
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-primary">{allLaudos.length}</p>
+                    <p className="text-xs text-muted-foreground">Total de Laudos</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-green-600">
+                      {allLaudos.filter(l => l.laudo_type === 'neuropsicologico').length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Neuropsicológico</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-blue-600">
+                      {allLaudos.filter(l => l.laudo_type === 'medico').length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Médico</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-purple-600">
+                      {new Set(allLaudos.map(l => l.client_id)).size}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Pacientes</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {allLaudos.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileCheck2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum laudo encontrado no período.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Paciente</TableHead>
+                      <TableHead>Profissional</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allLaudos.slice(0, 50).map((laudo) => (
+                      <TableRow key={laudo.id}>
+                        <TableCell>
+                          {format(new Date(laudo.laudo_date), 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {laudo.client?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell>{laudo.employee?.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {laudo.laudo_type === 'neuropsicologico' ? 'Neuropsicológico' :
+                             laudo.laudo_type === 'medico' ? 'Médico' :
+                             laudo.laudo_type || 'Outro'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <p className="truncate text-sm" title={laudo.title}>
+                            {laudo.title}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={laudo.status === 'active' ? 'default' : 'secondary'}>
+                            {laudo.status === 'active' ? 'Ativo' : laudo.status || 'N/A'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="materials">
           <Card>
             <CardHeader>
