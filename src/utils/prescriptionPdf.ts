@@ -38,24 +38,16 @@ export const generatePrescriptionPdf = async (
   const margin = 15;
   let yPosition = 20;
 
-  // Print-safe padding so the letterhead isn't cut by printer margins
-  const letterheadPadding = 8;
+  // Full page letterhead - no margins
   let timbradoBase64: string | null = null;
 
   const addLetterhead = () => {
     if (!timbradoBase64) return;
-
-    doc.addImage(
-      timbradoBase64,
-      'JPEG',
-      letterheadPadding,
-      letterheadPadding,
-      pageWidth - letterheadPadding * 2,
-      pageHeight - letterheadPadding * 2
-    );
+    // Fill entire A4 page with letterhead
+    doc.addImage(timbradoBase64, 'JPEG', 0, 0, pageWidth, pageHeight);
   };
 
-  // Add letterhead background (scaled slightly smaller to avoid printing cuts)
+  // Add letterhead background (full page)
   try {
     timbradoBase64 = await loadImageAsBase64(prescriptionTimbrado);
     addLetterhead();
