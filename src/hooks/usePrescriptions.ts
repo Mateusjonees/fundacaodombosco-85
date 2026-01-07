@@ -22,6 +22,8 @@ export interface Prescription {
   follow_up_notes?: string;
   status: string;
   service_type?: 'sus' | 'private';
+  show_print_date?: boolean;
+  show_prescription_date?: boolean;
   created_at: string;
   updated_at: string;
   employee?: { name: string; employee_role: string };
@@ -80,7 +82,9 @@ export const useCreatePrescription = () => {
           general_instructions: prescription.general_instructions || null,
           follow_up_notes: prescription.follow_up_notes || null,
           status: prescription.status || 'active',
-          service_type: prescription.service_type || 'private'
+          service_type: prescription.service_type || 'private',
+          show_print_date: prescription.show_print_date ?? false,
+          show_prescription_date: prescription.show_prescription_date ?? true
         }])
         .select()
         .single();

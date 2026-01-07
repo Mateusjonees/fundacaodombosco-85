@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2, Pill } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCreatePrescription, Medication } from '@/hooks/usePrescriptions';
@@ -34,6 +35,8 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
   const [medications, setMedications] = useState<Medication[]>([{ ...emptyMedication }]);
   const [generalInstructions, setGeneralInstructions] = useState('');
   const [followUpNotes, setFollowUpNotes] = useState('');
+  const [showPrescriptionDate, setShowPrescriptionDate] = useState(true);
+  const [showPrintDate, setShowPrintDate] = useState(false);
 
   const handleAddMedication = () => {
     setMedications([...medications, { ...emptyMedication }]);
@@ -69,7 +72,9 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
       general_instructions: generalInstructions || undefined,
       follow_up_notes: followUpNotes || undefined,
       status: 'active',
-      service_type: serviceType
+      service_type: serviceType,
+      show_prescription_date: showPrescriptionDate,
+      show_print_date: showPrintDate
     });
 
     // Reset form
@@ -79,6 +84,8 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
     setMedications([{ ...emptyMedication }]);
     setGeneralInstructions('');
     setFollowUpNotes('');
+    setShowPrescriptionDate(true);
+    setShowPrintDate(false);
     onOpenChange(false);
   };
 
@@ -227,6 +234,33 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
               onChange={(e) => setFollowUpNotes(e.target.value)}
               rows={2}
             />
+          </div>
+
+          {/* Opções de exibição no PDF */}
+          <div className="space-y-3 pt-2 border-t">
+            <Label className="text-sm font-medium text-muted-foreground">Opções de exibição no PDF</Label>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="show-prescription-date"
+                  checked={showPrescriptionDate}
+                  onCheckedChange={(checked) => setShowPrescriptionDate(checked === true)}
+                />
+                <Label htmlFor="show-prescription-date" className="text-sm font-normal cursor-pointer">
+                  Incluir Data de Lançamento no PDF
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="show-print-date"
+                  checked={showPrintDate}
+                  onCheckedChange={(checked) => setShowPrintDate(checked === true)}
+                />
+                <Label htmlFor="show-print-date" className="text-sm font-normal cursor-pointer">
+                  Incluir Data de Impressão no PDF
+                </Label>
+              </div>
+            </div>
           </div>
         </div>
 
