@@ -1,31 +1,21 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Create a Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -34,7 +24,6 @@ serve(async (req) => {
       );
     }
 
-    // Verify the user making the request
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
@@ -45,59 +34,50 @@ serve(async (req) => {
       );
     }
 
-    // Check if the user is a director
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('employee_role')
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile || profile.employee_role !== 'director') {
+    if (!profile || profile.employee_role !== 'director') {
       return new Response(
-        JSON.stringify({ error: 'Insufficient permissions. Only directors can delete users.' }),
+        JSON.stringify({ error: 'Only directors can delete users' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get user IDs from request body (supports single userId or array userIds)
     const body = await req.json();
     const userIds = body.userIds || (body.userId ? [body.userId] : []);
     
-    if (!userIds || userIds.length === 0) {
+    if (userIds.length === 0) {
       return new Response(
         JSON.stringify({ error: 'User ID(s) required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const results: { userId: string; success: boolean; error?: string }[] = [];
+    console.log('Deleting users:', userIds);
     
+    const results = [];
     for (const userId of userIds) {
-      // Delete the user from auth.users
-      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      
-      if (deleteError) {
-        console.error(`Error deleting user ${userId}:`, deleteError);
-        results.push({ userId, success: false, error: deleteError.message });
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (error) {
+        console.error('Delete error for', userId, error.message);
+        results.push({ userId, success: false, error: error.message });
       } else {
-        console.log(`Successfully deleted user ${userId}`);
+        console.log('Deleted user:', userId);
         results.push({ userId, success: true });
       }
     }
-    
-    const allSuccess = results.every(r => r.success);
-    const status = allSuccess ? 200 : 207;
 
     return new Response(
-      JSON.stringify({ 
-        message: allSuccess ? 'All users deleted successfully' : 'Some users could not be deleted',
-        results
-      }),
-      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ message: 'Completed', results }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
