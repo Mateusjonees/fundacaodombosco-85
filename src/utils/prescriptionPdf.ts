@@ -35,53 +35,51 @@ export const generatePrescriptionPdf = async (
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 25;
+  const margin = 15;
   let yPosition = 20;
 
   // Add letterhead background (full page)
   try {
     const timbradoBase64 = await loadImageAsBase64(prescriptionTimbrado);
-    // Add as background - the image has footer elements
     doc.addImage(timbradoBase64, 'JPEG', 0, 0, pageWidth, pageHeight);
   } catch (error) {
     console.error('Error loading letterhead:', error);
   }
 
   // Title - RECEITUÁRIO
-  yPosition = 30;
+  yPosition = 25;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 102, 153); // Azul institucional
+  doc.setTextColor(0, 102, 153);
   doc.text('RECEITUÁRIO', pageWidth / 2, yPosition, { align: 'center' });
 
   // Service type badge
-  yPosition += 10;
+  yPosition += 8;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   const serviceTypeText = prescription.service_type === 'sus' ? 'ATENDIMENTO SUS' : 'ATENDIMENTO PRIVATIVO';
-  const badgeColor = prescription.service_type === 'sus' ? [34, 139, 34] : [0, 102, 153]; // Verde para SUS, Azul para Privativo
+  const badgeColor = prescription.service_type === 'sus' ? [34, 139, 34] : [0, 102, 153];
   doc.setTextColor(badgeColor[0], badgeColor[1], badgeColor[2]);
   doc.text(serviceTypeText, pageWidth / 2, yPosition, { align: 'center' });
 
-  // Reset text color to black
   doc.setTextColor(0, 0, 0);
 
   // Line separator
-  yPosition += 8;
+  yPosition += 6;
   doc.setDrawColor(0, 102, 153);
   doc.setLineWidth(0.5);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
 
   // Patient info
-  yPosition += 12;
+  yPosition += 10;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text('Paciente:', margin, yPosition);
   doc.setFont('helvetica', 'normal');
-  doc.text(client.name, margin + 22, yPosition);
+  doc.text(client.name, margin + 20, yPosition);
 
   if (client.cpf) {
-    yPosition += 6;
+    yPosition += 5;
     doc.setFont('helvetica', 'bold');
     doc.text('CPF:', margin, yPosition);
     doc.setFont('helvetica', 'normal');
@@ -91,46 +89,46 @@ export const generatePrescriptionPdf = async (
   if (client.birth_date) {
     const birthDate = new Date(client.birth_date).toLocaleDateString('pt-BR');
     doc.setFont('helvetica', 'bold');
-    doc.text('Data de Nasc.:', margin + 80, yPosition);
+    doc.text('Data de Nasc.:', margin + 70, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(birthDate, margin + 110, yPosition);
+    doc.text(birthDate, margin + 98, yPosition);
   }
 
-  yPosition += 6;
+  yPosition += 5;
   doc.setFont('helvetica', 'bold');
   doc.text('Data da Prescrição:', margin, yPosition);
   doc.setFont('helvetica', 'normal');
-  doc.text(new Date(prescription.prescription_date).toLocaleDateString('pt-BR'), margin + 42, yPosition);
+  doc.text(new Date(prescription.prescription_date).toLocaleDateString('pt-BR'), margin + 38, yPosition);
 
   // Line separator
-  yPosition += 8;
+  yPosition += 6;
   doc.setLineWidth(0.3);
   doc.setDrawColor(200, 200, 200);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
 
-  // Diagnosis (if any)
-  if (prescription.diagnosis) {
-    yPosition += 10;
+  // Diagnosis - only if provided
+  if (prescription.diagnosis && prescription.diagnosis.trim()) {
+    yPosition += 8;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 102, 153);
     doc.text('Diagnóstico/Indicação:', margin, yPosition);
     doc.setTextColor(0, 0, 0);
-    yPosition += 6;
+    yPosition += 5;
     doc.setFont('helvetica', 'normal');
     const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - 2 * margin);
     doc.text(diagnosisLines, margin, yPosition);
     yPosition += diagnosisLines.length * 5;
   }
 
-  // Medications
-  yPosition += 10;
+  // Uso Oral section
+  yPosition += 8;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 102, 153);
-  doc.text('MEDICAMENTOS:', margin, yPosition);
+  doc.text('Uso Oral', margin, yPosition);
   doc.setTextColor(0, 0, 0);
   
-  yPosition += 8;
+  yPosition += 6;
   doc.setFontSize(10);
 
   // Max Y position before footer (leave space for footer graphics)
