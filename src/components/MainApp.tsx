@@ -19,8 +19,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PendingAttendancesNotification } from '@/components/PendingAttendancesNotification';
-import { AppointmentNotifications } from '@/components/AppointmentNotifications';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { QuickHelpCenter } from '@/components/QuickHelpCenter';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -164,15 +162,6 @@ export const MainApp = () => {
                         <Camera className="mr-3 h-4 w-4" />
                         <span>Meu Perfil</span>
                       </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      <div className="px-2 py-1">
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">Notificações</p>
-                      </div>
-                      
-                      <AppointmentNotifications />
-                      <PendingAttendancesNotification />
                       
                       <DropdownMenuSeparator />
                       
