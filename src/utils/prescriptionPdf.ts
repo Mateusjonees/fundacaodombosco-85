@@ -130,11 +130,14 @@ export const generatePrescriptionPdf = async (
     doc.text(birthDate, margin + 108, yPosition);
   }
 
-  yPosition += 5;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Data da Prescrição:', margin, yPosition);
-  doc.setFont('helvetica', 'normal');
-  doc.text(new Date(prescription.prescription_date).toLocaleDateString('pt-BR'), margin + 38, yPosition);
+  // Data de lançamento - só exibe se show_prescription_date !== false
+  if (prescription.show_prescription_date !== false) {
+    yPosition += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Data da Prescrição:', margin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(new Date(prescription.prescription_date).toLocaleDateString('pt-BR'), margin + 38, yPosition);
+  }
 
   // Line separator
   yPosition += 6;
@@ -257,9 +260,12 @@ export const generatePrescriptionPdf = async (
     doc.text(professionalLicense, pageWidth / 2, yPosition, { align: 'center' });
   }
 
-  yPosition += 8;
-  doc.setFontSize(9);
-  doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, yPosition, { align: 'center' });
+  // Data de impressão - só exibe se show_print_date === true
+  if (prescription.show_print_date === true) {
+    yPosition += 8;
+    doc.setFontSize(9);
+    doc.text(`Data de Impressão: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, yPosition, { align: 'center' });
+  }
 
   return doc;
 };

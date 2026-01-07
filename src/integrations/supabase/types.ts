@@ -2096,6 +2096,8 @@ export type Database = {
           prescription_date: string
           schedule_id: string | null
           service_type: string | null
+          show_prescription_date: boolean | null
+          show_print_date: boolean | null
           status: string | null
           updated_at: string
         }
@@ -2111,6 +2113,8 @@ export type Database = {
           prescription_date?: string
           schedule_id?: string | null
           service_type?: string | null
+          show_prescription_date?: boolean | null
+          show_print_date?: boolean | null
           status?: string | null
           updated_at?: string
         }
@@ -2126,6 +2130,8 @@ export type Database = {
           prescription_date?: string
           schedule_id?: string | null
           service_type?: string | null
+          show_prescription_date?: boolean | null
+          show_print_date?: boolean | null
           status?: string | null
           updated_at?: string
         }
