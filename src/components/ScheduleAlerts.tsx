@@ -140,10 +140,10 @@ export function ScheduleAlerts() {
         <div className="space-y-4">
           {/* Current Appointments */}
           {currentAppointments.length > 0 && (
-            <Alert className="border-green-200 bg-green-50">
-              <Clock className="h-4 w-4 text-green-600" />
+            <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/50">
+              <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
               <AlertDescription>
-                <div className="font-medium text-green-800 mb-2">Atendimentos em Andamento:</div>
+                <div className="font-medium text-green-800 dark:text-green-300 mb-2">Atendimentos em Andamento:</div>
                 <div className="space-y-1">
                   {currentAppointments.map((schedule) => (
                     <div key={schedule.id} className="flex items-center gap-2 text-sm">
@@ -163,10 +163,10 @@ export function ScheduleAlerts() {
 
           {/* Next Appointment */}
           {nextAppointment && (
-            <Alert className="border-blue-200 bg-blue-50">
-              <Bell className="h-4 w-4 text-blue-600" />
+            <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
+              <Bell className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <AlertDescription>
-                <div className="font-medium text-blue-800 mb-2">Próximo Atendimento:</div>
+                <div className="font-medium text-blue-800 dark:text-blue-300 mb-2">Próximo Atendimento:</div>
                 <div className="flex items-center gap-2 text-sm">
                   <User className="h-3 w-3" />
                   <span className="font-medium">{nextAppointment.clients?.name}</span>
