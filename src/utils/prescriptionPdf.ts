@@ -10,9 +10,10 @@ interface Client {
 }
 
 type PrescriptionPdfOptions = {
-  // Move the background image slightly to avoid printer cutting
+  // Move and scale the background image slightly to avoid printer cutting
   letterheadOffsetXmm?: number;
   letterheadOffsetYmm?: number;
+  letterheadScale?: number;
 };
 
 // Helper to load image as base64
@@ -53,11 +54,19 @@ export const generatePrescriptionPdf = async (
   const addLetterhead = () => {
     if (!timbradoBase64) return;
 
+    // Defaults tuned to keep the footer/logo from being cut on most printers
     const offsetX = options?.letterheadOffsetXmm ?? 0;
-    const offsetY = options?.letterheadOffsetYmm ?? 0;
+    const offsetY = options?.letterheadOffsetYmm ?? -25;
+    const scale = options?.letterheadScale ?? 0.96;
 
-    // Fill entire A4 page with letterhead (optionally shifted)
-    doc.addImage(timbradoBase64, 'JPEG', offsetX, offsetY, pageWidth, pageHeight);
+    const scaledWidth = pageWidth * scale;
+    const scaledHeight = pageHeight * scale;
+
+    // Center the letterhead on the page, then apply offsets
+    const x = (pageWidth - scaledWidth) / 2 + offsetX;
+    const y = (pageHeight - scaledHeight) / 2 + offsetY;
+
+    doc.addImage(timbradoBase64, 'JPEG', x, y, scaledWidth, scaledHeight);
   };
 
   const addLogo = () => {
@@ -279,10 +288,10 @@ export const printPrescriptionPdf = async (
   professionalName: string,
   professionalLicense?: string
 ) => {
-  // Shift background slightly up for printing to reduce cutting by printer margins
+  // Tune letterhead position/scale for printing (avoid cutting on paper)
   const doc = await generatePrescriptionPdf(prescription, client, professionalName, professionalLicense, {
-    // Subir o timbrado ~3cm para evitar corte no rodapé
-    letterheadOffsetYmm: -48,
+    letterheadOffsetYmm: -30,
+    letterheadScale: 0.94,
   });
   const pdfBlob = doc.output('blob');
   const url = URL.createObjectURL(pdfBlob);
