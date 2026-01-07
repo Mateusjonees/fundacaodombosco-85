@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +14,7 @@ interface ClientNote {
   note_text: string;
   note_type: string;
   created_at: string;
+  service_type?: string;
 }
 
 interface AddAnamnesisDialogProps {
@@ -67,6 +69,7 @@ export default function AddAnamnesisDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [serviceType, setServiceType] = useState<string>('private');
   
   const [formData, setFormData] = useState({
     queixaPrincipal: '',
@@ -82,6 +85,7 @@ export default function AddAnamnesisDialog({
     if (editingNote) {
       const parsed = parseNoteText(editingNote.note_text);
       setFormData(parsed);
+      setServiceType(editingNote.service_type || 'private');
     } else {
       setFormData({
         queixaPrincipal: '',
@@ -91,6 +95,7 @@ export default function AddAnamnesisDialog({
         hd: '',
         conduta: ''
       });
+      setServiceType('private');
     }
   }, [editingNote, open]);
 
@@ -139,7 +144,11 @@ export default function AddAnamnesisDialog({
         // Update existing note
         const { error } = await supabase
           .from('client_notes')
-          .update({ note_text: noteText, updated_at: new Date().toISOString() })
+          .update({ 
+            note_text: noteText, 
+            service_type: serviceType,
+            updated_at: new Date().toISOString() 
+          })
           .eq('id', editingNote.id);
 
         if (error) throw error;
@@ -156,6 +165,7 @@ export default function AddAnamnesisDialog({
             client_id: clientId,
             note_text: noteText,
             note_type: 'anamnesis',
+            service_type: serviceType,
             created_by: user?.id
           });
 
@@ -176,6 +186,7 @@ export default function AddAnamnesisDialog({
         hd: '',
         conduta: ''
       });
+      setServiceType('private');
 
       onSuccess();
       onOpenChange(false);
@@ -202,6 +213,20 @@ export default function AddAnamnesisDialog({
         </DialogHeader>
 
         <div className="space-y-4 pt-4">
+          {/* Tipo de Atendimento */}
+          <div className="space-y-2">
+            <Label htmlFor="serviceType">Tipo de Atendimento</Label>
+            <Select value={serviceType} onValueChange={setServiceType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="private">Privativo</SelectItem>
+                <SelectItem value="sus">SUS</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <p className="text-sm text-muted-foreground">
             Preencha os campos desejados. Todos os campos são opcionais.
           </p>
