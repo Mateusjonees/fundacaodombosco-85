@@ -93,16 +93,10 @@ export const generatePrescriptionPdf = async (
   doc.setTextColor(0, 102, 153);
   doc.text('RECEITUÁRIO', pageWidth / 2, yPosition, { align: 'center' });
 
-  // Service type badge
-  yPosition += 8;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  const serviceTypeText = prescription.service_type === 'sus' ? 'ATENDIMENTO SUS' : 'ATENDIMENTO PRIVATIVO';
-  const badgeColor = prescription.service_type === 'sus' ? [34, 139, 34] : [0, 102, 153];
-  doc.setTextColor(badgeColor[0], badgeColor[1], badgeColor[2]);
-  doc.text(serviceTypeText, pageWidth / 2, yPosition, { align: 'center' });
-
+  // Service type label removed (SUS/Privativo)
+  yPosition += 10;
   doc.setTextColor(0, 0, 0);
+
 
   // Line separator
   yPosition += 6;
@@ -287,7 +281,7 @@ export const printPrescriptionPdf = async (
 ) => {
   // Shift background slightly up for printing to reduce cutting by printer margins
   const doc = await generatePrescriptionPdf(prescription, client, professionalName, professionalLicense, {
-    letterheadOffsetYmm: -6,
+    letterheadOffsetYmm: -12,
   });
   const pdfBlob = doc.output('blob');
   const url = URL.createObjectURL(pdfBlob);
