@@ -62,11 +62,11 @@ export const generatePrescriptionPdf = async (
 
   const addLogo = () => {
     if (!logoBase64) return;
-    // Add logo centered at the top (30mm wide, ~25mm height, keeping aspect ratio)
-    const logoWidth = 30;
-    const logoHeight = 25;
-    const logoX = (pageWidth - logoWidth) / 2;
-    const logoY = 5;
+    // Add logo centered at the top (35mm wide, ~28mm height, keeping aspect ratio)
+    const logoWidth = 35;
+    const logoHeight = 28;
+    const logoX = (pageWidth - logoWidth) / 2 + 2; // +2mm offset para centralizar melhor
+    const logoY = 3;
     doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
   };
 
@@ -87,7 +87,7 @@ export const generatePrescriptionPdf = async (
   }
 
   // Title - RECEITUÁRIO (below logo)
-  yPosition = 35;
+  yPosition = 33;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 102, 153);
@@ -281,7 +281,7 @@ export const printPrescriptionPdf = async (
 ) => {
   // Shift background slightly up for printing to reduce cutting by printer margins
   const doc = await generatePrescriptionPdf(prescription, client, professionalName, professionalLicense, {
-    letterheadOffsetYmm: -12,
+    letterheadOffsetYmm: -18,
   });
   const pdfBlob = doc.output('blob');
   const url = URL.createObjectURL(pdfBlob);
