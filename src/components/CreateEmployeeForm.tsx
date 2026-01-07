@@ -136,24 +136,21 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
     const tempPassword = generateTempPassword();
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: tempPassword,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name: formData.name,
-            employee_role: formData.employee_role,
-            phone: formData.phone || null,
-            department: formData.department || null,
-            unit: formData.unit || null,
-            job_position_id: formData.job_position_id || null
-          }
+      // Usar edge function que cria usuário via API Admin (não faz login automático)
+      const { data, error } = await supabase.functions.invoke('create-users', {
+        body: {
+          email: formData.email,
+          password: tempPassword,
+          name: formData.name,
+          employee_role: formData.employee_role,
+          phone: formData.phone || null,
+          department: formData.department || null,
+          unit: formData.unit || null
         }
       });
 
       if (error) {
-        console.error('Signup error:', error);
+        console.error('Create user error:', error);
         toast({
           variant: "destructive",
           title: "Erro ao criar funcionário",
@@ -162,14 +159,27 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
         return;
       }
 
-      if (data?.user) {
+      // Verificar erro retornado pela edge function
+      if (data?.error) {
+        console.error('Edge function error:', data.error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar funcionário",
+          description: data.error,
+        });
+        return;
+      }
+
+      const userId = data?.user?.id;
+
+      if (userId) {
         // Se um cargo foi selecionado, criar a associação
         if (formData.job_position_id) {
           try {
             await supabase
               .from('user_job_assignments')
               .insert({
-                user_id: data.user.id,
+                user_id: userId,
                 position_id: formData.job_position_id,
                 assigned_by: userRole
               });
