@@ -1,7 +1,6 @@
 import jsPDF from 'jspdf';
 import { Medication, Prescription } from '@/hooks/usePrescriptions';
-import logoHeader from '@/assets/fundacao-dom-bosco-logo-header.png';
-import logoFooter from '@/assets/fundacao-dom-bosco-logo-optimized.png';
+import prescriptionTimbrado from '@/assets/prescription-timbrado-full.jpg';
 
 interface Client {
   name: string;
@@ -20,7 +19,7 @@ const loadImageAsBase64 = (src: string): Promise<string> => {
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
       ctx?.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
+      resolve(canvas.toDataURL('image/jpeg'));
     };
     img.onerror = reject;
     img.src = src;
@@ -36,51 +35,45 @@ export const generatePrescriptionPdf = async (
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
-  let yPosition = 15;
+  const margin = 25;
+  let yPosition = 20;
 
-  // Load and add header logo
+  // Add letterhead background (full page)
   try {
-    const logoBase64 = await loadImageAsBase64(logoHeader);
-    const logoWidth = 50;
-    const logoHeight = 20;
-    doc.addImage(logoBase64, 'PNG', (pageWidth - logoWidth) / 2, yPosition, logoWidth, logoHeight);
-    yPosition += logoHeight + 5;
+    const timbradoBase64 = await loadImageAsBase64(prescriptionTimbrado);
+    // Add as background - the image has footer elements
+    doc.addImage(timbradoBase64, 'JPEG', 0, 0, pageWidth, pageHeight);
   } catch (error) {
-    console.error('Error loading header logo:', error);
-    yPosition += 10;
+    console.error('Error loading letterhead:', error);
   }
 
-  // Header text
-  doc.setFontSize(14);
+  // Title - RECEITUÁRIO
+  yPosition = 30;
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('FUNDAÇÃO DOM BOSCO', pageWidth / 2, yPosition, { align: 'center' });
-  
-  yPosition += 6;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Clínica de Neuropsicologia e Desenvolvimento', pageWidth / 2, yPosition, { align: 'center' });
-
-  // Line separator
-  yPosition += 8;
-  doc.setLineWidth(0.5);
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-
-  // Title
-  yPosition += 12;
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 102, 153); // Azul institucional
   doc.text('RECEITUÁRIO', pageWidth / 2, yPosition, { align: 'center' });
 
   // Service type badge
-  yPosition += 8;
+  yPosition += 10;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   const serviceTypeText = prescription.service_type === 'sus' ? 'ATENDIMENTO SUS' : 'ATENDIMENTO PRIVATIVO';
+  const badgeColor = prescription.service_type === 'sus' ? [34, 139, 34] : [0, 102, 153]; // Verde para SUS, Azul para Privativo
+  doc.setTextColor(badgeColor[0], badgeColor[1], badgeColor[2]);
   doc.text(serviceTypeText, pageWidth / 2, yPosition, { align: 'center' });
 
+  // Reset text color to black
+  doc.setTextColor(0, 0, 0);
+
+  // Line separator
+  yPosition += 8;
+  doc.setDrawColor(0, 102, 153);
+  doc.setLineWidth(0.5);
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+
   // Patient info
-  yPosition += 15;
+  yPosition += 12;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text('Paciente:', margin, yPosition);
@@ -112,13 +105,16 @@ export const generatePrescriptionPdf = async (
   // Line separator
   yPosition += 8;
   doc.setLineWidth(0.3);
+  doc.setDrawColor(200, 200, 200);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
 
   // Diagnosis (if any)
   if (prescription.diagnosis) {
     yPosition += 10;
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 102, 153);
     doc.text('Diagnóstico/Indicação:', margin, yPosition);
+    doc.setTextColor(0, 0, 0);
     yPosition += 6;
     doc.setFont('helvetica', 'normal');
     const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - 2 * margin);
@@ -130,16 +126,25 @@ export const generatePrescriptionPdf = async (
   yPosition += 10;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 102, 153);
   doc.text('MEDICAMENTOS:', margin, yPosition);
+  doc.setTextColor(0, 0, 0);
   
   yPosition += 8;
   doc.setFontSize(10);
 
+  // Max Y position before footer (leave space for footer graphics)
+  const maxContentY = 200;
+
   prescription.medications.forEach((med: Medication, index: number) => {
     // Check if we need a new page (leave space for footer)
-    if (yPosition > 220) {
+    if (yPosition > maxContentY) {
       doc.addPage();
-      yPosition = 20;
+      // Re-add letterhead to new page
+      loadImageAsBase64(prescriptionTimbrado).then(base64 => {
+        doc.addImage(base64, 'JPEG', 0, 0, pageWidth, pageHeight);
+      });
+      yPosition = 30;
     }
 
     doc.setFont('helvetica', 'bold');
@@ -171,11 +176,14 @@ export const generatePrescriptionPdf = async (
   if (prescription.general_instructions) {
     yPosition += 5;
     doc.setLineWidth(0.3);
+    doc.setDrawColor(200, 200, 200);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
     
     yPosition += 8;
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 102, 153);
     doc.text('ORIENTAÇÕES GERAIS:', margin, yPosition);
+    doc.setTextColor(0, 0, 0);
     
     yPosition += 6;
     doc.setFont('helvetica', 'normal');
@@ -194,9 +202,15 @@ export const generatePrescriptionPdf = async (
     doc.text(followUpLines, margin + 18, yPosition);
   }
 
-  // Signature area
-  yPosition = Math.max(yPosition + 25, 200);
+  // Signature area - positioned above the footer graphics
+  yPosition = Math.max(yPosition + 20, 180);
   
+  // Ensure signature doesn't overlap with footer
+  if (yPosition > maxContentY) {
+    yPosition = maxContentY;
+  }
+  
+  doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.line(pageWidth / 2 - 40, yPosition, pageWidth / 2 + 40, yPosition);
   
@@ -213,27 +227,6 @@ export const generatePrescriptionPdf = async (
   yPosition += 8;
   doc.setFontSize(9);
   doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, yPosition, { align: 'center' });
-
-  // Footer with logo and address
-  const footerY = pageHeight - 30;
-  
-  // Add footer logo
-  try {
-    const footerLogoBase64 = await loadImageAsBase64(logoFooter);
-    const footerLogoWidth = 25;
-    const footerLogoHeight = 15;
-    doc.addImage(footerLogoBase64, 'PNG', (pageWidth - footerLogoWidth) / 2, footerY - 5, footerLogoWidth, footerLogoHeight);
-  } catch (error) {
-    console.error('Error loading footer logo:', error);
-  }
-
-  // Footer text
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100);
-  doc.text('Rua Madre Cecília, 1234 - Centro - Belo Horizonte/MG - CEP: 30000-000', pageWidth / 2, footerY + 15, { align: 'center' });
-  doc.text('Tel: (31) 3333-0000 | www.fundacaodombosco.org.br', pageWidth / 2, footerY + 20, { align: 'center' });
-  doc.setTextColor(0);
 
   return doc;
 };
