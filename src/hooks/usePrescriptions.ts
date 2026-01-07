@@ -152,3 +152,35 @@ export const useUpdatePrescription = () => {
     }
   });
 };
+
+export const useDeletePrescription = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, clientId }: { id: string; clientId: string }) => {
+      const { error } = await supabase
+        .from('prescriptions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { clientId };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['prescriptions', result.clientId] });
+      toast({
+        title: 'Sucesso',
+        description: 'Receita excluída com sucesso!'
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting prescription:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível excluir a receita.'
+      });
+    }
+  });
+};

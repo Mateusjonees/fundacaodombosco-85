@@ -5,13 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Eye, Edit, UserPlus, Users, Clock, Settings, Shield, UserCheck, UserX, Briefcase } from 'lucide-react';
+import { Search, Eye, Edit, UserPlus, Users, Clock, Settings, Shield, UserCheck, UserX, Briefcase, Trash2 } from 'lucide-react';
 import EmployeePermissions from '@/components/EmployeePermissions';
 import PasswordManager from '@/components/PasswordManager';
 import { CustomRoleManager } from '@/components/CustomRoleManager';
@@ -49,6 +49,9 @@ export default function Employees() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
     employee_role: EmployeeRole;
@@ -172,6 +175,82 @@ export default function Employees() {
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível atualizar o funcionário.",
+      });
+    }
+  };
+
+  const handleDeleteClick = (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!employeeToDelete) return;
+    
+    setDeleting(true);
+    try {
+      // Chama a edge function para deletar o usuário
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL || 'https://uzcfscnbkbeqxmjgxklq.supabase.co'}/functions/v1/delete-users`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData.session?.access_token}`,
+          },
+          body: JSON.stringify({ userId: employeeToDelete.user_id }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao deletar funcionário');
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Funcionário deletado permanentemente.",
+      });
+
+      setDeleteDialogOpen(false);
+      setEmployeeToDelete(null);
+      loadEmployees();
+    } catch (error: any) {
+      console.error('Error deleting employee:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Não foi possível deletar o funcionário.",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleToggleActive = async (employee: Employee) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !employee.is_active })
+        .eq('id', employee.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Funcionário ${employee.is_active ? 'desativado' : 'reativado'} com sucesso.`,
+      });
+
+      loadEmployees();
+    } catch (error) {
+      console.error('Error toggling employee status:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível alterar o status do funcionário.",
       });
     }
   };
@@ -406,6 +485,28 @@ export default function Employees() {
                                   employeeName={employee.name || 'Funcionário'}
                                   employeeEmail={employee.phone || 'email@exemplo.com'}
                                 />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleToggleActive(employee)}
+                                  title={employee.is_active ? 'Desativar' : 'Reativar'}
+                                >
+                                  {employee.is_active ? (
+                                    <UserX className="h-4 w-4 text-amber-500" />
+                                  ) : (
+                                    <UserCheck className="h-4 w-4 text-emerald-500" />
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteClick(employee)}
+                                  title="Deletar permanentemente"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -595,6 +696,48 @@ export default function Employees() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Deletar Funcionário
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação é <strong>permanente</strong> e não pode ser desfeita. O funcionário será removido completamente do sistema.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {employeeToDelete && (
+            <div className="py-4 space-y-2">
+              <p className="text-sm">
+                <strong>Nome:</strong> {employeeToDelete.name}
+              </p>
+              <p className="text-sm">
+                <strong>Cargo:</strong> {ROLE_LABELS[employeeToDelete.employee_role] || employeeToDelete.employee_role}
+              </p>
+              <p className="text-sm text-muted-foreground mt-4">
+                💡 Se deseja apenas impedir o acesso temporariamente, use a opção <strong>Desativar</strong> em vez de deletar.
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deletando...' : 'Deletar Permanentemente'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
