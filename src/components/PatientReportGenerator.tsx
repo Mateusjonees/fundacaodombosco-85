@@ -136,20 +136,28 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
       // Carregar medical records
       const { data: medicalData, error: medicalError } = await supabase
         .from('medical_records')
-        .select(`
-          id,
-          session_date,
-          session_type,
-          progress_notes,
-          treatment_plan,
-          symptoms,
-          session_duration,
-          profiles:employee_id (name)
-        `)
+        .select('id, session_date, session_type, progress_notes, treatment_plan, symptoms, session_duration, employee_id')
         .eq('client_id', client.id)
         .order('session_date', { ascending: false });
 
       if (medicalError) throw medicalError;
+
+      // Enriquecer medical records com nomes dos profissionais
+      let enrichedMedicalData = medicalData || [];
+      if (medicalData && medicalData.length > 0) {
+        const medicalEmployeeIds = [...new Set(medicalData.map(m => m.employee_id).filter(Boolean))];
+        if (medicalEmployeeIds.length > 0) {
+          const { data: medicalProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', medicalEmployeeIds);
+          
+          enrichedMedicalData = medicalData.map(m => ({
+            ...m,
+            profiles: { name: medicalProfiles?.find(p => p.user_id === m.employee_id)?.name || 'Profissional' }
+          }));
+        }
+      }
 
       // Carregar pagamentos do cliente
       const { data: paymentData, error: paymentError } = await supabase
@@ -317,7 +325,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
         materials_used: Array.isArray(report.materials_used) ? report.materials_used : [],
         attachments: Array.isArray(report.attachments) ? report.attachments : []
       })));
-      setMedicalRecords(medicalData || []);
+      setMedicalRecords(enrichedMedicalData);
       setPaymentRecords(paymentData || []);
 
     } catch (error) {
