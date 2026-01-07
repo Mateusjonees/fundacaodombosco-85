@@ -38,10 +38,27 @@ export const generatePrescriptionPdf = async (
   const margin = 15;
   let yPosition = 20;
 
-  // Add letterhead background (full page)
+  // Print-safe padding so the letterhead isn't cut by printer margins
+  const letterheadPadding = 8;
+  let timbradoBase64: string | null = null;
+
+  const addLetterhead = () => {
+    if (!timbradoBase64) return;
+
+    doc.addImage(
+      timbradoBase64,
+      'JPEG',
+      letterheadPadding,
+      letterheadPadding,
+      pageWidth - letterheadPadding * 2,
+      pageHeight - letterheadPadding * 2
+    );
+  };
+
+  // Add letterhead background (scaled slightly smaller to avoid printing cuts)
   try {
-    const timbradoBase64 = await loadImageAsBase64(prescriptionTimbrado);
-    doc.addImage(timbradoBase64, 'JPEG', 0, 0, pageWidth, pageHeight);
+    timbradoBase64 = await loadImageAsBase64(prescriptionTimbrado);
+    addLetterhead();
   } catch (error) {
     console.error('Error loading letterhead:', error);
   }
@@ -134,41 +151,39 @@ export const generatePrescriptionPdf = async (
   // Max Y position before footer (leave space for footer graphics)
   const maxContentY = 200;
 
-  prescription.medications.forEach((med: Medication, index: number) => {
+  for (let index = 0; index < prescription.medications.length; index += 1) {
+    const med: Medication = prescription.medications[index];
     // Check if we need a new page (leave space for footer)
     if (yPosition > maxContentY) {
       doc.addPage();
-      // Re-add letterhead to new page
-      loadImageAsBase64(prescriptionTimbrado).then(base64 => {
-        doc.addImage(base64, 'JPEG', 0, 0, pageWidth, pageHeight);
-      });
+      addLetterhead();
       yPosition = 30;
     }
 
     doc.setFont('helvetica', 'bold');
     doc.text(`${index + 1}. ${med.name}${med.dosage ? ' ' + med.dosage : ''}`, margin, yPosition);
-    
+
     yPosition += 6;
     doc.setFont('helvetica', 'normal');
-    
+
     const details: string[] = [];
     if (med.frequency) details.push(`Posologia: ${med.frequency}`);
     if (med.duration) details.push(`Duração: ${med.duration}`);
-    
+
     if (details.length > 0) {
       doc.text(details.join(' | '), margin + 5, yPosition);
       yPosition += 5;
     }
-    
+
     if (med.instructions) {
       doc.setFont('helvetica', 'italic');
       const instructionLines = doc.splitTextToSize(`Obs: ${med.instructions}`, pageWidth - 2 * margin - 5);
       doc.text(instructionLines, margin + 5, yPosition);
       yPosition += instructionLines.length * 5;
     }
-    
+
     yPosition += 5;
-  });
+  }
 
   // General instructions
   if (prescription.general_instructions) {
