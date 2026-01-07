@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { Search, Users, Power, UserCheck, UserX, Plus, Edit, Eye, EyeOff, Building2 } from 'lucide-react';
+import { Search, Users, Power, UserCheck, UserX, Plus, Edit, Eye, EyeOff, Building2, Trash2 } from 'lucide-react';
 import { UNITS } from '@/utils/unitUtils';
 
 interface Employee {
@@ -55,7 +55,10 @@ export default function EmployeesNew() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
@@ -283,6 +286,42 @@ export default function EmployeesNew() {
         title: "Erro",
         description: "Não foi possível alterar o status do funcionário.",
       });
+    }
+  };
+
+  const handleDeleteClick = (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!employeeToDelete) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-users', {
+        body: { userIds: [employeeToDelete.user_id] }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Funcionário excluído",
+        description: `${employeeToDelete.name} foi excluído permanentemente.`,
+      });
+
+      setIsDeleteDialogOpen(false);
+      setEmployeeToDelete(null);
+      loadEmployees();
+    } catch (error: any) {
+      console.error('Error deleting employee:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir",
+        description: error.message || "Não foi possível excluir o funcionário.",
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -649,11 +688,21 @@ export default function EmployeesNew() {
                             size="sm"
                             onClick={() => handleToggleEmployeeStatus(employee.user_id, employee.is_active)}
                             className={employee.is_active 
-                              ? "hover:bg-red-50 hover:text-red-600" 
+                              ? "hover:bg-orange-50 hover:text-orange-600" 
                               : "hover:bg-green-50 hover:text-green-600"
                             }
+                            title={employee.is_active ? "Desativar" : "Reativar"}
                           >
                             <Power className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(employee)}
+                            className="hover:bg-red-50 hover:text-red-600"
+                            title="Excluir permanentemente"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -751,6 +800,41 @@ export default function EmployeesNew() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleUpdateEmployee}>Salvar</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Exclusão */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Excluir Funcionário</DialogTitle>
+          </DialogHeader>
+          {employeeToDelete && (
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
+                <p className="text-sm text-red-700 dark:text-red-400">
+                  <strong>Atenção:</strong> Esta ação é irreversível! O usuário será permanentemente excluído do sistema.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p><strong>Nome:</strong> {employeeToDelete.name}</p>
+                <p><strong>E-mail:</strong> {employeeToDelete.email}</p>
+                <p><strong>Cargo:</strong> {roleNames[employeeToDelete.employee_role] || employeeToDelete.employee_role}</p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={deleting}>
+                  Cancelar
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleConfirmDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Excluindo...' : 'Excluir Permanentemente'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
