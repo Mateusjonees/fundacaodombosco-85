@@ -59,38 +59,41 @@ serve(async (req) => {
       );
     }
 
-    // Get user ID from request body
-    const { userId } = await req.json();
+    // Get user IDs from request body (supports single userId or array userIds)
+    const body = await req.json();
+    const userIds = body.userIds || (body.userId ? [body.userId] : []);
     
-    if (!userId) {
+    if (!userIds || userIds.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'User ID is required' }),
+        JSON.stringify({ error: 'User ID(s) required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Delete the user from auth.users
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    const results: { userId: string; success: boolean; error?: string }[] = [];
     
-    if (deleteError) {
-      console.error(`Error deleting user ${userId}:`, deleteError);
-      return new Response(
-        JSON.stringify({ 
-          error: `Failed to delete user: ${deleteError.message}`,
-          userId
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    for (const userId of userIds) {
+      // Delete the user from auth.users
+      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      
+      if (deleteError) {
+        console.error(`Error deleting user ${userId}:`, deleteError);
+        results.push({ userId, success: false, error: deleteError.message });
+      } else {
+        console.log(`Successfully deleted user ${userId}`);
+        results.push({ userId, success: true });
+      }
     }
-
-    console.log(`Successfully deleted user ${userId} from auth.users`);
     
+    const allSuccess = results.every(r => r.success);
+    const status = allSuccess ? 200 : 207;
+
     return new Response(
       JSON.stringify({ 
-        message: 'User successfully deleted from authentication system',
-        userId
+        message: allSuccess ? 'All users deleted successfully' : 'Some users could not be deleted',
+        results
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
