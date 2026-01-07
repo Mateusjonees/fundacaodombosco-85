@@ -1245,35 +1245,39 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
           <div className="lg:col-span-8">
             <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">
-                <Tabs defaultValue="clinical" className="w-full">
-                  <TabsList className="grid w-full grid-cols-7 mb-6">
-                    <TabsTrigger value="registration" className="text-xs md:text-sm">
-                      <Edit className="h-4 w-4 mr-1 hidden md:inline" />
-                      Cadastro
+                <Tabs defaultValue="history" className="w-full">
+                  {/* Tabs reorganizadas para fluxo de trabalho diário */}
+                  <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 mb-6">
+                    <TabsTrigger value="history" className="flex-1 min-w-[100px] text-xs md:text-sm py-2">
+                      <Activity className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Atendimentos</span>
+                      <span className="sm:hidden">Atend.</span>
                     </TabsTrigger>
-                    <TabsTrigger value="clinical" className="text-xs md:text-sm">
-                      <ClipboardList className="h-4 w-4 mr-1 hidden md:inline" />
+                    <TabsTrigger value="clinical" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
+                      <ClipboardList className="h-4 w-4 mr-1.5" />
                       Anamnese
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="text-xs md:text-sm">
-                      <Activity className="h-4 w-4 mr-1 hidden md:inline" />
-                      Atendimentos
-                    </TabsTrigger>
-                    <TabsTrigger value="prescriptions" className="text-xs md:text-sm">
-                      <Pill className="h-4 w-4 mr-1 hidden md:inline" />
+                    <TabsTrigger value="prescriptions" className="flex-1 min-w-[80px] text-xs md:text-sm py-2">
+                      <Pill className="h-4 w-4 mr-1.5" />
                       Receita
                     </TabsTrigger>
-                    <TabsTrigger value="laudos" className="text-xs md:text-sm">
-                      <FileCheck2 className="h-4 w-4 mr-1 hidden md:inline" />
+                    <TabsTrigger value="laudos" className="flex-1 min-w-[70px] text-xs md:text-sm py-2">
+                      <FileCheck2 className="h-4 w-4 mr-1.5" />
                       Laudos
                     </TabsTrigger>
-                    <TabsTrigger value="financial" className="text-xs md:text-sm">
-                      <CreditCard className="h-4 w-4 mr-1 hidden md:inline" />
-                      Financeiro
+                    <TabsTrigger value="financial" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
+                      <CreditCard className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Financeiro</span>
+                      <span className="sm:hidden">Finan.</span>
                     </TabsTrigger>
-                    <TabsTrigger value="documents" className="text-xs md:text-sm">
-                      <FolderOpen className="h-4 w-4 mr-1 hidden md:inline" />
-                      Documentos
+                    <TabsTrigger value="documents" className="flex-1 min-w-[80px] text-xs md:text-sm py-2">
+                      <FolderOpen className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Documentos</span>
+                      <span className="sm:hidden">Docs</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="registration" className="flex-1 min-w-[80px] text-xs md:text-sm py-2">
+                      <Edit className="h-4 w-4 mr-1.5" />
+                      Cadastro
                     </TabsTrigger>
                   </TabsList>
 

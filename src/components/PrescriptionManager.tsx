@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Plus, 
@@ -12,9 +12,10 @@ import {
   Download, 
   Printer,
   Eye,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
-import { usePrescriptions, Prescription, Medication } from '@/hooks/usePrescriptions';
+import { usePrescriptions, useDeletePrescription, Prescription, Medication } from '@/hooks/usePrescriptions';
 import AddPrescriptionDialog from './AddPrescriptionDialog';
 import { downloadPrescriptionPdf, printPrescriptionPdf } from '@/utils/prescriptionPdf';
 
@@ -31,9 +32,12 @@ interface PrescriptionManagerProps {
 
 export default function PrescriptionManager({ client }: PrescriptionManagerProps) {
   const { data: prescriptions, isLoading } = usePrescriptions(client.id);
+  const deletePrescription = useDeletePrescription();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
+  const [prescriptionToDelete, setPrescriptionToDelete] = useState<Prescription | null>(null);
 
   const handleView = (prescription: Prescription) => {
     setSelectedPrescription(prescription);
@@ -48,6 +52,23 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
   const handlePrint = async (prescription: Prescription) => {
     const professionalName = prescription.employee?.name || 'Profissional';
     await printPrescriptionPdf(prescription, client, professionalName);
+  };
+
+  const handleDeleteClick = (prescription: Prescription) => {
+    setPrescriptionToDelete(prescription);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!prescriptionToDelete) return;
+    
+    await deletePrescription.mutateAsync({
+      id: prescriptionToDelete.id,
+      clientId: client.id
+    });
+    
+    setDeleteDialogOpen(false);
+    setPrescriptionToDelete(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -148,7 +169,7 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-auto">
+                  <div className="flex items-center gap-1 ml-auto">
                     <Button variant="ghost" size="sm" onClick={() => handleView(prescription)}>
                       <Eye className="h-4 w-4 mr-1" />
                       Ver
@@ -159,6 +180,14 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handlePrint(prescription)}>
                       <Printer className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteClick(prescription)}
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -258,6 +287,42 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Excluir Receita
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta receita? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {prescriptionToDelete && (
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                Receita de <strong>{formatDate(prescriptionToDelete.prescription_date)}</strong> com {prescriptionToDelete.medications.length} medicamento(s).
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmDelete}
+              disabled={deletePrescription.isPending}
+            >
+              {deletePrescription.isPending ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
