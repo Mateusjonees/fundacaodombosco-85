@@ -10,10 +10,8 @@ interface Client {
 }
 
 type PrescriptionPdfOptions = {
-  // Move and scale the background image slightly to avoid printer cutting
-  letterheadOffsetXmm?: number;
+  // Move the background image slightly to avoid printer cutting
   letterheadOffsetYmm?: number;
-  letterheadScale?: number;
 };
 
 // Helper to load image as base64
@@ -53,20 +51,9 @@ export const generatePrescriptionPdf = async (
 
   const addLetterhead = () => {
     if (!timbradoBase64) return;
-
-    // Defaults tuned to keep the footer/logo from being cut on most printers
-    const offsetX = options?.letterheadOffsetXmm ?? 0;
-    const offsetY = options?.letterheadOffsetYmm ?? -25;
-    const scale = options?.letterheadScale ?? 0.96;
-
-    const scaledWidth = pageWidth * scale;
-    const scaledHeight = pageHeight * scale;
-
-    // Center the letterhead on the page, then apply offsets
-    const x = (pageWidth - scaledWidth) / 2 + offsetX;
-    const y = (pageHeight - scaledHeight) / 2 + offsetY;
-
-    doc.addImage(timbradoBase64, 'JPEG', x, y, scaledWidth, scaledHeight);
+    // Timbrado ocupa 100% da página, sem escala, apenas offset vertical opcional
+    const offsetY = options?.letterheadOffsetYmm ?? 0;
+    doc.addImage(timbradoBase64, 'JPEG', 0, offsetY, pageWidth, pageHeight);
   };
 
   const addLogo = () => {
@@ -96,7 +83,7 @@ export const generatePrescriptionPdf = async (
   }
 
   // Title - RECEITUÁRIO (below logo)
-  yPosition = 45;
+  yPosition = 40;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 102, 153);
@@ -243,7 +230,7 @@ export const generatePrescriptionPdf = async (
   }
 
   // Signature area - positioned above the footer graphics
-  yPosition = Math.max(yPosition + 20, 180);
+  yPosition = Math.max(yPosition + 25, 195);
   
   // Ensure signature doesn't overlap with footer
   if (yPosition > maxContentY) {
@@ -288,10 +275,9 @@ export const printPrescriptionPdf = async (
   professionalName: string,
   professionalLicense?: string
 ) => {
-  // Tune letterhead position/scale for printing (avoid cutting on paper)
+  // Timbrado em tela cheia, sem offset (ajustar se a impressora cortar)
   const doc = await generatePrescriptionPdf(prescription, client, professionalName, professionalLicense, {
-    letterheadOffsetYmm: -30,
-    letterheadScale: 0.94,
+    letterheadOffsetYmm: 0,
   });
   const pdfBlob = doc.output('blob');
   const url = URL.createObjectURL(pdfBlob);
