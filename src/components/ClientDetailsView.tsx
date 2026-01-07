@@ -53,6 +53,7 @@ import ServiceHistory from './ServiceHistory';
 import ClientPaymentManager from './ClientPaymentManager';
 import PrescriptionManager from './PrescriptionManager';
 import AddAnamnesisDialog from './AddAnamnesisDialog';
+import ClientLaudoManager from './ClientLaudoManager';
 
 interface Client {
   id: string;
@@ -1299,7 +1300,7 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
             <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">
                 <Tabs defaultValue="clinical" className="w-full">
-                  <TabsList className="grid w-full grid-cols-5 mb-6">
+                  <TabsList className="grid w-full grid-cols-6 mb-6">
                     <TabsTrigger value="clinical" className="text-xs md:text-sm">
                       <ClipboardList className="h-4 w-4 mr-1 hidden md:inline" />
                       Anamnese
@@ -1311,6 +1312,10 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                     <TabsTrigger value="prescriptions" className="text-xs md:text-sm">
                       <Pill className="h-4 w-4 mr-1 hidden md:inline" />
                       Receita
+                    </TabsTrigger>
+                    <TabsTrigger value="laudos" className="text-xs md:text-sm">
+                      <FileCheck2 className="h-4 w-4 mr-1 hidden md:inline" />
+                      Laudos
                     </TabsTrigger>
                     <TabsTrigger value="financial" className="text-xs md:text-sm">
                       <CreditCard className="h-4 w-4 mr-1 hidden md:inline" />
@@ -1576,6 +1581,11 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                   {/* Prescriptions Tab */}
                   <TabsContent value="prescriptions">
                     <PrescriptionManager client={client} />
+                  </TabsContent>
+
+                  {/* Laudos Tab */}
+                  <TabsContent value="laudos">
+                    <ClientLaudoManager client={client} />
                   </TabsContent>
 
                   {/* Financial Tab */}

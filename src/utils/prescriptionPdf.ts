@@ -72,6 +72,13 @@ export const generatePrescriptionPdf = async (
   doc.setFont('helvetica', 'bold');
   doc.text('RECEITUÁRIO', pageWidth / 2, yPosition, { align: 'center' });
 
+  // Service type badge
+  yPosition += 8;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  const serviceTypeText = prescription.service_type === 'sus' ? 'ATENDIMENTO SUS' : 'ATENDIMENTO PRIVATIVO';
+  doc.text(serviceTypeText, pageWidth / 2, yPosition, { align: 'center' });
+
   // Patient info
   yPosition += 15;
   doc.setFontSize(10);

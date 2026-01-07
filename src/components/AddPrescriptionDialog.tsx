@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Pill } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCreatePrescription, Medication } from '@/hooks/usePrescriptions';
@@ -28,6 +29,7 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
   const createPrescription = useCreatePrescription();
   
   const [prescriptionDate, setPrescriptionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [serviceType, setServiceType] = useState<'sus' | 'private'>('private');
   const [diagnosis, setDiagnosis] = useState('');
   const [medications, setMedications] = useState<Medication[]>([{ ...emptyMedication }]);
   const [generalInstructions, setGeneralInstructions] = useState('');
@@ -66,11 +68,13 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
       diagnosis: diagnosis || undefined,
       general_instructions: generalInstructions || undefined,
       follow_up_notes: followUpNotes || undefined,
-      status: 'active'
+      status: 'active',
+      service_type: serviceType
     });
 
     // Reset form
     setPrescriptionDate(new Date().toISOString().split('T')[0]);
+    setServiceType('private');
     setDiagnosis('');
     setMedications([{ ...emptyMedication }]);
     setGeneralInstructions('');
@@ -89,7 +93,7 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Data e Diagnóstico */}
+          {/* Data, Tipo de Atendimento e Diagnóstico */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="prescription-date">Data da Prescrição</Label>
@@ -99,6 +103,18 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
                 value={prescriptionDate}
                 onChange={(e) => setPrescriptionDate(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="service-type">Tipo de Atendimento</Label>
+              <Select value={serviceType} onValueChange={(v: 'sus' | 'private') => setServiceType(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">Privativo</SelectItem>
+                  <SelectItem value="sus">SUS</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
