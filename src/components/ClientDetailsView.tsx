@@ -43,12 +43,14 @@ import {
   ClipboardCheck,
   FileCheck2,
   AlertCircle,
-  Pill
+  Pill,
+  ClipboardList
 } from 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
 import ClientPaymentManager from './ClientPaymentManager';
 import PrescriptionManager from './PrescriptionManager';
+import AddAnamnesisDialog from './AddAnamnesisDialog';
 
 interface Client {
   id: string;
@@ -118,6 +120,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const [userProfile, setUserProfile] = useState<any>(null);
   const [newNote, setNewNote] = useState('');
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
+  const [addAnamnesisDialogOpen, setAddAnamnesisDialogOpen] = useState(false);
   const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState('');
@@ -1249,8 +1252,8 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                 <Tabs defaultValue="clinical" className="w-full">
                   <TabsList className="grid w-full grid-cols-5 mb-6">
                     <TabsTrigger value="clinical" className="text-xs md:text-sm">
-                      <Stethoscope className="h-4 w-4 mr-1 hidden md:inline" />
-                      Clínico
+                      <ClipboardList className="h-4 w-4 mr-1 hidden md:inline" />
+                      Anamnese
                     </TabsTrigger>
                     <TabsTrigger value="history" className="text-xs md:text-sm">
                       <Activity className="h-4 w-4 mr-1 hidden md:inline" />
@@ -1426,47 +1429,25 @@ Relatório gerado em: ${new Date().toLocaleString('pt-BR')}
                       </Card>
                     </div>
 
-                    {/* Notes Section */}
+                    {/* Anamnesis Section */}
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="font-medium flex items-center gap-2">
                           <FileText className="h-4 w-4" />
                           Evolução do Atendimento
                         </h4>
-                        <Dialog open={addNoteDialogOpen} onOpenChange={setAddNoteDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button size="sm">
-                              <Plus className="h-4 w-4 mr-2" />
-                              Nova Nota
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Adicionar Nova Nota</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 pt-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="newNote">Nota</Label>
-                                <Textarea
-                                  id="newNote"
-                                  value={newNote}
-                                  onChange={(e) => setNewNote(e.target.value)}
-                                  placeholder="Digite sua nota aqui..."
-                                  rows={5}
-                                />
-                              </div>
-                              <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setAddNoteDialogOpen(false)}>
-                                  Cancelar
-                                </Button>
-                                <Button onClick={handleAddNote} disabled={loading || !newNote.trim()}>
-                                  {loading ? 'Salvando...' : 'Salvar'}
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                        <Button size="sm" onClick={() => setAddAnamnesisDialogOpen(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Anamnese
+                        </Button>
                       </div>
+
+                      <AddAnamnesisDialog
+                        open={addAnamnesisDialogOpen}
+                        onOpenChange={setAddAnamnesisDialogOpen}
+                        clientId={client.id}
+                        onSuccess={loadNotes}
+                      />
                       
                       {notes.length > 0 ? (
                         <div className="space-y-3 max-h-[400px] overflow-y-auto">
