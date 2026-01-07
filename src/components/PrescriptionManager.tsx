@@ -40,14 +40,14 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
     setViewDialogOpen(true);
   };
 
-  const handleDownload = (prescription: Prescription) => {
+  const handleDownload = async (prescription: Prescription) => {
     const professionalName = prescription.employee?.name || 'Profissional';
-    downloadPrescriptionPdf(prescription, client, professionalName);
+    await downloadPrescriptionPdf(prescription, client, professionalName);
   };
 
-  const handlePrint = (prescription: Prescription) => {
+  const handlePrint = async (prescription: Prescription) => {
     const professionalName = prescription.employee?.name || 'Profissional';
-    printPrescriptionPdf(prescription, client, professionalName);
+    await printPrescriptionPdf(prescription, client, professionalName);
   };
 
   const formatDate = (dateString: string) => {
