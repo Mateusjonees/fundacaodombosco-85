@@ -1,14 +1,13 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   console.log('Edge function create-users invoked');
@@ -16,13 +15,7 @@ serve(async (req) => {
   try {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const authHeader = req.headers.get('Authorization');
@@ -43,24 +36,23 @@ serve(async (req) => {
       );
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('employee_role')
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile || profile.employee_role !== 'director') {
+    if (!profile || profile.employee_role !== 'director') {
       return new Response(
-        JSON.stringify({ error: 'Insufficient permissions. Only directors can create users.' }),
+        JSON.stringify({ error: 'Only directors can create users' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get user data from request body
     const body = await req.json();
     console.log('Request body:', { ...body, password: '***' });
     
-    const { email, password, name, employee_role, phone, department } = body;
+    const { email, password, name, employee_role, phone, department, unit, units, document_cpf } = body;
 
     if (!email || !password || !name || !employee_role) {
       return new Response(
@@ -69,21 +61,15 @@ serve(async (req) => {
       );
     }
 
-    // Create user using admin API
     const { data: createdUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: {
-        name,
-        employee_role,
-        phone,
-        department
-      }
+      user_metadata: { name, employee_role, phone, department }
     });
 
     if (createError) {
-      console.error('Error creating user:', createError);
+      console.error('Error creating user:', createError.message);
       return new Response(
         JSON.stringify({ error: createError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -91,31 +77,31 @@ serve(async (req) => {
     }
 
     if (!createdUser.user) {
-      console.error('No user created');
       return new Response(
         JSON.stringify({ error: 'Failed to create user' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User created successfully:', createdUser.user.id);
+    console.log('User created:', createdUser.user.id);
 
-    // Update profile with explicit employee_role casting and must_change_password
     const { error: profileUpdateError } = await supabaseAdmin
       .from('profiles')
       .update({
         name,
         phone: phone || null,
         department: department || null,
-        employee_role: employee_role,
+        employee_role,
+        unit: unit || null,
+        units: units || null,
+        document_cpf: document_cpf || null,
         is_active: true,
         must_change_password: true
       })
       .eq('user_id', createdUser.user.id);
 
     if (profileUpdateError) {
-      console.error('Error updating profile:', profileUpdateError);
-      // Try to delete the user if profile update fails
+      console.error('Error updating profile:', profileUpdateError.message);
       await supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
       return new Response(
         JSON.stringify({ error: `Failed to update profile: ${profileUpdateError.message}` }),
@@ -139,7 +125,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
