@@ -167,6 +167,15 @@ export default function CompleteAttendanceDialog({
     setLoading(true);
     
     try {
+      // Buscar unidade do cliente para verificar se é Atendimento Floresta
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('unit')
+        .eq('id', schedule.client_id)
+        .maybeSingle();
+
+      const isAtendimentoFloresta = clientData?.unit === 'atendimento_floresta';
+
       // Buscar profissional
       const { data: professionalProfile } = await supabase
         .from('profiles')
@@ -235,21 +244,26 @@ export default function CompleteAttendanceDialog({
         }
       }
 
+      // Definir status baseado na unidade
+      const scheduleStatus = isAtendimentoFloresta ? 'completed' : 'pending_validation';
+      const validationStatus = isAtendimentoFloresta ? 'validated' : 'pending_validation';
+      const now = new Date().toISOString();
+
       // Atualizar schedule
       await supabase
         .from('schedules')
         .update({ 
-          status: 'pending_validation',
+          status: scheduleStatus,
           session_notes: attendanceData.clinicalObservations,
           session_amount: attendanceData.sessionValue,
           payment_method: attendanceData.paymentMethod,
-          completed_at: new Date().toISOString(),
+          completed_at: now,
           completed_by: user.id
         })
         .eq('id', schedule.id);
 
       // Criar attendance_report
-      await supabase.from('attendance_reports').insert({
+      const { data: attendanceReport } = await supabase.from('attendance_reports').insert({
         schedule_id: schedule.id,
         client_id: schedule.client_id,
         employee_id: schedule.employee_id,
@@ -272,8 +286,11 @@ export default function CompleteAttendanceDialog({
         created_by: user.id,
         completed_by: user.id,
         completed_by_name: completedByName,
-        validation_status: 'pending_validation'
-      });
+        validation_status: validationStatus,
+        validated_at: isAtendimentoFloresta ? now : null,
+        validated_by: isAtendimentoFloresta ? user.id : null,
+        validated_by_name: isAtendimentoFloresta ? completedByName : null
+      }).select('id').maybeSingle();
 
       // Upsert employee_report
       await supabase
@@ -302,10 +319,26 @@ export default function CompleteAttendanceDialog({
           follow_up_needed: !!attendanceData.nextSessionPlan,
           completed_by: user.id,
           completed_by_name: completedByName,
-          validation_status: 'pending_validation'
+          validation_status: validationStatus,
+          validated_at: isAtendimentoFloresta ? now : null,
+          validated_by: isAtendimentoFloresta ? user.id : null,
+          validated_by_name: isAtendimentoFloresta ? completedByName : null
         }, {
           onConflict: 'schedule_id'
         });
+
+      // Se for Atendimento Floresta, processar estoque e financeiro automaticamente
+      if (isAtendimentoFloresta && attendanceReport?.id) {
+        // Chamar RPC para validar e processar materiais/financeiro
+        await supabase.rpc('validate_attendance_report', {
+          p_attendance_report_id: attendanceReport.id,
+          p_action: 'validate',
+          p_professional_amount: attendanceData.professionalValue || 0,
+          p_foundation_amount: attendanceData.institutionValue || 0,
+          p_total_amount: attendanceData.sessionValue || 0,
+          p_payment_method: attendanceData.paymentMethod || 'dinheiro'
+        });
+      }
 
       // Atualizar cliente
       const clientUpdate: any = {
@@ -333,8 +366,10 @@ export default function CompleteAttendanceDialog({
       setAttachedFiles([]);
       
       toast({
-        title: "Atendimento Enviado!",
-        description: "Atendimento enviado para revisão do coordenador.",
+        title: isAtendimentoFloresta ? "Atendimento Finalizado!" : "Atendimento Enviado!",
+        description: isAtendimentoFloresta 
+          ? "Atendimento concluído e registrado no histórico do paciente." 
+          : "Atendimento enviado para revisão do coordenador.",
       });
       
       onClose();
