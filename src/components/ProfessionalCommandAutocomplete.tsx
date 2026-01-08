@@ -55,7 +55,34 @@ export function ProfessionalCommandAutocomplete({
     return () => clearTimeout(timeoutId);
   }, [searchTerm, roleFilter, unitFilter]);
 
-  // Update display value when selection changes
+  // Load professional name when value is set externally (e.g., from URL params)
+  useEffect(() => {
+    const loadSelectedProfessional = async () => {
+      if (value && !displayValue) {
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('id, user_id, name, email, phone, employee_role, unit, department')
+            .eq('user_id', value)
+            .single();
+          
+          if (data) {
+            setDisplayValue(data.name);
+            setProfessionals(prev => {
+              const exists = prev.some(p => p.user_id === data.user_id);
+              return exists ? prev : [...prev, data];
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao carregar profissional selecionado:', error);
+        }
+      }
+    };
+    
+    loadSelectedProfessional();
+  }, [value]);
+
+  // Update display value when selection changes from list
   useEffect(() => {
     const selectedProfessional = professionals.find(prof => prof.user_id === value);
     if (selectedProfessional && value) {
