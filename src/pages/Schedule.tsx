@@ -141,24 +141,33 @@ export default function Schedule() {
 
   useEffect(() => {
     // Verificar se há parâmetros na URL para pré-preencher o formulário
+    // Aguardar userProfile carregar para preencher profissional e unidade corretamente
+    if (!userProfile) return;
+    
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = urlParams.get('client_id') || urlParams.get('client');
     
     if (clientId) {
+      // Preencher com o profissional logado e sua unidade
       setNewAppointment(prev => ({
         ...prev,
-        client_id: clientId
+        client_id: clientId,
+        employee_id: userProfile.user_id, // Usar user_id do profissional logado
+        unit: userProfile.unit || 'madre' // Usar unidade do profissional
       }));
       setIsDialogOpen(true);
+      
+      // Limpar URL params após usar
+      window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+  }, [userProfile]);
 
   // Auto-selecionar o profissional para usuários não-administrativos
   useEffect(() => {
     if (userProfile && !isAdmin) {
       setNewAppointment(prev => ({
         ...prev,
-        employee_id: userProfile.id
+        employee_id: userProfile.user_id // Usar user_id ao invés de id
       }));
     }
   }, [userProfile, isAdmin]);

@@ -51,7 +51,34 @@ export function PatientCommandAutocomplete({
     return () => clearTimeout(timeoutId);
   }, [searchTerm, unitFilter]);
 
-  // Update display value when selection changes
+  // Load client name when value is set externally (e.g., from URL params)
+  useEffect(() => {
+    const loadSelectedClient = async () => {
+      if (value && !displayValue) {
+        try {
+          const { data } = await supabase
+            .from('clients')
+            .select('id, name, cpf, phone, email, unit')
+            .eq('id', value)
+            .single();
+          
+          if (data) {
+            setDisplayValue(data.name);
+            setClients(prev => {
+              const exists = prev.some(c => c.id === data.id);
+              return exists ? prev : [...prev, data];
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao carregar paciente selecionado:', error);
+        }
+      }
+    };
+    
+    loadSelectedClient();
+  }, [value]);
+
+  // Update display value when selection changes from list
   useEffect(() => {
     const selectedClient = clients.find(client => client.id === value);
     if (selectedClient && value) {
