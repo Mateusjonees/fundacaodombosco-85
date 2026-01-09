@@ -224,7 +224,7 @@ export const MainApp = () => {
                     } />
                     
                     <Route path="/schedule-control" element={
-                      <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}>
+                      <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}>
                         <ScheduleControl />
                       </ProtectedRoute>
                     } />
