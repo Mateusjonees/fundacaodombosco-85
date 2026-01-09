@@ -96,13 +96,12 @@ export const useAppPreload = () => {
       queryClient.prefetchQuery({
         queryKey: ['schedules-week', weekStart, weekEnd, userId],
         queryFn: async () => {
-          let query = supabase
-            .from('schedules')
-            .select('id, client_id, employee_id, schedule_date, start_time, end_time, status, unit, service_type')
-            .gte('schedule_date', weekStart)
-            .lte('schedule_date', weekEnd)
-            .order('schedule_date')
-            .order('start_time');
+        let query = supabase
+          .from('schedules')
+          .select('id, client_id, employee_id, start_time, end_time, status, unit, service_type')
+          .gte('start_time', `${weekStart}T00:00:00`)
+          .lte('start_time', `${weekEnd}T23:59:59`)
+          .order('start_time');
 
           if (!isManager) {
             query = query.eq('employee_id', userId);
