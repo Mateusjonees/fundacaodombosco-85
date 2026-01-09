@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { Medication, Prescription } from '@/hooks/usePrescriptions';
 import prescriptionTimbrado from '@/assets/prescription-timbrado-full.jpg';
 import fundacaoLogo from '@/assets/fundacao-dom-bosco-saude-logo.png';
+import { formatDateBR } from '@/lib/utils';
 
 interface Client {
   name: string;
@@ -123,7 +124,7 @@ export const generatePrescriptionPdf = async (
   }
 
   if (client.birth_date) {
-    const birthDate = new Date(client.birth_date).toLocaleDateString('pt-BR');
+    const birthDate = formatDateBR(client.birth_date);
     doc.setFont('helvetica', 'bold');
     doc.text('Data de Nascimento:', margin + 70, yPosition);
     doc.setFont('helvetica', 'normal');

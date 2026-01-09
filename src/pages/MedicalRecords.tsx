@@ -11,6 +11,7 @@ import { AddMedicalRecordDialog } from '@/components/AddMedicalRecordDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebouncedValue } from '@/hooks/useDebounce';
 import { useQuery } from '@tanstack/react-query';
+import { formatDateBR } from '@/lib/utils';
 
 export default function MedicalRecords() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -230,7 +231,7 @@ export default function MedicalRecords() {
                       {selectedClient.birth_date && (
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {new Date(selectedClient.birth_date).toLocaleDateString('pt-BR')}
+                          {formatDateBR(selectedClient.birth_date)}
                         </span>
                       )}
                       {selectedClient.cpf && <span>CPF: {selectedClient.cpf}</span>}
