@@ -522,6 +522,17 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   };
 
   const formatDate = (dateString: string) => {
+    // Para datas puras (YYYY-MM-DD), evita problema de timezone
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    // Para datas com timestamp
+    if (dateString.includes('T')) {
+      const datePart = dateString.split('T')[0];
+      const [year, month, day] = datePart.split('-');
+      return `${day}/${month}/${year}`;
+    }
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
@@ -939,13 +950,27 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   };
 
   const calculateAge = (birthDate: string) => {
+    // Extrair ano, mês e dia diretamente da string para evitar problema de timezone
+    const match = birthDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return 0;
+    
+    const [, yearStr, monthStr, dayStr] = match;
+    const birthYear = parseInt(yearStr, 10);
+    const birthMonth = parseInt(monthStr, 10);
+    const birthDay = parseInt(dayStr, 10);
+    
     const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth() + 1;
+    const todayDay = today.getDate();
+    
+    let age = todayYear - birthYear;
+    
+    // Se ainda não fez aniversário este ano, subtrai 1
+    if (todayMonth < birthMonth || (todayMonth === birthMonth && todayDay < birthDay)) {
       age--;
     }
+    
     return age;
   };
 
