@@ -213,6 +213,29 @@ export default function Schedule() {
         return date.toISOString();
       };
 
+      // Validar se as datas foram preenchidas
+      if (!newAppointment.start_time || !newAppointment.end_time) {
+        toast({
+          variant: "destructive",
+          title: "Erro de Validação",
+          description: "Por favor, preencha a data e hora de início e fim.",
+        });
+        return;
+      }
+
+      // Validar se a data de fim é posterior à data de início
+      const startDate = new Date(newAppointment.start_time);
+      const endDate = new Date(newAppointment.end_time);
+      
+      if (endDate <= startDate) {
+        toast({
+          variant: "destructive",
+          title: "Erro de Data",
+          description: "A data e hora de fim deve ser posterior à data e hora de início.",
+        });
+        return;
+      }
+
       const appointmentData = {
         client_id: newAppointment.client_id,
         employee_id: newAppointment.employee_id,
