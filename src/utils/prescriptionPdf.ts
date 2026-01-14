@@ -214,12 +214,12 @@ export const generatePrescriptionPdf = async (
 
   // General instructions
   if (prescription.general_instructions) {
-    yPosition += 5;
+    yPosition += 12;
     doc.setLineWidth(0.3);
     doc.setDrawColor(200, 200, 200);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
     
-    yPosition += 8;
+    yPosition += 6;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 102, 153);
     doc.text('ORIENTAÇÕES GERAIS:', margin, yPosition);
