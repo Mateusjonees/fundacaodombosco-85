@@ -46,6 +46,14 @@ export const generatePrescriptionPdf = async (
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
+  const header = {
+    logoWidth: 35,
+    logoHeight: 28,
+    logoY: 5,
+    titleGapY: 6,
+  };
+  const headerTitleY = header.logoY + header.logoHeight + header.titleGapY;
+
   let yPosition = 20;
 
   // Full page letterhead - no margins
@@ -66,18 +74,28 @@ export const generatePrescriptionPdf = async (
 
   const addLogoAndTitle = () => {
     if (!logoBase64) return;
+
     // Logo centralizado com título RECEITUÁRIO abaixo
-    const logoWidth = 35;
-    const logoHeight = 28;
-    const logoX = (pageWidth - logoWidth) / 2;
-    const logoY = 5;
-    doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
-    
+    const logoX = (pageWidth - header.logoWidth) / 2;
+    doc.addImage(logoBase64, 'PNG', logoX, header.logoY, header.logoWidth, header.logoHeight);
+
     // Título RECEITUÁRIO centralizado logo abaixo da logo
+    const titleText = 'RECEITUÁRIO';
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
+
+    // "Máscara" branca para evitar que elementos do timbrado passem por cima do texto
+    const titleWidth = doc.getTextWidth(titleText);
+    const titlePadX = 6;
+    const titleRectW = titleWidth + titlePadX * 2;
+    const titleRectH = 8;
+    const titleRectX = (pageWidth - titleRectW) / 2;
+    const titleRectY = headerTitleY - 6;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(titleRectX, titleRectY, titleRectW, titleRectH, 'F');
+
     doc.setTextColor(0, 102, 153);
-    doc.text('RECEITUÁRIO', pageWidth / 2, logoY + logoHeight + 6, { align: 'center' });
+    doc.text(titleText, pageWidth / 2, headerTitleY, { align: 'center' });
   };
 
   // Add letterhead background (full page)
@@ -96,13 +114,11 @@ export const generatePrescriptionPdf = async (
     console.error('Error loading logo:', error);
   }
 
-  // Service type label removed (SUS/Privativo)
-  yPosition += 10;
+  // Iniciar conteúdo abaixo do título (evita linha passando pelo "RECEITUÁRIO")
+  yPosition = Math.max(yPosition, headerTitleY + 12);
   doc.setTextColor(0, 0, 0);
 
-
   // Line separator
-  yPosition += 6;
   doc.setDrawColor(0, 102, 153);
   doc.setLineWidth(0.5);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
