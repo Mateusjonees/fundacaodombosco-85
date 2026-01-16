@@ -64,10 +64,20 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
           const clientIds = clientsInUnit?.map(c => c.id) || [];
           if (clientIds.length > 0) query = query.in('client_id', clientIds);
         } else if (userProfile.employee_role === 'coordinator_floresta') {
+          // Coordinator floresta sees only floresta unit appointments
           const { data: clientsInUnit } = await supabase
             .from('clients')
             .select('id')
             .eq('unit', 'floresta')
+            .eq('is_active', true);
+          const clientIds = clientsInUnit?.map(c => c.id) || [];
+          if (clientIds.length > 0) query = query.in('client_id', clientIds);
+        } else if (userProfile.employee_role === 'coordinator_atendimento_floresta') {
+          // Coordinator atendimento floresta (Neuro) sees only atendimento_floresta unit appointments
+          const { data: clientsInUnit } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('unit', 'atendimento_floresta')
             .eq('is_active', true);
           const clientIds = clientsInUnit?.map(c => c.id) || [];
           if (clientIds.length > 0) query = query.in('client_id', clientIds);
