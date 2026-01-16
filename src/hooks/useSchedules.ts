@@ -56,38 +56,36 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
       // Aplicar filtros de permissão baseados no role
       if (userProfile) {
         if (userProfile.employee_role === 'coordinator_madre') {
+          // Coordenador Madre vê todos os pacientes da unidade madre (ativos e inativos)
           const { data: clientsInUnit } = await supabase
             .from('clients')
             .select('id')
-            .or('unit.eq.madre,unit.is.null')
-            .eq('is_active', true);
+            .or('unit.eq.madre,unit.is.null');
           const clientIds = clientsInUnit?.map(c => c.id) || [];
           if (clientIds.length > 0) query = query.in('client_id', clientIds);
         } else if (userProfile.employee_role === 'coordinator_floresta') {
-          // Coordinator floresta sees only floresta unit appointments
+          // Coordenador Floresta vê todos os pacientes da unidade floresta (ativos e inativos)
           const { data: clientsInUnit } = await supabase
             .from('clients')
             .select('id')
-            .eq('unit', 'floresta')
-            .eq('is_active', true);
+            .eq('unit', 'floresta');
           const clientIds = clientsInUnit?.map(c => c.id) || [];
           if (clientIds.length > 0) query = query.in('client_id', clientIds);
         } else if (userProfile.employee_role === 'coordinator_atendimento_floresta') {
-          // Coordinator atendimento floresta (Neuro) sees only atendimento_floresta unit appointments
+          // Coordenador Atendimento Floresta (Neuro) vê todos os pacientes da unidade (ativos e inativos)
           const { data: clientsInUnit } = await supabase
             .from('clients')
             .select('id')
-            .eq('unit', 'atendimento_floresta')
-            .eq('is_active', true);
+            .eq('unit', 'atendimento_floresta');
           const clientIds = clientsInUnit?.map(c => c.id) || [];
           if (clientIds.length > 0) query = query.in('client_id', clientIds);
         } else if (userProfile.employee_role === 'receptionist') {
+          // Recepcionista vê todos os pacientes da sua unidade (ativos e inativos)
           const userUnit = userProfile.unit || 'madre';
           const { data: clientsInUnit } = await supabase
             .from('clients')
             .select('id')
-            .eq('unit', userUnit)
-            .eq('is_active', true);
+            .eq('unit', userUnit);
           const clientIds = clientsInUnit?.map(c => c.id) || [];
           if (clientIds.length > 0) query = query.in('client_id', clientIds);
         } else if (userProfile.employee_role !== 'director') {
