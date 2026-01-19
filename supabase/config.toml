@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.send-employee-confirmation]
 verify_jwt = false
+
+[functions.api-financeiro]
+verify_jwt = false
