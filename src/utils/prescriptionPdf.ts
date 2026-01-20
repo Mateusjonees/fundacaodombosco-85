@@ -35,6 +35,26 @@ const loadImageAsBase64 = (src: string): Promise<string> => {
   });
 };
 
+// Gera PDF com quadrado vazio para escrita manual (para impressão com matriz)
+export const generateBlankPrescriptionPdf = async (): Promise<jsPDF> => {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  
+  // Quadrado vazio centralizado para escrita manual
+  const boxX = margin;
+  const boxY = margin;
+  const boxWidth = pageWidth - (margin * 2);
+  const boxHeight = pageHeight - (margin * 2);
+  
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.rect(boxX, boxY, boxWidth, boxHeight);
+  
+  return doc;
+};
+
 export const generatePrescriptionPdf = async (
   prescription: Prescription,
   client: Client,
@@ -342,6 +362,105 @@ export const printPrescriptionPdf = async (
         }
       }
       // Limpar iframe após impressão
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }, 500);
+  };
+  
+  document.body.appendChild(iframe);
+};
+
+// Imprimir página em branco para uso com matriz pré-impressa
+export const printBlankPrescriptionPdf = async () => {
+  const doc = await generateBlankPrescriptionPdf();
+  
+  const pdfBlob = doc.output('blob');
+  const url = URL.createObjectURL(pdfBlob);
+  
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = 'none';
+  iframe.src = url;
+  
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (e) {
+        const printWindow = window.open(url);
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 500);
+          };
+        }
+      }
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }, 500);
+  };
+  
+  document.body.appendChild(iframe);
+};
+
+// Gerar PDF em branco para laudo (uso com matriz pré-impressa)
+export const generateBlankLaudoPdf = async (): Promise<jsPDF> => {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  
+  // Quadrado vazio centralizado para escrita manual
+  const boxX = margin;
+  const boxY = margin;
+  const boxWidth = pageWidth - (margin * 2);
+  const boxHeight = pageHeight - (margin * 2);
+  
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.rect(boxX, boxY, boxWidth, boxHeight);
+  
+  return doc;
+};
+
+export const printBlankLaudoPdf = async () => {
+  const doc = await generateBlankLaudoPdf();
+  
+  const pdfBlob = doc.output('blob');
+  const url = URL.createObjectURL(pdfBlob);
+  
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = 'none';
+  iframe.src = url;
+  
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (e) {
+        const printWindow = window.open(url);
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 500);
+          };
+        }
+      }
       setTimeout(() => {
         document.body.removeChild(iframe);
         URL.revokeObjectURL(url);
