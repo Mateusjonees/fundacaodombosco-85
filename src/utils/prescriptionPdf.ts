@@ -185,87 +185,113 @@ export const generatePrescriptionPdf = async (
   doc.setDrawColor(200, 200, 200);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
 
-  // Diagnosis - only if provided
-  if (prescription.diagnosis && prescription.diagnosis.trim()) {
-    yPosition += 8;
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 102, 153);
-    doc.text('Diagnóstico/Indicação:', margin, yPosition);
-    doc.setTextColor(0, 0, 0);
-    yPosition += 5;
-    doc.setFont('helvetica', 'normal');
-    const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - 2 * margin);
-    doc.text(diagnosisLines, margin, yPosition);
-    yPosition += diagnosisLines.length * 5;
-  }
-
-  // Uso Oral section
-  yPosition += 8;
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 102, 153);
-  doc.text('Uso Oral', margin, yPosition);
-  doc.setTextColor(0, 0, 0);
-  
-  yPosition += 6;
-  doc.setFontSize(10);
-
   // Max Y position before footer (leave space for footer graphics)
   const maxContentY = 200;
 
-  for (let index = 0; index < prescription.medications.length; index += 1) {
-    const med: Medication = prescription.medications[index];
-    // Check if we need a new page (leave space for footer)
-    if (yPosition > maxContentY) {
-      doc.addPage();
-      addLetterhead();
-      addLogoAndTitle();
-      yPosition = 50;
-    }
+  // Check if we have the new free-text format (general_instructions contains main content, medications is empty)
+  const isFreeTextFormat = (!prescription.medications || prescription.medications.length === 0) && prescription.general_instructions;
 
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${index + 1}. ${med.name}${med.dosage ? ' ' + med.dosage : ''}`, margin, yPosition);
-
-    yPosition += 6;
+  if (isFreeTextFormat) {
+    // New simplified format: just show the free text content
+    yPosition += 10;
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-
-    const details: string[] = [];
-    if (med.frequency) details.push(`Posologia: ${med.frequency}`);
-    if (med.duration) details.push(`Duração: ${med.duration}`);
-
-    if (details.length > 0) {
-      doc.text(details.join(' | '), margin + 5, yPosition);
-      yPosition += 5;
-    }
-
-    if (med.instructions) {
-      doc.setFont('helvetica', 'italic');
-      const instructionLines = doc.splitTextToSize(`Obs: ${med.instructions}`, pageWidth - 2 * margin - 5);
-      doc.text(instructionLines, margin + 5, yPosition);
-      yPosition += instructionLines.length * 5;
-    }
-
-    yPosition += 5;
-  }
-
-  // General instructions
-  if (prescription.general_instructions) {
-    yPosition += 18;
-    doc.setLineWidth(0.3);
-    doc.setDrawColor(200, 200, 200);
-    doc.line(margin, yPosition, pageWidth - margin, yPosition);
     
+    const contentLines = doc.splitTextToSize(prescription.general_instructions!, pageWidth - 2 * margin);
+    
+    for (let i = 0; i < contentLines.length; i++) {
+      // Check if we need a new page
+      if (yPosition > maxContentY) {
+        doc.addPage();
+        addLetterhead();
+        addLogoAndTitle();
+        yPosition = 50;
+      }
+      doc.text(contentLines[i], margin, yPosition);
+      yPosition += 6;
+    }
+  } else {
+    // Original format with structured medications
+    
+    // Diagnosis - only if provided
+    if (prescription.diagnosis && prescription.diagnosis.trim() && !prescription.diagnosis.startsWith('prescriptions/')) {
+      yPosition += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 102, 153);
+      doc.text('Diagnóstico/Indicação:', margin, yPosition);
+      doc.setTextColor(0, 0, 0);
+      yPosition += 5;
+      doc.setFont('helvetica', 'normal');
+      const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - 2 * margin);
+      doc.text(diagnosisLines, margin, yPosition);
+      yPosition += diagnosisLines.length * 5;
+    }
+
+    // Uso Oral section
     yPosition += 8;
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 102, 153);
-    doc.text('ORIENTAÇÕES GERAIS:', margin, yPosition);
+    doc.text('Uso Oral', margin, yPosition);
     doc.setTextColor(0, 0, 0);
     
     yPosition += 6;
-    doc.setFont('helvetica', 'normal');
-    const instructionLines = doc.splitTextToSize(prescription.general_instructions, pageWidth - 2 * margin);
-    doc.text(instructionLines, margin, yPosition);
-    yPosition += instructionLines.length * 5;
+    doc.setFontSize(10);
+
+    for (let index = 0; index < prescription.medications.length; index += 1) {
+      const med: Medication = prescription.medications[index];
+      // Check if we need a new page (leave space for footer)
+      if (yPosition > maxContentY) {
+        doc.addPage();
+        addLetterhead();
+        addLogoAndTitle();
+        yPosition = 50;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${index + 1}. ${med.name}${med.dosage ? ' ' + med.dosage : ''}`, margin, yPosition);
+
+      yPosition += 6;
+      doc.setFont('helvetica', 'normal');
+
+      const details: string[] = [];
+      if (med.frequency) details.push(`Posologia: ${med.frequency}`);
+      if (med.duration) details.push(`Duração: ${med.duration}`);
+
+      if (details.length > 0) {
+        doc.text(details.join(' | '), margin + 5, yPosition);
+        yPosition += 5;
+      }
+
+      if (med.instructions) {
+        doc.setFont('helvetica', 'italic');
+        const instructionLines = doc.splitTextToSize(`Obs: ${med.instructions}`, pageWidth - 2 * margin - 5);
+        doc.text(instructionLines, margin + 5, yPosition);
+        yPosition += instructionLines.length * 5;
+      }
+
+      yPosition += 5;
+    }
+
+    // General instructions for old format
+    if (prescription.general_instructions) {
+      yPosition += 18;
+      doc.setLineWidth(0.3);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+      
+      yPosition += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 102, 153);
+      doc.text('ORIENTAÇÕES GERAIS:', margin, yPosition);
+      doc.setTextColor(0, 0, 0);
+      
+      yPosition += 6;
+      doc.setFont('helvetica', 'normal');
+      const instructionLines = doc.splitTextToSize(prescription.general_instructions, pageWidth - 2 * margin);
+      doc.text(instructionLines, margin, yPosition);
+      yPosition += instructionLines.length * 5;
+    }
   }
 
   // Follow-up notes

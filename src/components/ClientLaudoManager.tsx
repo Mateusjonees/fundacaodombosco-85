@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -17,9 +17,9 @@ import {
   Eye,
   FileText,
   Trash2,
-  Pencil,
   Upload,
-  Printer
+  Printer,
+  X
 } from 'lucide-react';
 import { useLaudos, useCreateLaudo, useDeleteLaudo, Laudo } from '@/hooks/useLaudos';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -57,12 +57,35 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
   const [selectedLaudo, setSelectedLaudo] = useState<Laudo | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Form state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Form state - simplified to just text + file
   const [laudoDate, setLaudoDate] = useState(new Date().toISOString().split('T')[0]);
   const [laudoType, setLaudoType] = useState('neuropsicologico');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [laudoText, setLaudoText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'Arquivo muito grande',
+          description: 'O arquivo deve ter no máximo 10MB.'
+        });
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleView = (laudo: Laudo) => {
     setSelectedLaudo(laudo);
@@ -125,7 +148,17 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
   };
 
   const handleSubmit = async () => {
-    if (!user || !title.trim()) return;
+    if (!user) return;
+
+    // Validate that there's content (text or file)
+    if (!laudoText.trim() && !selectedFile) {
+      toast({
+        variant: 'destructive',
+        title: 'Conteúdo obrigatório',
+        description: 'Escreva o conteúdo do laudo ou anexe um arquivo.'
+      });
+      return;
+    }
 
     setUploading(true);
     try {
@@ -144,13 +177,17 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
         if (uploadError) throw uploadError;
       }
 
+      // Generate a simple title based on type and date
+      const typeLabel = LAUDO_TYPES.find(t => t.value === laudoType)?.label || 'Laudo';
+      const generatedTitle = `${typeLabel} - ${new Date(laudoDate).toLocaleDateString('pt-BR')}`;
+
       await createLaudo.mutateAsync({
         client_id: client.id,
         employee_id: user.id,
         laudo_date: laudoDate,
         laudo_type: laudoType,
-        title: title.trim(),
-        description: description.trim() || undefined,
+        title: generatedTitle,
+        description: laudoText.trim() || undefined,
         file_path: filePath
       });
 
@@ -190,9 +227,11 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
   const resetForm = () => {
     setLaudoDate(new Date().toISOString().split('T')[0]);
     setLaudoType('neuropsicologico');
-    setTitle('');
-    setDescription('');
+    setLaudoText('');
     setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -364,39 +403,65 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
-              <Input
-                id="title"
-                placeholder="Ex: Laudo de Avaliação Neuropsicológica"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
+            {/* Caixa única de Laudo */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Laudo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Textarea
+                  placeholder="Escreva aqui o conteúdo do laudo..."
+                  value={laudoText}
+                  onChange={(e) => setLaudoText(e.target.value)}
+                  rows={10}
+                  className="resize-none"
+                />
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                placeholder="Descrição ou observações sobre o laudo..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="file">Arquivo (PDF, DOC)</Label>
-              <Input
-                id="file"
-                type="file"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                accept=".pdf,.doc,.docx"
-              />
-              <p className="text-xs text-muted-foreground">
-                Opcional: anexe o arquivo do laudo
-              </p>
-            </div>
+                {/* Upload de arquivo */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Ou anexe um arquivo</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Selecionar Arquivo
+                    </Button>
+                    {selectedFile && (
+                      <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                          onClick={handleRemoveFile}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Formatos aceitos: PDF, JPG, PNG, DOC, DOCX (máx. 10MB)
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <DialogFooter>
@@ -405,7 +470,7 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={uploading || !title.trim()}
+              disabled={uploading || (!laudoText.trim() && !selectedFile)}
             >
               {uploading ? 'Salvando...' : 'Salvar Laudo'}
             </Button>
