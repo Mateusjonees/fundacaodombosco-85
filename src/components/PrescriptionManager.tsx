@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { usePrescriptions, useDeletePrescription, Prescription, Medication } from '@/hooks/usePrescriptions';
 import AddPrescriptionDialog from './AddPrescriptionDialog';
-import { downloadPrescriptionPdf, printPrescriptionPdf } from '@/utils/prescriptionPdf';
+import { downloadPrescriptionPdf, printPrescriptionPdf, printBlankPrescriptionPdf } from '@/utils/prescriptionPdf';
 
 interface Client {
   id: string;
@@ -97,10 +97,16 @@ export default function PrescriptionManager({ client }: PrescriptionManagerProps
           <h3 className="text-lg font-semibold">Receitas</h3>
           <Badge variant="secondary">{prescriptions?.length || 0}</Badge>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Receita
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => printBlankPrescriptionPdf()} className="gap-2">
+            <Printer className="h-4 w-4" />
+            Imprimir em Branco
+          </Button>
+          <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Receita
+          </Button>
+        </div>
       </div>
 
       {/* Empty State */}

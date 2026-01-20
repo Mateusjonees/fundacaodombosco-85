@@ -18,12 +18,14 @@ import {
   FileText,
   Trash2,
   Pencil,
-  Upload
+  Upload,
+  Printer
 } from 'lucide-react';
 import { useLaudos, useCreateLaudo, useDeleteLaudo, Laudo } from '@/hooks/useLaudos';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { printBlankLaudoPdf } from '@/utils/prescriptionPdf';
 
 interface Client {
   id: string;
@@ -223,10 +225,16 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
           <h3 className="text-lg font-semibold">Laudos</h3>
           <Badge variant="secondary">{laudos?.length || 0}</Badge>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Laudo
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => printBlankLaudoPdf()} className="gap-2">
+            <Printer className="h-4 w-4" />
+            Imprimir em Branco
+          </Button>
+          <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Laudo
+          </Button>
+        </div>
       </div>
 
       {/* Empty State */}
