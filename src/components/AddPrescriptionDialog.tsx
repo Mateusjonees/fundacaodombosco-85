@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Pill } from 'lucide-react';
+import { Pill, Upload, X, FileText } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { useCreatePrescription, Medication } from '@/hooks/usePrescriptions';
+import { useCreatePrescription } from '@/hooks/usePrescriptions';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddPrescriptionDialogProps {
   open: boolean;
@@ -17,76 +19,121 @@ interface AddPrescriptionDialogProps {
   clientId: string;
 }
 
-const emptyMedication: Medication = {
-  name: '',
-  dosage: '',
-  frequency: '',
-  duration: '',
-  instructions: ''
-};
-
 export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: AddPrescriptionDialogProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const createPrescription = useCreatePrescription();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [prescriptionDate, setPrescriptionDate] = useState(new Date().toISOString().split('T')[0]);
   const [serviceType, setServiceType] = useState<'sus' | 'private'>('private');
-  const [diagnosis, setDiagnosis] = useState('');
-  const [medications, setMedications] = useState<Medication[]>([{ ...emptyMedication }]);
-  const [generalInstructions, setGeneralInstructions] = useState('');
-  const [followUpNotes, setFollowUpNotes] = useState('');
+  const [prescriptionText, setPrescriptionText] = useState('');
   const [showPrescriptionDate, setShowPrescriptionDate] = useState(true);
   const [showPrintDate, setShowPrintDate] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleAddMedication = () => {
-    setMedications([...medications, { ...emptyMedication }]);
-  };
-
-  const handleRemoveMedication = (index: number) => {
-    if (medications.length > 1) {
-      setMedications(medications.filter((_, i) => i !== index));
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'Arquivo muito grande',
+          description: 'O arquivo deve ter no máximo 10MB.'
+        });
+        return;
+      }
+      setUploadedFile(file);
     }
   };
 
-  const handleMedicationChange = (index: number, field: keyof Medication, value: string) => {
-    const updated = [...medications];
-    updated[index] = { ...updated[index], [field]: value };
-    setMedications(updated);
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadFile = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${clientId}/${Date.now()}.${fileExt}`;
+    const filePath = `prescriptions/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from('client-documents')
+      .upload(filePath, file);
+
+    if (error) {
+      console.error('Error uploading file:', error);
+      return null;
+    }
+
+    return filePath;
   };
 
   const handleSubmit = async () => {
     if (!user) return;
 
-    // Validate at least one medication with name
-    const validMedications = medications.filter(m => m.name.trim());
-    if (validMedications.length === 0) {
+    // Validate that there's content (text or file)
+    if (!prescriptionText.trim() && !uploadedFile) {
+      toast({
+        variant: 'destructive',
+        title: 'Conteúdo obrigatório',
+        description: 'Escreva o conteúdo da receita ou anexe um arquivo.'
+      });
       return;
     }
 
-    await createPrescription.mutateAsync({
-      client_id: clientId,
-      employee_id: user.id,
-      prescription_date: prescriptionDate,
-      medications: validMedications,
-      diagnosis: diagnosis || undefined,
-      general_instructions: generalInstructions || undefined,
-      follow_up_notes: followUpNotes || undefined,
-      status: 'active',
-      service_type: serviceType,
-      show_prescription_date: showPrescriptionDate,
-      show_print_date: showPrintDate
-    });
+    setIsUploading(true);
 
-    // Reset form
-    setPrescriptionDate(new Date().toISOString().split('T')[0]);
-    setServiceType('private');
-    setDiagnosis('');
-    setMedications([{ ...emptyMedication }]);
-    setGeneralInstructions('');
-    setFollowUpNotes('');
-    setShowPrescriptionDate(true);
-    setShowPrintDate(false);
-    onOpenChange(false);
+    try {
+      let filePath: string | null = null;
+      
+      if (uploadedFile) {
+        filePath = await uploadFile(uploadedFile);
+        if (!filePath) {
+          toast({
+            variant: 'destructive',
+            title: 'Erro no upload',
+            description: 'Não foi possível fazer o upload do arquivo.'
+          });
+          setIsUploading(false);
+          return;
+        }
+      }
+
+      // Store the text content in general_instructions and file path in diagnosis (reusing field)
+      await createPrescription.mutateAsync({
+        client_id: clientId,
+        employee_id: user.id,
+        prescription_date: prescriptionDate,
+        medications: [], // Empty since we're using free text
+        general_instructions: prescriptionText || undefined,
+        diagnosis: filePath || undefined, // Reusing diagnosis field to store file path
+        status: 'active',
+        service_type: serviceType,
+        show_prescription_date: showPrescriptionDate,
+        show_print_date: showPrintDate
+      });
+
+      // Reset form
+      setPrescriptionDate(new Date().toISOString().split('T')[0]);
+      setServiceType('private');
+      setPrescriptionText('');
+      setShowPrescriptionDate(true);
+      setShowPrintDate(false);
+      setUploadedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving prescription:', error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -100,7 +147,7 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Data, Tipo de Atendimento e Diagnóstico */}
+          {/* Data e Tipo de Atendimento */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="prescription-date">Data da Prescrição</Label>
@@ -125,116 +172,65 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="diagnosis">Diagnóstico / Indicação</Label>
-            <Textarea
-              id="diagnosis"
-              placeholder="Diagnóstico ou indicação clínica..."
-              value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
-              rows={2}
-            />
-          </div>
+          {/* Caixa única de Receita */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Receita
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea
+                placeholder="Escreva aqui o conteúdo da receita: medicamentos, dosagens, orientações, etc..."
+                value={prescriptionText}
+                onChange={(e) => setPrescriptionText(e.target.value)}
+                rows={10}
+                className="resize-none"
+              />
 
-          {/* Medicamentos */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">Medicamentos</Label>
-              <Button type="button" variant="outline" size="sm" onClick={handleAddMedication}>
-                <Plus className="h-4 w-4 mr-1" />
-                Adicionar
-              </Button>
-            </div>
-
-            {medications.map((med, index) => (
-              <Card key={index} className="border-dashed">
-                <CardContent className="pt-4">
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Nome do Medicamento *</Label>
-                          <Input
-                            placeholder="Ex: Ritalina"
-                            value={med.name}
-                            onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Dosagem</Label>
-                          <Input
-                            placeholder="Ex: 10mg"
-                            value={med.dosage}
-                            onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Frequência</Label>
-                          <Input
-                            placeholder="Ex: 2x ao dia"
-                            value={med.frequency}
-                            onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Duração</Label>
-                          <Input
-                            placeholder="Ex: 30 dias"
-                            value={med.duration}
-                            onChange={(e) => handleMedicationChange(index, 'duration', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Instruções</Label>
-                          <Input
-                            placeholder="Ex: Tomar após as refeições"
-                            value={med.instructions}
-                            onChange={(e) => handleMedicationChange(index, 'instructions', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    {medications.length > 1 && (
+              {/* Upload de arquivo */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Ou anexe um arquivo</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Selecionar Arquivo
+                  </Button>
+                  {uploadedFile && (
+                    <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm truncate max-w-[200px]">{uploadedFile.name}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleRemoveMedication(index)}
+                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                        onClick={handleRemoveFile}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <X className="h-3 w-3" />
                       </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Orientações */}
-          <div className="space-y-2">
-            <Label htmlFor="general-instructions">Orientações Gerais</Label>
-            <Textarea
-              id="general-instructions"
-              placeholder="Orientações gerais para o paciente..."
-              value={generalInstructions}
-              onChange={(e) => setGeneralInstructions(e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="follow-up">Observações de Retorno</Label>
-            <Textarea
-              id="follow-up"
-              placeholder="Ex: Retorno em 30 dias para reavaliação..."
-              value={followUpNotes}
-              onChange={(e) => setFollowUpNotes(e.target.value)}
-              rows={2}
-            />
-          </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Formatos aceitos: PDF, JPG, PNG, DOC, DOCX (máx. 10MB)
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Opções de exibição no PDF */}
           <div className="space-y-3 pt-2 border-t">
@@ -270,9 +266,9 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={createPrescription.isPending || !medications.some(m => m.name.trim())}
+            disabled={createPrescription.isPending || isUploading || (!prescriptionText.trim() && !uploadedFile)}
           >
-            {createPrescription.isPending ? 'Salvando...' : 'Salvar Receita'}
+            {isUploading ? 'Enviando...' : createPrescription.isPending ? 'Salvando...' : 'Salvar Receita'}
           </Button>
         </DialogFooter>
       </DialogContent>
