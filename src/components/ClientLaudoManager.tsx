@@ -8,55 +8,55 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Plus, 
-  FileCheck2, 
-  Calendar, 
-  User, 
-  Download, 
-  Eye,
-  FileText,
-  Trash2,
-  Upload,
-  Printer,
-  X
-} from 'lucide-react';
+import { Plus, FileCheck2, Calendar, User, Download, Eye, FileText, Trash2, Upload, Printer, X } from 'lucide-react';
 import { useLaudos, useCreateLaudo, useDeleteLaudo, Laudo } from '@/hooks/useLaudos';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { printBlankLaudoPdf } from '@/utils/prescriptionPdf';
-
 interface Client {
   id: string;
   name: string;
 }
-
 interface ClientLaudoManagerProps {
   client: Client;
 }
-
-const LAUDO_TYPES = [
-  { value: 'neuropsicologico', label: 'Neuropsicológico' },
-  { value: 'psicologico', label: 'Psicológico' },
-  { value: 'fonoaudiologico', label: 'Fonoaudiológico' },
-  { value: 'medico', label: 'Médico' },
-  { value: 'outro', label: 'Outro' }
-];
-
-export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const { data: laudos, isLoading } = useLaudos(client.id);
+const LAUDO_TYPES = [{
+  value: 'neuropsicologico',
+  label: 'Neuropsicológico'
+}, {
+  value: 'psicologico',
+  label: 'Psicológico'
+}, {
+  value: 'fonoaudiologico',
+  label: 'Fonoaudiológico'
+}, {
+  value: 'medico',
+  label: 'Médico'
+}, {
+  value: 'outro',
+  label: 'Outro'
+}];
+export default function ClientLaudoManager({
+  client
+}: ClientLaudoManagerProps) {
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    data: laudos,
+    isLoading
+  } = useLaudos(client.id);
   const createLaudo = useCreateLaudo();
   const deleteLaudo = useDeleteLaudo();
-
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedLaudo, setSelectedLaudo] = useState<Laudo | null>(null);
   const [uploading, setUploading] = useState(false);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state - simplified to just text + file
@@ -64,7 +64,6 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
   const [laudoType, setLaudoType] = useState('neuropsicologico');
   const [laudoText, setLaudoText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -79,19 +78,16 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
       setSelectedFile(file);
     }
   };
-
   const handleRemoveFile = () => {
     setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
-
   const handleView = (laudo: Laudo) => {
     setSelectedLaudo(laudo);
     setViewDialogOpen(true);
   };
-
   const handleDownload = async (laudo: Laudo) => {
     if (!laudo.file_path) {
       toast({
@@ -101,14 +97,12 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
       });
       return;
     }
-
     try {
-      const { data, error } = await supabase.storage
-        .from('laudos')
-        .download(laudo.file_path);
-
+      const {
+        data,
+        error
+      } = await supabase.storage.from('laudos').download(laudo.file_path);
       if (error) throw error;
-
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
@@ -126,15 +120,13 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
       });
     }
   };
-
   const handleViewFile = async (laudo: Laudo) => {
     if (!laudo.file_path) return;
-
     try {
-      const { data, error } = await supabase.storage
-        .from('laudos')
-        .createSignedUrl(laudo.file_path, 3600);
-
+      const {
+        data,
+        error
+      } = await supabase.storage.from('laudos').createSignedUrl(laudo.file_path, 3600);
       if (error) throw error;
       window.open(data.signedUrl, '_blank');
     } catch (error) {
@@ -146,7 +138,6 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
       });
     }
   };
-
   const handleSubmit = async () => {
     if (!user) return;
 
@@ -159,7 +150,6 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
       });
       return;
     }
-
     setUploading(true);
     try {
       let filePath: string | undefined;
@@ -169,18 +159,15 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `${Date.now()}_${selectedFile.name.replace(/[{}[\]<>]/g, '').replace(/\s+/g, '_')}`;
         filePath = `${client.id}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('laudos')
-          .upload(filePath, selectedFile);
-
+        const {
+          error: uploadError
+        } = await supabase.storage.from('laudos').upload(filePath, selectedFile);
         if (uploadError) throw uploadError;
       }
 
       // Generate a simple title based on type and date
       const typeLabel = LAUDO_TYPES.find(t => t.value === laudoType)?.label || 'Laudo';
       const generatedTitle = `${typeLabel} - ${new Date(laudoDate).toLocaleDateString('pt-BR')}`;
-
       await createLaudo.mutateAsync({
         client_id: client.id,
         employee_id: user.id,
@@ -200,30 +187,23 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
       setUploading(false);
     }
   };
-
   const handleDelete = async () => {
     if (!selectedLaudo) return;
-
     try {
       // Delete file from storage if exists
       if (selectedLaudo.file_path) {
-        await supabase.storage
-          .from('laudos')
-          .remove([selectedLaudo.file_path]);
+        await supabase.storage.from('laudos').remove([selectedLaudo.file_path]);
       }
-
       await deleteLaudo.mutateAsync({
         id: selectedLaudo.id,
         clientId: client.id
       });
-
       setDeleteDialogOpen(false);
       setSelectedLaudo(null);
     } catch (error) {
       console.error('Error deleting laudo:', error);
     }
   };
-
   const resetForm = () => {
     setLaudoDate(new Date().toISOString().split('T')[0]);
     setLaudoType('neuropsicologico');
@@ -233,30 +213,23 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
       fileInputRef.current.value = '';
     }
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
-
   const getLaudoTypeLabel = (type: string) => {
     return LAUDO_TYPES.find(t => t.value === type)?.label || type;
   };
-
   if (isLoading) {
-    return (
-      <div className="space-y-4">
+    return <div className="space-y-4">
         <div className="flex justify-between items-center">
           <Skeleton className="h-8 w-32" />
           <Skeleton className="h-10 w-36" />
         </div>
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-24 w-full" />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div className="flex items-center gap-2">
@@ -265,10 +238,7 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
           <Badge variant="secondary">{laudos?.length || 0}</Badge>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => printBlankLaudoPdf()} className="gap-2">
-            <Printer className="h-4 w-4" />
-            Imprimir em Branco
-          </Button>
+          
           <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             Novo Laudo
@@ -277,8 +247,7 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
       </div>
 
       {/* Empty State */}
-      {(!laudos || laudos.length === 0) && (
-        <Card className="border-dashed">
+      {(!laudos || laudos.length === 0) && <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <div className="p-4 bg-muted rounded-full mb-4">
               <FileCheck2 className="h-8 w-8 text-muted-foreground" />
@@ -288,14 +257,11 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
               Clique em "Novo Laudo" para adicionar o primeiro laudo do paciente.
             </p>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       {/* Laudo List */}
-      {laudos && laudos.length > 0 && (
-        <div className="space-y-3">
-          {laudos.map((laudo) => (
-            <Card key={laudo.id} className="hover:shadow-md transition-shadow">
+      {laudos && laudos.length > 0 && <div className="space-y-3">
+          {laudos.map(laudo => <Card key={laudo.id} className="hover:shadow-md transition-shadow">
               <CardContent className="py-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -306,11 +272,9 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-medium">{laudo.title}</span>
                         <Badge variant="outline">{getLaudoTypeLabel(laudo.laudo_type)}</Badge>
-                        {laudo.file_path && (
-                          <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+                        {laudo.file_path && <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
                             Arquivo anexado
-                          </Badge>
-                        )}
+                          </Badge>}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -323,11 +287,9 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
                           {laudo.employee?.name || 'Profissional'}
                         </div>
                       </div>
-                      {laudo.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                      {laudo.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                           {laudo.description}
-                        </p>
-                      )}
+                        </p>}
                     </div>
                   </div>
 
@@ -336,34 +298,25 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
                       <Eye className="h-4 w-4 mr-1" />
                       Ver
                     </Button>
-                    {laudo.file_path && (
-                      <>
+                    {laudo.file_path && <>
                         <Button variant="ghost" size="sm" onClick={() => handleViewFile(laudo)}>
                           <FileText className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDownload(laudo)}>
                           <Download className="h-4 w-4" />
                         </Button>
-                      </>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => {
-                        setSelectedLaudo(laudo);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
+                      </>}
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => {
+                setSelectedLaudo(laudo);
+                setDeleteDialogOpen(true);
+              }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+            </Card>)}
+        </div>}
 
       {/* Add Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -379,12 +332,7 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="laudo-date">Data do Laudo</Label>
-                <Input
-                  id="laudo-date"
-                  type="date"
-                  value={laudoDate}
-                  onChange={(e) => setLaudoDate(e.target.value)}
-                />
+                <Input id="laudo-date" type="date" value={laudoDate} onChange={e => setLaudoDate(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="laudo-type">Tipo</Label>
@@ -393,11 +341,9 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {LAUDO_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>
+                    {LAUDO_TYPES.map(type => <SelectItem key={type.value} value={type.value}>
                         {type.label}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -412,49 +358,24 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Textarea
-                  placeholder="Escreva aqui o conteúdo do laudo..."
-                  value={laudoText}
-                  onChange={(e) => setLaudoText(e.target.value)}
-                  rows={10}
-                  className="resize-none"
-                />
+                <Textarea placeholder="Escreva aqui o conteúdo do laudo..." value={laudoText} onChange={e => setLaudoText(e.target.value)} rows={10} className="resize-none" />
 
                 {/* Upload de arquivo */}
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">Ou anexe um arquivo</Label>
                   <div className="flex items-center gap-2">
-                    <Input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
+                    <Input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={handleFileChange} className="hidden" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                       <Upload className="h-4 w-4 mr-2" />
                       Selecionar Arquivo
                     </Button>
-                    {selectedFile && (
-                      <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md">
+                    {selectedFile && <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                          onClick={handleRemoveFile}
-                        >
+                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={handleRemoveFile}>
                           <X className="h-3 w-3" />
                         </Button>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Formatos aceitos: PDF, JPG, PNG, DOC, DOCX (máx. 10MB)
@@ -468,10 +389,7 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={uploading || (!laudoText.trim() && !selectedFile)}
-            >
+            <Button onClick={handleSubmit} disabled={uploading || !laudoText.trim() && !selectedFile}>
               {uploading ? 'Salvando...' : 'Salvar Laudo'}
             </Button>
           </DialogFooter>
@@ -488,8 +406,7 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
             </DialogTitle>
           </DialogHeader>
 
-          {selectedLaudo && (
-            <div className="space-y-4">
+          {selectedLaudo && <div className="space-y-4">
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Calendar className="h-4 w-4" />
@@ -511,15 +428,12 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
                 <Badge variant="outline">{getLaudoTypeLabel(selectedLaudo.laudo_type)}</Badge>
               </div>
 
-              {selectedLaudo.description && (
-                <div>
+              {selectedLaudo.description && <div>
                   <h4 className="font-medium text-sm mb-1">Descrição</h4>
                   <p className="text-sm text-muted-foreground">{selectedLaudo.description}</p>
-                </div>
-              )}
+                </div>}
 
-              {selectedLaudo.file_path && (
-                <div className="flex justify-end gap-2 pt-4 border-t">
+              {selectedLaudo.file_path && <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button variant="outline" size="sm" onClick={() => handleViewFile(selectedLaudo)}>
                     <Eye className="h-4 w-4 mr-1" />
                     Visualizar
@@ -528,10 +442,8 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
                     <Download className="h-4 w-4 mr-1" />
                     Baixar
                   </Button>
-                </div>
-              )}
-            </div>
-          )}
+                </div>}
+            </div>}
         </DialogContent>
       </Dialog>
 
@@ -554,6 +466,5 @@ export default function ClientLaudoManager({ client }: ClientLaudoManagerProps) 
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 }
