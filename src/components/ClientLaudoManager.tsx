@@ -238,7 +238,14 @@ export default function ClientLaudoManager({
           <Badge variant="secondary">{laudos?.length || 0}</Badge>
         </div>
         <div className="flex gap-2">
-          
+          <Button 
+            variant="outline" 
+            onClick={() => printBlankLaudoPdf()}
+            className="gap-2"
+          >
+            <Printer className="h-4 w-4" />
+            Imprimir em Branco
+          </Button>
           <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             Novo Laudo
