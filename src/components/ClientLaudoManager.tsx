@@ -157,7 +157,13 @@ export default function ClientLaudoManager({
       // Upload file if selected
       if (selectedFile) {
         const fileExt = selectedFile.name.split('.').pop();
-        const fileName = `${Date.now()}_${selectedFile.name.replace(/[{}[\]<>]/g, '').replace(/\s+/g, '_')}`;
+        // Sanitize filename - remove accents, special chars, and spaces
+        const sanitizedName = selectedFile.name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove accents
+          .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars with underscore
+          .replace(/_+/g, '_'); // Replace multiple underscores with single
+        const fileName = `${Date.now()}_${sanitizedName}`;
         filePath = `${client.id}/${fileName}`;
         const {
           error: uploadError
