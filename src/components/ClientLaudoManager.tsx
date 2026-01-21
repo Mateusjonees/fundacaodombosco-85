@@ -8,12 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, FileCheck2, Calendar, User, Download, Eye, FileText, Trash2, Upload, Printer, X, FileDown } from 'lucide-react';
+import { Plus, FileCheck2, Calendar, User, Download, Eye, FileText, Trash2, Upload, Printer, X } from 'lucide-react';
 import { useLaudos, useCreateLaudo, useDeleteLaudo, Laudo } from '@/hooks/useLaudos';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { printBlankLaudoPdf, printLaudoPdf, downloadLaudoPdf } from '@/utils/prescriptionPdf';
+import { printBlankLaudoPdf } from '@/utils/prescriptionPdf';
 interface Client {
   id: string;
   name: string;
@@ -138,52 +138,6 @@ export default function ClientLaudoManager({
       });
     }
   };
-
-  // Imprimir PDF do laudo com conteúdo
-  const handlePrintLaudo = async (laudo: Laudo) => {
-    if (!laudo.description) {
-      toast({
-        variant: "destructive",
-        title: "Sem conteúdo",
-        description: "Este laudo não possui texto para gerar PDF."
-      });
-      return;
-    }
-    const professionalName = laudo.employee?.name || 'Profissional';
-    await printLaudoPdf(
-      { 
-        title: laudo.title, 
-        description: laudo.description, 
-        laudo_date: laudo.laudo_date, 
-        laudo_type: laudo.laudo_type 
-      },
-      client,
-      professionalName
-    );
-  };
-
-  // Baixar PDF do laudo com conteúdo
-  const handleDownloadLaudoPdf = async (laudo: Laudo) => {
-    if (!laudo.description) {
-      toast({
-        variant: "destructive",
-        title: "Sem conteúdo",
-        description: "Este laudo não possui texto para gerar PDF."
-      });
-      return;
-    }
-    const professionalName = laudo.employee?.name || 'Profissional';
-    await downloadLaudoPdf(
-      { 
-        title: laudo.title, 
-        description: laudo.description, 
-        laudo_date: laudo.laudo_date, 
-        laudo_type: laudo.laudo_type 
-      },
-      client,
-      professionalName
-    );
-  };
   const handleSubmit = async () => {
     if (!user) return;
 
@@ -284,11 +238,7 @@ export default function ClientLaudoManager({
           <Badge variant="secondary">{laudos?.length || 0}</Badge>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => printBlankLaudoPdf()}
-            className="gap-2"
-          >
+          <Button variant="outline" onClick={() => printBlankLaudoPdf()} className="gap-2">
             <Printer className="h-4 w-4" />
             Imprimir em Branco
           </Button>
@@ -330,10 +280,7 @@ export default function ClientLaudoManager({
                           </Badge>}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {formatDate(laudo.laudo_date)}
-                        </div>
+                        
                         <span>•</span>
                         <div className="flex items-center gap-1">
                           <User className="h-3.5 w-3.5" />
@@ -346,37 +293,23 @@ export default function ClientLaudoManager({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 ml-auto">
-                    <Button variant="ghost" size="sm" onClick={() => handleView(laudo)} title="Ver detalhes">
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Button variant="ghost" size="sm" onClick={() => handleView(laudo)}>
                       <Eye className="h-4 w-4 mr-1" />
                       Ver
                     </Button>
-                    {/* Botões para laudo com conteúdo texto */}
-                    {laudo.description && (
-                      <>
-                        <Button variant="ghost" size="sm" onClick={() => handlePrintLaudo(laudo)} title="Imprimir PDF">
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDownloadLaudoPdf(laudo)} title="Baixar PDF">
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                    {/* Botões para laudo com arquivo anexado */}
-                    {laudo.file_path && (
-                      <>
-                        <Button variant="ghost" size="sm" onClick={() => handleViewFile(laudo)} title="Ver arquivo">
+                    {laudo.file_path && <>
+                        <Button variant="ghost" size="sm" onClick={() => handleViewFile(laudo)}>
                           <FileText className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDownload(laudo)} title="Baixar arquivo">
+                        <Button variant="ghost" size="sm" onClick={() => handleDownload(laudo)}>
                           <Download className="h-4 w-4" />
                         </Button>
-                      </>
-                    )}
+                      </>}
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => {
-                      setSelectedLaudo(laudo);
-                      setDeleteDialogOpen(true);
-                    }} title="Excluir">
+                setSelectedLaudo(laudo);
+                setDeleteDialogOpen(true);
+              }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
