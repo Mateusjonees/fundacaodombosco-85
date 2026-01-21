@@ -8,12 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, FileCheck2, Calendar, User, Download, Eye, FileText, Trash2, Upload, Printer, X } from 'lucide-react';
+import { Plus, FileCheck2, Calendar, User, Download, Eye, FileText, Trash2, Upload, Printer, X, FileDown } from 'lucide-react';
 import { useLaudos, useCreateLaudo, useDeleteLaudo, Laudo } from '@/hooks/useLaudos';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { printBlankLaudoPdf } from '@/utils/prescriptionPdf';
+import { printBlankLaudoPdf, printLaudoPdf, downloadLaudoPdf } from '@/utils/prescriptionPdf';
 interface Client {
   id: string;
   name: string;
@@ -137,6 +137,52 @@ export default function ClientLaudoManager({
         description: "Não foi possível visualizar o laudo."
       });
     }
+  };
+
+  // Imprimir PDF do laudo com conteúdo
+  const handlePrintLaudo = async (laudo: Laudo) => {
+    if (!laudo.description) {
+      toast({
+        variant: "destructive",
+        title: "Sem conteúdo",
+        description: "Este laudo não possui texto para gerar PDF."
+      });
+      return;
+    }
+    const professionalName = laudo.employee?.name || 'Profissional';
+    await printLaudoPdf(
+      { 
+        title: laudo.title, 
+        description: laudo.description, 
+        laudo_date: laudo.laudo_date, 
+        laudo_type: laudo.laudo_type 
+      },
+      client,
+      professionalName
+    );
+  };
+
+  // Baixar PDF do laudo com conteúdo
+  const handleDownloadLaudoPdf = async (laudo: Laudo) => {
+    if (!laudo.description) {
+      toast({
+        variant: "destructive",
+        title: "Sem conteúdo",
+        description: "Este laudo não possui texto para gerar PDF."
+      });
+      return;
+    }
+    const professionalName = laudo.employee?.name || 'Profissional';
+    await downloadLaudoPdf(
+      { 
+        title: laudo.title, 
+        description: laudo.description, 
+        laudo_date: laudo.laudo_date, 
+        laudo_type: laudo.laudo_type 
+      },
+      client,
+      professionalName
+    );
   };
   const handleSubmit = async () => {
     if (!user) return;
@@ -300,23 +346,37 @@ export default function ClientLaudoManager({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-auto">
-                    <Button variant="ghost" size="sm" onClick={() => handleView(laudo)}>
+                  <div className="flex items-center gap-1 ml-auto">
+                    <Button variant="ghost" size="sm" onClick={() => handleView(laudo)} title="Ver detalhes">
                       <Eye className="h-4 w-4 mr-1" />
                       Ver
                     </Button>
-                    {laudo.file_path && <>
-                        <Button variant="ghost" size="sm" onClick={() => handleViewFile(laudo)}>
+                    {/* Botões para laudo com conteúdo texto */}
+                    {laudo.description && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => handlePrintLaudo(laudo)} title="Imprimir PDF">
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDownloadLaudoPdf(laudo)} title="Baixar PDF">
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                    {/* Botões para laudo com arquivo anexado */}
+                    {laudo.file_path && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => handleViewFile(laudo)} title="Ver arquivo">
                           <FileText className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDownload(laudo)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleDownload(laudo)} title="Baixar arquivo">
                           <Download className="h-4 w-4" />
                         </Button>
-                      </>}
+                      </>
+                    )}
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => {
-                setSelectedLaudo(laudo);
-                setDeleteDialogOpen(true);
-              }}>
+                      setSelectedLaudo(laudo);
+                      setDeleteDialogOpen(true);
+                    }} title="Excluir">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

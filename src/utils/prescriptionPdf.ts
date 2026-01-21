@@ -438,6 +438,222 @@ export const printBlankPrescriptionPdf = async () => {
   document.body.appendChild(iframe);
 };
 
+// Interface para Laudo
+interface LaudoData {
+  title: string;
+  description?: string | null;
+  laudo_date: string;
+  laudo_type: string;
+}
+
+interface LaudoClient {
+  name: string;
+  cpf?: string;
+  birth_date?: string;
+}
+
+// Gerar PDF do laudo com conteúdo
+export const generateLaudoPdf = async (
+  laudo: LaudoData,
+  client: LaudoClient,
+  professionalName: string,
+  professionalLicense?: string
+): Promise<jsPDF> => {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  const contentWidth = pageWidth - 2 * margin;
+
+  let timbradoBase64: string | null = null;
+  let logoBase64: string | null = null;
+
+  try {
+    timbradoBase64 = await loadImageAsBase64(prescriptionTimbrado);
+    logoBase64 = await loadImageAsBase64(fundacaoLogo);
+  } catch (e) {
+    console.warn('Erro ao carregar imagens:', e);
+  }
+
+  const addNewPage = () => {
+    doc.addPage();
+    if (timbradoBase64) {
+      doc.addImage(timbradoBase64, 'JPEG', 5, 5, pageWidth - 10, pageHeight - 10);
+    }
+  };
+
+  // Background timbrado
+  if (timbradoBase64) {
+    doc.addImage(timbradoBase64, 'JPEG', 5, 5, pageWidth - 10, pageHeight - 10);
+  }
+
+  // Logo e título
+  let yPosition = 20;
+  if (logoBase64) {
+    const logoW = 35;
+    const logoH = 28;
+    doc.addImage(logoBase64, 'PNG', (pageWidth - logoW) / 2, 5, logoW, logoH);
+    yPosition = 40;
+  }
+
+  // Máscara branca para título
+  doc.setFillColor(255, 255, 255);
+  doc.rect(margin, yPosition - 2, contentWidth, 12, 'F');
+
+  // Título "LAUDO"
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text('LAUDO', pageWidth / 2, yPosition + 6, { align: 'center' });
+  yPosition += 18;
+
+  // Tipo do laudo
+  const tipoLabels: Record<string, string> = {
+    neuropsicologico: 'Neuropsicológico',
+    psicologico: 'Psicológico',
+    fonoaudiologico: 'Fonoaudiológico',
+    medico: 'Médico',
+    outro: 'Outro'
+  };
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Tipo: ${tipoLabels[laudo.laudo_type] || laudo.laudo_type}`, margin, yPosition);
+  yPosition += 6;
+
+  // Informações do paciente
+  doc.setFont('helvetica', 'bold');
+  doc.text('Paciente:', margin, yPosition);
+  doc.setFont('helvetica', 'normal');
+  doc.text(client.name, margin + 22, yPosition);
+  yPosition += 6;
+
+  if (client.cpf) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('CPF:', margin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(client.cpf, margin + 12, yPosition);
+    yPosition += 6;
+  }
+
+  if (client.birth_date) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Data de Nascimento:', margin, yPosition);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatDateBR(client.birth_date), margin + 42, yPosition);
+    yPosition += 6;
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Data do Laudo:', margin, yPosition);
+  doc.setFont('helvetica', 'normal');
+  doc.text(formatDateBR(laudo.laudo_date), margin + 32, yPosition);
+  yPosition += 12;
+
+  // Linha divisória
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 10;
+
+  // Conteúdo do laudo
+  const maxY = pageHeight - 50;
+
+  if (laudo.description) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    const lines = doc.splitTextToSize(laudo.description, contentWidth);
+
+    for (let i = 0; i < lines.length; i++) {
+      if (yPosition > maxY) {
+        addNewPage();
+        yPosition = 50;
+      }
+      doc.text(lines[i], margin, yPosition);
+      yPosition += 6;
+    }
+  }
+
+  // Assinatura do profissional
+  yPosition = Math.max(yPosition + 20, pageHeight - 45);
+  if (yPosition > pageHeight - 30) {
+    addNewPage();
+    yPosition = pageHeight - 45;
+  }
+
+  doc.setDrawColor(0, 0, 0);
+  const lineStart = (pageWidth - 70) / 2;
+  doc.line(lineStart, yPosition, lineStart + 70, yPosition);
+  yPosition += 5;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(professionalName, pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 5;
+
+  if (professionalLicense) {
+    doc.setFont('helvetica', 'normal');
+    doc.text(professionalLicense, pageWidth / 2, yPosition, { align: 'center' });
+  }
+
+  return doc;
+};
+
+// Imprimir laudo PDF
+export const printLaudoPdf = async (
+  laudo: LaudoData,
+  client: LaudoClient,
+  professionalName: string,
+  professionalLicense?: string
+) => {
+  const doc = await generateLaudoPdf(laudo, client, professionalName, professionalLicense);
+  
+  const pdfBlob = doc.output('blob');
+  const url = URL.createObjectURL(pdfBlob);
+  
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = 'none';
+  iframe.src = url;
+  
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (e) {
+        const printWindow = window.open(url);
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 500);
+          };
+        }
+      }
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }, 500);
+  };
+  
+  document.body.appendChild(iframe);
+};
+
+// Download laudo PDF
+export const downloadLaudoPdf = async (
+  laudo: LaudoData,
+  client: LaudoClient,
+  professionalName: string,
+  professionalLicense?: string
+) => {
+  const doc = await generateLaudoPdf(laudo, client, professionalName, professionalLicense);
+  const fileName = `laudo_${client.name.replace(/\s+/g, '_')}_${laudo.laudo_date}.pdf`;
+  doc.save(fileName);
+};
+
 // Gerar PDF em branco para laudo (uso com matriz pré-impressa)
 export const generateBlankLaudoPdf = async (): Promise<jsPDF> => {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
