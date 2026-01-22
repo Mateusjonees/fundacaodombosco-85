@@ -8,6 +8,7 @@ import { Plus, Pill, Calendar, User, Download, Printer, Eye, FileText, Trash2 } 
 import { usePrescriptions, useDeletePrescription, Prescription, Medication } from '@/hooks/usePrescriptions';
 import AddPrescriptionDialog from './AddPrescriptionDialog';
 import { downloadPrescriptionPdf, printPrescriptionPdf, printBlankPrescriptionPdf } from '@/utils/prescriptionPdf';
+import { formatDateBR } from '@/lib/utils';
 interface Client {
   id: string;
   name: string;
@@ -56,9 +57,7 @@ export default function PrescriptionManager({
     setDeleteDialogOpen(false);
     setPrescriptionToDelete(null);
   };
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  const formatDate = (dateString: string) => formatDateBR(dateString);
   if (isLoading) {
     return <div className="space-y-4">
         <div className="flex justify-between items-center">
