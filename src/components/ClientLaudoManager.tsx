@@ -85,7 +85,8 @@ export default function ClientLaudoManager({
     }
   };
   const handleView = (laudo: Laudo) => {
-    setSelectedLaudo(laudo);
+    // Force dialog content to refresh even when the dialog is already open
+    setSelectedLaudo({ ...laudo });
     setViewDialogOpen(true);
   };
   const handleDownload = async (laudo: Laudo) => {
@@ -465,7 +466,7 @@ export default function ClientLaudoManager({
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent key={selectedLaudo?.id || 'laudo-view'} className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileCheck2 className="h-5 w-5" />
