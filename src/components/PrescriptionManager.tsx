@@ -31,7 +31,8 @@ export default function PrescriptionManager({
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [prescriptionToDelete, setPrescriptionToDelete] = useState<Prescription | null>(null);
   const handleView = (prescription: Prescription) => {
-    setSelectedPrescription(prescription);
+    // Force dialog content to refresh even when the dialog is already open
+    setSelectedPrescription({ ...prescription });
     setViewDialogOpen(true);
   };
   const handleDownload = async (prescription: Prescription) => {
@@ -163,7 +164,7 @@ export default function PrescriptionManager({
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent key={selectedPrescription?.id || 'prescription-view'} className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pill className="h-5 w-5" />
