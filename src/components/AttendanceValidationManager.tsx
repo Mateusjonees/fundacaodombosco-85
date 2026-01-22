@@ -14,7 +14,6 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { Check, X, Eye, Clock, User, Calendar, Package, Filter, DollarSign } from 'lucide-react';
-
 interface PendingAttendance {
   id: string;
   schedule_id: string;
@@ -38,16 +37,20 @@ interface PendingAttendance {
   next_session_plan: string;
   unit?: string;
 }
-
 interface Employee {
   user_id: string;
   name: string;
 }
-
 export default function AttendanceValidationManager() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const { logAction } = useAuditLog();
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    logAction
+  } = useAuditLog();
   const [pendingAttendances, setPendingAttendances] = useState<PendingAttendance[]>([]);
   const [allAttendances, setAllAttendances] = useState<PendingAttendance[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -62,40 +65,35 @@ export default function AttendanceValidationManager() {
   const [foundationAmount, setFoundationAmount] = useState<string>('');
   const [totalAmount, setTotalAmount] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<string>('dinheiro');
-  
+
   // Estados para edição dos campos do atendimento
   const [editedAttendance, setEditedAttendance] = useState<Partial<PendingAttendance>>({});
-
   useEffect(() => {
     if (user) {
       loadPendingAttendances();
       loadEmployees();
     }
   }, [user]);
-
   useEffect(() => {
     applyFilters();
   }, [unitFilter, employeeFilter, allAttendances]);
-
   const loadPendingAttendances = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('attendance_reports')
-        .select(`
+      const {
+        data,
+        error
+      } = await supabase.from('attendance_reports').select(`
           *,
           clients!inner(unit)
-        `)
-        .eq('validation_status', 'pending_validation')
-        .order('created_at', { ascending: false });
-
+        `).eq('validation_status', 'pending_validation').order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
-      
       const attendancesWithUnit = data?.map(attendance => ({
         ...attendance,
         unit: attendance.clients?.unit || 'madre'
       })) || [];
-      
       setAllAttendances(attendancesWithUnit);
       setPendingAttendances(attendancesWithUnit);
     } catch (error) {
@@ -103,76 +101,64 @@ export default function AttendanceValidationManager() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível carregar os atendimentos pendentes.",
+        description: "Não foi possível carregar os atendimentos pendentes."
       });
     } finally {
       setLoading(false);
     }
   };
-
   const loadEmployees = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, name')
-        .not('employee_role', 'is', null)
-        .eq('is_active', true)
-        .order('name');
-
+      const {
+        data,
+        error
+      } = await supabase.from('profiles').select('user_id, name').not('employee_role', 'is', null).eq('is_active', true).order('name');
       if (error) throw error;
       setEmployees(data || []);
     } catch (error) {
       console.error('Error loading employees:', error);
     }
   };
-
   const applyFilters = () => {
     let filtered = [...allAttendances];
-
     if (unitFilter !== 'all') {
       filtered = filtered.filter(attendance => attendance.unit === unitFilter);
     }
-
     if (employeeFilter !== 'all') {
       filtered = filtered.filter(attendance => attendance.employee_id === employeeFilter);
     }
-
     setPendingAttendances(filtered);
   };
-
   const handleValidationAction = async () => {
     if (!selectedAttendance || !validationAction) return;
-
     if (validationAction === 'reject' && !rejectionReason.trim()) {
       toast({
         variant: "destructive",
         title: "Motivo obrigatório",
-        description: "Por favor, informe o motivo da rejeição.",
+        description: "Por favor, informe o motivo da rejeição."
       });
       return;
     }
-
     setProcessing(true);
     try {
       // Atualizar dados do atendimento se houver edições
       if (validationAction === 'validate' && Object.keys(editedAttendance).length > 0) {
-        const { error: updateError } = await supabase
-          .from('attendance_reports')
-          .update({
-            attendance_type: editedAttendance.attendance_type,
-            session_duration: editedAttendance.session_duration,
-            amount_charged: editedAttendance.amount_charged,
-            techniques_used: editedAttendance.techniques_used,
-            patient_response: editedAttendance.patient_response,
-            observations: editedAttendance.observations,
-            next_session_plan: editedAttendance.next_session_plan,
-          })
-          .eq('id', selectedAttendance.id);
-
+        const {
+          error: updateError
+        } = await supabase.from('attendance_reports').update({
+          attendance_type: editedAttendance.attendance_type,
+          session_duration: editedAttendance.session_duration,
+          amount_charged: editedAttendance.amount_charged,
+          techniques_used: editedAttendance.techniques_used,
+          patient_response: editedAttendance.patient_response,
+          observations: editedAttendance.observations,
+          next_session_plan: editedAttendance.next_session_plan
+        }).eq('id', selectedAttendance.id);
         if (updateError) throw updateError;
       }
-
-      const { error } = await supabase.rpc('validate_attendance_report', {
+      const {
+        error
+      } = await supabase.rpc('validate_attendance_report', {
         p_attendance_report_id: selectedAttendance.id,
         p_action: validationAction,
         p_rejection_reason: validationAction === 'reject' ? rejectionReason : null,
@@ -181,7 +167,6 @@ export default function AttendanceValidationManager() {
         p_total_amount: validationAction === 'validate' && totalAmount ? parseFloat(totalAmount) : editedAttendance.amount_charged || selectedAttendance?.amount_charged || 0,
         p_payment_method: validationAction === 'validate' ? paymentMethod : 'dinheiro'
       });
-
       if (error) throw error;
 
       // Registrar auditoria da validação
@@ -197,20 +182,17 @@ export default function AttendanceValidationManager() {
           total_amount: validationAction === 'validate' && totalAmount ? parseFloat(totalAmount) : selectedAttendance?.amount_charged || 0,
           professional_amount: validationAction === 'validate' && professionalAmount ? parseFloat(professionalAmount) : 0,
           foundation_amount: validationAction === 'validate' && foundationAmount ? parseFloat(foundationAmount) : 0,
-          rejection_reason: validationAction === 'reject' ? rejectionReason : null,
+          rejection_reason: validationAction === 'reject' ? rejectionReason : null
         }
       });
-
       toast({
         title: validationAction === 'validate' ? "Atendimento Validado!" : "Atendimento Rejeitado",
-        description: validationAction === 'validate' 
-          ? "O atendimento foi validado e os dados foram processados no sistema."
-          : "O atendimento foi rejeitado e retornado ao profissional.",
+        description: validationAction === 'validate' ? "O atendimento foi validado e os dados foram processados no sistema." : "O atendimento foi rejeitado e retornado ao profissional."
       });
 
       // Recarregar lista
       loadPendingAttendances();
-      
+
       // Fechar dialog e limpar campos
       setSelectedAttendance(null);
       setValidationAction(null);
@@ -220,19 +202,17 @@ export default function AttendanceValidationManager() {
       setTotalAmount('');
       setPaymentMethod('dinheiro');
       setEditedAttendance({});
-      
     } catch (error) {
       console.error('Error processing validation:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível processar a validação. Tente novamente.",
+        description: "Não foi possível processar a validação. Tente novamente."
       });
     } finally {
       setProcessing(false);
     }
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -242,34 +222,27 @@ export default function AttendanceValidationManager() {
       minute: '2-digit'
     });
   };
-
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('pt-BR', {
       hour: '2-digit',
       minute: '2-digit'
     });
   };
-
   const getTotalMaterialsCost = (materials: any) => {
     if (!materials || !Array.isArray(materials)) return 0;
     return materials.reduce((total, material) => total + (material.total_cost || 0), 0);
   };
-
   if (loading) {
-    return (
-      <div className="p-6">
+    return <div className="p-6">
         <div className="flex items-center justify-center">
           <div className="text-center">
             <Clock className="h-8 w-8 animate-spin mx-auto mb-2" />
             <p>Carregando atendimentos pendentes...</p>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="p-4 md:p-6 space-y-6 animate-fade-in">
+  return <div className="p-4 md:p-6 space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
@@ -316,28 +289,20 @@ export default function AttendanceValidationManager() {
             <div>
               <Label htmlFor="employee-filter" className="text-sm">Funcionário</Label>
               <div className="mt-1">
-                <Combobox
-                  options={[
-                    { value: "all", label: "Todos os funcionários" },
-                    ...employees.map((employee) => ({
-                      value: employee.user_id,
-                      label: employee.name
-                    }))
-                  ]}
-                  value={employeeFilter}
-                  onValueChange={setEmployeeFilter}
-                  placeholder="Buscar funcionário..."
-                  searchPlaceholder="Digite o nome do funcionário..."
-                  emptyMessage="Nenhum funcionário encontrado."
-                />
+                <Combobox options={[{
+                value: "all",
+                label: "Todos os funcionários"
+              }, ...employees.map(employee => ({
+                value: employee.user_id,
+                label: employee.name
+              }))]} value={employeeFilter} onValueChange={setEmployeeFilter} placeholder="Buscar funcionário..." searchPlaceholder="Digite o nome do funcionário..." emptyMessage="Nenhum funcionário encontrado." />
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {pendingAttendances.length === 0 ? (
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-green-500/5">
+      {pendingAttendances.length === 0 ? <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-green-500/5">
           <CardContent className="text-center py-16">
             <div className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full mx-auto w-fit mb-4">
               <Check className="h-16 w-16 text-green-500" />
@@ -349,11 +314,8 @@ export default function AttendanceValidationManager() {
               Todos os atendimentos foram validados ou não há atendimentos para revisar.
             </p>
           </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {pendingAttendances.map((attendance) => (
-            <Card key={attendance.id} className="group border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-gradient-to-br from-card via-card to-yellow-500/5 border-l-4 border-l-yellow-500">
+        </Card> : <div className="grid gap-4 md:grid-cols-2">
+          {pendingAttendances.map(attendance => <Card key={attendance.id} className="group border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-gradient-to-br from-card via-card to-yellow-500/5 border-l-4 border-l-yellow-500">
               <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -377,10 +339,7 @@ export default function AttendanceValidationManager() {
                   <div>
                     <Label className="font-medium text-xs sm:text-sm">Unidade</Label>
                     <p className="text-muted-foreground text-xs sm:text-sm">
-                      {attendance.unit === 'madre' ? 'MADRE' : 
-                       attendance.unit === 'floresta' ? 'Floresta' :
-                       attendance.unit === 'atendimento_floresta' ? 'Atendimento Floresta' : 
-                       attendance.unit || 'N/A'}
+                      {attendance.unit === 'madre' ? 'MADRE' : attendance.unit === 'floresta' ? 'Floresta' : attendance.unit === 'atendimento_floresta' ? 'Atendimento Floresta' : attendance.unit || 'N/A'}
                     </p>
                   </div>
                   <div>
@@ -399,8 +358,7 @@ export default function AttendanceValidationManager() {
                   </div>
                 </div>
 
-                {attendance.materials_used && Array.isArray(attendance.materials_used) && attendance.materials_used.length > 0 && (
-                  <div className="bg-muted/30 p-3 rounded-md">
+                {attendance.materials_used && Array.isArray(attendance.materials_used) && attendance.materials_used.length > 0 && <div className="bg-muted/30 p-3 rounded-md">
                     <Label className="font-medium flex items-center gap-1 text-xs sm:text-sm">
                       <Package className="h-3 w-3 sm:h-4 sm:w-4" />
                       Materiais ({Array.isArray(attendance.materials_used) ? attendance.materials_used.length : 0})
@@ -408,55 +366,32 @@ export default function AttendanceValidationManager() {
                     <div className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Custo total: R$ {getTotalMaterialsCost(attendance.materials_used).toFixed(2)}
                     </div>
-                  </div>
-                )}
+                  </div>}
 
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSelectedAttendance(attendance)}
-                    className="w-full sm:w-auto"
-                  >
+                  <Button variant="outline" size="sm" onClick={() => setSelectedAttendance(attendance)} className="w-full sm:w-auto">
                     <Eye className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Revisar</span>
                     <span className="sm:hidden">Ver Detalhes</span>
                   </Button>
-                  <Button 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedAttendance(attendance);
-                      setValidationAction('validate');
-                    }}
-                    className="w-full sm:w-auto"
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    Validar
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedAttendance(attendance);
-                      setValidationAction('reject');
-                    }}
-                    className="w-full sm:w-auto"
-                  >
+                  
+                  <Button variant="destructive" size="sm" onClick={() => {
+              setSelectedAttendance(attendance);
+              setValidationAction('reject');
+            }} className="w-full sm:w-auto">
                     <X className="h-4 w-4 mr-1" />
                     Rejeitar
                   </Button>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+            </Card>)}
+        </div>}
 
       {/* Dialog de Revisão Detalhada - EDITÁVEL */}
       <Dialog open={!!selectedAttendance && !validationAction} onOpenChange={() => {
-        setSelectedAttendance(null);
-        setEditedAttendance({});
-      }}>
+      setSelectedAttendance(null);
+      setEditedAttendance({});
+    }}>
         <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -465,8 +400,7 @@ export default function AttendanceValidationManager() {
             </DialogTitle>
           </DialogHeader>
           
-          {selectedAttendance && (
-            <div className="space-y-6">
+          {selectedAttendance && <div className="space-y-6">
               {/* Informações Básicas */}
               <Card>
                 <CardHeader>
@@ -485,23 +419,19 @@ export default function AttendanceValidationManager() {
                     <Label htmlFor="edit-attendance-type" className="text-sm font-medium">
                       Tipo de Atendimento *
                     </Label>
-                    <Input
-                      id="edit-attendance-type"
-                      value={editedAttendance.attendance_type ?? selectedAttendance.attendance_type}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, attendance_type: e.target.value})}
-                    />
+                    <Input id="edit-attendance-type" value={editedAttendance.attendance_type ?? selectedAttendance.attendance_type} onChange={e => setEditedAttendance({
+                  ...editedAttendance,
+                  attendance_type: e.target.value
+                })} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-duration" className="text-sm font-medium">
                       Duração (minutos) *
                     </Label>
-                    <Input
-                      id="edit-duration"
-                      type="number"
-                      min="0"
-                      value={editedAttendance.session_duration ?? selectedAttendance.session_duration}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, session_duration: parseInt(e.target.value) || 0})}
-                    />
+                    <Input id="edit-duration" type="number" min="0" value={editedAttendance.session_duration ?? selectedAttendance.session_duration} onChange={e => setEditedAttendance({
+                  ...editedAttendance,
+                  session_duration: parseInt(e.target.value) || 0
+                })} />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Horário</Label>
@@ -513,14 +443,10 @@ export default function AttendanceValidationManager() {
                     <Label htmlFor="edit-amount" className="text-sm font-medium">
                       Valor Cobrado (R$) *
                     </Label>
-                    <Input
-                      id="edit-amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editedAttendance.amount_charged ?? selectedAttendance.amount_charged}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, amount_charged: parseFloat(e.target.value) || 0})}
-                    />
+                    <Input id="edit-amount" type="number" step="0.01" min="0" value={editedAttendance.amount_charged ?? selectedAttendance.amount_charged} onChange={e => setEditedAttendance({
+                  ...editedAttendance,
+                  amount_charged: parseFloat(e.target.value) || 0
+                })} />
                   </div>
                 </CardContent>
               </Card>
@@ -535,68 +461,52 @@ export default function AttendanceValidationManager() {
                     <Label htmlFor="edit-objectives" className="text-sm font-medium">
                       Objetivos da Sessão
                     </Label>
-                    <Textarea
-                      id="edit-objectives"
-                      value={editedAttendance.techniques_used ?? selectedAttendance.techniques_used ?? ''}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, techniques_used: e.target.value})}
-                      placeholder="Descreva os objetivos trabalhados na sessão..."
-                      rows={3}
-                    />
+                    <Textarea id="edit-objectives" value={editedAttendance.techniques_used ?? selectedAttendance.techniques_used ?? ''} onChange={e => setEditedAttendance({
+                  ...editedAttendance,
+                  techniques_used: e.target.value
+                })} placeholder="Descreva os objetivos trabalhados na sessão..." rows={3} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-patient-response" className="text-sm font-medium">
                       Resposta do Paciente
                     </Label>
-                    <Textarea
-                      id="edit-patient-response"
-                      value={editedAttendance.patient_response ?? selectedAttendance.patient_response ?? ''}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, patient_response: e.target.value})}
-                      placeholder="Como o paciente respondeu durante a sessão..."
-                      rows={3}
-                    />
+                    <Textarea id="edit-patient-response" value={editedAttendance.patient_response ?? selectedAttendance.patient_response ?? ''} onChange={e => setEditedAttendance({
+                  ...editedAttendance,
+                  patient_response: e.target.value
+                })} placeholder="Como o paciente respondeu durante a sessão..." rows={3} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-observations" className="text-sm font-medium">
                       Observações Clínicas
                     </Label>
-                    <Textarea
-                      id="edit-observations"
-                      value={editedAttendance.observations ?? selectedAttendance.observations ?? ''}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, observations: e.target.value})}
-                      placeholder="Observações clínicas importantes..."
-                      rows={3}
-                    />
+                    <Textarea id="edit-observations" value={editedAttendance.observations ?? selectedAttendance.observations ?? ''} onChange={e => setEditedAttendance({
+                  ...editedAttendance,
+                  observations: e.target.value
+                })} placeholder="Observações clínicas importantes..." rows={3} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-next-plan" className="text-sm font-medium">
                       Plano para Próxima Sessão
                     </Label>
-                    <Textarea
-                      id="edit-next-plan"
-                      value={editedAttendance.next_session_plan ?? selectedAttendance.next_session_plan ?? ''}
-                      onChange={(e) => setEditedAttendance({...editedAttendance, next_session_plan: e.target.value})}
-                      placeholder="Planejamento para a próxima sessão..."
-                      rows={3}
-                    />
+                    <Textarea id="edit-next-plan" value={editedAttendance.next_session_plan ?? selectedAttendance.next_session_plan ?? ''} onChange={e => setEditedAttendance({
+                  ...editedAttendance,
+                  next_session_plan: e.target.value
+                })} placeholder="Planejamento para a próxima sessão..." rows={3} />
                   </div>
                 </CardContent>
               </Card>
 
               {/* Materiais */}
-              {selectedAttendance.materials_used && Array.isArray(selectedAttendance.materials_used) && selectedAttendance.materials_used.length > 0 && (
-                <Card>
+              {selectedAttendance.materials_used && Array.isArray(selectedAttendance.materials_used) && selectedAttendance.materials_used.length > 0 && <Card>
                   <CardHeader>
                     <CardTitle>Materiais Utilizados</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {selectedAttendance.materials_used.map((material, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
+                      {selectedAttendance.materials_used.map((material, index) => <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
                           <div>
                             <span className="font-medium">{material.name}</span>
-                            {material.observation && (
-                              <p className="text-xs text-muted-foreground">{material.observation}</p>
-                            )}
+                            {material.observation && <p className="text-xs text-muted-foreground">{material.observation}</p>}
                           </div>
                           <div className="text-right">
                             <Badge variant="outline">
@@ -606,26 +516,22 @@ export default function AttendanceValidationManager() {
                               R$ {material.total_cost?.toFixed(2) || '0.00'}
                             </p>
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                       <div className="text-right font-medium pt-2 border-t">
                         Total: R$ {getTotalMaterialsCost(selectedAttendance.materials_used).toFixed(2)}
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              )}
+                </Card>}
 
               {/* Anexos */}
-              {selectedAttendance.attachments && Array.isArray(selectedAttendance.attachments) && selectedAttendance.attachments.length > 0 && (
-                <Card>
+              {selectedAttendance.attachments && Array.isArray(selectedAttendance.attachments) && selectedAttendance.attachments.length > 0 && <Card>
                   <CardHeader>
                     <CardTitle>Documentos Anexos</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {selectedAttendance.attachments.map((file, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
+                      {selectedAttendance.attachments.map((file, index) => <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
                           <span className="text-lg">📄</span>
                           <div>
                             <p className="font-medium text-sm">{file.name}</p>
@@ -633,36 +539,28 @@ export default function AttendanceValidationManager() {
                               {(file.size / 1024 / 1024).toFixed(2)} MB
                             </p>
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                   </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
+                </Card>}
+            </div>}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => {
-              setSelectedAttendance(null);
-              setEditedAttendance({});
-            }}>
+            setSelectedAttendance(null);
+            setEditedAttendance({});
+          }}>
               Fechar
             </Button>
-            <Button 
-              onClick={() => {
-                setValidationAction('validate');
-              }}
-            >
+            <Button onClick={() => {
+            setValidationAction('validate');
+          }}>
               <Check className="h-4 w-4 mr-1" />
               Validar Atendimento
             </Button>
-            <Button 
-              variant="destructive"
-              onClick={() => {
-                setValidationAction('reject');
-              }}
-            >
+            <Button variant="destructive" onClick={() => {
+            setValidationAction('reject');
+          }}>
               <X className="h-4 w-4 mr-1" />
               Rejeitar Atendimento
             </Button>
@@ -672,14 +570,14 @@ export default function AttendanceValidationManager() {
 
       {/* Dialog de Confirmação de Ação */}
       <Dialog open={!!validationAction} onOpenChange={() => {
-        setValidationAction(null);
-        setRejectionReason('');
-        setProfessionalAmount('');
-        setFoundationAmount('');
-        setTotalAmount('');
-        setPaymentMethod('dinheiro');
-        setEditedAttendance({});
-      }}>
+      setValidationAction(null);
+      setRejectionReason('');
+      setProfessionalAmount('');
+      setFoundationAmount('');
+      setTotalAmount('');
+      setPaymentMethod('dinheiro');
+      setEditedAttendance({});
+    }}>
         <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -689,31 +587,18 @@ export default function AttendanceValidationManager() {
           
           <div className="space-y-4">
             <p>
-              {validationAction === 'validate' 
-                ? 'Confirme os valores e valide este atendimento. Os dados serão processados no sistema (estoque, financeiro, histórico).'
-                : 'Tem certeza que deseja rejeitar este atendimento? O profissional precisará revisar e reenviar.'
-              }
+              {validationAction === 'validate' ? 'Confirme os valores e valide este atendimento. Os dados serão processados no sistema (estoque, financeiro, histórico).' : 'Tem certeza que deseja rejeitar este atendimento? O profissional precisará revisar e reenviar.'}
             </p>
 
-            {validationAction === 'validate' && (
-              <>
-                {selectedAttendance?.unit === 'madre' ? (
-                  <>
+            {validationAction === 'validate' && <>
+                {selectedAttendance?.unit === 'madre' ? <>
                     <div className="grid grid-cols-1 gap-4">
                       <div>
                         <Label htmlFor="total-amount" className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4" />
                           Valor Total da Sessão (R$)
                         </Label>
-                        <Input
-                          id="total-amount"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={totalAmount || selectedAttendance?.amount_charged?.toString() || ''}
-                          onChange={(e) => setTotalAmount(e.target.value)}
-                          placeholder="0.00"
-                        />
+                        <Input id="total-amount" type="number" step="0.01" min="0" value={totalAmount || selectedAttendance?.amount_charged?.toString() || ''} onChange={e => setTotalAmount(e.target.value)} placeholder="0.00" />
                       </div>
                       <div>
                         <Label htmlFor="payment-method">Método de Pagamento</Label>
@@ -735,97 +620,52 @@ export default function AttendanceValidationManager() {
                           <DollarSign className="h-4 w-4" />
                           Valor para o Profissional (R$)
                         </Label>
-                        <Input
-                          id="professional-amount"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={professionalAmount}
-                          onChange={(e) => setProfessionalAmount(e.target.value)}
-                          placeholder="0.00"
-                        />
+                        <Input id="professional-amount" type="number" step="0.01" min="0" value={professionalAmount} onChange={e => setProfessionalAmount(e.target.value)} placeholder="0.00" />
                       </div>
                       <div>
                         <Label htmlFor="foundation-amount" className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4" />
                           Valor para a Fundação (R$)
                         </Label>
-                        <Input
-                          id="foundation-amount"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={foundationAmount}
-                          onChange={(e) => setFoundationAmount(e.target.value)}
-                          placeholder="0.00"
-                        />
+                        <Input id="foundation-amount" type="number" step="0.01" min="0" value={foundationAmount} onChange={e => setFoundationAmount(e.target.value)} placeholder="0.00" />
                       </div>
                     </div>
                     <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
                       <p><strong>Informação:</strong> Os valores informados serão registrados no sistema financeiro e nos relatórios profissionais. Se não informar valores, apenas os custos dos materiais e valor total da sessão serão processados.</p>
                     </div>
-                  </>
-                ) : (
-                  <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                  </> : <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
                     <p><strong>Informação:</strong> Para atendimentos da unidade {selectedAttendance?.unit === 'floresta' ? 'Floresta (Neuroavaliação)' : 'Atendimento Floresta'}, não é necessário informar valores financeiros.</p>
-                  </div>
-                )}
-              </>
-            )}
+                  </div>}
+              </>}
 
-            {validationAction === 'reject' && (
-              <div>
+            {validationAction === 'reject' && <div>
                 <Label htmlFor="rejection-reason">Motivo da Rejeição *</Label>
-                <Textarea
-                  id="rejection-reason"
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Explique o motivo da rejeição para que o profissional possa corrigir..."
-                  rows={3}
-                />
-              </div>
-            )}
+                <Textarea id="rejection-reason" value={rejectionReason} onChange={e => setRejectionReason(e.target.value)} placeholder="Explique o motivo da rejeição para que o profissional possa corrigir..." rows={3} />
+              </div>}
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setValidationAction(null);
-                setRejectionReason('');
-                setProfessionalAmount('');
-                setFoundationAmount('');
-                setTotalAmount('');
-                setPaymentMethod('dinheiro');
-                setEditedAttendance({});
-              }}
-              disabled={processing}
-            >
+            <Button variant="outline" onClick={() => {
+            setValidationAction(null);
+            setRejectionReason('');
+            setProfessionalAmount('');
+            setFoundationAmount('');
+            setTotalAmount('');
+            setPaymentMethod('dinheiro');
+            setEditedAttendance({});
+          }} disabled={processing}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleValidationAction}
-              disabled={processing}
-              variant={validationAction === 'validate' ? 'default' : 'destructive'}
-            >
-              {processing ? (
-                <>
+            <Button onClick={handleValidationAction} disabled={processing} variant={validationAction === 'validate' ? 'default' : 'destructive'}>
+              {processing ? <>
                   <Clock className="h-4 w-4 mr-1 animate-spin" />
                   Processando...
-                </>
-              ) : (
-                <>
-                  {validationAction === 'validate' ? (
-                    <><Check className="h-4 w-4 mr-1" />Validar</>
-                  ) : (
-                    <><X className="h-4 w-4 mr-1" />Rejeitar</>
-                  )}
-                </>
-              )}
+                </> : <>
+                  {validationAction === 'validate' ? <><Check className="h-4 w-4 mr-1" />Validar</> : <><X className="h-4 w-4 mr-1" />Rejeitar</>}
+                </>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 }
