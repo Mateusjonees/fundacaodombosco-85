@@ -12,6 +12,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useCreatePrescription } from '@/hooks/usePrescriptions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getTodayLocalISODate } from '@/lib/utils';
 
 interface AddPrescriptionDialogProps {
   open: boolean;
@@ -25,7 +26,7 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
   const createPrescription = useCreatePrescription();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [prescriptionDate, setPrescriptionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [prescriptionDate, setPrescriptionDate] = useState(getTodayLocalISODate());
   const [serviceType, setServiceType] = useState<'sus' | 'private'>('private');
   const [prescriptionText, setPrescriptionText] = useState('');
   const [showPrescriptionDate, setShowPrescriptionDate] = useState(true);
@@ -119,7 +120,7 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
       });
 
       // Reset form
-      setPrescriptionDate(new Date().toISOString().split('T')[0]);
+      setPrescriptionDate(getTodayLocalISODate());
       setServiceType('private');
       setPrescriptionText('');
       setShowPrescriptionDate(true);

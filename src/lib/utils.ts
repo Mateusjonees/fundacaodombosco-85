@@ -30,6 +30,18 @@ export const formatDateBR = (dateString: string | null | undefined): string => {
 };
 
 /**
+ * Retorna a data de hoje no formato YYYY-MM-DD usando o fuso local.
+ * Evita o bug de 1 dia a menos ao usar toISOString() (UTC).
+ */
+export const getTodayLocalISODate = (): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Calcula idade a partir de uma data de nascimento (formato YYYY-MM-DD)
  * Evita problema de timezone
  */

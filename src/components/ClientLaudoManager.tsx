@@ -14,6 +14,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { printBlankLaudoPdf, printLaudoPdf, downloadLaudoPdf } from '@/utils/prescriptionPdf';
+import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
 interface Client {
   id: string;
   name: string;
@@ -60,7 +61,7 @@ export default function ClientLaudoManager({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state - simplified to just text + file
-  const [laudoDate, setLaudoDate] = useState(new Date().toISOString().split('T')[0]);
+  const [laudoDate, setLaudoDate] = useState(getTodayLocalISODate());
   const [laudoType, setLaudoType] = useState('neuropsicologico');
   const [laudoText, setLaudoText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -214,7 +215,7 @@ export default function ClientLaudoManager({
 
       // Generate a simple title based on type and date
       const typeLabel = LAUDO_TYPES.find(t => t.value === laudoType)?.label || 'Laudo';
-      const generatedTitle = `${typeLabel} - ${new Date(laudoDate).toLocaleDateString('pt-BR')}`;
+      const generatedTitle = `${typeLabel} - ${formatDateBR(laudoDate)}`;
       await createLaudo.mutateAsync({
         client_id: client.id,
         employee_id: user.id,
@@ -252,7 +253,7 @@ export default function ClientLaudoManager({
     }
   };
   const resetForm = () => {
-    setLaudoDate(new Date().toISOString().split('T')[0]);
+    setLaudoDate(getTodayLocalISODate());
     setLaudoType('neuropsicologico');
     setLaudoText('');
     setSelectedFile(null);
@@ -260,9 +261,7 @@ export default function ClientLaudoManager({
       fileInputRef.current.value = '';
     }
   };
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  const formatDate = (dateString: string) => formatDateBR(dateString);
   const getLaudoTypeLabel = (type: string) => {
     return LAUDO_TYPES.find(t => t.value === type)?.label || type;
   };
