@@ -375,13 +375,7 @@ export default function AttendanceValidationManager() {
                     <span className="sm:hidden">Ver Detalhes</span>
                   </Button>
                   
-                  <Button variant="destructive" size="sm" onClick={() => {
-              setSelectedAttendance(attendance);
-              setValidationAction('reject');
-            }} className="w-full sm:w-auto">
-                    <X className="h-4 w-4 mr-1" />
-                    Rejeitar
-                  </Button>
+                  
                 </div>
               </CardContent>
             </Card>)}
