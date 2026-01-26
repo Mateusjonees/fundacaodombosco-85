@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,7 +61,7 @@ export default function CompleteAttendanceDialog({
       toast({
         variant: "destructive",
         title: "Campo obrigatório",
-        description: "Por favor, preencha as observações do atendimento."
+        description: "Por favor, preencha a evolução do atendimento."
       });
       return;
     }
@@ -205,7 +206,7 @@ export default function CompleteAttendanceDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="w-[95vw] max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -216,22 +217,25 @@ export default function CompleteAttendanceDialog({
           </p>
         </DialogHeader>
 
-        <Card className="border-2 border-dashed">
-          <CardContent className="p-4">
-            <Textarea
-              placeholder="Descreva as observações do atendimento, procedimentos realizados, evolução do paciente, orientações dadas..."
-              value={sessionNotes}
-              onChange={(e) => setSessionNotes(e.target.value)}
-              className="min-h-[300px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Evolução do Atendimento</Label>
+          <Card className="border-2 border-dashed">
+            <CardContent className="p-3 sm:p-4">
+              <Textarea
+                placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
+                value={sessionNotes}
+                onChange={(e) => setSessionNotes(e.target.value)}
+                className="min-h-[250px] sm:min-h-[300px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base"
+              />
+            </CardContent>
+          </Card>
+        </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
             Cancelar
           </Button>
-          <Button onClick={handleComplete} disabled={loading}>
+          <Button onClick={handleComplete} disabled={loading} className="w-full sm:w-auto">
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Finalizar Atendimento
           </Button>
