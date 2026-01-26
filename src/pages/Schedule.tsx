@@ -684,19 +684,19 @@ export default function Schedule() {
         />
       </div>
       
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
         {/* Sidebar esquerda com calendário e controles */}
-        <div className="lg:w-72">
+        <div className="w-full lg:w-72">
           <div className="space-y-4">
             {/* Calendário */}
             <Card className="border shadow-sm">
-              <CardContent className="p-3">
+              <CardContent className="p-2 sm:p-3">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={(date) => date && setSelectedDate(date)}
                   locale={ptBR}
-                  className="rounded-lg w-full"
+                  className="rounded-lg w-full [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 sm:[&_.rdp-day]:h-9 sm:[&_.rdp-day]:w-9"
                 />
               </CardContent>
             </Card>
@@ -704,17 +704,17 @@ export default function Schedule() {
             {/* Filtros para Administradores */}
             {isAdmin && (
               <Card className="border shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
+                <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
+                  <CardTitle className="flex items-center gap-2 text-xs sm:text-sm">
+                    <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     Filtros
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
                   <div>
-                    <Label className="text-xs">Profissional</Label>
+                    <Label className="text-[10px] sm:text-xs">Profissional</Label>
                     <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                      <SelectTrigger className="h-9 mt-1">
+                      <SelectTrigger className="h-8 sm:h-9 mt-1 text-xs sm:text-sm">
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
@@ -730,9 +730,9 @@ export default function Schedule() {
 
                   {userRole === 'director' && (
                     <div>
-                      <Label className="text-xs">Unidade</Label>
+                      <Label className="text-[10px] sm:text-xs">Unidade</Label>
                       <Select value={filterUnit} onValueChange={setFilterUnit}>
-                        <SelectTrigger className="h-9 mt-1">
+                        <SelectTrigger className="h-8 sm:h-9 mt-1 text-xs sm:text-sm">
                           <SelectValue placeholder="Todas" />
                         </SelectTrigger>
                         <SelectContent>
@@ -755,64 +755,67 @@ export default function Schedule() {
           <div className="space-y-4">
             {/* Barra de pesquisa e visualização */}
             <Card className="border shadow-sm">
-              <CardContent className="py-3 px-4">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  {/* Pesquisa */}
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar paciente, profissional, horário..."
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      className="pl-9 pr-9 h-9"
-                    />
-                    {searchText && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                        onClick={() => setSearchText('')}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+              <CardContent className="py-2 sm:py-3 px-3 sm:px-4">
+                <div className="flex flex-col gap-2 sm:gap-3">
+                  {/* Linha 1: Pesquisa + Toggle */}
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    {/* Pesquisa */}
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar paciente, profissional..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        className="pl-8 sm:pl-9 pr-8 sm:pr-9 h-8 sm:h-9 text-xs sm:text-sm"
+                      />
+                      {searchText && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 sm:h-7 sm:w-7 p-0"
+                          onClick={() => setSearchText('')}
+                        >
+                          <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Toggle Dia/Semana */}
+                    <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')}>
+                      <ToggleGroupItem value="day" aria-label="Dia" className="gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3">
+                        <LayoutList className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="text-xs sm:text-sm">Dia</span>
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="week" aria-label="Semana" className="gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3">
+                        <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="text-xs sm:text-sm">Semana</span>
+                      </ToggleGroupItem>
+                    </ToggleGroup>
                   </div>
 
-                  {/* Toggle Dia/Semana */}
-                  <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')}>
-                    <ToggleGroupItem value="day" aria-label="Dia" className="gap-1.5 h-9 px-3">
-                      <LayoutList className="h-4 w-4" />
-                      <span className="text-sm">Dia</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="week" aria-label="Semana" className="gap-1.5 h-9 px-3">
-                      <CalendarDays className="h-4 w-4" />
-                      <span className="text-sm">Semana</span>
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-
-                  {/* Filtro de horário */}
+                  {/* Linha 2: Filtro de horário (opcional, colapsável em mobile) */}
                   <div className="flex items-center gap-2">
                     <Input
                       type="time"
                       value={filterTimeStart}
                       onChange={(e) => setFilterTimeStart(e.target.value)}
-                      className="w-24 h-9"
+                      className="w-20 sm:w-24 h-8 sm:h-9 text-xs sm:text-sm"
                     />
-                    <span className="text-muted-foreground text-sm">-</span>
+                    <span className="text-muted-foreground text-xs sm:text-sm">-</span>
                     <Input
                       type="time"
                       value={filterTimeEnd}
                       onChange={(e) => setFilterTimeEnd(e.target.value)}
-                      className="w-24 h-9"
+                      className="w-20 sm:w-24 h-8 sm:h-9 text-xs sm:text-sm"
                     />
                     {(filterTimeStart || filterTimeEnd) && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => { setFilterTimeStart(''); setFilterTimeEnd(''); }}
-                        className="h-9 w-9 p-0"
+                        className="h-8 sm:h-9 w-8 sm:w-9 p-0"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                     )}
                   </div>
