@@ -9,6 +9,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2 } from 'lucide-react';
 import { getTodayLocalISODate } from '@/lib/utils';
+import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 
 interface Schedule {
   id: string;
@@ -20,6 +21,13 @@ interface Schedule {
   clients?: {
     name: string;
   };
+}
+
+interface SelectedMaterial {
+  stock_item_id: string;
+  name: string;
+  quantity: number;
+  unit: string;
 }
 
 interface CompleteAttendanceDialogProps {
@@ -39,11 +47,13 @@ export default function CompleteAttendanceDialog({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [sessionNotes, setSessionNotes] = useState('');
+  const [selectedMaterials, setSelectedMaterials] = useState<SelectedMaterial[]>([]);
 
   // Reset form when dialog opens
   useEffect(() => {
     if (isOpen) {
       setSessionNotes('');
+      setSelectedMaterials([]);
     }
   }, [isOpen]);
 
@@ -104,13 +114,21 @@ export default function CompleteAttendanceDialog({
       const endTime = new Date(schedule.end_time);
       const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
+      // Preparar materials_used como JSON
+      const materialsUsed = selectedMaterials.length > 0 
+        ? JSON.parse(JSON.stringify(selectedMaterials)) 
+        : null;
+
       // Atualizar schedule
-      await supabase.from('schedules').update({
+      const { error: scheduleError } = await supabase.from('schedules').update({
         status: scheduleStatus,
         session_notes: sessionNotes,
+        materials_used: materialsUsed,
         completed_at: now,
         completed_by: user.id
       }).eq('id', schedule.id);
+
+      if (scheduleError) throw scheduleError;
 
       // Criar attendance_report
       const { data: attendanceReport } = await supabase
@@ -127,6 +145,7 @@ export default function CompleteAttendanceDialog({
           session_duration: durationMinutes,
           observations: sessionNotes,
           session_notes: sessionNotes,
+          materials_used: materialsUsed,
           created_by: user.id,
           completed_by: user.id,
           completed_by_name: completedByName,
@@ -217,18 +236,27 @@ export default function CompleteAttendanceDialog({
           </p>
         </DialogHeader>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Evolução do Atendimento</Label>
-          <Card className="border-2 border-dashed">
-            <CardContent className="p-3 sm:p-4">
-              <Textarea
-                placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
-                value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
-                className="min-h-[250px] sm:min-h-[300px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base"
-              />
-            </CardContent>
-          </Card>
+        <div className="space-y-4">
+          {/* Seletor de Materiais */}
+          <AttendanceMaterialSelector
+            selectedMaterials={selectedMaterials}
+            onMaterialsChange={setSelectedMaterials}
+          />
+
+          {/* Evolução do Atendimento */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Evolução do Atendimento</Label>
+            <Card className="border-2 border-dashed">
+              <CardContent className="p-3 sm:p-4">
+                <Textarea
+                  placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
+                  value={sessionNotes}
+                  onChange={(e) => setSessionNotes(e.target.value)}
+                  className="min-h-[200px] sm:min-h-[250px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base"
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
