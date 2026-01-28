@@ -9,8 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2, Brain } from 'lucide-react';
-import { getTodayLocalISODate } from '@/lib/utils';
-import { differenceInYears, parseISO } from 'date-fns';
+import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NeuroTestSelector from './NeuroTestSelector';
 import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
@@ -80,8 +79,8 @@ export default function CompleteAttendanceDialog({
     if (data) {
       setClientUnit(data.unit);
       if (data.birth_date) {
-        const age = differenceInYears(new Date(), parseISO(data.birth_date));
-        setPatientAge(age);
+        const age = calculateAgeBR(data.birth_date);
+        setPatientAge(age ?? 0);
       }
     }
   };
