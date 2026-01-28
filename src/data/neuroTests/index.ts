@@ -5,6 +5,7 @@
 export * from './bpa2';
 export * from './bpa2Percentiles';
 export * from './fdt';
+export * from './fdtPercentiles';
 export * from './ravlt';
 export * from './ravltPercentiles';
 
