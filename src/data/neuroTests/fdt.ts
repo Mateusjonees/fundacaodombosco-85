@@ -18,9 +18,21 @@ export interface FDTCalculatedScores {
   flexibilidade: number;  // alternancia - leitura
 }
 
+export interface FDTPercentiles {
+  inibicao: number;
+  flexibilidade: number;
+}
+
+export interface FDTClassifications {
+  inibicao: string;
+  flexibilidade: string;
+}
+
 export interface FDTResults {
   rawScores: FDTScores;
   calculatedScores: FDTCalculatedScores;
+  percentiles: FDTPercentiles;
+  classifications: FDTClassifications;
   notes: string;
 }
 
