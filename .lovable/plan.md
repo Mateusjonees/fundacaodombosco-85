@@ -1,199 +1,190 @@
 
+# Plano: Adicionar Testes FDT e RAVLT ao Sistema Neuropsicologico
 
-# Plano: Corrigir Tabelas de Percentis BPA-2 com Dados Reais do PDF
+## Resumo
 
-## Problema Identificado
-
-Os valores no arquivo `bpa2Percentiles.ts` estao completamente errados. Os dados foram estimados e nao correspondem aos valores reais do manual BPA-2.
-
-### Exemplo de Discrepancia (51-60 anos, Atencao Alternada):
-
-| Percentil | PDF (Correto) | Codigo (Errado) |
-|-----------|---------------|-----------------|
-| 50        | 70            | 114             |
-| 75        | 89            | 140             |
-| 90        | 106           | 165             |
-
-Diferenca de ate 60 pontos nos valores!
+Adicionar dois novos testes neuropsicologicos ao sistema de atendimento da unidade Floresta (Neuro):
+1. **FDT** (Five Digit Test) - Avalia funcoes executivas
+2. **RAVLT** (Teste de Aprendizagem Auditivo-Verbal de Rey) - Avalia memoria verbal
 
 ---
 
-## Dados Corretos Extraidos do PDF
+## Dados Extraidos do PDF RAVLT
 
-### Atencao Alternada (AA) - Por Faixa Etaria
+### Faixas Etarias Disponiveis:
+- 6-8 anos (Tabela 15)
+- 9-11 anos (Tabela 16)
+- 12-14 anos (Tabela 17)
+- 15-17 anos (Tabela 18)
+- 18-20 anos (Tabela 19)
+- 21-30 anos (Tabela 20)
+- 31-40 anos (Tabela 21)
+- 41-50 anos (Tabela 22)
+- 51-60 anos (Tabela 23)
+- 61-70 anos (Tabela 24)
+- 71-79 anos (Tabela 25)
+- 80+ anos (Tabela 26)
 
-**6 anos**: P1=-20, P10=10, P20=18, P25=21, P30=23, P40=26, P50=31, P60=34, P70=37, P75=39, P80=42, P90=49, P99=78
-
-**7 anos**: P1=-16, P10=17, P20=25, P25=28, P30=30, P40=34, P50=38, P60=42, P70=46, P75=48, P80=51, P90=59, P99=83
-
-**8 anos**: P1=-6, P10=24, P20=33, P25=35, P30=37, P40=42, P50=46, P60=50, P70=55, P75=59, P80=62, P90=72, P99=94
-
-**9 anos**: P1=0, P10=30, P20=39, P25=41, P30=44, P40=48, P50=53, P60=58, P70=64, P75=68, P80=72, P90=82, P99=109
-
-**10 anos**: P1=-6, P10=33, P20=43, P25=47, P30=49, P40=55, P50=61, P60=68, P70=74, P75=78, P80=82, P90=93, P99=114
-
-**11 anos**: P1=-8, P10=39, P20=49, P25=53, P30=57, P40=62, P50=70, P60=76, P70=82, P75=87, P80=90, P90=101, P99=117
-
-**12 anos**: P1=-6, P10=42, P20=55, P25=59, P30=63, P40=71, P50=77, P60=84, P70=91, P75=95, P80=100, P90=108, P99=119
-
-**13 anos**: P1=9, P10=42, P20=58, P25=63, P30=68, P40=75, P50=81, P60=88, P70=96, P75=99, P80=103, P90=112, P99=120
-
-**14 anos**: P1=10, P10=50, P20=63, P25=68, P30=72, P40=79, P50=86, P60=93, P70=100, P75=104, P80=107, P90=114, P99=120
-
-**15-17 anos**: P1=5, P10=55, P20=70, P25=75, P30=80, P40=87, P50=94, P60=100, P70=107, P75=110, P80=113, P90=117, P99=120
-
-**18-20 anos**: P1=36, P10=69, P20=80, P25=84, P30=88, P40=95, P50=100, P60=107, P70=112, P75=114, P80=116, P90=119, P99=120
-
-**21-30 anos**: P1=28, P10=62, P20=73, P25=77, P30=81, P40=88, P50=95, P60=100, P70=106, P75=109, P80=113, P90=118, P99=120
-
-**31-40 anos**: P1=15, P10=55, P20=66, P25=71, P30=74, P40=81, P50=87, P60=94, P70=100, P75=104, P80=108, P90=116, P99=120
-
-**41-50 anos**: P1=1, P10=45, P20=57, P25=61, P30=65, P40=72, P50=78, P60=85, P70=93, P75=97, P80=101, P90=112, P99=120
-
-**51-60 anos**: P1=0, P10=36, P20=47, P25=52, P30=56, P40=63, P50=70, P60=77, P70=85, P75=89, P80=95, P90=106, P99=117
-
-**61-70 anos**: P1=-5, P10=26, P20=36, P25=39, P30=43, P40=50, P50=57, P60=64, P70=72, P75=76, P80=81, P90=93, P99=110
-
-**71-80 anos**: P1=-15, P10=14, P20=23, P25=26, P30=30, P40=35, P50=41, P60=48, P70=55, P75=59, P80=64, P90=78, P99=78
-
-**81 anos**: P1=-23, P10=4, P20=14, P25=17, P30=21, P40=26, P50=30, P60=33, P70=39, P75=41, P80=44, P90=56, P99=120
+### Percentis: 5, 25, 50, 75, 95
 
 ---
 
-### Atencao Concentrada (AC) - Por Faixa Etaria
+## Estrutura do Teste FDT
 
-**6 anos**: P1=-27, P10=8, P20=16, P25=19, P30=22, P40=25, P50=28, P60=32, P70=35, P75=37, P80=40, P90=46, P99=79
+### Campos de Entrada (tempo em segundos):
+- Leitura
+- Contagem
+- Escolha
+- Alternancia
 
-**7 anos**: P1=-21, P10=15, P20=23, P25=26, P30=29, P40=33, P50=37, P60=40, P70=44, P75=46, P80=48, P90=55, P99=70
-
-**8 anos**: P1=-13, P10=22, P20=31, P25=33, P30=36, P40=40, P50=44, P60=47, P70=52, P75=54, P80=56, P90=62, P99=79
-
-**9 anos**: P1=-14, P10=28, P20=37, P25=40, P30=42, P40=46, P50=50, P60=54, P70=59, P75=62, P80=64, P90=70, P99=89
-
-**10 anos**: P1=-15, P10=32, P20=42, P25=45, P30=48, P40=52, P50=56, P60=60, P70=65, P75=68, P80=71, P90=78, P99=99
-
-**11 anos**: P1=-1, P10=37, P20=46, P25=49, P30=52, P40=57, P50=61, P60=66, P70=72, P75=75, P80=78, P90=87, P99=110
-
-**12 anos**: P1=-5, P10=41, P20=51, P25=55, P30=58, P40=64, P50=69, P60=74, P70=80, P75=83, P80=86, P90=95, P99=113
-
-**13 anos**: P1=4, P10=42, P20=53, P25=57, P30=60, P40=67, P50=73, P60=79, P70=84, P75=88, P80=91, P90=101, P99=118
-
-**14 anos**: P1=1, P10=47, P20=57, P25=60, P30=63, P40=70, P50=77, P60=83, P70=90, P75=93, P80=97, P90=108, P99=115
-
-**15-17 anos**: P1=10, P10=48, P20=62, P25=66, P30=69, P40=76, P50=83, P60=89, P70=96, P75=99, P80=103, P90=112, P99=113
-
-**18-20 anos**: P1=34, P10=63, P20=73, P25=77, P30=80, P40=86, P50=92, P60=98, P70=104, P75=108, P80=112, P90=118, P99=120
-
-**21-30 anos**: P1=33, P10=62, P20=72, P25=76, P30=79, P40=85, P50=91, P60=97, P70=103, P75=106, P80=110, P90=118, P99=120
-
-**31-40 anos**: P1=28, P10=61, P20=70, P25=74, P30=78, P40=84, P50=90, P60=95, P70=102, P75=105, P80=108, P90=116, P99=120
-
-**41-50 anos**: P1=24, P10=57, P20=67, P25=70, P30=73, P40=80, P50=85, P60=91, P70=98, P75=102, P80=106, P90=103, P99=91
-
-**51-60 anos**: P1=14, P10=51, P20=61, P25=65, P30=68, P40=74, P50=81, P60=87, P70=94, P75=98, P80=103, P90=107, P99=68
-
-**61-70 anos**: P1=10, P10=43, P20=53, P25=56, P30=60, P40=67, P50=72, P60=79, P70=85, P75=89, P80=94, P90=107, P99=116
-
-**71-80 anos**: P1=6, P10=28, P20=38, P25=42, P30=46, P40=52, P50=58, P60=65, P70=71, P75=76, P80=81, P90=91, P99=68
-
-**81 anos**: P1=15, P10=15, P20=23, P25=28, P30=31, P40=37, P50=43, P60=48, P70=53, P75=56, P80=60, P90=107, P99=120
+### Calculos Automaticos:
+- **Inibicao** = Escolha - Leitura
+- **Flexibilidade** = Alternancia - Leitura
 
 ---
 
-### Atencao Dividida (AD) - Por Faixa Etaria
+## Estrutura do Teste RAVLT
 
-**6 anos**: P1=-49, P10=-14, P20=-1, P25=2, P30=5, P40=17, P50=26, P60=22, P70=29, P75=32, P80=35, P90=44, P99=72
+### Campos de Entrada:
+- A1, A2, A3, A4, A5 (total de palavras corretas lembradas)
+- B1 (lista distratora)
+- A6, A7 (evocacao tardia)
+- REC (reconhecimento antes de diminuir 35)
 
-**7 anos**: P1=-53, P10=-9, P20=4, P25=9, P30=13, P40=34, P50=26, P60=31, P70=37, P75=40, P80=43, P90=51, P99=72
+### Calculos Automaticos:
+- **Reconhecimento** = REC - 35
+- **Escore Total** = A1 + A2 + A3 + A4 + A5
+- **ALT** (Aprendizagem ao Longo das Tentativas) = Escore Total - (5 x A1)
+- **Velocidade de Esquecimento** = A7 / A6
+- **Interferencia Proativa** = B1 / A1
+- **Interferencia Retroativa** = A6 / A5
 
-**8 anos**: P1=-47, P10=1, P20=15, P25=20, P30=23, P40=40, P50=52, P60=40, P70=44, P75=48, P80=51, P90=60, P99=77
-
-**9 anos**: P1=-47, P10=4, P20=20, P25=24, P30=28, P40=46, P50=57, P60=46, P70=52, P75=55, P80=58, P90=68, P99=93
-
-**10 anos**: P1=-43, P10=7, P20=24, P25=29, P30=33, P40=52, P50=57, P60=58, P70=62, P75=65, P80=65, P90=73, P99=95
-
-**11 anos**: P1=-36, P10=15, P20=31, P25=35, P30=38, P40=58, P50=64, P60=64, P70=67, P75=70, P80=81, P90=106, P99=106
-
-**12 anos**: P1=-31, P10=19, P20=34, P25=39, P30=43, P40=60, P50=67, P60=70, P70=74, P75=78, P80=88, P90=106, P99=106
-
-**13 anos**: P1=-30, P10=21, P20=37, P25=42, P30=45, P40=67, P50=74, P60=74, P70=78, P75=82, P80=92, P90=110, P99=110
-
-**14 anos**: P1=-27, P10=29, P20=42, P25=46, P30=51, P40=76, P50=82, P60=81, P70=84, P75=88, P80=97, P90=114, P99=114
-
-**15-17 anos**: P1=-11, P10=34, P20=50, P25=56, P30=60, P40=86, P50=92, P60=89, P70=92, P75=96, P80=104, P90=116, P99=116
-
-**18-20 anos**: P1=16, P10=53, P20=66, P25=70, P30=74, P40=92, P50=88, P60=98, P70=100, P75=104, P80=110, P90=120, P99=120
-
-**21-30 anos**: P1=8, P10=49, P20=60, P25=65, P30=69, P40=82, P50=88, P60=94, P70=97, P75=100, P80=108, P90=119, P99=119
-
-**31-40 anos**: P1=0, P10=42, P20=53, P25=58, P30=61, P40=75, P50=81, P60=88, P70=91, P75=95, P80=105, P90=118, P99=118
-
-**41-50 anos**: P1=-9, P10=31, P20=43, P25=47, P30=51, P40=64, P50=70, P60=78, P70=82, P75=86, P80=96, P90=116, P99=116
-
-**51-60 anos**: P1=-19, P10=21, P20=34, P25=38, P30=42, P40=54, P50=61, P60=68, P70=72, P75=77, P80=88, P90=112, P99=112
-
-**61-70 anos**: P1=-32, P10=9, P20=22, P25=27, P30=31, P40=44, P50=51, P60=57, P70=62, P75=66, P80=77, P90=104, P99=104
-
-**71-80 anos**: P1=-31, P10=0, P20=10, P25=14, P30=17, P40=28, P50=33, P60=41, P70=45, P75=48, P80=60, P90=90, P99=90
-
-**81 anos**: P1=-53, P10=-5, P20=0, P25=3, P30=5, P40=15, P50=20, P60=25, P70=29, P75=32, P80=42, P90=68, P99=68
+### Sistema de Classificacao (igual para FDT e RAVLT):
+| Percentil | Classificacao |
+|-----------|---------------|
+| menos que 5 | Inferior |
+| 5 | Inferior |
+| 5-25 | Medio Inferior |
+| 25 | Medio Inferior |
+| 25-50 | Medio |
+| 50 | Medio |
+| 50-75 | Medio |
+| 75 | Medio Superior |
+| 75-95 | Medio Superior |
+| 95 | Superior |
+| maior que 95 | Superior |
 
 ---
 
-### Atencao Geral (AG) - Por Faixa Etaria
+## Arquivos a Criar
 
-Os dados de AG no PDF estao em formato diferente. Vou extrair os valores corrigidos das linhas correspondentes:
+### 1. `src/data/neuroTests/fdt.ts`
+Definicao do teste FDT com campos e formulas
 
-**6 anos**: P1=-57, P10=15, P20=34, P25=44, P30=51, P40=63, P50=73, P60=86, P70=99, P75=105, P80=111, P90=129, P99=207
+### 2. `src/data/neuroTests/ravlt.ts`
+Definicao do teste RAVLT com campos, formulas e funcoes de calculo
 
-**7 anos**: P1=-42, P10=32, P20=59, P25=68, P30=76, P40=89, P50=99, P60=110, P70=122, P75=129, P80=135, P90=153, P99=206
+### 3. `src/data/neuroTests/ravltPercentiles.ts`
+Tabelas normativas do RAVLT extraidas do PDF para todas as faixas etarias
 
-**8 anos**: P1=-30, P10=57, P20=83, P25=94, P30=100, P40=112, P50=124, P60=135, P70=146, P75=154, P80=162, P90=182, P99=230
+### 4. `src/components/NeuroTestFDTForm.tsx`
+Formulario de entrada para o teste FDT com campos de tempo e calculos
 
-**9 anos**: P1=-10, P10=74, P20=100, P25=110, P30=118, P40=131, P50=143, P60=155, P70=169, P75=177, P80=186, P90=208, P99=271
-
-**10 anos**: P1=-22, P10=83, P20=115, P25=126, P30=135, P40=150, P50=164, P60=177, P70=192, P75=200, P80=208, P90=231, P99=283
-
-**11 anos**: P1=-19, P10=104, P20=133, P25=143, P30=153, P40=168, P50=183, P60=196, P70=212, P75=221, P80=231, P90=257, P99=311
-
-**12 anos**: P1=-9, P10=114, P20=149, P25=160, P30=170, P40=188, P50=203, P60=219, P70=236, P75=245, P80=254, P90=278, P99=320
-
-**13 anos**: P1=25, P10=121, P20=153, P25=169, P30=179, P40=197, P50=212, P60=230, P70=250, P75=259, P80=269, P90=290, P99=330
-
-**14 anos**: P1=30, P10=142, P20=172, P25=185, P30=194, P40=210, P50=228, P60=245, P70=264, P75=273, P80=282, P90=303, P99=339
-
-**15-17 anos**: P1=41, P10=150, P20=188, P25=205, P30=216, P40=235, P50=250, P60=267, P70=282, P75=291, P80=300, P90=320, P99=347
-
-**18-20 anos**: P1=118, P10=185, P20=226, P25=237, P30=247, P40=264, P50=278, P60=292, P70=305, P75=312, P80=319, P90=335, P99=356
-
-**21-30 anos**: P1=99, P10=169, P20=214, P25=224, P30=234, P40=251, P50=266, P60=281, P70=296, P75=304, P80=312, P90=330, P99=354
-
-**31-40 anos**: P1=82, P10=144, P20=198, P25=208, P30=218, P40=236, P50=251, P60=267, P70=283, P75=292, P80=301, P90=322, P99=352
-
-**41-50 anos**: P1=53, P10=120, P20=173, P25=184, P30=194, P40=212, P50=228, P60=245, P70=263, P75=272, P80=283, P90=308, P99=347
-
-**51-60 anos**: P1=32, P10=89, P20=149, P25=160, P30=171, P40=188, P50=206, P60=224, P70=242, P75=253, P80=264, P90=292, P99=338
-
-**61-70 anos**: P1=7, P10=47, P20=116, P25=127, P30=138, P40=156, P50=174, P60=192, P70=213, P75=223, P80=233, P90=259, P99=318
-
-**71-80 anos**: P1=-12, P10=18, P20=77, P25=87, P30=95, P40=111, P50=126, P60=145, P70=166, P75=175, P80=186, P90=222, P99=290
-
-**81 anos**: P1=-21, P10=38, P20=45, P25=53, P30=60, P40=72, P50=85, P60=97, P70=114, P75=126, P80=133, P90=158, P99=222
+### 5. `src/components/NeuroTestRAVLTForm.tsx`
+Formulario de entrada para o teste RAVLT com todos os campos e calculos
 
 ---
 
-## Arquivo a Modificar
+## Arquivos a Modificar
 
-### `src/data/neuroTests/bpa2Percentiles.ts`
+### 1. `src/data/neuroTests/index.ts`
+Adicionar exportacao dos novos testes FDT e RAVLT na lista AVAILABLE_NEURO_TESTS
 
-Substituir TODAS as tabelas com os valores corretos extraidos do PDF do manual BPA-2.
+### 2. `src/components/CompleteAttendanceDialog.tsx`
+Integrar os formularios dos novos testes (FDT e RAVLT) na finalizacao de atendimento
+
+---
+
+## Detalhes Tecnicos
+
+### Estrutura de Dados RAVLT:
+```typescript
+interface RAVLTScores {
+  a1: number; a2: number; a3: number; a4: number; a5: number;
+  b1: number; a6: number; a7: number;
+  rec: number;
+}
+
+interface RAVLTResults {
+  rawScores: RAVLTScores;
+  calculatedScores: {
+    reconhecimento: number;
+    escoreTotal: number;
+    alt: number;
+    velocidadeEsquecimento: number;
+    interferenciaProativa: number;
+    interferenciaRetroativa: number;
+  };
+  percentiles: { ... };
+  classifications: { ... };
+  notes: string;
+}
+```
+
+### Estrutura de Dados FDT:
+```typescript
+interface FDTScores {
+  leitura: number;
+  contagem: number;
+  escolha: number;
+  alternancia: number;
+}
+
+interface FDTResults {
+  rawScores: FDTScores;
+  calculatedScores: {
+    inibicao: number;      // escolha - leitura
+    flexibilidade: number; // alternancia - leitura
+  };
+  notes: string;
+}
+```
+
+### Tabela de Percentis RAVLT (exemplo 6-8 anos):
+```typescript
+const TABLE_6_8 = {
+  A1: [p(5, 2), p(25, 3), p(50, 4), p(75, 5), p(95, 8)],
+  A2: [p(5, 3), p(25, 5), p(50, 6), p(75, 7), p(95, 10)],
+  // ... demais variaveis
+}
+```
+
+---
+
+## Fluxo de Uso
+
+```text
+1. Profissional finaliza atendimento na unidade Floresta (Neuro)
+2. Sistema exibe lista de testes disponiveis (BPA-2, FDT, RAVLT)
+3. Profissional seleciona os testes aplicados
+4. Para cada teste selecionado, aparece o formulario correspondente
+5. Profissional insere os valores brutos
+6. Sistema calcula escores derivados, percentis e classificacoes
+7. Resultados sao salvos junto com o registro de atendimento
+```
+
+---
+
+## Observacao sobre FDT
+
+Para o teste FDT, sera criada a estrutura completa do formulario com os calculos de Inibicao e Flexibilidade. No entanto, **para calcular percentis automaticamente**, seria necessario o PDF do manual FDT com as tabelas normativas. Por enquanto, o formulario ficara funcional para entrada de dados e calculos, mas sem classificacao automatica por percentil ate que as tabelas sejam fornecidas.
 
 ---
 
 ## Resultado Esperado
 
-Apos a correcao:
-- Os percentis corresponderao exatamente ao manual BPA-2
-- Pacientes receberao classificacoes precisas
-- Sistema estara validado para uso clinico profissional
-
+- Testes FDT e RAVLT disponiveis para selecao na finalizacao de atendimento
+- Formularios especificos para cada teste com campos apropriados
+- Calculos automaticos conforme formulas especificadas
+- Percentis e classificacoes automaticas para RAVLT (baseado no PDF)
+- Sistema extensivel para adicionar novos testes no futuro
