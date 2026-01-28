@@ -128,56 +128,56 @@ export default function NeuroTestBPA2Form({
     const classification = getClassification(percentile);
 
     return (
-      <div key={code} className="space-y-2 p-3 bg-muted/30 rounded-lg">
-        <div className="flex items-center justify-between">
-          <Label className="font-medium text-sm">{name} ({code})</Label>
-          <Badge variant={getClassificationVariant(classification)} className="text-xs">
+      <div key={code} className="space-y-1.5 p-2.5 bg-muted/30 rounded-lg">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="font-medium text-xs sm:text-sm">{name} ({code})</Label>
+          <Badge variant={getClassificationVariant(classification)} className="text-[10px] sm:text-xs shrink-0">
             {classification}
           </Badge>
         </div>
         
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           <div>
-            <Label className="text-xs text-muted-foreground">Acertos (A)</Label>
+            <Label className="text-[10px] sm:text-xs text-muted-foreground">A</Label>
             <Input
               type="number"
               min="0"
               value={scores[subtestKey].acertos || ''}
               onChange={(e) => updateScore(subtestKey, 'acertos', e.target.value)}
-              className="h-9"
+              className="h-8 text-sm"
               placeholder="0"
             />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Erros (E)</Label>
+            <Label className="text-[10px] sm:text-xs text-muted-foreground">E</Label>
             <Input
               type="number"
               min="0"
               value={scores[subtestKey].erros || ''}
               onChange={(e) => updateScore(subtestKey, 'erros', e.target.value)}
-              className="h-9"
+              className="h-8 text-sm"
               placeholder="0"
             />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Omissões (O)</Label>
+            <Label className="text-[10px] sm:text-xs text-muted-foreground">O</Label>
             <Input
               type="number"
               min="0"
               value={scores[subtestKey].omissoes || ''}
               onChange={(e) => updateScore(subtestKey, 'omissoes', e.target.value)}
-              className="h-9"
+              className="h-8 text-sm"
               placeholder="0"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm pt-1 border-t border-border/50">
+        <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
           <span className="text-muted-foreground">
-            Resultado: A - (E + O) = <strong className="text-foreground">{score}</strong>
+            = <strong className="text-foreground">{score}</strong>
           </span>
           <span className="text-muted-foreground">
-            Percentil: <strong className="text-foreground">{percentile}</strong>
+            P<strong className="text-foreground">{percentile}</strong>
           </span>
         </div>
       </div>
@@ -194,58 +194,53 @@ export default function NeuroTestBPA2Form({
 
   return (
     <Card className="border-primary/20">
-      <CardHeader className="pb-3">
+      <CardHeader className="p-3 pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+            <Brain className="h-4 w-4 text-primary" />
             {BPA2_TEST.name}
           </CardTitle>
           <Button
             variant="ghost"
             size="icon"
             onClick={onRemove}
-            className="h-8 w-8 text-destructive hover:text-destructive"
+            className="h-7 w-7 text-destructive hover:text-destructive"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">{BPA2_TEST.fullName}</p>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-3 pt-0 space-y-2.5">
         {/* Subtestes */}
         {renderSubtestRow('AC', 'Atenção Concentrada', 'ac')}
         {renderSubtestRow('AD', 'Atenção Dividida', 'ad')}
         {renderSubtestRow('AA', 'Atenção Alternada', 'aa')}
 
         {/* Atenção Geral (calculado) */}
-        <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-          <div className="flex items-center justify-between mb-2">
+        <div className="p-2.5 bg-primary/5 rounded-lg border border-primary/20">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calculator className="h-4 w-4 text-primary" />
-              <Label className="font-medium text-sm">Atenção Geral (AG)</Label>
+              <Label className="font-medium text-xs sm:text-sm">AG</Label>
+              <span className="text-sm font-bold text-foreground">{agScore}</span>
             </div>
-            <Badge variant={getClassificationVariant(agClassification)}>
-              {agClassification}
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              AC + AD + AA = <strong className="text-foreground text-lg">{agScore}</strong>
-            </span>
-            <span className="text-muted-foreground">
-              Percentil: <strong className="text-foreground text-lg">{agPercentile}</strong>
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">P{agPercentile}</span>
+              <Badge variant={getClassificationVariant(agClassification)} className="text-[10px] sm:text-xs">
+                {agClassification}
+              </Badge>
+            </div>
           </div>
         </div>
 
         {/* Observações */}
-        <div className="space-y-2">
-          <Label className="text-sm">Observações do Teste</Label>
+        <div className="space-y-1">
+          <Label className="text-xs">Obs. do Teste</Label>
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Observações sobre a aplicação do teste, comportamento do paciente, etc."
-            className="min-h-[80px] resize-none"
+            placeholder="Comportamento, dificuldades observadas..."
+            className="min-h-[50px] resize-none text-sm"
           />
         </div>
       </CardContent>

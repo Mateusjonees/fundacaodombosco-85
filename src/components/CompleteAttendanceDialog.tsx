@@ -300,25 +300,25 @@ export default function CompleteAttendanceDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-4 sm:px-6 py-4 border-b shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <FileText className="h-5 w-5" />
             Finalizar Atendimento
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             {schedule.clients?.name} • {new Date(schedule.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             {isNeuroUnit && patientAge > 0 && (
-              <span className="ml-2 text-primary">• {patientAge} anos</span>
+              <span className="ml-2 text-primary font-medium">• {patientAge} anos</span>
             )}
           </p>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4 pb-4">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="space-y-4 p-4 sm:p-6">
             {/* Seção de Testes Neuropsicológicos - Apenas para unidade Floresta (Neuro) */}
             {isNeuroUnit && patientAge > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <NeuroTestSelector
                   patientAge={patientAge}
                   selectedTests={selectedTests}
@@ -345,22 +345,21 @@ export default function CompleteAttendanceDialog({
 
             {/* Evolução do Atendimento */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Evolução do Atendimento</Label>
-              <Card className="border-2 border-dashed">
-                <CardContent className="p-3 sm:p-4">
-                  <Textarea
-                    placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
-                    value={sessionNotes}
-                    onChange={(e) => setSessionNotes(e.target.value)}
-                    className="min-h-[180px] sm:min-h-[200px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base"
-                  />
-                </CardContent>
-              </Card>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Evolução do Atendimento <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
+                value={sessionNotes}
+                onChange={(e) => setSessionNotes(e.target.value)}
+                className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
+              />
             </div>
           </div>
         </ScrollArea>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2 pt-4 border-t">
+        <DialogFooter className="flex-col sm:flex-row gap-2 px-4 sm:px-6 py-4 border-t shrink-0">
           <Button variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
             Cancelar
           </Button>
