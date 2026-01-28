@@ -13,6 +13,10 @@ import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NeuroTestSelector from './NeuroTestSelector';
 import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
+import NeuroTestFDTForm from './NeuroTestFDTForm';
+import NeuroTestRAVLTForm from './NeuroTestRAVLTForm';
+import { type FDTResults } from '@/data/neuroTests/fdt';
+import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 
 interface Schedule {
   id: string;
@@ -57,6 +61,8 @@ export default function CompleteAttendanceDialog({
   // Neuro tests state
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [bpa2Results, setBpa2Results] = useState<BPA2Results | null>(null);
+  const [fdtResults, setFdtResults] = useState<FDTResults | null>(null);
+  const [ravltResults, setRavltResults] = useState<RAVLTResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -92,6 +98,8 @@ export default function CompleteAttendanceDialog({
       setSelectedMaterials([]);
       setSelectedTests([]);
       setBpa2Results(null);
+      setFdtResults(null);
+      setRavltResults(null);
     }
   }, [isOpen]);
 
@@ -103,11 +111,23 @@ export default function CompleteAttendanceDialog({
     setSelectedTests(prev => prev.filter(t => t !== testCode));
     if (testCode === 'BPA2') {
       setBpa2Results(null);
+    } else if (testCode === 'FDT') {
+      setFdtResults(null);
+    } else if (testCode === 'RAVLT') {
+      setRavltResults(null);
     }
   };
 
   const handleBpa2ResultsChange = useCallback((results: BPA2Results) => {
     setBpa2Results(results);
+  }, []);
+
+  const handleFdtResultsChange = useCallback((results: FDTResults) => {
+    setFdtResults(results);
+  }, []);
+
+  const handleRavltResultsChange = useCallback((results: RAVLTResults) => {
+    setRavltResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -204,29 +224,70 @@ export default function CompleteAttendanceDialog({
         .select('id')
         .maybeSingle();
 
-      // Salvar resultados do teste neuro (se houver)
-      if (isNeuroUnit && bpa2Results && selectedTests.includes('BPA2')) {
-        // Convert to JSON-safe format
-        const rawScoresJson = JSON.parse(JSON.stringify(bpa2Results.rawScores));
-        const calculatedScoresJson = JSON.parse(JSON.stringify(bpa2Results.calculatedScores));
-        const percentilesJson = JSON.parse(JSON.stringify(bpa2Results.percentiles));
-        const classificationsJson = JSON.parse(JSON.stringify(bpa2Results.classifications));
+      // Salvar resultados dos testes neuro (se houver)
+      if (isNeuroUnit) {
+        const testsToSave = [];
 
-        await supabase.from('neuro_test_results').insert([{
-          client_id: schedule.client_id,
-          schedule_id: schedule.id,
-          attendance_report_id: attendanceReport?.id || null,
-          test_code: 'BPA2',
-          test_name: 'BPA-2 - Bateria Psicológica para Avaliação da Atenção',
-          patient_age: patientAge,
-          raw_scores: rawScoresJson,
-          calculated_scores: calculatedScoresJson,
-          percentiles: percentilesJson,
-          classifications: classificationsJson,
-          applied_by: user.id,
-          applied_at: now,
-          notes: bpa2Results.notes || null
-        }]);
+        // BPA-2
+        if (bpa2Results && selectedTests.includes('BPA2')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'BPA2',
+            test_name: 'BPA-2 - Bateria Psicológica para Avaliação da Atenção',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(bpa2Results.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(bpa2Results.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(bpa2Results.percentiles)),
+            classifications: JSON.parse(JSON.stringify(bpa2Results.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: bpa2Results.notes || null
+          });
+        }
+
+        // FDT
+        if (fdtResults && selectedTests.includes('FDT')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'FDT',
+            test_name: 'FDT - Five Digit Test',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(fdtResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(fdtResults.calculatedScores)),
+            percentiles: {},
+            classifications: {},
+            applied_by: user.id,
+            applied_at: now,
+            notes: fdtResults.notes || null
+          });
+        }
+
+        // RAVLT
+        if (ravltResults && selectedTests.includes('RAVLT')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'RAVLT',
+            test_name: 'RAVLT - Teste de Aprendizagem Auditivo-Verbal de Rey',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(ravltResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(ravltResults.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(ravltResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(ravltResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: ravltResults.notes || null
+          });
+        }
+
+        if (testsToSave.length > 0) {
+          await supabase.from('neuro_test_results').insert(testsToSave);
+        }
       }
 
       // Upsert employee_report
@@ -331,6 +392,24 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleBpa2ResultsChange}
                     onRemove={() => handleRemoveTest('BPA2')}
+                  />
+                )}
+
+                {/* Formulário FDT */}
+                {selectedTests.includes('FDT') && (
+                  <NeuroTestFDTForm
+                    patientAge={patientAge}
+                    onResultsChange={handleFdtResultsChange}
+                    onRemove={() => handleRemoveTest('FDT')}
+                  />
+                )}
+
+                {/* Formulário RAVLT */}
+                {selectedTests.includes('RAVLT') && (
+                  <NeuroTestRAVLTForm
+                    patientAge={patientAge}
+                    onResultsChange={handleRavltResultsChange}
+                    onRemove={() => handleRemoveTest('RAVLT')}
                   />
                 )}
               </div>
