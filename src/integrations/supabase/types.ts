@@ -1846,6 +1846,85 @@ export type Database = {
         }
         Relationships: []
       }
+      neuro_test_results: {
+        Row: {
+          applied_at: string
+          applied_by: string | null
+          attendance_report_id: string | null
+          calculated_scores: Json
+          classifications: Json
+          client_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          patient_age: number
+          percentiles: Json
+          raw_scores: Json
+          schedule_id: string | null
+          test_code: string
+          test_name: string
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string
+          applied_by?: string | null
+          attendance_report_id?: string | null
+          calculated_scores?: Json
+          classifications?: Json
+          client_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_age: number
+          percentiles?: Json
+          raw_scores?: Json
+          schedule_id?: string | null
+          test_code: string
+          test_name: string
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string
+          applied_by?: string | null
+          attendance_report_id?: string | null
+          calculated_scores?: Json
+          classifications?: Json
+          client_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_age?: number
+          percentiles?: Json
+          raw_scores?: Json
+          schedule_id?: string | null
+          test_code?: string
+          test_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "neuro_test_results_attendance_report_id_fkey"
+            columns: ["attendance_report_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "neuro_test_results_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "neuro_test_results_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           category: string | null

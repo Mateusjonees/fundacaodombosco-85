@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, Brain } from 'lucide-react';
 import { getTodayLocalISODate } from '@/lib/utils';
+import { differenceInYears, parseISO } from 'date-fns';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
+import NeuroTestSelector from './NeuroTestSelector';
+import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
 
 interface Schedule {
   id: string;
@@ -20,6 +24,8 @@ interface Schedule {
   title: string;
   clients?: {
     name: string;
+    birth_date?: string;
+    unit?: string;
   };
 }
 
@@ -48,14 +54,62 @@ export default function CompleteAttendanceDialog({
   const [loading, setLoading] = useState(false);
   const [sessionNotes, setSessionNotes] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState<SelectedMaterial[]>([]);
+  
+  // Neuro tests state
+  const [selectedTests, setSelectedTests] = useState<string[]>([]);
+  const [bpa2Results, setBpa2Results] = useState<BPA2Results | null>(null);
+  const [clientUnit, setClientUnit] = useState<string | null>(null);
+  const [patientAge, setPatientAge] = useState<number>(0);
+
+  // Calculate patient age and get unit
+  useEffect(() => {
+    if (isOpen && schedule?.client_id) {
+      fetchClientInfo();
+    }
+  }, [isOpen, schedule?.client_id]);
+
+  const fetchClientInfo = async () => {
+    if (!schedule?.client_id) return;
+    
+    const { data } = await supabase
+      .from('clients')
+      .select('birth_date, unit')
+      .eq('id', schedule.client_id)
+      .maybeSingle();
+    
+    if (data) {
+      setClientUnit(data.unit);
+      if (data.birth_date) {
+        const age = differenceInYears(new Date(), parseISO(data.birth_date));
+        setPatientAge(age);
+      }
+    }
+  };
 
   // Reset form when dialog opens
   useEffect(() => {
     if (isOpen) {
       setSessionNotes('');
       setSelectedMaterials([]);
+      setSelectedTests([]);
+      setBpa2Results(null);
     }
   }, [isOpen]);
+
+  const handleSelectTest = (testCode: string) => {
+    setSelectedTests(prev => [...prev, testCode]);
+  };
+
+  const handleRemoveTest = (testCode: string) => {
+    setSelectedTests(prev => prev.filter(t => t !== testCode));
+    if (testCode === 'BPA2') {
+      setBpa2Results(null);
+    }
+  };
+
+  const handleBpa2ResultsChange = useCallback((results: BPA2Results) => {
+    setBpa2Results(results);
+  }, []);
 
   const handleComplete = async () => {
     if (!schedule || !user) {
@@ -78,14 +132,8 @@ export default function CompleteAttendanceDialog({
 
     setLoading(true);
     try {
-      // Buscar unidade do cliente para verificar se é Atendimento Floresta
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('unit')
-        .eq('id', schedule.client_id)
-        .maybeSingle();
-
-      const isAtendimentoFloresta = clientData?.unit === 'atendimento_floresta';
+      const isAtendimentoFloresta = clientUnit === 'atendimento_floresta';
+      const isNeuroUnit = clientUnit === 'floresta';
 
       // Buscar profissional
       const { data: professionalProfile } = await supabase
@@ -157,6 +205,31 @@ export default function CompleteAttendanceDialog({
         .select('id')
         .maybeSingle();
 
+      // Salvar resultados do teste neuro (se houver)
+      if (isNeuroUnit && bpa2Results && selectedTests.includes('BPA2')) {
+        // Convert to JSON-safe format
+        const rawScoresJson = JSON.parse(JSON.stringify(bpa2Results.rawScores));
+        const calculatedScoresJson = JSON.parse(JSON.stringify(bpa2Results.calculatedScores));
+        const percentilesJson = JSON.parse(JSON.stringify(bpa2Results.percentiles));
+        const classificationsJson = JSON.parse(JSON.stringify(bpa2Results.classifications));
+
+        await supabase.from('neuro_test_results').insert([{
+          client_id: schedule.client_id,
+          schedule_id: schedule.id,
+          attendance_report_id: attendanceReport?.id || null,
+          test_code: 'BPA2',
+          test_name: 'BPA-2 - Bateria Psicológica para Avaliação da Atenção',
+          patient_age: patientAge,
+          raw_scores: rawScoresJson,
+          calculated_scores: calculatedScoresJson,
+          percentiles: percentilesJson,
+          classifications: classificationsJson,
+          applied_by: user.id,
+          applied_at: now,
+          notes: bpa2Results.notes || null
+        }]);
+      }
+
       // Upsert employee_report
       await supabase.from('employee_reports').upsert({
         employee_id: schedule.employee_id,
@@ -223,9 +296,11 @@ export default function CompleteAttendanceDialog({
 
   if (!schedule) return null;
 
+  const isNeuroUnit = clientUnit === 'floresta';
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-2xl">
+      <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -233,33 +308,59 @@ export default function CompleteAttendanceDialog({
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             {schedule.clients?.name} • {new Date(schedule.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            {isNeuroUnit && patientAge > 0 && (
+              <span className="ml-2 text-primary">• {patientAge} anos</span>
+            )}
           </p>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Seletor de Materiais */}
-          <AttendanceMaterialSelector
-            selectedMaterials={selectedMaterials}
-            onMaterialsChange={setSelectedMaterials}
-          />
-
-          {/* Evolução do Atendimento */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Evolução do Atendimento</Label>
-            <Card className="border-2 border-dashed">
-              <CardContent className="p-3 sm:p-4">
-                <Textarea
-                  placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
-                  value={sessionNotes}
-                  onChange={(e) => setSessionNotes(e.target.value)}
-                  className="min-h-[200px] sm:min-h-[250px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base"
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-4 pb-4">
+            {/* Seção de Testes Neuropsicológicos - Apenas para unidade Floresta (Neuro) */}
+            {isNeuroUnit && patientAge > 0 && (
+              <div className="space-y-4">
+                <NeuroTestSelector
+                  patientAge={patientAge}
+                  selectedTests={selectedTests}
+                  onSelectTest={handleSelectTest}
+                  onRemoveTest={handleRemoveTest}
                 />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+                {/* Formulário BPA-2 */}
+                {selectedTests.includes('BPA2') && (
+                  <NeuroTestBPA2Form
+                    patientAge={patientAge}
+                    onResultsChange={handleBpa2ResultsChange}
+                    onRemove={() => handleRemoveTest('BPA2')}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Seletor de Materiais */}
+            <AttendanceMaterialSelector
+              selectedMaterials={selectedMaterials}
+              onMaterialsChange={setSelectedMaterials}
+            />
+
+            {/* Evolução do Atendimento */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Evolução do Atendimento</Label>
+              <Card className="border-2 border-dashed">
+                <CardContent className="p-3 sm:p-4">
+                  <Textarea
+                    placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
+                    value={sessionNotes}
+                    onChange={(e) => setSessionNotes(e.target.value)}
+                    className="min-h-[180px] sm:min-h-[200px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </ScrollArea>
+
+        <DialogFooter className="flex-col sm:flex-row gap-2 pt-4 border-t">
           <Button variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
             Cancelar
           </Button>
