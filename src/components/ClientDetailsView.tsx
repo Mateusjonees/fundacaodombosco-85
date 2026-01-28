@@ -56,6 +56,7 @@ import AddAnamnesisDialog from './AddAnamnesisDialog';
 import ClientLaudoManager from './ClientLaudoManager';
 import { PatientReportGenerator } from './PatientReportGenerator';
 import { ClientEditTab } from './ClientEditTab';
+import PatientNeuroTestHistory from './PatientNeuroTestHistory';
 
 interface Client {
   id: string;
@@ -1304,6 +1305,13 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
                       <Edit className="h-4 w-4 mr-1.5" />
                       Cadastro
                     </TabsTrigger>
+                    {client.unit === 'floresta' && (
+                      <TabsTrigger value="neuro_tests" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
+                        <Brain className="h-4 w-4 mr-1.5" />
+                        <span className="hidden sm:inline">Testes Neuro</span>
+                        <span className="sm:hidden">Neuro</span>
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
                   {/* Registration Tab - Edição de Dados Cadastrais */}
@@ -1685,6 +1693,16 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
                       <ClientLaudoManager client={client} />
                     </div>
                   </TabsContent>
+
+                  {/* Neuro Tests Tab - Only for Floresta unit */}
+                  {client.unit === 'floresta' && (
+                    <TabsContent value="neuro_tests" className="space-y-6">
+                      <PatientNeuroTestHistory
+                        clientId={client.id}
+                        clientName={client.name}
+                      />
+                    </TabsContent>
+                  )}
                 </Tabs>
               </CardContent>
             </Card>
