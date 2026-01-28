@@ -4,12 +4,19 @@
 
 export * from './bpa2';
 export * from './bpa2Percentiles';
+export * from './fdt';
+export * from './ravlt';
+export * from './ravltPercentiles';
 
 import { BPA2_TEST, type NeuroTestDefinition } from './bpa2';
+import { FDT_TEST } from './fdt';
+import { RAVLT_TEST } from './ravlt';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
-  BPA2_TEST
+  BPA2_TEST,
+  FDT_TEST,
+  RAVLT_TEST
 ];
 
 /**
