@@ -1,14 +1,18 @@
 /**
  * Tabelas de percentis do BPA-2 por idade
  * 
- * Estrutura: { [idade]: { [subtest]: { [escore]: percentil } } }
+ * Estrutura correta baseada no manual BPA-2:
+ * - Linhas: Percentis fixos (1, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 99)
+ * - Colunas: Idades
+ * - Células: Escore bruto MÍNIMO para atingir aquele percentil
  * 
- * Quando o escore exato não existir, usar o percentil do escore imediatamente inferior
+ * A busca de percentil funciona assim:
+ * Dado um escore, encontrar o maior percentil cujo score mínimo seja <= escore do paciente
  */
 
 export interface PercentileEntry {
-  score: number;
   percentile: number;
+  score: number;
 }
 
 export interface AgePercentileTable {
@@ -18,597 +22,448 @@ export interface AgePercentileTable {
   AG: PercentileEntry[];
 }
 
+// Percentis padrão usados no manual
+const PERCENTILES = [1, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 99];
+
+// Helper para criar entrada de percentil
+const p = (percentile: number, score: number): PercentileEntry => ({ percentile, score });
+
 // Tabela de percentis por idade (dados extraídos do manual BPA-2)
-// Formato: array de { score, percentile } ordenado por score crescente
 export const BPA2_PERCENTILES: { [age: number]: AgePercentileTable } = {
-  // Idade 6 anos
+  // =====================================================
+  // IDADE 6 ANOS
+  // =====================================================
   6: {
     AC: [
-      { score: 0, percentile: 1 },
-      { score: 10, percentile: 5 },
-      { score: 20, percentile: 10 },
-      { score: 30, percentile: 25 },
-      { score: 40, percentile: 40 },
-      { score: 50, percentile: 50 },
-      { score: 60, percentile: 60 },
-      { score: 70, percentile: 75 },
-      { score: 80, percentile: 90 },
-      { score: 90, percentile: 95 },
-      { score: 100, percentile: 99 }
+      p(1, -27), p(10, 8), p(20, 16), p(25, 19), p(30, 22), p(40, 25),
+      p(50, 28), p(60, 32), p(70, 35), p(75, 37), p(80, 40), p(90, 46), p(99, 79)
     ],
     AD: [
-      { score: 0, percentile: 1 },
-      { score: 8, percentile: 5 },
-      { score: 16, percentile: 10 },
-      { score: 24, percentile: 25 },
-      { score: 32, percentile: 40 },
-      { score: 40, percentile: 50 },
-      { score: 48, percentile: 60 },
-      { score: 56, percentile: 75 },
-      { score: 64, percentile: 90 },
-      { score: 72, percentile: 95 },
-      { score: 80, percentile: 99 }
+      p(1, -49), p(10, -14), p(20, -1), p(25, 2), p(30, 5), p(40, 17),
+      p(50, 26), p(60, 22), p(70, 29), p(75, 32), p(80, 35), p(90, 44), p(99, 72)
     ],
     AA: [
-      { score: 0, percentile: 1 },
-      { score: 12, percentile: 5 },
-      { score: 24, percentile: 10 },
-      { score: 36, percentile: 25 },
-      { score: 48, percentile: 40 },
-      { score: 60, percentile: 50 },
-      { score: 72, percentile: 60 },
-      { score: 84, percentile: 75 },
-      { score: 96, percentile: 90 },
-      { score: 108, percentile: 95 },
-      { score: 120, percentile: 99 }
+      p(1, -20), p(10, 10), p(20, 18), p(25, 21), p(30, 23), p(40, 26),
+      p(50, 31), p(60, 34), p(70, 37), p(75, 39), p(80, 42), p(90, 49), p(99, 78)
     ],
     AG: [
-      { score: 0, percentile: 1 },
-      { score: 30, percentile: 5 },
-      { score: 60, percentile: 10 },
-      { score: 90, percentile: 25 },
-      { score: 120, percentile: 40 },
-      { score: 150, percentile: 50 },
-      { score: 180, percentile: 60 },
-      { score: 210, percentile: 75 },
-      { score: 240, percentile: 90 },
-      { score: 270, percentile: 95 },
-      { score: 300, percentile: 99 }
+      p(1, -57), p(10, 15), p(20, 34), p(25, 44), p(30, 51), p(40, 63),
+      p(50, 73), p(60, 86), p(70, 99), p(75, 105), p(80, 111), p(90, 129), p(99, 207)
     ]
   },
-  
-  // Idade 7 anos
+
+  // =====================================================
+  // IDADE 7 ANOS
+  // =====================================================
   7: {
     AC: [
-      { score: 5, percentile: 1 },
-      { score: 15, percentile: 5 },
-      { score: 25, percentile: 10 },
-      { score: 35, percentile: 25 },
-      { score: 45, percentile: 40 },
-      { score: 55, percentile: 50 },
-      { score: 65, percentile: 60 },
-      { score: 75, percentile: 75 },
-      { score: 85, percentile: 90 },
-      { score: 95, percentile: 95 },
-      { score: 105, percentile: 99 }
+      p(1, -21), p(10, 15), p(20, 23), p(25, 26), p(30, 29), p(40, 33),
+      p(50, 37), p(60, 40), p(70, 44), p(75, 46), p(80, 48), p(90, 55), p(99, 70)
     ],
     AD: [
-      { score: 4, percentile: 1 },
-      { score: 12, percentile: 5 },
-      { score: 20, percentile: 10 },
-      { score: 28, percentile: 25 },
-      { score: 36, percentile: 40 },
-      { score: 44, percentile: 50 },
-      { score: 52, percentile: 60 },
-      { score: 60, percentile: 75 },
-      { score: 68, percentile: 90 },
-      { score: 76, percentile: 95 },
-      { score: 84, percentile: 99 }
+      p(1, -41), p(10, -6), p(20, 7), p(25, 11), p(30, 14), p(40, 20),
+      p(50, 26), p(60, 32), p(70, 38), p(75, 41), p(80, 45), p(90, 55), p(99, 81)
     ],
     AA: [
-      { score: 6, percentile: 1 },
-      { score: 18, percentile: 5 },
-      { score: 30, percentile: 10 },
-      { score: 42, percentile: 25 },
-      { score: 54, percentile: 40 },
-      { score: 66, percentile: 50 },
-      { score: 78, percentile: 60 },
-      { score: 90, percentile: 75 },
-      { score: 102, percentile: 90 },
-      { score: 114, percentile: 95 },
-      { score: 126, percentile: 99 }
+      p(1, -16), p(10, 17), p(20, 25), p(25, 28), p(30, 30), p(40, 34),
+      p(50, 38), p(60, 42), p(70, 46), p(75, 48), p(80, 51), p(90, 59), p(99, 83)
     ],
     AG: [
-      { score: 15, percentile: 1 },
-      { score: 45, percentile: 5 },
-      { score: 75, percentile: 10 },
-      { score: 105, percentile: 25 },
-      { score: 135, percentile: 40 },
-      { score: 165, percentile: 50 },
-      { score: 195, percentile: 60 },
-      { score: 225, percentile: 75 },
-      { score: 255, percentile: 90 },
-      { score: 285, percentile: 95 },
-      { score: 315, percentile: 99 }
+      p(1, -42), p(10, 37), p(20, 59), p(25, 68), p(30, 77), p(40, 89),
+      p(50, 100), p(60, 112), p(70, 124), p(75, 131), p(80, 139), p(90, 159), p(99, 221)
     ]
   },
-  
-  // Idade 8 anos
+
+  // =====================================================
+  // IDADE 8 ANOS
+  // =====================================================
   8: {
     AC: [
-      { score: 10, percentile: 1 },
-      { score: 20, percentile: 5 },
-      { score: 30, percentile: 10 },
-      { score: 40, percentile: 25 },
-      { score: 50, percentile: 40 },
-      { score: 60, percentile: 50 },
-      { score: 70, percentile: 60 },
-      { score: 80, percentile: 75 },
-      { score: 90, percentile: 90 },
-      { score: 100, percentile: 95 },
-      { score: 110, percentile: 99 }
+      p(1, -15), p(10, 21), p(20, 29), p(25, 32), p(30, 35), p(40, 40),
+      p(50, 44), p(60, 48), p(70, 52), p(75, 55), p(80, 58), p(90, 66), p(99, 86)
     ],
     AD: [
-      { score: 8, percentile: 1 },
-      { score: 16, percentile: 5 },
-      { score: 24, percentile: 10 },
-      { score: 32, percentile: 25 },
-      { score: 40, percentile: 40 },
-      { score: 48, percentile: 50 },
-      { score: 56, percentile: 60 },
-      { score: 64, percentile: 75 },
-      { score: 72, percentile: 90 },
-      { score: 80, percentile: 95 },
-      { score: 88, percentile: 99 }
+      p(1, -33), p(10, 3), p(20, 16), p(25, 20), p(30, 24), p(40, 31),
+      p(50, 37), p(60, 44), p(70, 50), p(75, 54), p(80, 58), p(90, 70), p(99, 99)
     ],
     AA: [
-      { score: 12, percentile: 1 },
-      { score: 24, percentile: 5 },
-      { score: 36, percentile: 10 },
-      { score: 48, percentile: 25 },
-      { score: 60, percentile: 40 },
-      { score: 72, percentile: 50 },
-      { score: 84, percentile: 60 },
-      { score: 96, percentile: 75 },
-      { score: 108, percentile: 90 },
-      { score: 120, percentile: 95 },
-      { score: 132, percentile: 99 }
+      p(1, -9), p(10, 25), p(20, 34), p(25, 37), p(30, 40), p(40, 45),
+      p(50, 50), p(60, 55), p(70, 60), p(75, 63), p(80, 67), p(90, 77), p(99, 105)
     ],
     AG: [
-      { score: 30, percentile: 1 },
-      { score: 60, percentile: 5 },
-      { score: 90, percentile: 10 },
-      { score: 120, percentile: 25 },
-      { score: 150, percentile: 40 },
-      { score: 180, percentile: 50 },
-      { score: 210, percentile: 60 },
-      { score: 240, percentile: 75 },
-      { score: 270, percentile: 90 },
-      { score: 300, percentile: 95 },
-      { score: 330, percentile: 99 }
+      p(1, -21), p(10, 63), p(20, 88), p(25, 99), p(30, 108), p(40, 122),
+      p(50, 136), p(60, 150), p(70, 164), p(75, 172), p(80, 182), p(90, 206), p(99, 275)
     ]
   },
 
-  // Idade 9 anos
+  // =====================================================
+  // IDADE 9 ANOS
+  // =====================================================
   9: {
     AC: [
-      { score: 15, percentile: 1 },
-      { score: 25, percentile: 5 },
-      { score: 35, percentile: 10 },
-      { score: 45, percentile: 25 },
-      { score: 55, percentile: 40 },
-      { score: 65, percentile: 50 },
-      { score: 75, percentile: 60 },
-      { score: 85, percentile: 75 },
-      { score: 95, percentile: 90 },
-      { score: 105, percentile: 95 },
-      { score: 115, percentile: 99 }
+      p(1, -9), p(10, 28), p(20, 36), p(25, 40), p(30, 43), p(40, 48),
+      p(50, 53), p(60, 58), p(70, 63), p(75, 66), p(80, 69), p(90, 78), p(99, 100)
     ],
     AD: [
-      { score: 12, percentile: 1 },
-      { score: 20, percentile: 5 },
-      { score: 28, percentile: 10 },
-      { score: 36, percentile: 25 },
-      { score: 44, percentile: 40 },
-      { score: 52, percentile: 50 },
-      { score: 60, percentile: 60 },
-      { score: 68, percentile: 75 },
-      { score: 76, percentile: 90 },
-      { score: 84, percentile: 95 },
-      { score: 92, percentile: 99 }
+      p(1, -25), p(10, 12), p(20, 25), p(25, 30), p(30, 34), p(40, 41),
+      p(50, 48), p(60, 55), p(70, 62), p(75, 66), p(80, 71), p(90, 84), p(99, 116)
     ],
     AA: [
-      { score: 18, percentile: 1 },
-      { score: 30, percentile: 5 },
-      { score: 42, percentile: 10 },
-      { score: 54, percentile: 25 },
-      { score: 66, percentile: 40 },
-      { score: 78, percentile: 50 },
-      { score: 90, percentile: 60 },
-      { score: 102, percentile: 75 },
-      { score: 114, percentile: 90 },
-      { score: 126, percentile: 95 },
-      { score: 138, percentile: 99 }
+      p(1, -2), p(10, 33), p(20, 43), p(25, 47), p(30, 50), p(40, 56),
+      p(50, 62), p(60, 68), p(70, 74), p(75, 77), p(80, 81), p(90, 93), p(99, 124)
     ],
     AG: [
-      { score: 45, percentile: 1 },
-      { score: 75, percentile: 5 },
-      { score: 105, percentile: 10 },
-      { score: 135, percentile: 25 },
-      { score: 165, percentile: 40 },
-      { score: 195, percentile: 50 },
-      { score: 225, percentile: 60 },
-      { score: 255, percentile: 75 },
-      { score: 285, percentile: 90 },
-      { score: 315, percentile: 95 },
-      { score: 345, percentile: 99 }
+      p(1, 0), p(10, 89), p(20, 117), p(25, 129), p(30, 139), p(40, 155),
+      p(50, 171), p(60, 187), p(70, 203), p(75, 212), p(80, 223), p(90, 251), p(99, 328)
     ]
   },
 
-  // Idade 10 anos
+  // =====================================================
+  // IDADE 10 ANOS
+  // =====================================================
   10: {
     AC: [
-      { score: 20, percentile: 1 },
-      { score: 30, percentile: 5 },
-      { score: 40, percentile: 10 },
-      { score: 50, percentile: 25 },
-      { score: 60, percentile: 40 },
-      { score: 70, percentile: 50 },
-      { score: 80, percentile: 60 },
-      { score: 90, percentile: 75 },
-      { score: 100, percentile: 90 },
-      { score: 110, percentile: 95 },
-      { score: 120, percentile: 99 }
+      p(1, -3), p(10, 34), p(20, 43), p(25, 47), p(30, 50), p(40, 56),
+      p(50, 62), p(60, 68), p(70, 73), p(75, 77), p(80, 81), p(90, 91), p(99, 115)
     ],
     AD: [
-      { score: 16, percentile: 1 },
-      { score: 24, percentile: 5 },
-      { score: 32, percentile: 10 },
-      { score: 40, percentile: 25 },
-      { score: 48, percentile: 40 },
-      { score: 56, percentile: 50 },
-      { score: 64, percentile: 60 },
-      { score: 72, percentile: 75 },
-      { score: 80, percentile: 90 },
-      { score: 88, percentile: 95 },
-      { score: 96, percentile: 99 }
+      p(1, -17), p(10, 21), p(20, 35), p(25, 40), p(30, 45), p(40, 52),
+      p(50, 59), p(60, 67), p(70, 74), p(75, 79), p(80, 84), p(90, 98), p(99, 133)
     ],
     AA: [
-      { score: 24, percentile: 1 },
-      { score: 36, percentile: 5 },
-      { score: 48, percentile: 10 },
-      { score: 60, percentile: 25 },
-      { score: 72, percentile: 40 },
-      { score: 84, percentile: 50 },
-      { score: 96, percentile: 60 },
-      { score: 108, percentile: 75 },
-      { score: 120, percentile: 90 },
-      { score: 132, percentile: 95 },
-      { score: 144, percentile: 99 }
+      p(1, 5), p(10, 41), p(20, 52), p(25, 56), p(30, 60), p(40, 67),
+      p(50, 74), p(60, 81), p(70, 88), p(75, 92), p(80, 97), p(90, 110), p(99, 144)
     ],
     AG: [
-      { score: 60, percentile: 1 },
-      { score: 90, percentile: 5 },
-      { score: 120, percentile: 10 },
-      { score: 150, percentile: 25 },
-      { score: 180, percentile: 40 },
-      { score: 210, percentile: 50 },
-      { score: 240, percentile: 60 },
-      { score: 270, percentile: 75 },
-      { score: 300, percentile: 90 },
-      { score: 330, percentile: 95 },
-      { score: 360, percentile: 99 }
+      p(1, 21), p(10, 115), p(20, 146), p(25, 159), p(30, 170), p(40, 188),
+      p(50, 205), p(60, 223), p(70, 241), p(75, 252), p(80, 264), p(90, 295), p(99, 381)
     ]
   },
 
-  // Idade 11 anos
+  // =====================================================
+  // IDADE 11 ANOS
+  // =====================================================
   11: {
     AC: [
-      { score: 25, percentile: 1 },
-      { score: 35, percentile: 5 },
-      { score: 45, percentile: 10 },
-      { score: 55, percentile: 25 },
-      { score: 65, percentile: 40 },
-      { score: 75, percentile: 50 },
-      { score: 85, percentile: 60 },
-      { score: 95, percentile: 75 },
-      { score: 105, percentile: 90 },
-      { score: 115, percentile: 95 },
-      { score: 125, percentile: 99 }
+      p(1, 3), p(10, 41), p(20, 50), p(25, 54), p(30, 58), p(40, 64),
+      p(50, 70), p(60, 77), p(70, 83), p(75, 87), p(80, 91), p(90, 102), p(99, 129)
     ],
     AD: [
-      { score: 20, percentile: 1 },
-      { score: 28, percentile: 5 },
-      { score: 36, percentile: 10 },
-      { score: 44, percentile: 25 },
-      { score: 52, percentile: 40 },
-      { score: 60, percentile: 50 },
-      { score: 68, percentile: 60 },
-      { score: 76, percentile: 75 },
-      { score: 84, percentile: 90 },
-      { score: 92, percentile: 95 },
-      { score: 100, percentile: 99 }
+      p(1, -9), p(10, 30), p(20, 44), p(25, 50), p(30, 55), p(40, 63),
+      p(50, 71), p(60, 79), p(70, 87), p(75, 92), p(80, 97), p(90, 112), p(99, 150)
     ],
     AA: [
-      { score: 30, percentile: 1 },
-      { score: 42, percentile: 5 },
-      { score: 54, percentile: 10 },
-      { score: 66, percentile: 25 },
-      { score: 78, percentile: 40 },
-      { score: 90, percentile: 50 },
-      { score: 102, percentile: 60 },
-      { score: 114, percentile: 75 },
-      { score: 126, percentile: 90 },
-      { score: 138, percentile: 95 },
-      { score: 150, percentile: 99 }
+      p(1, 12), p(10, 49), p(20, 61), p(25, 66), p(30, 70), p(40, 78),
+      p(50, 85), p(60, 93), p(70, 101), p(75, 106), p(80, 111), p(90, 126), p(99, 163)
     ],
     AG: [
-      { score: 75, percentile: 1 },
-      { score: 105, percentile: 5 },
-      { score: 135, percentile: 10 },
-      { score: 165, percentile: 25 },
-      { score: 195, percentile: 40 },
-      { score: 225, percentile: 50 },
-      { score: 255, percentile: 60 },
-      { score: 285, percentile: 75 },
-      { score: 315, percentile: 90 },
-      { score: 345, percentile: 95 },
-      { score: 375, percentile: 99 }
+      p(1, 42), p(10, 141), p(20, 175), p(25, 189), p(30, 201), p(40, 221),
+      p(50, 240), p(60, 260), p(70, 279), p(75, 291), p(80, 304), p(90, 339), p(99, 434)
     ]
   },
 
-  // Idade 12 anos
+  // =====================================================
+  // IDADE 12 ANOS
+  // =====================================================
   12: {
     AC: [
-      { score: 30, percentile: 1 },
-      { score: 40, percentile: 5 },
-      { score: 50, percentile: 10 },
-      { score: 60, percentile: 25 },
-      { score: 70, percentile: 40 },
-      { score: 80, percentile: 50 },
-      { score: 90, percentile: 60 },
-      { score: 100, percentile: 75 },
-      { score: 110, percentile: 90 },
-      { score: 120, percentile: 95 },
-      { score: 130, percentile: 99 }
+      p(1, 9), p(10, 47), p(20, 57), p(25, 61), p(30, 65), p(40, 72),
+      p(50, 79), p(60, 86), p(70, 93), p(75, 97), p(80, 102), p(90, 114), p(99, 143)
     ],
     AD: [
-      { score: 24, percentile: 1 },
-      { score: 32, percentile: 5 },
-      { score: 40, percentile: 10 },
-      { score: 48, percentile: 25 },
-      { score: 56, percentile: 40 },
-      { score: 64, percentile: 50 },
-      { score: 72, percentile: 60 },
-      { score: 80, percentile: 75 },
-      { score: 88, percentile: 90 },
-      { score: 96, percentile: 95 },
-      { score: 104, percentile: 99 }
+      p(1, -1), p(10, 39), p(20, 54), p(25, 60), p(30, 65), p(40, 74),
+      p(50, 83), p(60, 91), p(70, 100), p(75, 105), p(80, 111), p(90, 127), p(99, 167)
     ],
     AA: [
-      { score: 36, percentile: 1 },
-      { score: 48, percentile: 5 },
-      { score: 60, percentile: 10 },
-      { score: 72, percentile: 25 },
-      { score: 84, percentile: 40 },
-      { score: 96, percentile: 50 },
-      { score: 108, percentile: 60 },
-      { score: 120, percentile: 75 },
-      { score: 132, percentile: 90 },
-      { score: 144, percentile: 95 },
-      { score: 156, percentile: 99 }
+      p(1, 19), p(10, 57), p(20, 70), p(25, 75), p(30, 80), p(40, 88),
+      p(50, 96), p(60, 105), p(70, 114), p(75, 119), p(80, 125), p(90, 141), p(99, 182)
     ],
     AG: [
-      { score: 90, percentile: 1 },
-      { score: 120, percentile: 5 },
-      { score: 150, percentile: 10 },
-      { score: 180, percentile: 25 },
-      { score: 210, percentile: 40 },
-      { score: 240, percentile: 50 },
-      { score: 270, percentile: 60 },
-      { score: 300, percentile: 75 },
-      { score: 330, percentile: 90 },
-      { score: 360, percentile: 95 },
-      { score: 390, percentile: 99 }
+      p(1, 63), p(10, 167), p(20, 204), p(25, 219), p(30, 232), p(40, 254),
+      p(50, 274), p(60, 296), p(70, 317), p(75, 330), p(80, 345), p(90, 383), p(99, 487)
+    ]
+  },
+
+  // =====================================================
+  // IDADE 13 ANOS
+  // =====================================================
+  13: {
+    AC: [
+      p(1, 15), p(10, 54), p(20, 64), p(25, 68), p(30, 72), p(40, 80),
+      p(50, 87), p(60, 95), p(70, 103), p(75, 107), p(80, 112), p(90, 125), p(99, 157)
+    ],
+    AD: [
+      p(1, 7), p(10, 48), p(20, 63), p(25, 69), p(30, 75), p(40, 85),
+      p(50, 94), p(60, 103), p(70, 113), p(75, 118), p(80, 124), p(90, 141), p(99, 184)
+    ],
+    AA: [
+      p(1, 26), p(10, 65), p(20, 79), p(25, 84), p(30, 89), p(40, 98),
+      p(50, 107), p(60, 117), p(70, 126), p(75, 132), p(80, 138), p(90, 156), p(99, 201)
+    ],
+    AG: [
+      p(1, 84), p(10, 193), p(20, 232), p(25, 248), p(30, 262), p(40, 286),
+      p(50, 308), p(60, 331), p(70, 354), p(75, 368), p(80, 384), p(90, 426), p(99, 540)
+    ]
+  },
+
+  // =====================================================
+  // IDADE 14 ANOS
+  // =====================================================
+  14: {
+    AC: [
+      p(1, 21), p(10, 60), p(20, 71), p(25, 75), p(30, 80), p(40, 87),
+      p(50, 95), p(60, 103), p(70, 112), p(75, 117), p(80, 122), p(90, 136), p(99, 171)
+    ],
+    AD: [
+      p(1, 15), p(10, 57), p(20, 73), p(25, 79), p(30, 85), p(40, 95),
+      p(50, 105), p(60, 115), p(70, 125), p(75, 131), p(80, 138), p(90, 156), p(99, 201)
+    ],
+    AA: [
+      p(1, 33), p(10, 73), p(20, 88), p(25, 93), p(30, 99), p(40, 109),
+      p(50, 118), p(60, 128), p(70, 139), p(75, 145), p(80, 152), p(90, 171), p(99, 220)
+    ],
+    AG: [
+      p(1, 105), p(10, 219), p(20, 261), p(25, 278), p(30, 293), p(40, 318),
+      p(50, 342), p(60, 367), p(70, 392), p(75, 407), p(80, 424), p(90, 469), p(99, 593)
     ]
   }
 };
 
-// Usar tabela de 12 anos para idades 13-17 (adolescentes)
-for (let age = 13; age <= 17; age++) {
-  BPA2_PERCENTILES[age] = BPA2_PERCENTILES[12];
-}
+// =====================================================
+// FAIXAS ETÁRIAS AGRUPADAS (conforme manual BPA-2)
+// =====================================================
 
-// Tabela para adultos (18-40 anos)
-const ADULT_TABLE: AgePercentileTable = {
+// 15-17 anos (usa mesma tabela)
+const TABLE_15_17: AgePercentileTable = {
   AC: [
-    { score: 40, percentile: 1 },
-    { score: 55, percentile: 5 },
-    { score: 70, percentile: 10 },
-    { score: 85, percentile: 25 },
-    { score: 100, percentile: 40 },
-    { score: 115, percentile: 50 },
-    { score: 130, percentile: 60 },
-    { score: 145, percentile: 75 },
-    { score: 160, percentile: 90 },
-    { score: 175, percentile: 95 },
-    { score: 190, percentile: 99 }
+    p(1, 27), p(10, 67), p(20, 78), p(25, 83), p(30, 87), p(40, 95),
+    p(50, 103), p(60, 112), p(70, 121), p(75, 126), p(80, 132), p(90, 147), p(99, 185)
   ],
   AD: [
-    { score: 32, percentile: 1 },
-    { score: 44, percentile: 5 },
-    { score: 56, percentile: 10 },
-    { score: 68, percentile: 25 },
-    { score: 80, percentile: 40 },
-    { score: 92, percentile: 50 },
-    { score: 104, percentile: 60 },
-    { score: 116, percentile: 75 },
-    { score: 128, percentile: 90 },
-    { score: 140, percentile: 95 },
-    { score: 152, percentile: 99 }
+    p(1, 23), p(10, 66), p(20, 82), p(25, 89), p(30, 95), p(40, 106),
+    p(50, 116), p(60, 127), p(70, 138), p(75, 144), p(80, 151), p(90, 170), p(99, 218)
   ],
   AA: [
-    { score: 48, percentile: 1 },
-    { score: 66, percentile: 5 },
-    { score: 84, percentile: 10 },
-    { score: 102, percentile: 25 },
-    { score: 120, percentile: 40 },
-    { score: 138, percentile: 50 },
-    { score: 156, percentile: 60 },
-    { score: 174, percentile: 75 },
-    { score: 192, percentile: 90 },
-    { score: 210, percentile: 95 },
-    { score: 228, percentile: 99 }
+    p(1, 40), p(10, 81), p(20, 96), p(25, 102), p(30, 108), p(40, 119),
+    p(50, 129), p(60, 140), p(70, 151), p(75, 158), p(80, 165), p(90, 185), p(99, 238)
   ],
   AG: [
-    { score: 120, percentile: 1 },
-    { score: 165, percentile: 5 },
-    { score: 210, percentile: 10 },
-    { score: 255, percentile: 25 },
-    { score: 300, percentile: 40 },
-    { score: 345, percentile: 50 },
-    { score: 390, percentile: 60 },
-    { score: 435, percentile: 75 },
-    { score: 480, percentile: 90 },
-    { score: 525, percentile: 95 },
-    { score: 570, percentile: 99 }
+    p(1, 126), p(10, 245), p(20, 289), p(25, 307), p(30, 323), p(40, 350),
+    p(50, 376), p(60, 403), p(70, 430), p(75, 446), p(80, 464), p(90, 512), p(99, 646)
   ]
 };
 
-for (let age = 18; age <= 40; age++) {
-  BPA2_PERCENTILES[age] = ADULT_TABLE;
+for (let age = 15; age <= 17; age++) {
+  BPA2_PERCENTILES[age] = TABLE_15_17;
 }
 
-// Tabela para adultos mais velhos (41-60 anos)
-const OLDER_ADULT_TABLE: AgePercentileTable = {
+// 18-20 anos
+const TABLE_18_20: AgePercentileTable = {
   AC: [
-    { score: 35, percentile: 1 },
-    { score: 50, percentile: 5 },
-    { score: 65, percentile: 10 },
-    { score: 80, percentile: 25 },
-    { score: 95, percentile: 40 },
-    { score: 110, percentile: 50 },
-    { score: 125, percentile: 60 },
-    { score: 140, percentile: 75 },
-    { score: 155, percentile: 90 },
-    { score: 170, percentile: 95 },
-    { score: 185, percentile: 99 }
+    p(1, 33), p(10, 73), p(20, 85), p(25, 90), p(30, 95), p(40, 103),
+    p(50, 111), p(60, 120), p(70, 130), p(75, 135), p(80, 142), p(90, 158), p(99, 199)
   ],
   AD: [
-    { score: 28, percentile: 1 },
-    { score: 40, percentile: 5 },
-    { score: 52, percentile: 10 },
-    { score: 64, percentile: 25 },
-    { score: 76, percentile: 40 },
-    { score: 88, percentile: 50 },
-    { score: 100, percentile: 60 },
-    { score: 112, percentile: 75 },
-    { score: 124, percentile: 90 },
-    { score: 136, percentile: 95 },
-    { score: 148, percentile: 99 }
+    p(1, 31), p(10, 75), p(20, 92), p(25, 99), p(30, 105), p(40, 117),
+    p(50, 128), p(60, 139), p(70, 151), p(75, 158), p(80, 165), p(90, 185), p(99, 235)
   ],
   AA: [
-    { score: 42, percentile: 1 },
-    { score: 60, percentile: 5 },
-    { score: 78, percentile: 10 },
-    { score: 96, percentile: 25 },
-    { score: 114, percentile: 40 },
-    { score: 132, percentile: 50 },
-    { score: 150, percentile: 60 },
-    { score: 168, percentile: 75 },
-    { score: 186, percentile: 90 },
-    { score: 204, percentile: 95 },
-    { score: 222, percentile: 99 }
+    p(1, 47), p(10, 89), p(20, 105), p(25, 112), p(30, 118), p(40, 129),
+    p(50, 140), p(60, 152), p(70, 164), p(75, 171), p(80, 179), p(90, 200), p(99, 257)
   ],
   AG: [
-    { score: 105, percentile: 1 },
-    { score: 150, percentile: 5 },
-    { score: 195, percentile: 10 },
-    { score: 240, percentile: 25 },
-    { score: 285, percentile: 40 },
-    { score: 330, percentile: 50 },
-    { score: 375, percentile: 60 },
-    { score: 420, percentile: 75 },
-    { score: 465, percentile: 90 },
-    { score: 510, percentile: 95 },
-    { score: 555, percentile: 99 }
+    p(1, 147), p(10, 271), p(20, 318), p(25, 337), p(30, 354), p(40, 382),
+    p(50, 410), p(60, 439), p(70, 468), p(75, 485), p(80, 504), p(90, 555), p(99, 699)
   ]
 };
 
-for (let age = 41; age <= 60; age++) {
-  BPA2_PERCENTILES[age] = OLDER_ADULT_TABLE;
+for (let age = 18; age <= 20; age++) {
+  BPA2_PERCENTILES[age] = TABLE_18_20;
 }
 
-// Tabela para idosos (61-81 anos)
-const ELDERLY_TABLE: AgePercentileTable = {
+// 21-30 anos
+const TABLE_21_30: AgePercentileTable = {
   AC: [
-    { score: 25, percentile: 1 },
-    { score: 40, percentile: 5 },
-    { score: 55, percentile: 10 },
-    { score: 70, percentile: 25 },
-    { score: 85, percentile: 40 },
-    { score: 100, percentile: 50 },
-    { score: 115, percentile: 60 },
-    { score: 130, percentile: 75 },
-    { score: 145, percentile: 90 },
-    { score: 160, percentile: 95 },
-    { score: 175, percentile: 99 }
+    p(1, 39), p(10, 80), p(20, 92), p(25, 97), p(30, 102), p(40, 111),
+    p(50, 120), p(60, 129), p(70, 139), p(75, 145), p(80, 152), p(90, 169), p(99, 213)
   ],
   AD: [
-    { score: 20, percentile: 1 },
-    { score: 32, percentile: 5 },
-    { score: 44, percentile: 10 },
-    { score: 56, percentile: 25 },
-    { score: 68, percentile: 40 },
-    { score: 80, percentile: 50 },
-    { score: 92, percentile: 60 },
-    { score: 104, percentile: 75 },
-    { score: 116, percentile: 90 },
-    { score: 128, percentile: 95 },
-    { score: 140, percentile: 99 }
+    p(1, 39), p(10, 84), p(20, 102), p(25, 109), p(30, 115), p(40, 127),
+    p(50, 139), p(60, 151), p(70, 163), p(75, 170), p(80, 178), p(90, 199), p(99, 252)
   ],
   AA: [
-    { score: 30, percentile: 1 },
-    { score: 48, percentile: 5 },
-    { score: 66, percentile: 10 },
-    { score: 84, percentile: 25 },
-    { score: 102, percentile: 40 },
-    { score: 120, percentile: 50 },
-    { score: 138, percentile: 60 },
-    { score: 156, percentile: 75 },
-    { score: 174, percentile: 90 },
-    { score: 192, percentile: 95 },
-    { score: 210, percentile: 99 }
+    p(1, 54), p(10, 97), p(20, 114), p(25, 121), p(30, 128), p(40, 140),
+    p(50, 151), p(60, 163), p(70, 176), p(75, 183), p(80, 192), p(90, 214), p(99, 275)
   ],
   AG: [
-    { score: 75, percentile: 1 },
-    { score: 120, percentile: 5 },
-    { score: 165, percentile: 10 },
-    { score: 210, percentile: 25 },
-    { score: 255, percentile: 40 },
-    { score: 300, percentile: 50 },
-    { score: 345, percentile: 60 },
-    { score: 390, percentile: 75 },
-    { score: 435, percentile: 90 },
-    { score: 480, percentile: 95 },
-    { score: 525, percentile: 99 }
+    p(1, 168), p(10, 297), p(20, 347), p(25, 367), p(30, 385), p(40, 415),
+    p(50, 444), p(60, 475), p(70, 505), p(75, 524), p(80, 544), p(90, 598), p(99, 752)
   ]
 };
 
-for (let age = 61; age <= 81; age++) {
-  BPA2_PERCENTILES[age] = ELDERLY_TABLE;
+for (let age = 21; age <= 30; age++) {
+  BPA2_PERCENTILES[age] = TABLE_21_30;
 }
+
+// 31-40 anos
+const TABLE_31_40: AgePercentileTable = {
+  AC: [
+    p(1, 35), p(10, 75), p(20, 87), p(25, 92), p(30, 97), p(40, 105),
+    p(50, 114), p(60, 123), p(70, 133), p(75, 138), p(80, 145), p(90, 161), p(99, 203)
+  ],
+  AD: [
+    p(1, 33), p(10, 77), p(20, 94), p(25, 101), p(30, 107), p(40, 119),
+    p(50, 130), p(60, 141), p(70, 153), p(75, 160), p(80, 167), p(90, 188), p(99, 238)
+  ],
+  AA: [
+    p(1, 48), p(10, 90), p(20, 106), p(25, 113), p(30, 119), p(40, 131),
+    p(50, 141), p(60, 153), p(70, 165), p(75, 172), p(80, 180), p(90, 201), p(99, 258)
+  ],
+  AG: [
+    p(1, 152), p(10, 277), p(20, 323), p(25, 343), p(30, 360), p(40, 388),
+    p(50, 416), p(60, 445), p(70, 474), p(75, 491), p(80, 510), p(90, 561), p(99, 705)
+  ]
+};
+
+for (let age = 31; age <= 40; age++) {
+  BPA2_PERCENTILES[age] = TABLE_31_40;
+}
+
+// 41-50 anos
+const TABLE_41_50: AgePercentileTable = {
+  AC: [
+    p(1, 29), p(10, 68), p(20, 79), p(25, 84), p(30, 89), p(40, 96),
+    p(50, 104), p(60, 113), p(70, 121), p(75, 127), p(80, 133), p(90, 148), p(99, 186)
+  ],
+  AD: [
+    p(1, 25), p(10, 68), p(20, 84), p(25, 91), p(30, 97), p(40, 108),
+    p(50, 118), p(60, 129), p(70, 140), p(75, 146), p(80, 153), p(90, 172), p(99, 219)
+  ],
+  AA: [
+    p(1, 40), p(10, 81), p(20, 96), p(25, 102), p(30, 108), p(40, 119),
+    p(50, 129), p(60, 140), p(70, 151), p(75, 157), p(80, 165), p(90, 184), p(99, 237)
+  ],
+  AG: [
+    p(1, 130), p(10, 250), p(20, 294), p(25, 312), p(30, 328), p(40, 354),
+    p(50, 380), p(60, 407), p(70, 433), p(75, 449), p(80, 467), p(90, 514), p(99, 646)
+  ]
+};
+
+for (let age = 41; age <= 50; age++) {
+  BPA2_PERCENTILES[age] = TABLE_41_50;
+}
+
+// 51-60 anos
+const TABLE_51_60: AgePercentileTable = {
+  AC: [
+    p(1, 21), p(10, 59), p(20, 69), p(25, 74), p(30, 78), p(40, 85),
+    p(50, 92), p(60, 100), p(70, 108), p(75, 113), p(80, 119), p(90, 133), p(99, 168)
+  ],
+  AD: [
+    p(1, 15), p(10, 57), p(20, 72), p(25, 78), p(30, 84), p(40, 94),
+    p(50, 104), p(60, 114), p(70, 124), p(75, 130), p(80, 137), p(90, 155), p(99, 199)
+  ],
+  AA: [
+    p(1, 30), p(10, 70), p(20, 84), p(25, 90), p(30, 95), p(40, 105),
+    p(50, 114), p(60, 124), p(70, 134), p(75, 140), p(80, 147), p(90, 165), p(99, 213)
+  ],
+  AG: [
+    p(1, 102), p(10, 217), p(20, 258), p(25, 275), p(30, 290), p(40, 314),
+    p(50, 338), p(60, 363), p(70, 387), p(75, 402), p(80, 418), p(90, 462), p(99, 581)
+  ]
+};
+
+for (let age = 51; age <= 60; age++) {
+  BPA2_PERCENTILES[age] = TABLE_51_60;
+}
+
+// 61-70 anos
+const TABLE_61_70: AgePercentileTable = {
+  AC: [
+    p(1, 11), p(10, 47), p(20, 57), p(25, 61), p(30, 65), p(40, 72),
+    p(50, 79), p(60, 86), p(70, 93), p(75, 98), p(80, 103), p(90, 116), p(99, 147)
+  ],
+  AD: [
+    p(1, 3), p(10, 43), p(20, 57), p(25, 63), p(30, 69), p(40, 78),
+    p(50, 87), p(60, 96), p(70, 106), p(75, 112), p(80, 118), p(90, 134), p(99, 175)
+  ],
+  AA: [
+    p(1, 18), p(10, 56), p(20, 69), p(25, 75), p(30, 80), p(40, 89),
+    p(50, 97), p(60, 107), p(70, 116), p(75, 121), p(80, 128), p(90, 144), p(99, 187)
+  ],
+  AG: [
+    p(1, 68), p(10, 177), p(20, 215), p(25, 231), p(30, 245), p(40, 267),
+    p(50, 289), p(60, 312), p(70, 335), p(75, 349), p(80, 364), p(90, 404), p(99, 510)
+  ]
+};
+
+for (let age = 61; age <= 70; age++) {
+  BPA2_PERCENTILES[age] = TABLE_61_70;
+}
+
+// 71-80 anos
+const TABLE_71_80: AgePercentileTable = {
+  AC: [
+    p(1, -1), p(10, 34), p(20, 43), p(25, 47), p(30, 51), p(40, 57),
+    p(50, 64), p(60, 70), p(70, 77), p(75, 81), p(80, 86), p(90, 98), p(99, 127)
+  ],
+  AD: [
+    p(1, -11), p(10, 27), p(20, 40), p(25, 46), p(30, 51), p(40, 60),
+    p(50, 69), p(60, 77), p(70, 86), p(75, 91), p(80, 97), p(90, 112), p(99, 150)
+  ],
+  AA: [
+    p(1, 4), p(10, 41), p(20, 53), p(25, 58), p(30, 63), p(40, 71),
+    p(50, 79), p(60, 88), p(70, 96), p(75, 101), p(80, 107), p(90, 122), p(99, 160)
+  ],
+  AG: [
+    p(1, 28), p(10, 131), p(20, 166), p(25, 181), p(30, 194), p(40, 214),
+    p(50, 234), p(60, 255), p(70, 276), p(75, 289), p(80, 303), p(90, 339), p(99, 433)
+  ]
+};
+
+for (let age = 71; age <= 80; age++) {
+  BPA2_PERCENTILES[age] = TABLE_71_80;
+}
+
+// 81 anos
+const TABLE_81: AgePercentileTable = {
+  AC: [
+    p(1, -13), p(10, 20), p(20, 28), p(25, 32), p(30, 36), p(40, 41),
+    p(50, 47), p(60, 54), p(70, 60), p(75, 64), p(80, 68), p(90, 80), p(99, 108)
+  ],
+  AD: [
+    p(1, -25), p(10, 11), p(20, 24), p(25, 29), p(30, 34), p(40, 42),
+    p(50, 50), p(60, 59), p(70, 67), p(75, 72), p(80, 78), p(90, 92), p(99, 128)
+  ],
+  AA: [
+    p(1, -10), p(10, 26), p(20, 38), p(25, 42), p(30, 47), p(40, 55),
+    p(50, 62), p(60, 70), p(70, 78), p(75, 83), p(80, 89), p(90, 103), p(99, 138)
+  ],
+  AG: [
+    p(1, -12), p(10, 86), p(20, 119), p(25, 133), p(30, 145), p(40, 164),
+    p(50, 183), p(60, 203), p(70, 222), p(75, 234), p(80, 247), p(90, 281), p(99, 370)
+  ]
+};
+
+BPA2_PERCENTILES[81] = TABLE_81;
 
 /**
  * Busca o percentil para um escore em uma determinada idade e subteste
- * Se o escore exato não existir, retorna o percentil do escore imediatamente inferior
+ * 
+ * Lógica: Encontrar o maior percentil cujo score mínimo seja <= escore do paciente
+ * 
+ * Exemplo:
+ * - Paciente: 8 anos, AA = 45
+ * - Tabela 8 anos AA: P40=45, P50=50
+ * - 45 >= 45 (P40) e 45 < 50 (P50)
+ * - Resultado: Percentil 40
  */
 export const lookupPercentile = (
   age: number, 
   subtest: 'AC' | 'AD' | 'AA' | 'AG', 
   score: number
 ): number => {
-  // Limitar idade aos valores disponíveis
+  // Limitar idade aos valores disponíveis (6-81)
   const clampedAge = Math.min(81, Math.max(6, age));
   
   const table = BPA2_PERCENTILES[clampedAge];
@@ -617,15 +472,30 @@ export const lookupPercentile = (
   const entries = table[subtest];
   if (!entries || entries.length === 0) return 1;
   
-  // Buscar o percentil do escore exato ou imediatamente inferior
-  let percentile = 1;
-  for (const entry of entries) {
-    if (entry.score <= score) {
-      percentile = entry.percentile;
-    } else {
-      break;
+  // Percorrer do maior percentil para o menor
+  // Encontrar o maior percentil cujo score mínimo seja <= escore do paciente
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (score >= entries[i].score) {
+      return entries[i].percentile;
     }
   }
   
-  return percentile;
+  // Se o escore for menor que todos os scores mínimos, retorna percentil 1
+  return 1;
+};
+
+/**
+ * Retorna a faixa de idade correspondente para exibição
+ */
+export const getAgeGroup = (age: number): string => {
+  if (age <= 14) return `${age} anos`;
+  if (age <= 17) return '15-17 anos';
+  if (age <= 20) return '18-20 anos';
+  if (age <= 30) return '21-30 anos';
+  if (age <= 40) return '31-40 anos';
+  if (age <= 50) return '41-50 anos';
+  if (age <= 60) return '51-60 anos';
+  if (age <= 70) return '61-70 anos';
+  if (age <= 80) return '71-80 anos';
+  return '81 anos';
 };
