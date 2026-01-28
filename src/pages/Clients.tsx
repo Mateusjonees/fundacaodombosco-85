@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -80,6 +81,7 @@ interface UserProfile {
 export default function Patients() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
   const customPermissions = useCustomPermissions();
   const [employees, setEmployees] = useState<any[]>([]);
@@ -103,6 +105,25 @@ export default function Patients() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [reportClient, setReportClient] = useState<Client | null>(null);
   const { toast } = useToast();
+
+  // Função para selecionar cliente com persistência na URL e scroll
+  const handleSelectClient = useCallback((client: Client) => {
+    setSelectedClient(client);
+    setSearchParams({ clientId: client.id }, { replace: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [setSearchParams]);
+
+  // Função para voltar à lista limpando a URL
+  const handleBackToList = useCallback(() => {
+    setSelectedClient(null);
+    searchParams.delete('clientId');
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Função para invalidar cache ao invés de reload
+  const refreshClients = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['clients'] });
+  }, [queryClient]);
 
   // Helper function to check if user is coordinator or director
   const isCoordinatorOrDirector = () => {
@@ -159,19 +180,17 @@ export default function Patients() {
     loadClientAssignments();
   }, [user]);
 
-  // Abrir cliente via URL se clientId estiver presente
+  // Restaurar cliente via URL se clientId estiver presente
   useEffect(() => {
     const clientId = searchParams.get('clientId');
-    if (clientId && clients.length > 0) {
+    if (clientId && clients.length > 0 && !selectedClient) {
       const clientToOpen = clients.find(c => c.id === clientId);
       if (clientToOpen) {
         setSelectedClient(clientToOpen);
-        // Limpar o parâmetro da URL após selecionar
-        searchParams.delete('clientId');
-        setSearchParams(searchParams, { replace: true });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
-  }, [searchParams, clients]);
+  }, [searchParams, clients, selectedClient]);
 
   // React Query carrega automaticamente os clientes
 
@@ -234,7 +253,7 @@ export default function Patients() {
       });
       setIsDialogOpen(false);
       resetForm();
-      window.location.reload(); // Recarrega para atualizar cache
+      refreshClients();
       loadClientAssignments();
     } catch (error) {
       console.error("Error creating client:", error);
@@ -257,7 +276,7 @@ export default function Patients() {
       setIsDialogOpen(false);
       setEditingClient(null);
       resetForm();
-      window.location.reload();
+      refreshClients();
       loadClientAssignments();
     } catch (error) {
       console.error("Error updating client:", error);
@@ -281,7 +300,7 @@ export default function Patients() {
         title: currentStatus ? "Paciente desativado" : "Paciente ativado",
         description: `Paciente ${currentStatus ? "desativado" : "ativado"} com sucesso!`,
       });
-      window.location.reload();
+      refreshClients();
     } catch (error) {
       console.error("Error toggling client status:", error);
       toast({
@@ -356,7 +375,7 @@ export default function Patients() {
           title: "Importação concluída",
           description: `${result.success} pacientes importados com sucesso.`,
         });
-        window.location.reload();
+        refreshClients();
       }
       if (result.errors.length > 0) {
         toast({
@@ -467,18 +486,18 @@ export default function Patients() {
   if (selectedClient) {
     return (
       <div className="space-y-6">
-        <Button variant="outline" onClick={() => setSelectedClient(null)} className="gap-2">
+        <Button variant="outline" onClick={handleBackToList} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Voltar para Lista
         </Button>
         <ClientDetailsView
           client={selectedClient}
           onEdit={() => {
-            setSelectedClient(null);
+            handleBackToList();
             openEditDialog(selectedClient);
           }}
-          onBack={() => setSelectedClient(null)}
-          onRefresh={() => window.location.reload()}
+          onBack={handleBackToList}
+          onRefresh={refreshClients}
         />
       </div>
     );
@@ -994,7 +1013,7 @@ export default function Patients() {
                       showCheckbox={isCoordinatorOrDirector()}
                       showActions={true}
                       onSelect={() => toggleClientSelection(client.id)}
-                      onView={() => setSelectedClient(client)}
+                      onView={() => handleSelectClient(client)}
                       onEdit={isCoordinatorOrDirector() ? () => openEditDialog(client) : undefined}
                       onReport={isCoordinatorOrDirector() ? () => setReportClient(client) : undefined}
                       onToggleStatus={isCoordinatorOrDirector() ? () => handleToggleClientStatus(client.id, client.is_active) : undefined}
@@ -1074,7 +1093,7 @@ export default function Patients() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setSelectedClient(client)}
+                              onClick={() => handleSelectClient(client)}
                               className="hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all"
                               title="Visualizar"
                             >
@@ -1138,7 +1157,7 @@ export default function Patients() {
         isOpen={isBulkImportOpen}
         onClose={() => setIsBulkImportOpen(false)}
         onImportComplete={() => {
-          window.location.reload();
+          refreshClients();
         }}
       />
 
@@ -1146,7 +1165,7 @@ export default function Patients() {
         isOpen={isAutoImportOpen}
         onClose={() => setIsAutoImportOpen(false)}
         onImportComplete={() => {
-          window.location.reload();
+          refreshClients();
         }}
       />
 
