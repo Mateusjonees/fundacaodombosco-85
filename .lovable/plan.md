@@ -1,88 +1,105 @@
-# Plano: Sistema de Testes Neuropsicológicos para Unidade Neuro
 
-## Status: ✅ IMPLEMENTADO
+# Plano: Corrigir Layout do Dialog de Finalizar Atendimento
 
----
+## Problema Identificado
 
-## Resumo
+O dialog "Finalizar Atendimento" esta cortando o conteudo. O usuario nao consegue ver:
+- Todos os subtestes do BPA-2 (AD e AA estao cortados)
+- A secao "Atencao Geral (AG)"
+- A secao "Materiais Utilizados"
+- A secao "Evolucao do Atendimento"
 
-Sistema completo para estagiários da unidade **Floresta (Neuro)** aplicarem testes neuropsicológicos durante a finalização de atendimentos. O sistema calcula automaticamente resultados, percentis e classificações com base em tabelas normativas por idade do paciente.
+## Solucoes a Implementar
 
----
+### 1. Ajustar o DialogContent
+- Configurar altura maxima adequada para o dialog
+- Garantir que o ScrollArea funcione corretamente
+- Adicionar padding adequado
 
-## Arquivos Criados
+### 2. Reorganizar Componentes
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/data/neuroTests/bpa2.ts` | Definição do teste BPA-2, fórmulas e classificações |
-| `src/data/neuroTests/bpa2Percentiles.ts` | Tabelas normativas completas (6-81 anos) |
-| `src/data/neuroTests/index.ts` | Exportações centralizadas |
-| `src/components/NeuroTestSelector.tsx` | Seletor de testes por idade |
-| `src/components/NeuroTestBPA2Form.tsx` | Formulário de escores com cálculos automáticos |
-| `src/components/NeuroTestResults.tsx` | Exibição de resultados calculados |
-| `src/components/PatientNeuroTestHistory.tsx` | Histórico de testes no perfil do paciente |
+Ordem das secoes no dialog:
+1. **Testes Neuropsicologicos** (seletor de testes)
+2. **Formulario BPA-2** (quando selecionado)
+3. **Materiais Utilizados** (opcional, colapsado por padrao para economizar espaco)
+4. **Evolucao do Atendimento** (textarea principal - sempre visivel)
 
-## Arquivos Modificados
+### 3. Otimizar o BPA-2 Form
+- Compactar um pouco os espacamentos
+- Manter todos os campos visiveis com scroll
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/CompleteAttendanceDialog.tsx` | Integração do sistema de testes neuro |
-| `src/components/ClientDetailsView.tsx` | Nova aba "Testes Neuro" para unidade Floresta |
+### 4. Melhorar Estrutura do Dialog
 
-## Migração SQL
-
-Tabela `neuro_test_results` criada com:
-- Campos para escores brutos, calculados, percentis e classificações (JSONB)
-- RLS policies para usuários autenticados
-- Índices para buscas eficientes
-- Trigger para updated_at automático
-
----
-
-## Como Usar
-
-### 1. Finalizar Atendimento (Unidade Floresta)
-
-1. Clicar em "Finalizar Atendimento" para paciente da unidade Floresta
-2. O sistema mostra testes disponíveis para a idade do paciente
-3. Selecionar BPA-2 (ou outro teste futuro)
-4. Preencher escores: Acertos, Erros, Omissões para cada subteste
-5. Sistema calcula automaticamente:
-   - AC, AD, AA (individual)
-   - AG = AC + AD + AA (geral)
-   - Percentis por idade
-   - Classificações
-
-### 2. Visualizar Histórico (Perfil do Paciente)
-
-1. Acessar perfil de paciente da unidade Floresta
-2. Ir para aba "Testes Neuro"
-3. Ver histórico com todos os testes aplicados
-4. Clicar em "Copiar para Laudo" para gerar texto formatado
-
----
-
-## Classificações
-
-| Percentil | Classificação |
-|-----------|---------------|
-| ≤1 | Muito Inferior |
-| 2-10 | Inferior |
-| 11-25 | Médio Inferior |
-| 26-75 | Médio |
-| 76-90 | Médio Superior |
-| 91-95 | Superior |
-| ≥96 | Muito Superior |
+```text
++--------------------------------------------------+
+| Finalizar Atendimento                        [X] |
+| Paciente: Nome • Hora • Idade                    |
++--------------------------------------------------+
+|                                                  |
+| [ScrollArea com altura fixa]                     |
+|                                                  |
+| +----------------------------------------------+ |
+| | Testes Neuropsicologicos    [Idade: XX anos]| |
+| | [BPA-2 x]                                    | |
+| +----------------------------------------------+ |
+|                                                  |
+| +----------------------------------------------+ |
+| | BPA-2 - Form                            [X]  | |
+| | AC: [A] [E] [O] = XX | Percentil XX          | |
+| | AD: [A] [E] [O] = XX | Percentil XX          | |
+| | AA: [A] [E] [O] = XX | Percentil XX          | |
+| | AG = XX | Percentil XX | Classificacao       | |
+| | Observacoes do teste: [________]             | |
+| +----------------------------------------------+ |
+|                                                  |
+| +----------------------------------------------+ |
+| | Materiais Utilizados (opcional)              | |
+| | [Buscar...] [Lista colapsavel]               | |
+| +----------------------------------------------+ |
+|                                                  |
+| +----------------------------------------------+ |
+| | Evolucao do Atendimento *                    | |
+| | [Textarea grande para descricao]             | |
+| +----------------------------------------------+ |
+|                                                  |
++--------------------------------------------------+
+| [Cancelar]               [Finalizar Atendimento] |
++--------------------------------------------------+
+```
 
 ---
 
-## Extensibilidade
+## Arquivos a Modificar
 
-Para adicionar novos testes:
+### 1. `src/components/CompleteAttendanceDialog.tsx`
 
-1. Criar `src/data/neuroTests/[nome].ts` com definição
-2. Criar `src/data/neuroTests/[nome]Percentiles.ts` com tabelas
-3. Adicionar ao `index.ts`
-4. Criar formulário específico se necessário
+Mudancas:
+- Ajustar altura do ScrollArea: `max-h-[calc(90vh-180px)]`
+- Garantir que o Dialog tenha altura maxima correta
+- Adicionar visual de separacao entre secoes
+- Mover "Evolucao do Atendimento" para ter destaque
 
-Testes futuros planejados: WISC-V, SNAP-IV, etc.
+### 2. `src/components/NeuroTestBPA2Form.tsx`
+
+Mudancas:
+- Compactar espacamentos (p-2 ao inves de p-3 em alguns lugares)
+- Reduzir altura minima do textarea de observacoes
+- Manter legibilidade mas otimizar espaco vertical
+
+### 3. `src/components/AttendanceMaterialSelector.tsx`
+
+Mudancas:
+- Adicionar Collapsible para expandir/recolher a lista de materiais
+- Mostrar apenas os selecionados por padrao
+- Expandir busca quando o usuario quiser adicionar
+
+---
+
+## Resultado Esperado
+
+Apos as mudancas:
+- Todo o conteudo do dialog sera acessivel via scroll
+- O formulario BPA-2 ficara visivel por completo
+- A secao "Evolucao do Atendimento" estara sempre presente e visivel
+- O layout ficara organizado e funcional para uso diario
+- Materiais serao opcionais e nao ocuparao espaco desnecessario
