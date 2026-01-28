@@ -13,7 +13,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { Check, X, Eye, Clock, User, Calendar, Package, Filter, DollarSign } from 'lucide-react';
+import { Check, X, Eye, Clock, User, Calendar, Package, Filter, DollarSign, Brain, FileText } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 interface PendingAttendance {
   id: string;
   schedule_id: string;
@@ -37,6 +39,20 @@ interface PendingAttendance {
   next_session_plan: string;
   unit?: string;
 }
+
+interface NeuroTestResult {
+  id: string;
+  test_code: string;
+  test_name: string;
+  patient_age: number;
+  raw_scores: any;
+  calculated_scores: any;
+  percentiles: any;
+  classifications: any;
+  notes: string;
+  applied_at: string;
+}
+
 interface Employee {
   user_id: string;
   name: string;
@@ -56,6 +72,8 @@ export default function AttendanceValidationManager() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAttendance, setSelectedAttendance] = useState<PendingAttendance | null>(null);
+  const [neuroTests, setNeuroTests] = useState<NeuroTestResult[]>([]);
+  const [loadingNeuroTests, setLoadingNeuroTests] = useState(false);
   const [validationAction, setValidationAction] = useState<'validate' | 'reject' | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -77,6 +95,34 @@ export default function AttendanceValidationManager() {
   useEffect(() => {
     applyFilters();
   }, [unitFilter, employeeFilter, allAttendances]);
+
+  // Carregar testes neuro quando um atendimento for selecionado
+  useEffect(() => {
+    if (selectedAttendance) {
+      loadNeuroTests(selectedAttendance.id);
+    } else {
+      setNeuroTests([]);
+    }
+  }, [selectedAttendance]);
+
+  const loadNeuroTests = async (attendanceReportId: string) => {
+    try {
+      setLoadingNeuroTests(true);
+      const { data, error } = await supabase
+        .from('neuro_test_results')
+        .select('*')
+        .eq('attendance_report_id', attendanceReportId)
+        .order('created_at');
+      
+      if (error) throw error;
+      setNeuroTests(data || []);
+    } catch (error) {
+      console.error('Error loading neuro tests:', error);
+      setNeuroTests([]);
+    } finally {
+      setLoadingNeuroTests(false);
+    }
+  };
   const loadPendingAttendances = async () => {
     try {
       setLoading(true);
@@ -445,50 +491,168 @@ export default function AttendanceValidationManager() {
                 </CardContent>
               </Card>
 
-              {/* Observações */}
-              <Card>
+              {/* Evolução do Atendimento - Campo Principal */}
+              <Card className="border-primary/20">
                 <CardHeader>
-                  <CardTitle className="text-lg">Objetivos e Observações</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Evolução do Atendimento
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-objectives" className="text-sm font-medium">
-                      Objetivos da Sessão
-                    </Label>
-                    <Textarea id="edit-objectives" value={editedAttendance.techniques_used ?? selectedAttendance.techniques_used ?? ''} onChange={e => setEditedAttendance({
-                  ...editedAttendance,
-                  techniques_used: e.target.value
-                })} placeholder="Descreva os objetivos trabalhados na sessão..." rows={3} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-patient-response" className="text-sm font-medium">
-                      Resposta do Paciente
-                    </Label>
-                    <Textarea id="edit-patient-response" value={editedAttendance.patient_response ?? selectedAttendance.patient_response ?? ''} onChange={e => setEditedAttendance({
-                  ...editedAttendance,
-                  patient_response: e.target.value
-                })} placeholder="Como o paciente respondeu durante a sessão..." rows={3} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-observations" className="text-sm font-medium">
-                      Observações Clínicas
-                    </Label>
-                    <Textarea id="edit-observations" value={editedAttendance.observations ?? selectedAttendance.observations ?? ''} onChange={e => setEditedAttendance({
-                  ...editedAttendance,
-                  observations: e.target.value
-                })} placeholder="Observações clínicas importantes..." rows={3} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-next-plan" className="text-sm font-medium">
-                      Plano para Próxima Sessão
-                    </Label>
-                    <Textarea id="edit-next-plan" value={editedAttendance.next_session_plan ?? selectedAttendance.next_session_plan ?? ''} onChange={e => setEditedAttendance({
-                  ...editedAttendance,
-                  next_session_plan: e.target.value
-                })} placeholder="Planejamento para a próxima sessão..." rows={3} />
-                  </div>
+                <CardContent>
+                  <Textarea 
+                    id="edit-observations" 
+                    value={editedAttendance.observations ?? selectedAttendance.observations ?? selectedAttendance.session_notes ?? ''} 
+                    onChange={e => setEditedAttendance({
+                      ...editedAttendance,
+                      observations: e.target.value
+                    })} 
+                    placeholder="Evolução e observações do atendimento..." 
+                    rows={4} 
+                    className="resize-none"
+                  />
                 </CardContent>
               </Card>
+
+              {/* Testes Neuropsicológicos - Se houver */}
+              {(neuroTests.length > 0 || loadingNeuroTests) && (
+                <Card className="border-purple-500/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Brain className="h-5 w-5 text-purple-600" />
+                      Testes Neuropsicológicos Aplicados
+                      <Badge variant="outline" className="ml-2">{neuroTests.length} teste{neuroTests.length !== 1 ? 's' : ''}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingNeuroTests ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Clock className="h-5 w-5 animate-spin mr-2" />
+                        <span>Carregando testes...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {neuroTests.map((test, index) => (
+                          <div key={test.id} className="border rounded-lg p-4 bg-muted/30">
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <h4 className="font-semibold text-lg">{test.test_name}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  Código: {test.test_code} | Idade do paciente: {test.patient_age} anos
+                                </p>
+                              </div>
+                              <Badge variant="secondary">
+                                {new Date(test.applied_at).toLocaleDateString('pt-BR')}
+                              </Badge>
+                            </div>
+
+                            {/* Escores e Classificações */}
+                            {test.classifications && Object.keys(test.classifications).length > 0 && (
+                              <div className="mt-3">
+                                <Label className="text-sm font-medium mb-2 block">Resultados e Classificações:</Label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                  {Object.entries(test.classifications).map(([key, value]) => {
+                                    const percentile = test.percentiles?.[key];
+                                    const rawScore = test.raw_scores?.[key];
+                                    const calcScore = test.calculated_scores?.[key];
+                                    
+                                    return (
+                                      <div key={key} className="p-2 bg-background rounded border">
+                                        <p className="font-medium text-sm capitalize">
+                                          {key.replace(/_/g, ' ')}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <Badge 
+                                            variant="outline" 
+                                            className={
+                                              value === 'Superior' ? 'bg-green-100 text-green-700 border-green-300' :
+                                              value === 'Médio Superior' ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                                              value === 'Médio' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                                              value === 'Médio Inferior' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
+                                              'bg-red-100 text-red-700 border-red-300'
+                                            }
+                                          >
+                                            {String(value)}
+                                          </Badge>
+                                          {percentile !== undefined && (
+                                            <span className="text-xs text-muted-foreground">
+                                              Pc {percentile}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {(rawScore !== undefined || calcScore !== undefined) && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            {rawScore !== undefined && `Bruto: ${rawScore}`}
+                                            {rawScore !== undefined && calcScore !== undefined && ' | '}
+                                            {calcScore !== undefined && `Calc: ${calcScore}`}
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Notas do aplicador */}
+                            {test.notes && (
+                              <div className="mt-3 p-2 bg-background rounded border">
+                                <Label className="text-xs font-medium text-muted-foreground">Notas do aplicador:</Label>
+                                <p className="text-sm mt-1">{test.notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Campos Opcionais (colapsível) */}
+              <Collapsible>
+                <Card>
+                  <CollapsibleTrigger className="w-full">
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                      <CardTitle className="text-lg flex items-center justify-between">
+                        <span>Campos Adicionais (Opcional)</span>
+                        <Badge variant="outline" className="text-xs">Clique para expandir</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent className="space-y-4 pt-0">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-objectives" className="text-sm font-medium">
+                          Objetivos da Sessão
+                        </Label>
+                        <Textarea id="edit-objectives" value={editedAttendance.techniques_used ?? selectedAttendance.techniques_used ?? ''} onChange={e => setEditedAttendance({
+                          ...editedAttendance,
+                          techniques_used: e.target.value
+                        })} placeholder="Descreva os objetivos trabalhados na sessão..." rows={2} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-patient-response" className="text-sm font-medium">
+                          Resposta do Paciente
+                        </Label>
+                        <Textarea id="edit-patient-response" value={editedAttendance.patient_response ?? selectedAttendance.patient_response ?? ''} onChange={e => setEditedAttendance({
+                          ...editedAttendance,
+                          patient_response: e.target.value
+                        })} placeholder="Como o paciente respondeu durante a sessão..." rows={2} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-next-plan" className="text-sm font-medium">
+                          Plano para Próxima Sessão
+                        </Label>
+                        <Textarea id="edit-next-plan" value={editedAttendance.next_session_plan ?? selectedAttendance.next_session_plan ?? ''} onChange={e => setEditedAttendance({
+                          ...editedAttendance,
+                          next_session_plan: e.target.value
+                        })} placeholder="Planejamento para a próxima sessão..." rows={2} />
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
 
               {/* Materiais */}
               {selectedAttendance.materials_used && Array.isArray(selectedAttendance.materials_used) && selectedAttendance.materials_used.length > 0 && <Card>
