@@ -79,6 +79,16 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'escorePadraoOD'
       };
+    case 'FVA':
+      return {
+        subtests: ['percentilAnimais', 'percentilFrutas', 'percentilPares'],
+        names: {
+          percentilAnimais: 'Animais',
+          percentilFrutas: 'Frutas',
+          percentilPares: 'Pares (Alternada)'
+        },
+        mainSubtest: 'percentilAnimais'
+      };
     default:
       return null;
   }
@@ -409,6 +419,60 @@ const renderTSBCCalculations = (calc: Record<string, number>) => {
   );
 };
 
+// Renderiza dados de entrada do FVA
+const renderFVAInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Animais</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.animais ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Frutas</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.frutas ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Pares</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.pares ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+// Renderiza cálculos do FVA
+const renderFVACalculations = (calc: Record<string, string>) => {
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">Percentil = Consulta tabela normativa por idade</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Animais</span>
+          <span className="font-mono text-sm">{calc.percentilAnimais ?? '-'}</span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Frutas</span>
+          <span className="font-mono text-sm">{calc.percentilFrutas ?? '-'}</span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Pares</span>
+          <span className="font-mono text-sm">{calc.percentilPares ?? '-'}</span>
+        </div>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;5 ou 5: Inferior</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">5-25: Média Inferior</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">25-75: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">75-95: Média Superior</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">&gt;95: Superior</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function NeuroTestResults({
   testCode,
   testName,
@@ -472,6 +536,10 @@ export default function NeuroTestResults({
       case 'TSBC':
         inputSection = renderTSBCInputs(rawScores);
         calculationsSection = renderTSBCCalculations(calculatedScores);
+        break;
+      case 'FVA':
+        inputSection = renderFVAInputs(rawScores);
+        calculationsSection = renderFVACalculations(calculatedScores as unknown as Record<string, string>);
         break;
     }
 
@@ -582,6 +650,18 @@ export default function NeuroTestResults({
       lines.push('');
       lines.push('CLASSIFICAÇÃO:');
       lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');
+    } else if (testCode === 'FVA') {
+      lines.push(`- Animais: ${rawScores.animais}`);
+      lines.push(`- Frutas: ${rawScores.frutas || '-'}`);
+      lines.push(`- Pares: ${rawScores.pares || '-'}`);
+      lines.push('');
+      lines.push('RESULTADOS:');
+      lines.push(`- Animais: Percentil ${calculatedScores.percentilAnimais ?? '-'}`);
+      lines.push(`- Frutas: Percentil ${calculatedScores.percentilFrutas ?? '-'}`);
+      lines.push(`- Pares: Percentil ${calculatedScores.percentilPares ?? '-'}`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <5 ou 5: Inferior | 5-25: Média Inferior | 25-75: Média | 75-95: Média Superior | >95: Superior');
     }
 
     lines.push('');

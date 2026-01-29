@@ -18,10 +18,11 @@ import NeuroTestRAVLTForm from './NeuroTestRAVLTForm';
 import NeuroTestTINForm, { type TINResults } from './NeuroTestTINForm';
 import NeuroTestPCFOForm, { type PCFOResults } from './NeuroTestPCFOForm';
 import NeuroTestTSBCForm from './NeuroTestTSBCForm';
+import NeuroTestFVAForm from './NeuroTestFVAForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
-
+import { type FVAResults } from '@/data/neuroTests/fva';
 interface Schedule {
   id: string;
   client_id: string;
@@ -70,6 +71,7 @@ export default function CompleteAttendanceDialog({
   const [tinResults, setTinResults] = useState<TINResults | null>(null);
   const [pcfoResults, setPcfoResults] = useState<PCFOResults | null>(null);
   const [tsbcResults, setTsbcResults] = useState<TSBCResults | null>(null);
+  const [fvaResults, setFvaResults] = useState<FVAResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -110,6 +112,7 @@ export default function CompleteAttendanceDialog({
       setTinResults(null);
       setPcfoResults(null);
       setTsbcResults(null);
+      setFvaResults(null);
     }
   }, [isOpen]);
 
@@ -131,6 +134,8 @@ export default function CompleteAttendanceDialog({
       setPcfoResults(null);
     } else if (testCode === 'TSBC') {
       setTsbcResults(null);
+    } else if (testCode === 'FVA') {
+      setFvaResults(null);
     }
   };
 
@@ -156,6 +161,10 @@ export default function CompleteAttendanceDialog({
 
   const handleTsbcResultsChange = useCallback((results: TSBCResults) => {
     setTsbcResults(results);
+  }, []);
+
+  const handleFvaResultsChange = useCallback((results: FVAResults | null) => {
+    setFvaResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -370,6 +379,25 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // FVA
+        if (fvaResults && selectedTests.includes('FVA')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'FVA',
+            test_name: 'FVA - Fluência Verbal Alternada',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(fvaResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(fvaResults.calculatedScores)),
+            percentiles: {},
+            classifications: JSON.parse(JSON.stringify(fvaResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: fvaResults.notes || null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -521,6 +549,14 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleTsbcResultsChange}
                     onRemove={() => handleRemoveTest('TSBC')}
+                  />
+                )}
+
+                {/* Formulário FVA */}
+                {selectedTests.includes('FVA') && (
+                  <NeuroTestFVAForm
+                    patientAge={patientAge}
+                    onResultsChange={handleFvaResultsChange}
                   />
                 )}
               </div>
