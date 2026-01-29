@@ -75,7 +75,7 @@ export const RAVLT_TEST: NeuroTestDefinition = {
   fullName: 'Teste de Aprendizagem Auditivo-Verbal de Rey',
   description: 'Avalia memória verbal: aprendizagem, evocação imediata e tardia, e reconhecimento.',
   minAge: 6,
-  maxAge: 81,
+  maxAge: 89,
   subtests: [
     { code: 'A1', name: 'A1', fields: ['palavras'], formula: 'total de palavras' },
     { code: 'A2', name: 'A2', fields: ['palavras'], formula: 'total de palavras' },
