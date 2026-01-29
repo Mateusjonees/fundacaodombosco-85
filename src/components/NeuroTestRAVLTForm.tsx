@@ -18,7 +18,7 @@ import {
   type RAVLTScores, 
   type RAVLTResults 
 } from '@/data/neuroTests/ravlt';
-import { lookupRAVLTPercentile, getAgeGroupName } from '@/data/neuroTests/ravltPercentiles';
+import { lookupRAVLTPercentile, lookupRAVLTPercentileRange, getClassificationFromRange, getAgeGroupName } from '@/data/neuroTests/ravltPercentiles';
 
 interface NeuroTestRAVLTFormProps {
   patientAge: number;
@@ -52,7 +52,7 @@ export default function NeuroTestRAVLTForm({
     const interferenciaProativa = calculateInterferenciaProativa(scores.b1, scores.a1);
     const interferenciaRetroativa = calculateInterferenciaRetroativa(scores.a6, scores.a5);
 
-    // Buscar percentis
+    // Buscar percentis (numéricos para armazenamento)
     const percentiles = {
       a1: lookupRAVLTPercentile(patientAge, 'A1', scores.a1),
       a2: lookupRAVLTPercentile(patientAge, 'A2', scores.a2),
@@ -66,18 +66,32 @@ export default function NeuroTestRAVLTForm({
       reconhecimento: lookupRAVLTPercentile(patientAge, 'Reconhecimento', reconhecimento)
     };
 
-    // Classificações
+    // Buscar faixas percentílicas (strings para exibição)
+    const percentileRanges = {
+      a1: lookupRAVLTPercentileRange(patientAge, 'A1', scores.a1),
+      a2: lookupRAVLTPercentileRange(patientAge, 'A2', scores.a2),
+      a3: lookupRAVLTPercentileRange(patientAge, 'A3', scores.a3),
+      a4: lookupRAVLTPercentileRange(patientAge, 'A4', scores.a4),
+      a5: lookupRAVLTPercentileRange(patientAge, 'A5', scores.a5),
+      b1: lookupRAVLTPercentileRange(patientAge, 'B1', scores.b1),
+      a6: lookupRAVLTPercentileRange(patientAge, 'A6', scores.a6),
+      a7: lookupRAVLTPercentileRange(patientAge, 'A7', scores.a7),
+      escoreTotal: lookupRAVLTPercentileRange(patientAge, 'EscoreTotal', escoreTotal),
+      reconhecimento: lookupRAVLTPercentileRange(patientAge, 'Reconhecimento', reconhecimento)
+    };
+
+    // Classificações usando faixas percentílicas
     const classifications = {
-      a1: getRAVLTClassification(percentiles.a1),
-      a2: getRAVLTClassification(percentiles.a2),
-      a3: getRAVLTClassification(percentiles.a3),
-      a4: getRAVLTClassification(percentiles.a4),
-      a5: getRAVLTClassification(percentiles.a5),
-      b1: getRAVLTClassification(percentiles.b1),
-      a6: getRAVLTClassification(percentiles.a6),
-      a7: getRAVLTClassification(percentiles.a7),
-      escoreTotal: getRAVLTClassification(percentiles.escoreTotal),
-      reconhecimento: getRAVLTClassification(percentiles.reconhecimento)
+      a1: getClassificationFromRange(percentileRanges.a1),
+      a2: getClassificationFromRange(percentileRanges.a2),
+      a3: getClassificationFromRange(percentileRanges.a3),
+      a4: getClassificationFromRange(percentileRanges.a4),
+      a5: getClassificationFromRange(percentileRanges.a5),
+      b1: getClassificationFromRange(percentileRanges.b1),
+      a6: getClassificationFromRange(percentileRanges.a6),
+      a7: getClassificationFromRange(percentileRanges.a7),
+      escoreTotal: getClassificationFromRange(percentileRanges.escoreTotal),
+      reconhecimento: getClassificationFromRange(percentileRanges.reconhecimento)
     };
 
     const results: RAVLTResults = {
@@ -91,6 +105,7 @@ export default function NeuroTestRAVLTForm({
         interferenciaRetroativa
       },
       percentiles,
+      percentileRanges, // Adicionar faixas percentílicas ao resultado
       classifications,
       notes
     };
@@ -114,24 +129,24 @@ export default function NeuroTestRAVLTForm({
   const interferenciaProativa = calculateInterferenciaProativa(scores.b1, scores.a1);
   const interferenciaRetroativa = calculateInterferenciaRetroativa(scores.a6, scores.a5);
 
-  // Percentis e classificações para exibição
-  const escoreTotalPercentile = lookupRAVLTPercentile(patientAge, 'EscoreTotal', escoreTotal);
-  const reconhecimentoPercentile = lookupRAVLTPercentile(patientAge, 'Reconhecimento', reconhecimento);
+  // Faixas percentílicas para exibição
+  const escoreTotalRange = lookupRAVLTPercentileRange(patientAge, 'EscoreTotal', escoreTotal);
+  const reconhecimentoRange = lookupRAVLTPercentileRange(patientAge, 'Reconhecimento', reconhecimento);
 
   const renderScoreInput = (
     field: keyof RAVLTScores, 
     label: string, 
     variableName: 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'B1' | 'A6' | 'A7'
   ) => {
-    const percentile = lookupRAVLTPercentile(patientAge, variableName, scores[field]);
-    const classification = getRAVLTClassification(percentile);
+    const percentileRange = lookupRAVLTPercentileRange(patientAge, variableName, scores[field]);
+    const classification = getClassificationFromRange(percentileRange);
     
     return (
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <Label className="text-xs sm:text-sm font-medium">{label}</Label>
           <Badge variant={getClassificationVariant(classification)} className="text-[9px] sm:text-[10px]">
-            P{percentile}
+            P{percentileRange}
           </Badge>
         </div>
         <Input
@@ -210,8 +225,8 @@ export default function NeuroTestRAVLTForm({
             <div className="p-2 bg-muted/30 rounded-lg flex flex-col justify-center">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Reconhecimento</span>
-                <Badge variant={getClassificationVariant(getRAVLTClassification(reconhecimentoPercentile))} className="text-[9px]">
-                  P{reconhecimentoPercentile}
+                <Badge variant={getClassificationVariant(getClassificationFromRange(reconhecimentoRange))} className="text-[9px]">
+                  P{reconhecimentoRange}
                 </Badge>
               </div>
               <span className="text-sm font-bold">{reconhecimento}</span>
@@ -235,8 +250,8 @@ export default function NeuroTestRAVLTForm({
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold">{escoreTotal}</span>
-                <Badge variant={getClassificationVariant(getRAVLTClassification(escoreTotalPercentile))} className="text-[9px]">
-                  P{escoreTotalPercentile} • {getRAVLTClassification(escoreTotalPercentile)}
+                <Badge variant={getClassificationVariant(getClassificationFromRange(escoreTotalRange))} className="text-[9px]">
+                  P{escoreTotalRange} • {getClassificationFromRange(escoreTotalRange)}
                 </Badge>
               </div>
             </div>
