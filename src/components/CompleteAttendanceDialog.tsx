@@ -16,6 +16,7 @@ import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
 import NeuroTestFDTForm from './NeuroTestFDTForm';
 import NeuroTestRAVLTForm from './NeuroTestRAVLTForm';
 import NeuroTestTINForm, { type TINResults } from './NeuroTestTINForm';
+import NeuroTestPCFOForm, { type PCFOResults } from './NeuroTestPCFOForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 
@@ -65,6 +66,7 @@ export default function CompleteAttendanceDialog({
   const [fdtResults, setFdtResults] = useState<FDTResults | null>(null);
   const [ravltResults, setRavltResults] = useState<RAVLTResults | null>(null);
   const [tinResults, setTinResults] = useState<TINResults | null>(null);
+  const [pcfoResults, setPcfoResults] = useState<PCFOResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -103,6 +105,7 @@ export default function CompleteAttendanceDialog({
       setFdtResults(null);
       setRavltResults(null);
       setTinResults(null);
+      setPcfoResults(null);
     }
   }, [isOpen]);
 
@@ -120,6 +123,8 @@ export default function CompleteAttendanceDialog({
       setRavltResults(null);
     } else if (testCode === 'TIN') {
       setTinResults(null);
+    } else if (testCode === 'PCFO') {
+      setPcfoResults(null);
     }
   };
 
@@ -137,6 +142,10 @@ export default function CompleteAttendanceDialog({
 
   const handleTinResultsChange = useCallback((results: TINResults) => {
     setTinResults(results);
+  }, []);
+
+  const handlePcfoResultsChange = useCallback((results: PCFOResults) => {
+    setPcfoResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -313,6 +322,25 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // PCFO
+        if (pcfoResults && selectedTests.includes('PCFO')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'PCFO',
+            test_name: 'PCFO - Prova de Consciência Fonológica por produção Oral',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(pcfoResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(pcfoResults.calculatedScores)),
+            percentiles: {},
+            classifications: JSON.parse(JSON.stringify(pcfoResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: pcfoResults.notes || null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -447,6 +475,14 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleTinResultsChange}
                     onRemove={() => handleRemoveTest('TIN')}
+                  />
+                )}
+
+                {/* Formulário PCFO */}
+                {selectedTests.includes('PCFO') && (
+                  <NeuroTestPCFOForm
+                    patientAge={patientAge}
+                    onResultsChange={handlePcfoResultsChange}
                   />
                 )}
               </div>
