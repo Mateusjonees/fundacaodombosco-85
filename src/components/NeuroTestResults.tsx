@@ -70,6 +70,15 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'escorePadrao'
       };
+    case 'TSBC':
+      return {
+        subtests: ['escorePadraoOD', 'escorePadraoOI'],
+        names: {
+          escorePadraoOD: 'Ordem Direta',
+          escorePadraoOI: 'Ordem Inversa'
+        },
+        mainSubtest: 'escorePadraoOD'
+      };
     default:
       return null;
   }
@@ -344,6 +353,62 @@ const renderPCFOCalculations = (calc: Record<string, number>) => {
   );
 };
 
+// Renderiza dados de entrada do TSBC
+const renderTSBCInputs = (rawScores: Record<string, number | string>) => (
+  <div className="space-y-3">
+    <div className="grid grid-cols-2 gap-3">
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Ordem Direta (acertos)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.ordemDireta ?? '-'}</Badge>
+      </div>
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Ordem Inversa (acertos)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.ordemInversa ?? '-'}</Badge>
+      </div>
+    </div>
+    <div className="p-2 bg-muted/30 rounded-lg text-center">
+      <p className="text-xs text-muted-foreground">
+        Tipo de Escola: <strong>{rawScores.schoolType === 'publica' ? 'Pública' : 'Privada'}</strong>
+      </p>
+    </div>
+  </div>
+);
+
+// Renderiza cálculos do TSBC
+const renderTSBCCalculations = (calc: Record<string, number>) => {
+  const escorePadraoOD = calc.escorePadraoOD ?? '-';
+  const escorePadraoOI = calc.escorePadraoOI ?? '-';
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">EP = Consulta tabela normativa por idade e tipo de escola</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+          <span className="font-medium">EP Ordem Direta</span>
+          <span className="font-mono"><strong>{escorePadraoOD}</strong></span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+          <span className="font-medium">EP Ordem Inversa</span>
+          <span className="font-mono"><strong>{escorePadraoOI}</strong></span>
+        </div>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;70: Muito Baixa</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">70-84: Baixa</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">85-114: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">115-129: Alta</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">≥130: Muito Alta</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function NeuroTestResults({
   testCode,
   testName,
@@ -403,6 +468,10 @@ export default function NeuroTestResults({
       case 'PCFO':
         inputSection = renderPCFOInputs(rawScores);
         calculationsSection = renderPCFOCalculations(calculatedScores);
+        break;
+      case 'TSBC':
+        inputSection = renderTSBCInputs(rawScores);
+        calculationsSection = renderTSBCCalculations(calculatedScores);
         break;
     }
 
@@ -498,6 +567,18 @@ export default function NeuroTestResults({
       lines.push('');
       lines.push('CÁLCULOS:');
       lines.push(`- Escore Padrão: ${calculatedScores.escorePadrao ?? '-'} (M=100, DP=15)`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');
+    } else if (testCode === 'TSBC') {
+      lines.push(`- Ordem Direta (acertos): ${rawScores.ordemDireta}`);
+      lines.push(`- Ordem Inversa (acertos): ${rawScores.ordemInversa}`);
+      const schoolType = String(rawScores.schoolType) === 'publica' ? 'Pública' : 'Privada';
+      lines.push(`- Tipo de Escola: ${schoolType}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Escore Padrão OD: ${calculatedScores.escorePadraoOD ?? '-'} (M=100, DP=15)`);
+      lines.push(`- Escore Padrão OI: ${calculatedScores.escorePadraoOI ?? '-'} (M=100, DP=15)`);
       lines.push('');
       lines.push('CLASSIFICAÇÃO:');
       lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');

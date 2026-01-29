@@ -17,8 +17,10 @@ import NeuroTestFDTForm from './NeuroTestFDTForm';
 import NeuroTestRAVLTForm from './NeuroTestRAVLTForm';
 import NeuroTestTINForm, { type TINResults } from './NeuroTestTINForm';
 import NeuroTestPCFOForm, { type PCFOResults } from './NeuroTestPCFOForm';
+import NeuroTestTSBCForm from './NeuroTestTSBCForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
+import { type TSBCResults } from '@/data/neuroTests/tsbc';
 
 interface Schedule {
   id: string;
@@ -67,6 +69,7 @@ export default function CompleteAttendanceDialog({
   const [ravltResults, setRavltResults] = useState<RAVLTResults | null>(null);
   const [tinResults, setTinResults] = useState<TINResults | null>(null);
   const [pcfoResults, setPcfoResults] = useState<PCFOResults | null>(null);
+  const [tsbcResults, setTsbcResults] = useState<TSBCResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -106,6 +109,7 @@ export default function CompleteAttendanceDialog({
       setRavltResults(null);
       setTinResults(null);
       setPcfoResults(null);
+      setTsbcResults(null);
     }
   }, [isOpen]);
 
@@ -125,6 +129,8 @@ export default function CompleteAttendanceDialog({
       setTinResults(null);
     } else if (testCode === 'PCFO') {
       setPcfoResults(null);
+    } else if (testCode === 'TSBC') {
+      setTsbcResults(null);
     }
   };
 
@@ -146,6 +152,10 @@ export default function CompleteAttendanceDialog({
 
   const handlePcfoResultsChange = useCallback((results: PCFOResults) => {
     setPcfoResults(results);
+  }, []);
+
+  const handleTsbcResultsChange = useCallback((results: TSBCResults) => {
+    setTsbcResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -341,6 +351,25 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // TSBC
+        if (tsbcResults && selectedTests.includes('TSBC')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TSBC',
+            test_name: 'TSBC - Tarefa Span de Blocos (Corsi)',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(tsbcResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(tsbcResults.calculatedScores)),
+            percentiles: {},
+            classifications: JSON.parse(JSON.stringify(tsbcResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: tsbcResults.notes || null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -483,6 +512,15 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestPCFOForm
                     patientAge={patientAge}
                     onResultsChange={handlePcfoResultsChange}
+                  />
+                )}
+
+                {/* Formulário TSBC */}
+                {selectedTests.includes('TSBC') && (
+                  <NeuroTestTSBCForm
+                    patientAge={patientAge}
+                    onResultsChange={handleTsbcResultsChange}
+                    onRemove={() => handleRemoveTest('TSBC')}
                   />
                 )}
               </div>
