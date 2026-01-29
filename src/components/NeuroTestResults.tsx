@@ -4,14 +4,74 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Brain, ClipboardCopy, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import type { BPA2Results } from './NeuroTestBPA2Form';
+
+interface TestConfig {
+  subtests: string[];
+  names: Record<string, string>;
+  mainSubtest: string;
+  useRawScores?: string[];
+}
+
+// Configuração de subtestes por tipo de teste
+const getTestConfig = (testCode: string): TestConfig | null => {
+  switch (testCode) {
+    case 'BPA2':
+      return {
+        subtests: ['AC', 'AD', 'AA', 'AG'],
+        names: {
+          AC: 'Atenção Concentrada',
+          AD: 'Atenção Dividida',
+          AA: 'Atenção Alternada',
+          AG: 'Atenção Geral'
+        },
+        mainSubtest: 'AG'
+      };
+    case 'RAVLT':
+      return {
+        subtests: ['a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'a6', 'a7', 'escoreTotal', 'reconhecimento'],
+        names: {
+          a1: 'A1 (1ª tentativa)',
+          a2: 'A2 (2ª tentativa)',
+          a3: 'A3 (3ª tentativa)',
+          a4: 'A4 (4ª tentativa)',
+          a5: 'A5 (5ª tentativa)',
+          b1: 'B1 (Lista B)',
+          a6: 'A6 (Evocação imediata)',
+          a7: 'A7 (Evocação tardia)',
+          escoreTotal: 'Escore Total (A1-A5)',
+          reconhecimento: 'Reconhecimento'
+        },
+        mainSubtest: 'escoreTotal',
+        useRawScores: ['a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'a6', 'a7']
+      };
+    case 'FDT':
+      return {
+        subtests: ['inibicao', 'flexibilidade'],
+        names: {
+          inibicao: 'Inibição',
+          flexibilidade: 'Flexibilidade'
+        },
+        mainSubtest: 'inibicao'
+      };
+    default:
+      return null;
+  }
+};
+
+interface GenericTestResults {
+  rawScores?: Record<string, number>;
+  calculatedScores: Record<string, number>;
+  percentiles: Record<string, number>;
+  classifications: Record<string, string>;
+  notes?: string;
+}
 
 interface NeuroTestResultsProps {
   testCode: string;
   testName: string;
   patientName: string;
   patientAge: number;
-  results: BPA2Results;
+  results: GenericTestResults;
   appliedAt?: string;
   appliedBy?: string;
 }
@@ -26,24 +86,28 @@ export default function NeuroTestResults({
   appliedBy
 }: NeuroTestResultsProps) {
   const { toast } = useToast();
+  
+  const config = getTestConfig(testCode);
+  
+  if (!config) {
+    return (
+      <Card>
+        <CardContent className="py-6 text-center text-muted-foreground">
+          Tipo de teste não reconhecido: {testCode}
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const subtests = [
-    { code: 'AC', name: 'Atenção Concentrada' },
-    { code: 'AD', name: 'Atenção Dividida' },
-    { code: 'AA', name: 'Atenção Alternada' },
-    { code: 'AG', name: 'Atenção Geral' }
-  ];
-
-  const copyToClipboard = () => {
-    const text = generateReportText();
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copiado!",
-      description: "Texto formatado copiado para a área de transferência."
-    });
+  // Obtém o escore correto (raw ou calculated) para cada subteste
+  const getScoreValue = (subtestCode: string): number | string => {
+    if (config.useRawScores?.includes(subtestCode) && results.rawScores) {
+      return results.rawScores[subtestCode] ?? '-';
+    }
+    return results.calculatedScores[subtestCode] ?? '-';
   };
 
-  const generateReportText = () => {
+  const copyToClipboard = () => {
     const lines = [
       `TESTE: ${testName}`,
       `Paciente: ${patientName} (${patientAge} anos)`,
@@ -52,16 +116,18 @@ export default function NeuroTestResults({
       '',
       'RESULTADOS:',
       '-------------------------------------------',
-      'Subteste           | Escore | Percentil | Classificação',
+      'Variável                | Bruto | Percentil | Classificação',
       '-------------------------------------------'
     ];
 
-    subtests.forEach(({ code, name }) => {
-      const score = results.calculatedScores[code as keyof typeof results.calculatedScores];
-      const percentile = results.percentiles[code as keyof typeof results.percentiles];
-      const classification = results.classifications[code as keyof typeof results.classifications];
+    config.subtests.forEach(code => {
+      const name = config.names[code] || code;
+      const score = getScoreValue(code);
+      const percentile = results.percentiles[code] ?? '-';
+      const classification = results.classifications[code] ?? '-';
+      
       lines.push(
-        `${name.padEnd(18)} | ${String(score).padStart(6)} | ${String(percentile).padStart(9)} | ${classification}`
+        `${name.padEnd(23)} | ${String(score).padStart(5)} | ${String(percentile).padStart(9)} | ${classification}`
       );
     });
 
@@ -71,7 +137,11 @@ export default function NeuroTestResults({
       lines.push('', 'OBSERVAÇÕES:', results.notes);
     }
 
-    return lines.filter(l => l !== undefined).join('\n');
+    navigator.clipboard.writeText(lines.filter(l => l !== undefined && l !== '').join('\n'));
+    toast({
+      title: "Copiado!",
+      description: "Texto formatado copiado para a área de transferência."
+    });
   };
 
   return (
@@ -108,32 +178,31 @@ export default function NeuroTestResults({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Subteste</TableHead>
-              <TableHead className="text-center">Escore</TableHead>
+              <TableHead>Variável</TableHead>
+              <TableHead className="text-center">Bruto</TableHead>
               <TableHead className="text-center">Percentil</TableHead>
               <TableHead className="text-right">Classificação</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {subtests.map(({ code, name }) => {
-              const score = results.calculatedScores[code as keyof typeof results.calculatedScores];
-              const percentile = results.percentiles[code as keyof typeof results.percentiles];
-              const classification = results.classifications[code as keyof typeof results.classifications];
-              const isAG = code === 'AG';
+            {config.subtests.map(code => {
+              const score = getScoreValue(code);
+              const percentile = results.percentiles[code] ?? '-';
+              const classification = results.classifications[code] ?? '-';
+              const isMain = code === config.mainSubtest;
               
               return (
-                <TableRow key={code} className={isAG ? 'bg-primary/5 font-medium' : ''}>
+                <TableRow key={code} className={isMain ? 'bg-primary/5 font-medium' : ''}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {isAG && <Brain className="h-4 w-4 text-primary" />}
-                      <span>{name}</span>
-                      <Badge variant="outline" className="text-xs">{code}</Badge>
+                      {isMain && <Brain className="h-4 w-4 text-primary" />}
+                      <span>{config.names[code] || code}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-center font-mono">{score}</TableCell>
                   <TableCell className="text-center font-mono">{percentile}</TableCell>
                   <TableCell className="text-right">
-                    <Badge variant={getClassificationVariant(classification)}>
+                    <Badge variant={getClassificationVariant(String(classification))}>
                       {classification}
                     </Badge>
                   </TableCell>
