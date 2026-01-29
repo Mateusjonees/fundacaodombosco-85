@@ -42,6 +42,18 @@ export interface RAVLTResults {
     escoreTotal: number;
     reconhecimento: number;
   };
+  percentileRanges?: {
+    a1: string;
+    a2: string;
+    a3: string;
+    a4: string;
+    a5: string;
+    b1: string;
+    a6: string;
+    a7: string;
+    escoreTotal: string;
+    reconhecimento: string;
+  };
   classifications: {
     a1: string;
     a2: string;
@@ -131,14 +143,27 @@ export const calculateInterferenciaRetroativa = (a6: number, a5: number): number
 };
 
 /**
- * Sistema de Classificação por Percentil
+ * Sistema de Classificação por Percentil (numérico)
+ * 
+ * <5 = Inferior
+ * 5 = Inferior
+ * 5-25 = Médio Inferior
+ * 25 = Médio Inferior
+ * 25-50 = Médio
+ * 50 = Médio
+ * 50-75 = Médio
+ * 75 = Médio Superior
+ * 75-95 = Médio Superior
+ * 95 = Superior
+ * >95 = Superior
  */
 export const getRAVLTClassification = (percentile: number): string => {
   if (percentile < 5) return 'Inferior';
   if (percentile === 5) return 'Inferior';
   if (percentile > 5 && percentile < 25) return 'Médio Inferior';
   if (percentile === 25) return 'Médio Inferior';
-  if (percentile > 25 && percentile <= 75) return 'Médio';
+  if (percentile > 25 && percentile < 75) return 'Médio';
+  if (percentile === 75) return 'Médio';
   if (percentile > 75 && percentile < 95) return 'Médio Superior';
   if (percentile === 95) return 'Superior';
   if (percentile > 95) return 'Superior';
