@@ -14,6 +14,8 @@ export * from './pcfo';
 export * from './pcfoStandardScores';
 export * from './tsbc';
 export * from './tsbcStandardScores';
+export * from './fva';
+export * from './fvaPercentiles';
 
 import { BPA2_TEST, type NeuroTestDefinition } from './bpa2';
 import { FDT_TEST } from './fdt';
@@ -21,6 +23,7 @@ import { RAVLT_TEST } from './ravlt';
 import { TIN_TEST } from './tin';
 import { PCFO_TEST } from './pcfo';
 import { TSBC_TEST } from './tsbc';
+import { FVA_TEST } from './fva';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -29,7 +32,8 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   RAVLT_TEST,
   TIN_TEST,
   PCFO_TEST,
-  TSBC_TEST
+  TSBC_TEST,
+  FVA_TEST
 ];
 
 /**
