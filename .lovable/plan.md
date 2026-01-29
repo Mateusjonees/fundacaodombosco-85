@@ -1,69 +1,38 @@
 
-# Plano: Corrigir Faixas Etárias dos Testes Neuropsicológicos
+# Verificação: Sistema de Testes Neuropsicológicos
 
-## Objetivo
-Atualizar as definições de idade mínima e máxima de cada teste neuropsicológico para refletir os dados presentes nas tabelas normativas.
+## Status Atual - Tudo Funcionando Corretamente
 
----
+### 1. Seleção de Escola no TSBC
+O formulário do teste TSBC **já possui** a opção de selecionar entre escola **Pública** ou **Privada**. Quando o profissional seleciona o teste TSBC na finalização de atendimento, aparece um seletor de tipo de escola antes de preencher os resultados.
 
-## Alterações Necessárias
+### 2. Testes Disponíveis para Neuroavaliação (Floresta)
+Os testes neuropsicológicos **já aparecem automaticamente** na tela de "Finalizar Atendimento" para pacientes da unidade Floresta. O sistema filtra os testes pela idade do paciente:
 
-### 1. BPA-2 (Nenhuma alteração necessária)
-- **Configuração atual**: 6-81 anos
-- **Tabelas disponíveis**: 6 anos até 81+ anos
-- **Status**: Correto
+| Teste | Faixa Etária | Particularidades |
+|-------|--------------|------------------|
+| **BPA-2** | 6-81 anos | Bateria completa de atenção |
+| **RAVLT** | 6-89 anos | Memória auditivo-verbal |
+| **FDT** | 6-99 anos | Velocidade e atenção |
+| **TIN** | 3-14 anos | Nomeação infantil |
+| **PCFO** | 3-14 anos | Consciência fonológica (diferencia Educação Infantil/Ensino Fundamental) |
+| **TSBC** | 4-10 anos | Span de Blocos (diferencia escola pública/privada) |
 
-### 2. RAVLT
-- **Configuração atual**: 6-81 anos  
-- **Configuração correta**: 6-89 anos (Tabela 80+ cobre até pelo menos 89 anos)
+### 3. Como Funciona
 
-**Arquivo**: `src/data/neuroTests/ravlt.ts`
-```typescript
-// De:
-minAge: 6,
-maxAge: 81,
+1. Profissional agenda atendimento para paciente da unidade **Floresta**
+2. Ao finalizar o atendimento, o sistema calcula a idade do paciente
+3. Na seção "Testes Neuropsicológicos" aparecem todos os testes compatíveis com aquela idade
+4. O profissional seleciona os testes que foram aplicados
+5. Cada teste abre seu formulário específico com os campos necessários
+6. O TSBC especificamente mostra o seletor de **Pública/Privada**
+7. Os resultados são salvos automaticamente no banco de dados
 
-// Para:
-minAge: 6,
-maxAge: 89,
-```
+## Conclusão
 
-### 3. FDT
-- **Configuração atual**: 6-81 anos  
-- **Configuração correta**: 6-99 anos (Tabela 76+ não tem limite superior definido)
+**Nenhuma alteração é necessária** - o sistema já está funcionando conforme esperado:
+- O TSBC já tem seleção de tipo de escola
+- Todos os testes aparecem para pacientes da unidade Floresta
+- A filtragem por idade está funcionando corretamente
 
-**Arquivo**: `src/data/neuroTests/fdt.ts`
-```typescript
-// De:
-minAge: 6,
-maxAge: 81,
-
-// Para:
-minAge: 6,
-maxAge: 99,
-```
-
----
-
-## Resumo Final das Faixas Etárias
-
-| Teste | Idade Mínima | Idade Máxima |
-|-------|--------------|--------------|
-| BPA-2 | 6 anos | 81 anos |
-| RAVLT | 6 anos | 89 anos |
-| FDT   | 6 anos | 99 anos |
-
----
-
-## Impacto da Mudança
-
-- Pacientes com idade entre 82-89 anos terão acesso ao teste RAVLT
-- Pacientes com idade entre 82-99 anos terão acesso ao teste FDT
-- A seleção de testes na tela de conclusão de atendimento mostrará os testes corretos para cada idade
-
----
-
-## Arquivos a Modificar
-
-1. `src/data/neuroTests/ravlt.ts` - Alterar maxAge de 81 para 89
-2. `src/data/neuroTests/fdt.ts` - Alterar maxAge de 81 para 99
+Se você deseja que eu **teste o fluxo** para confirmar que tudo está funcionando, posso criar um atendimento de teste e verificar na prática.
