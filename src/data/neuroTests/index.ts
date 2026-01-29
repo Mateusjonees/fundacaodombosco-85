@@ -10,18 +10,22 @@ export * from './ravlt';
 export * from './ravltPercentiles';
 export * from './tin';
 export * from './tinStandardScores';
+export * from './pcfo';
+export * from './pcfoStandardScores';
 
 import { BPA2_TEST, type NeuroTestDefinition } from './bpa2';
 import { FDT_TEST } from './fdt';
 import { RAVLT_TEST } from './ravlt';
 import { TIN_TEST } from './tin';
+import { PCFO_TEST } from './pcfo';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   BPA2_TEST,
   FDT_TEST,
   RAVLT_TEST,
-  TIN_TEST
+  TIN_TEST,
+  PCFO_TEST
 ];
 
 /**
