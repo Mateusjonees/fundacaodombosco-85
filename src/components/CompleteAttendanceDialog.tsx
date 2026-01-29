@@ -19,10 +19,13 @@ import NeuroTestTINForm, { type TINResults } from './NeuroTestTINForm';
 import NeuroTestPCFOForm, { type PCFOResults } from './NeuroTestPCFOForm';
 import NeuroTestTSBCForm from './NeuroTestTSBCForm';
 import NeuroTestFVAForm from './NeuroTestFVAForm';
+import NeuroTestBNTBRForm from './NeuroTestBNTBRForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
 import { type FVAResults } from '@/data/neuroTests/fva';
+import { type BNTBRResults } from '@/data/neuroTests/bntbr';
+
 interface Schedule {
   id: string;
   client_id: string;
@@ -72,6 +75,7 @@ export default function CompleteAttendanceDialog({
   const [pcfoResults, setPcfoResults] = useState<PCFOResults | null>(null);
   const [tsbcResults, setTsbcResults] = useState<TSBCResults | null>(null);
   const [fvaResults, setFvaResults] = useState<FVAResults | null>(null);
+  const [bntbrResults, setBntbrResults] = useState<BNTBRResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -113,6 +117,7 @@ export default function CompleteAttendanceDialog({
       setPcfoResults(null);
       setTsbcResults(null);
       setFvaResults(null);
+      setBntbrResults(null);
     }
   }, [isOpen]);
 
@@ -136,6 +141,8 @@ export default function CompleteAttendanceDialog({
       setTsbcResults(null);
     } else if (testCode === 'FVA') {
       setFvaResults(null);
+    } else if (testCode === 'BNTBR') {
+      setBntbrResults(null);
     }
   };
 
@@ -165,6 +172,10 @@ export default function CompleteAttendanceDialog({
 
   const handleFvaResultsChange = useCallback((results: FVAResults | null) => {
     setFvaResults(results);
+  }, []);
+
+  const handleBntbrResultsChange = useCallback((results: BNTBRResults | null) => {
+    setBntbrResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -398,6 +409,25 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // BNT-BR
+        if (bntbrResults && selectedTests.includes('BNTBR')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'BNTBR',
+            test_name: 'BNT-BR - Teste de Nomeação de Boston',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(bntbrResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(bntbrResults.calculatedScores)),
+            percentiles: { percentil: bntbrResults.calculatedScores.percentil },
+            classifications: JSON.parse(JSON.stringify(bntbrResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: bntbrResults.notes || null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -557,6 +587,15 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestFVAForm
                     patientAge={patientAge}
                     onResultsChange={handleFvaResultsChange}
+                  />
+                )}
+
+                {/* Formulário BNT-BR */}
+                {selectedTests.includes('BNTBR') && (
+                  <NeuroTestBNTBRForm
+                    patientAge={patientAge}
+                    onResultsChange={handleBntbrResultsChange}
+                    onRemove={() => handleRemoveTest('BNTBR')}
                   />
                 )}
               </div>

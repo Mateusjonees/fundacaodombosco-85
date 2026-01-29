@@ -89,6 +89,14 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'percentilAnimais'
       };
+    case 'BNTBR':
+      return {
+        subtests: ['percentil'],
+        names: {
+          percentil: 'Nomeação'
+        },
+        mainSubtest: 'percentil'
+      };
     default:
       return null;
   }
@@ -473,6 +481,55 @@ const renderFVACalculations = (calc: Record<string, string>) => {
   );
 };
 
+// Renderiza dados de entrada do BNT-BR
+const renderBNTBRInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.acertos ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 30)</p>
+  </div>
+);
+
+// Renderiza cálculos do BNT-BR
+const renderBNTBRCalculations = (calc: Record<string, number>) => {
+  const pontuacao = calc.pontuacao ?? '-';
+  const zScore = calc.zScore ?? 0;
+  const percentil = calc.percentil ?? '-';
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">Z = (Acertos - Média) / DP → Percentil</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Pontuação</span>
+          <span className="font-mono text-sm">{pontuacao}</span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Z-Score</span>
+          <span className="font-mono text-sm">{typeof zScore === 'number' ? zScore.toFixed(2) : zScore}</span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Percentil</span>
+          <span className="font-mono text-sm">{percentil}</span>
+        </div>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">≤5: Inferior</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">6-25: Média Inferior</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">26-74: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">75-94: Média Superior</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">≥95: Superior</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function NeuroTestResults({
   testCode,
   testName,
@@ -540,6 +597,10 @@ export default function NeuroTestResults({
       case 'FVA':
         inputSection = renderFVAInputs(rawScores);
         calculationsSection = renderFVACalculations(calculatedScores as unknown as Record<string, string>);
+        break;
+      case 'BNTBR':
+        inputSection = renderBNTBRInputs(rawScores);
+        calculationsSection = renderBNTBRCalculations(calculatedScores);
         break;
     }
 
@@ -662,6 +723,16 @@ export default function NeuroTestResults({
       lines.push('');
       lines.push('CLASSIFICAÇÃO:');
       lines.push('- <5 ou 5: Inferior | 5-25: Média Inferior | 25-75: Média | 75-95: Média Superior | >95: Superior');
+    } else if (testCode === 'BNTBR') {
+      lines.push(`- Total de Acertos: ${rawScores.acertos}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Pontuação: ${calculatedScores.pontuacao}`);
+      lines.push(`- Z-Score: ${(calculatedScores.zScore ?? 0).toFixed(2)}`);
+      lines.push(`- Percentil: ${calculatedScores.percentil}`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- ≤5: Inferior | 6-25: Média Inferior | 26-74: Média | 75-94: Média Superior | ≥95: Superior');
     }
 
     lines.push('');
