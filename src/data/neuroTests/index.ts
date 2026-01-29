@@ -8,16 +8,20 @@ export * from './fdt';
 export * from './fdtPercentiles';
 export * from './ravlt';
 export * from './ravltPercentiles';
+export * from './tin';
+export * from './tinStandardScores';
 
 import { BPA2_TEST, type NeuroTestDefinition } from './bpa2';
 import { FDT_TEST } from './fdt';
 import { RAVLT_TEST } from './ravlt';
+import { TIN_TEST } from './tin';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   BPA2_TEST,
   FDT_TEST,
-  RAVLT_TEST
+  RAVLT_TEST,
+  TIN_TEST
 ];
 
 /**

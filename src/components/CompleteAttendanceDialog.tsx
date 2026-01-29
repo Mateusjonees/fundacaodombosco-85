@@ -15,6 +15,7 @@ import NeuroTestSelector from './NeuroTestSelector';
 import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
 import NeuroTestFDTForm from './NeuroTestFDTForm';
 import NeuroTestRAVLTForm from './NeuroTestRAVLTForm';
+import NeuroTestTINForm, { type TINResults } from './NeuroTestTINForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 
@@ -63,6 +64,7 @@ export default function CompleteAttendanceDialog({
   const [bpa2Results, setBpa2Results] = useState<BPA2Results | null>(null);
   const [fdtResults, setFdtResults] = useState<FDTResults | null>(null);
   const [ravltResults, setRavltResults] = useState<RAVLTResults | null>(null);
+  const [tinResults, setTinResults] = useState<TINResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -100,6 +102,7 @@ export default function CompleteAttendanceDialog({
       setBpa2Results(null);
       setFdtResults(null);
       setRavltResults(null);
+      setTinResults(null);
     }
   }, [isOpen]);
 
@@ -115,6 +118,8 @@ export default function CompleteAttendanceDialog({
       setFdtResults(null);
     } else if (testCode === 'RAVLT') {
       setRavltResults(null);
+    } else if (testCode === 'TIN') {
+      setTinResults(null);
     }
   };
 
@@ -128,6 +133,10 @@ export default function CompleteAttendanceDialog({
 
   const handleRavltResultsChange = useCallback((results: RAVLTResults) => {
     setRavltResults(results);
+  }, []);
+
+  const handleTinResultsChange = useCallback((results: TINResults) => {
+    setTinResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -285,6 +294,25 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // TIN
+        if (tinResults && selectedTests.includes('TIN')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TIN',
+            test_name: 'TIN - Teste Infantil de Nomeação',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(tinResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(tinResults.calculatedScores)),
+            percentiles: {},
+            classifications: JSON.parse(JSON.stringify(tinResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: tinResults.notes || null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -410,6 +438,15 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleRavltResultsChange}
                     onRemove={() => handleRemoveTest('RAVLT')}
+                  />
+                )}
+
+                {/* Formulário TIN */}
+                {selectedTests.includes('TIN') && (
+                  <NeuroTestTINForm
+                    patientAge={patientAge}
+                    onResultsChange={handleTinResultsChange}
+                    onRemove={() => handleRemoveTest('TIN')}
                   />
                 )}
               </div>

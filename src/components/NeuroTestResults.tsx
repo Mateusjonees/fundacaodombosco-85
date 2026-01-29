@@ -54,6 +54,14 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'inibicao'
       };
+    case 'TIN':
+      return {
+        subtests: ['escorePadrao'],
+        names: {
+          escorePadrao: 'Escore Padrão'
+        },
+        mainSubtest: 'escorePadrao'
+      };
     default:
       return null;
   }
@@ -249,6 +257,43 @@ const renderBPA2Calculations = (calc: Record<string, number>) => {
   );
 };
 
+// Renderiza dados de entrada do TIN
+const renderTINInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.acertos ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 60)</p>
+  </div>
+);
+
+// Renderiza cálculos do TIN
+const renderTINCalculations = (calc: Record<string, number>) => {
+  const escorePadrao = calc.escorePadrao ?? '-';
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">Escore Padrão = Consulta tabela normativa por idade</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">Escore Padrão</span>
+        <span className="font-mono"><strong>{escorePadrao}</strong> (M=100, DP=15)</span>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;70: Muito Baixa</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">70-84: Baixa</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">85-114: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">115-129: Alta</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">≥130: Muito Alta</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function NeuroTestResults({
   testCode,
   testName,
@@ -300,6 +345,10 @@ export default function NeuroTestResults({
       case 'BPA2':
         inputSection = renderBPA2Inputs(rawScores, calculatedScores);
         calculationsSection = renderBPA2Calculations(calculatedScores);
+        break;
+      case 'TIN':
+        inputSection = renderTINInputs(rawScores);
+        calculationsSection = renderTINCalculations(calculatedScores);
         break;
     }
 
@@ -380,6 +429,14 @@ export default function NeuroTestResults({
       lines.push('CÁLCULOS:');
       lines.push('- Fórmula: Score = Acertos - Erros - Omissões');
       lines.push(`- AG = ${calculatedScores.AC} + ${calculatedScores.AD} + ${calculatedScores.AA} = ${calculatedScores.AG}`);
+    } else if (testCode === 'TIN') {
+      lines.push(`- Total de Acertos: ${rawScores.acertos}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Escore Padrão: ${calculatedScores.escorePadrao ?? '-'} (M=100, DP=15)`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');
     }
 
     lines.push('');
