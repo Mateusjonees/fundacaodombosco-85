@@ -1,73 +1,139 @@
 
-# Plano: Otimizacao do Menu Lateral (Sidebar/Nav)
 
-## Problemas Identificados
+# Plano: Relatorio de Estatisticas de Tempo dos Atendimentos
 
-### 1. Desalinhamento do Botao no Desktop
-O botao de toggle (hamburger) no header esta fixo na posicao, mas quando a sidebar esta colapsada (w-72px), o conteudo principal nao ajusta corretamente, causando desalinhamento visual.
+## Objetivo
+Adicionar uma nova aba dedicada ao levantamento de horas/minutos dos atendimentos, com calculos detalhados, filtros por periodo (mes, semana, ano), e agrupamentos por profissional, paciente, tipo de atendimento e unidade.
 
-### 2. Mobile Mostrando Apenas Icones
-A segunda imagem mostra que no celular os itens aparecem como icones soltos sem texto nem agrupamento. O esperado seria o drawer completo com texto visivel.
+## Funcionalidades
 
-### 3. Falta de Acesso Rapido no Modo Colapsado
-Quando a sidebar esta fechada, os icones aparecem mas sem identificacao clara. Seria util ter acesso rapido aos itens mais usados.
+### Nova Aba "Tempo" no Reports.tsx
 
-## Solucao Proposta
+A pagina de Relatorios ja possui as seguintes abas:
+- Atendimentos, Sessoes, Anamneses, Receitas, Laudos, Desempenho, Analytics
 
-### Ajustes no Desktop (PC)
+Sera adicionada uma nova aba chamada **"Tempo"** com as seguintes funcionalidades:
 
-**Arquivo: src/components/MainApp.tsx**
-- Ajustar o layout para que o header respeite a largura da sidebar colapsada/expandida
-- Garantir transicao suave entre estados
+### 1. Cards de Resumo (Topo)
+- **Total de Horas**: Soma de todas as session_duration convertidas para horas
+- **Total de Minutos**: Soma total em minutos
+- **Media por Atendimento**: Duracao media em minutos
+- **Atendimentos Contabilizados**: Quantidade de atendimentos com duracao registrada
 
-**Arquivo: src/components/layout/AppSidebar.tsx**
-- Melhorar o modo colapsado para mostrar icones mais claros com cores das categorias
-- Adicionar mini-labels ou badges nos icones mais importantes
+### 2. Filtros de Periodo
+- **Agrupamento por**: Dia, Semana, Mes, Ano
+- **Periodo**: Selector de mes/data inicial/data final (reutiliza os filtros existentes)
+- **Profissional**: Combobox para filtrar por funcionario
+- **Paciente**: Combobox para filtrar por paciente
+- **Unidade**: MADRE, Floresta, Atendimento Floresta
+- **Tipo de Atendimento**: Consulta, Terapia, Avaliacao, etc.
 
-### Ajustes no Mobile
+### 3. Tabela de Estatisticas Agrupadas
+| Periodo | Atendimentos | Horas Totais | Minutos Totais | Media (min) |
+|---------|--------------|--------------|----------------|-------------|
+| Jan/2025 | 45 | 67h 30min | 4050 | 90 |
+| Fev/2025 | 52 | 78h 15min | 4695 | 90.3 |
 
-**Arquivo: src/components/ui/sidebar.tsx**
-- Verificar se o Sheet (drawer) esta abrindo corretamente no mobile
-- Garantir que o conteudo mobile mostra o menu completo com texto, nao apenas icones
+### 4. Tabela por Profissional
+| Profissional | Atendimentos | Horas | Media | % do Total |
+|--------------|--------------|-------|-------|------------|
+| Maria Silva | 28 | 42h | 90min | 35% |
+| Joao Santos | 17 | 25h 30min | 90min | 21% |
 
-**Arquivo: src/components/layout/AppSidebar.tsx**
-- Garantir que quando `isMobile` e true, o menu mostra itens completos (nao collapsed)
+### 5. Tabela por Tipo de Atendimento
+| Tipo | Atendimentos | Horas | Media |
+|------|--------------|-------|-------|
+| Terapia | 35 | 52h 30min | 90min |
+| Avaliacao | 15 | 22h 30min | 90min |
 
-## Implementacao Tecnica
+### 6. Exportacao PDF
+Botao para gerar PDF com todo o relatorio de tempo contendo:
+- Resumo geral
+- Estatisticas por periodo
+- Estatisticas por profissional
+- Estatisticas por tipo
 
-### 1. Corrigir Layout Desktop
+## Detalhes Tecnicos
+
+### Arquivo a Modificar
+
+**src/pages/Reports.tsx**
+
+### Novas Funcoes de Calculo
+
 ```text
-MainApp.tsx:
-- Envolver header + main em flex container que respeita a sidebar
-- Adicionar transicao suave no conteudo principal
+getTotalMinutes()
+- Soma session_duration de todos os attendanceReports filtrados
+
+getTotalHours()
+- Converte total de minutos para horas decimais
+
+formatHoursMinutes(totalMinutes)
+- Formata como "Xh Ymin"
+
+getTimeByPeriod(groupBy: 'day' | 'week' | 'month' | 'year')
+- Agrupa atendimentos por periodo
+- Retorna array com: periodo, count, totalMinutes, avgMinutes
+
+getTimeByEmployee()
+- Agrupa por employee_id
+- Retorna: nome, count, totalMinutes, avgMinutes, percentual
+
+getTimeByType()
+- Agrupa por attendance_type
+- Retorna: tipo, count, totalMinutes, avgMinutes
 ```
 
-### 2. Corrigir Mobile Sheet
+### Nova TabsTrigger e TabsContent
+
 ```text
-sidebar.tsx / AppSidebar.tsx:
-- Garantir que no mobile o collapsed e sempre false
-- O Sheet deve mostrar menu completo
+<TabsTrigger value="tempo">
+  <Clock className="h-4 w-4 mr-2" />
+  Tempo
+</TabsTrigger>
+
+<TabsContent value="tempo">
+  ... componente completo com cards, tabelas e filtros
+</TabsContent>
 ```
 
-### 3. Melhorar Modo Colapsado
+### Estrutura do Layout
+
 ```text
-AppSidebar.tsx:
-- Icones mais visiveis com cores das categorias
-- Tooltip mais rapido (sem delay)
-- Separadores visuais entre grupos de icones
++------------------------------------------+
+|  [Card]      [Card]      [Card]   [Card] |
+|  Total Hrs   Tot. Min    Media    Count  |
++------------------------------------------+
+|  Filtros: [Agrupar Por] [Exportar PDF]   |
++------------------------------------------+
+|  Tabela de Estatisticas por Periodo      |
+|  - Data/Semana/Mes | Atend. | Horas | Med|
++------------------------------------------+
+|  [Accordion: Por Profissional]           |
+|  [Accordion: Por Tipo de Atendimento]    |
++------------------------------------------+
 ```
+
+### Dependencia Existente
+- Ja existe a funcao `getAverageDuration()` que calcula duracao media
+- Campo `session_duration` armazena duracao em minutos (number)
+- Filtros de periodo ja existem e serao reutilizados
 
 ## Resumo das Alteracoes
 
-| Arquivo | Mudanca |
-|---------|---------|
-| MainApp.tsx | Ajustar alinhamento header/sidebar, transicoes |
-| AppSidebar.tsx | Melhorar modo colapsado, garantir mobile full menu |
-| sidebar.tsx | Verificar comportamento Sheet no mobile |
-| index.css | Adicionar transicoes suaves se necessario |
+| Arquivo | Alteracao |
+|---------|-----------|
+| src/pages/Reports.tsx | Adicionar nova aba "Tempo" com estatisticas detalhadas |
+| src/pages/Reports.tsx | Novas funcoes de calculo e agrupamento |
+| src/pages/Reports.tsx | Funcao de exportar PDF especifico de tempo |
 
 ## Resultado Esperado
 
-- No PC: Botao de toggle alinhado com a sidebar, transicao fluida
-- No Mobile: Menu abre como drawer completo com texto visivel
-- Modo colapsado: Icones coloridos por categoria, separadores visuais, tooltips rapidos
+O usuario podera:
+1. Ver o total de horas/minutos trabalhados no periodo
+2. Agrupar por dia, semana, mes ou ano
+3. Ver estatisticas por profissional individual
+4. Ver estatisticas por tipo de atendimento
+5. Exportar um PDF com todas as informacoes de tempo
+6. Aplicar todos os filtros existentes (funcionario, paciente, unidade, tipo)
+
