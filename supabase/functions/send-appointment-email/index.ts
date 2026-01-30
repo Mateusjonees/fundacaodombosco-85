@@ -35,13 +35,29 @@ interface AppointmentEmailRequest {
 const getUnitInfo = (unit: string) => {
   switch (unit) {
     case 'madre':
-      return { name: 'Clínica Social Madre Clélia', color: '#3b82f6' };
+      return { 
+        name: 'Clínica Social Madre Clélia', 
+        color: '#3b82f6',
+        address: 'Rua Jaime Salse, 280 - Madre Gertrudes'
+      };
     case 'floresta':
-      return { name: 'Neuroavaliação Floresta', color: '#10b981' };
+      return { 
+        name: 'Neuroavaliação Floresta', 
+        color: '#10b981',
+        address: 'Rua Urucuia, 18 - Floresta'
+      };
     case 'atendimento_floresta':
-      return { name: 'Atendimento Floresta', color: '#8b5cf6' };
+      return { 
+        name: 'Atendimento Floresta', 
+        color: '#8b5cf6',
+        address: 'Rua Urucuia, 18 - Floresta'
+      };
     default:
-      return { name: 'Fundação Dom Bosco', color: '#3b82f6' };
+      return { 
+        name: 'Fundação Dom Bosco', 
+        color: '#3b82f6',
+        address: 'Rua Jaime Salse, 280 - Madre Gertrudes'
+      };
   }
 };
 
@@ -182,6 +198,10 @@ const handler = async (req: Request): Promise<Response> => {
                   <tr>
                     <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📋 Tipo:</td>
                     <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${appointmentType}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📍 Local:</td>
+                    <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${unitInfo.address}</td>
                   </tr>
                 </table>
               </div>
