@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
@@ -375,14 +375,16 @@ const SidebarNavItem = memo(({
         </>}
     </NavLink>;
   if (collapsed) {
-    return <Tooltip>
-        <TooltipTrigger asChild>
-          <div>{content}</div>
-        </TooltipTrigger>
-        <TooltipContent side="right" className="font-medium">
-          {item.title}
-        </TooltipContent>
-      </Tooltip>;
+    return <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>{content}</div>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-medium bg-popover border shadow-lg">
+            {item.title}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>;
   }
   return content;
 });
@@ -393,7 +395,8 @@ export function AppSidebar() {
     isMobile,
     setOpenMobile
   } = useSidebar();
-  const collapsed = state === 'collapsed';
+  // No mobile, sempre mostrar expandido (drawer completo com texto)
+  const collapsed = isMobile ? false : state === 'collapsed';
   const location = useLocation();
   const {
     user
@@ -475,7 +478,7 @@ export function AppSidebar() {
     }
   };
   const categories = ['GESTÃO CLÍNICA', 'AGENDA', 'FINANCEIRO', 'ESTOQUE', 'EQUIPE', 'RELATÓRIOS', 'COMUNICAÇÃO', 'PESSOAL'];
-  return <Sidebar className={cn("sidebar-container border-r border-sidebar-border/50", collapsed ? "w-[72px]" : "w-72")}>
+  return <Sidebar collapsible="icon" className={cn("sidebar-container border-r border-sidebar-border/50", collapsed ? "w-[72px]" : "w-72")}>
       <SidebarContent className="flex flex-col h-full bg-gradient-to-b from-sidebar-background via-sidebar-background to-sidebar-accent/30">
         {/* Logo Header with glassmorphism */}
         <div className={cn("sidebar-header relative overflow-hidden border-b border-sidebar-border/30", collapsed ? "p-3" : "p-4")}>
@@ -526,8 +529,12 @@ export function AppSidebar() {
             const isOpen = openCategories[category] ?? false;
             const hasActiveItem = groupedItems[category].some(item => isActive(item.url));
             if (collapsed) {
-              // Collapsed: show only icons with tooltips
-              return <div key={category} className="space-y-1 py-1">
+              // Collapsed: show only icons with tooltips and category separators
+              return <div key={category} className="py-2">
+                    {/* Category separator with colored indicator */}
+                    <div className="flex items-center justify-center mb-2">
+                      <div className={cn("h-0.5 w-8 rounded-full", config?.iconBg?.replace('text-', 'bg-').replace('/15', '/40'))} />
+                    </div>
                     {groupedItems[category].map(item => <SidebarMenuItem key={item.id}>
                         <SidebarMenuButton asChild>
                           <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} categoryConfig={config} />
