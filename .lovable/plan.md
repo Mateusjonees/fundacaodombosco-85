@@ -1,59 +1,73 @@
 
-# Plano: Adicionar Botao de Copiar Linha Individual nos Testes
+# Plano: Otimizacao do Menu Lateral (Sidebar/Nav)
 
-## Contexto
-O sistema de testes neuropsicologicos exibe os resultados em tabelas com colunas: Variavel, Bruto, Percentil, Classificacao. Atualmente existe apenas o botao "Copiar para Laudo" que copia todos os dados do teste. O usuario quer poder copiar **cada linha individualmente**.
+## Problemas Identificados
 
-## Objetivo
-Adicionar um botao de copiar ao lado de cada linha na tabela de resultados dos testes, permitindo copiar apenas aquela linha especifica para usar em laudos ou documentos.
+### 1. Desalinhamento do Botao no Desktop
+O botao de toggle (hamburger) no header esta fixo na posicao, mas quando a sidebar esta colapsada (w-72px), o conteudo principal nao ajusta corretamente, causando desalinhamento visual.
 
-## Implementacao
+### 2. Mobile Mostrando Apenas Icones
+A segunda imagem mostra que no celular os itens aparecem como icones soltos sem texto nem agrupamento. O esperado seria o drawer completo com texto visivel.
 
-### Arquivos a Modificar
+### 3. Falta de Acesso Rapido no Modo Colapsado
+Quando a sidebar esta fechada, os icones aparecem mas sem identificacao clara. Seria util ter acesso rapido aos itens mais usados.
 
-**1. src/components/PatientNeuroTestHistory.tsx**
-- Adicionar botao de copiar em cada linha da tabela de resultados (linhas 570-595)
-- O botao ficara na ultima coluna ou como um icone discreto
-- Formato do texto copiado: `[Nome do Teste] - [Variavel]: Bruto [valor], Percentil [valor], Classificacao [valor]`
+## Solucao Proposta
 
-**2. src/components/NeuroTestResults.tsx**
-- Este componente tambem exibe resultados de testes (usado na validacao de atendimentos)
-- Aplicar a mesma logica de botao de copiar por linha
+### Ajustes no Desktop (PC)
 
-## Detalhes Tecnicos
+**Arquivo: src/components/MainApp.tsx**
+- Ajustar o layout para que o header respeite a largura da sidebar colapsada/expandida
+- Garantir transicao suave entre estados
 
-### Formato do Texto Copiado
-Exemplo para BPA-2:
-```
-BPA-2 - Atencao Concentrada (AC): Bruto 85, Percentil 50, Classificacao Media
-```
+**Arquivo: src/components/layout/AppSidebar.tsx**
+- Melhorar o modo colapsado para mostrar icones mais claros com cores das categorias
+- Adicionar mini-labels ou badges nos icones mais importantes
 
-### Layout do Botao
-- Icone pequeno de clipboard (ClipboardCopy) no inicio ou fim de cada linha
-- Aparece ao passar o mouse (hover) para nao poluir visualmente
-- Ao clicar, mostra toast de confirmacao "Linha copiada!"
+### Ajustes no Mobile
 
-### Alteracoes na Tabela
+**Arquivo: src/components/ui/sidebar.tsx**
+- Verificar se o Sheet (drawer) esta abrindo corretamente no mobile
+- Garantir que o conteudo mobile mostra o menu completo com texto, nao apenas icones
+
+**Arquivo: src/components/layout/AppSidebar.tsx**
+- Garantir que quando `isMobile` e true, o menu mostra itens completos (nao collapsed)
+
+## Implementacao Tecnica
+
+### 1. Corrigir Layout Desktop
 ```text
-Antes:
-| Variavel           | Bruto | Percentil | Classificacao |
-| Atencao Concentrada|   85  |     50    |     Media     |
-
-Depois:
-| Variavel           | Bruto | Percentil | Classificacao | Copiar |
-| Atencao Concentrada|   85  |     50    |     Media     |   [icon] |
+MainApp.tsx:
+- Envolver header + main em flex container que respeita a sidebar
+- Adicionar transicao suave no conteudo principal
 ```
 
-Ou alternativamente, o icone pode ficar na coluna Variavel, antes do nome.
+### 2. Corrigir Mobile Sheet
+```text
+sidebar.tsx / AppSidebar.tsx:
+- Garantir que no mobile o collapsed e sempre false
+- O Sheet deve mostrar menu completo
+```
 
-## Resumo das Mudancas
+### 3. Melhorar Modo Colapsado
+```text
+AppSidebar.tsx:
+- Icones mais visiveis com cores das categorias
+- Tooltip mais rapido (sem delay)
+- Separadores visuais entre grupos de icones
+```
+
+## Resumo das Alteracoes
 
 | Arquivo | Mudanca |
 |---------|---------|
-| PatientNeuroTestHistory.tsx | Adicionar coluna/botao de copiar em cada linha da tabela |
-| NeuroTestResults.tsx | Mesma funcionalidade para consistencia |
+| MainApp.tsx | Ajustar alinhamento header/sidebar, transicoes |
+| AppSidebar.tsx | Melhorar modo colapsado, garantir mobile full menu |
+| sidebar.tsx | Verificar comportamento Sheet no mobile |
+| index.css | Adicionar transicoes suaves se necessario |
 
-## Beneficios
-- Permite copiar resultados individuais para laudos
-- Maior flexibilidade ao compor documentos clinicos
-- Interacao rapida sem precisar copiar e editar texto completo
+## Resultado Esperado
+
+- No PC: Botao de toggle alinhado com a sidebar, transicao fluida
+- No Mobile: Menu abre como drawer completo com texto visivel
+- Modo colapsado: Icones coloridos por categoria, separadores visuais, tooltips rapidos
