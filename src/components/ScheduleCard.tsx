@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
 import { UserAvatar } from '@/components/UserAvatar';
-import { PatientQuickViewModal } from '@/components/PatientQuickViewModal';
+import { PatientDetailsModal } from '@/components/PatientDetailsModal';
 import { ProfessionalQuickViewModal } from '@/components/ProfessionalQuickViewModal';
 
 interface Schedule {
@@ -76,8 +76,8 @@ export const ScheduleCard = ({
 
   return (
     <>
-      {/* Modais de Quick View */}
-      <PatientQuickViewModal
+      {/* Modal de detalhes completo do paciente */}
+      <PatientDetailsModal
         clientId={schedule.client_id}
         open={patientModalOpen}
         onOpenChange={setPatientModalOpen}
