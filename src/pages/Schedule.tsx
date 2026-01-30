@@ -10,10 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X, Trash2, CalendarDays, LayoutList, UserCheck, ClipboardList, AlertCircle } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X, Trash2, CalendarDays, LayoutList, UserCheck, ClipboardList, AlertCircle, Mail, MailCheck } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -112,8 +113,25 @@ export default function Schedule() {
     end_time: '',
     notes: '',
     unit: 'madre',
-    sessionCount: 1
+    sessionCount: 1,
+    sendConfirmationEmail: false
   });
+
+  // Estado para armazenar e-mail do paciente selecionado
+  const [selectedClientEmail, setSelectedClientEmail] = useState<string | null>(null);
+
+  // Buscar e-mail do cliente quando mudar
+  useEffect(() => {
+    const fetchClientEmail = async () => {
+      if (newAppointment.client_id) {
+        const client = clients.find(c => c.id === newAppointment.client_id);
+        setSelectedClientEmail(client?.email || null);
+      } else {
+        setSelectedClientEmail(null);
+      }
+    };
+    fetchClientEmail();
+  }, [newAppointment.client_id, clients]);
 
   // Auto-definir a unidade baseada no funcionário logado
   useEffect(() => {
@@ -317,18 +335,72 @@ export default function Schedule() {
         
         if (conflictFound) return;
 
-        const { error } = await supabase
+        const { data: insertedSchedules, error } = await supabase
           .from('schedules')
-          .insert(appointmentsToCreate);
+          .insert(appointmentsToCreate)
+          .select('id, start_time');
 
         if (error) throw error;
 
-        toast({
-          title: "Sucesso",
-          description: sessionCount > 1 
-            ? `${sessionCount} sessões criadas com sucesso!`
-            : "Agendamento criado com sucesso!",
-        });
+        // Enviar e-mail de confirmação se habilitado
+        if (newAppointment.sendConfirmationEmail && selectedClientEmail && insertedSchedules) {
+          try {
+            const client = clients.find(c => c.id === newAppointment.client_id);
+            const professional = employees.find(e => e.user_id === newAppointment.employee_id);
+            
+            const sessions = insertedSchedules.map((s, idx) => ({
+              date: format(new Date(s.start_time), "dd/MM/yyyy", { locale: ptBR }),
+              time: format(new Date(s.start_time), "HH:mm", { locale: ptBR }),
+              sessionNumber: idx + 1
+            }));
+
+            const response = await supabase.functions.invoke('send-appointment-email', {
+              body: {
+                clientEmail: selectedClientEmail,
+                clientName: client?.name || 'Paciente',
+                appointmentDate: sessions[0].date,
+                appointmentTime: sessions[0].time,
+                professionalName: professional?.name || 'Profissional',
+                appointmentType: newAppointment.title,
+                notes: newAppointment.notes,
+                unit: newAppointment.unit,
+                scheduleIds: insertedSchedules.map(s => s.id),
+                sessions: sessions
+              }
+            });
+
+            if (response.error) {
+              console.error('Erro ao enviar e-mail:', response.error);
+              toast({
+                variant: "destructive",
+                title: "Aviso",
+                description: "Agendamento criado, mas houve erro ao enviar e-mail de confirmação.",
+              });
+            } else {
+              toast({
+                title: "Sucesso",
+                description: sessionCount > 1 
+                  ? `${sessionCount} sessões criadas e e-mail de confirmação enviado!`
+                  : "Agendamento criado e e-mail de confirmação enviado!",
+              });
+            }
+          } catch (emailError) {
+            console.error('Erro ao enviar e-mail:', emailError);
+            toast({
+              title: "Sucesso",
+              description: sessionCount > 1 
+                ? `${sessionCount} sessões criadas! (E-mail não enviado)`
+                : "Agendamento criado! (E-mail não enviado)",
+            });
+          }
+        } else {
+          toast({
+            title: "Sucesso",
+            description: sessionCount > 1 
+              ? `${sessionCount} sessões criadas com sucesso!`
+              : "Agendamento criado com sucesso!",
+          });
+        }
       }
       
       setIsDialogOpen(false);
@@ -341,8 +413,10 @@ export default function Schedule() {
         end_time: '',
         notes: '',
         unit: 'madre',
-        sessionCount: 1
+        sessionCount: 1,
+        sendConfirmationEmail: false
       });
+      setSelectedClientEmail(null);
       refetchSchedules();
     } catch (error) {
       console.error('Error saving appointment:', error);
@@ -374,7 +448,8 @@ export default function Schedule() {
       end_time: formatDateTimeLocal(schedule.end_time),
       notes: schedule.notes || '',
       unit: schedule.unit || 'madre',
-      sessionCount: 1
+      sessionCount: 1,
+      sendConfirmationEmail: false
     });
     setIsDialogOpen(true);
   };
@@ -645,7 +720,8 @@ export default function Schedule() {
                 end_time: '',
                 notes: '',
                 unit: userProfile?.unit || 'madre',
-                sessionCount: 1
+                sessionCount: 1,
+                sendConfirmationEmail: false
               });
               setIsDialogOpen(true);
             }}
@@ -1015,7 +1091,8 @@ export default function Schedule() {
                   end_time: '',
                   notes: '',
                   unit: 'madre',
-                  sessionCount: 1
+                  sessionCount: 1,
+                  sendConfirmationEmail: false
                 });
               }}
             >
@@ -1156,6 +1233,49 @@ export default function Schedule() {
                     className="resize-none w-full"
                   />
                 </div>
+
+                {/* Seção de E-mail de Confirmação */}
+                {!editingSchedule && (
+                  <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-sm font-medium">Notificação por E-mail</Label>
+                    </div>
+                    
+                    {selectedClientEmail ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm text-muted-foreground">
+                              Enviar e-mail de confirmação ao paciente
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              <MailCheck className="h-3 w-3 inline mr-1" />
+                              {selectedClientEmail}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={newAppointment.sendConfirmationEmail}
+                            onCheckedChange={(checked) => setNewAppointment({...newAppointment, sendConfirmationEmail: checked})}
+                          />
+                        </div>
+                        {newAppointment.sendConfirmationEmail && (
+                          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
+                            <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                              ✅ O paciente receberá um e-mail com os dados do agendamento e poderá confirmar sua presença clicando em um botão.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                        <p className="text-xs text-amber-700 dark:text-amber-400">
+                          ⚠️ Paciente não possui e-mail cadastrado. Não será possível enviar confirmação por e-mail.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             
