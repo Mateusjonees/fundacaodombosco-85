@@ -1,38 +1,88 @@
 
-# Plano: Confirmação de Presença por E-mail com Opção de Recusa
+# Plano: Adicionar Endereço Dinâmico Baseado na Unidade
 
 ## Resumo
-Adicionar dois botões no e-mail de confirmação: um para confirmar presença e outro para informar que não poderá comparecer. A resposta será registrada automaticamente no sistema sem que o paciente precise sair do e-mail ou acessar qualquer sistema.
+Incluir o endereço correto no e-mail de agendamento e na página de confirmação, baseado na unidade do atendimento.
 
-## O que será implementado
+## Endereços por Unidade
 
-### 1. Novo Campo no Banco de Dados
-Adicionar coluna na tabela `schedules`:
-- `patient_declined` (boolean) - indica se o paciente informou que não poderá comparecer
-- `patient_declined_at` (timestamp) - quando informou
+| Unidade | Endereço |
+|---------|----------|
+| MADRE (Clínica Social) | Rua Jaime Salse, 280 - Madre Gertrudes |
+| Floresta (Neuroavaliação) | Rua Urucuia, 18 - Floresta |
+| Atendimento Floresta | Rua Urucuia, 18 - Floresta |
 
-### 2. Modificar o E-mail de Confirmação
-O e-mail terá dois botões:
-- **"Confirmo minha presença"** (verde) - mantém o comportamento atual
-- **"Não poderei comparecer"** (vermelho) - novo botão para recusar
+## Alterações Necessárias
 
-Ambos os botões funcionarão com um único clique, abrindo uma página simples de confirmação.
+### 1. Edge Function: `send-appointment-email/index.ts`
+- Atualizar a função `getUnitInfo()` para incluir o endereço
+- Adicionar linha de endereço no card de detalhes do e-mail
 
-### 3. Atualizar a Edge Function `confirm-appointment`
-Modificar para aceitar um parâmetro `action` (confirm/decline):
-- `?token=XXX&action=confirm` - confirma presença
-- `?token=XXX&action=decline` - informa recusa
+**Antes:**
+```typescript
+const getUnitInfo = (unit: string) => {
+  switch (unit) {
+    case 'madre':
+      return { name: 'Clínica Social Madre Clélia', color: '#3b82f6' };
+    case 'floresta':
+      return { name: 'Neuroavaliação Floresta', color: '#10b981' };
+    // ...
+  }
+};
+```
 
-A página de resposta mostrará:
-- Confirmação: "Obrigado! Sua presença foi confirmada."
-- Recusa: "Obrigado por nos avisar. Entraremos em contato para reagendar."
+**Depois:**
+```typescript
+const getUnitInfo = (unit: string) => {
+  switch (unit) {
+    case 'madre':
+      return { 
+        name: 'Clínica Social Madre Clélia', 
+        color: '#3b82f6',
+        address: 'Rua Jaime Salse, 280 - Madre Gertrudes'
+      };
+    case 'floresta':
+      return { 
+        name: 'Neuroavaliação Floresta', 
+        color: '#10b981',
+        address: 'Rua Urucuia, 18 - Floresta'
+      };
+    case 'atendimento_floresta':
+      return { 
+        name: 'Atendimento Floresta', 
+        color: '#8b5cf6',
+        address: 'Rua Urucuia, 18 - Floresta'
+      };
+    // ...
+  }
+};
+```
 
-### 4. Exibição na Agenda (ScheduleCard)
-Adicionar indicadores visuais:
-- Se confirmou: Badge azul "Confirmou que irá" (já existe)
-- Se recusou: Badge vermelho/laranja "Não poderá comparecer - entrar em contato"
+**Nova linha no e-mail:**
+```html
+<tr>
+  <td style="...">📍 Local:</td>
+  <td style="...">${unitInfo.address}</td>
+</tr>
+```
 
-A observação também aparecerá no campo de notas do agendamento automaticamente.
+### 2. Edge Function: `confirm-appointment/index.ts`
+- Buscar a unidade do agendamento junto com o select
+- Passar o endereço para a página de confirmação
+
+**Alterações:**
+- Incluir `unit` no select: `select("id, ..., unit, clients(name)")`
+- Adicionar função `getAddressByUnit()`
+- Mostrar endereço na mensagem de confirmação
+
+**Exemplo de mensagem atualizada:**
+```
+"Obrigado, Maria! Sua presença foi confirmada para o dia segunda-feira, 03 de fevereiro de 2026 às 14:00.
+
+📍 Local: Rua Jaime Salse, 280 - Madre Gertrudes
+
+Até lá!"
+```
 
 ## Fluxo Visual
 
@@ -40,50 +90,33 @@ A observação também aparecerá no campo de notas do agendamento automaticamen
 ┌─────────────────────────────────────────┐
 │           E-MAIL DO PACIENTE            │
 ├─────────────────────────────────────────┤
-│  📅 Novo Agendamento                    │
-│  Data: 30/01/2026  Hora: 10:52          │
-│  Profissional: Dev                      │
-│                                         │
-│  ┌─────────────────────────────────┐    │
-│  │  ✅ Confirmo minha presença     │    │
-│  └─────────────────────────────────┘    │
-│                                         │
-│  ┌─────────────────────────────────┐    │
-│  │  ❌ Não poderei comparecer      │    │
-│  └─────────────────────────────────┘    │
-│                                         │
+│  📅 Data: 30/01/2026                    │
+│  🕐 Horário: 10:00                      │
+│  👨‍⚕️ Profissional: Dr. João              │
+│  📋 Tipo: Atendimento                   │
+│  📍 Local: Rua Jaime Salse, 280 ← NOVO  │
+│           (Madre Gertrudes)             │
 └─────────────────────────────────────────┘
-          │                    │
-          ▼                    ▼
-    ┌──────────┐         ┌──────────┐
-    │ CONFIRMA │         │ RECUSA   │
-    └──────────┘         └──────────┘
-          │                    │
-          ▼                    ▼
- patient_confirmed=true   patient_declined=true
- Badge azul na agenda     Badge vermelho na agenda
-                          + Obs: "Entrar em contato"
+
+         Paciente clica "Confirmo"
+                    ↓
+
+┌─────────────────────────────────────────┐
+│     ✅ Presença Confirmada!             │
+├─────────────────────────────────────────┤
+│  Obrigado, Maria!                       │
+│  Sua presença foi confirmada.           │
+│                                         │
+│  📍 Local: Rua Jaime Salse, 280         │
+│           (Madre Gertrudes)         ← NOVO│
+│                                         │
+│  Até lá!                                │
+└─────────────────────────────────────────┘
 ```
 
-## Detalhes Técnicos
+## Arquivos a Modificar
+1. `supabase/functions/send-appointment-email/index.ts`
+2. `supabase/functions/confirm-appointment/index.ts`
 
-### Migração SQL
-```sql
-ALTER TABLE schedules 
-ADD COLUMN patient_declined boolean DEFAULT false,
-ADD COLUMN patient_declined_at timestamptz;
-```
-
-### Arquivos a Modificar
-1. `supabase/functions/send-appointment-email/index.ts` - Adicionar segundo botão
-2. `supabase/functions/confirm-appointment/index.ts` - Processar ação de recusa
-3. `src/components/ScheduleCard.tsx` - Exibir badge de recusa
-4. `src/hooks/useSchedules.ts` - Incluir novos campos no select
-
-### Comportamento do Botão no E-mail
-Os botões são links HTML simples que abrem uma página de confirmação visual. O paciente:
-1. Clica no botão
-2. Vê uma página bonita confirmando sua ação
-3. Pode fechar a página e voltar ao e-mail
-
-Não há necessidade de login ou acesso ao sistema.
+## Nenhuma Migração Necessária
+A coluna `unit` já existe na tabela `schedules`.
