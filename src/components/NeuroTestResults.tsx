@@ -54,6 +54,49 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'inibicao'
       };
+    case 'TIN':
+      return {
+        subtests: ['escorePadrao'],
+        names: {
+          escorePadrao: 'Escore Padrão'
+        },
+        mainSubtest: 'escorePadrao'
+      };
+    case 'PCFO':
+      return {
+        subtests: ['escorePadrao'],
+        names: {
+          escorePadrao: 'Escore Padrão'
+        },
+        mainSubtest: 'escorePadrao'
+      };
+    case 'TSBC':
+      return {
+        subtests: ['escorePadraoOD', 'escorePadraoOI'],
+        names: {
+          escorePadraoOD: 'Ordem Direta',
+          escorePadraoOI: 'Ordem Inversa'
+        },
+        mainSubtest: 'escorePadraoOD'
+      };
+    case 'FVA':
+      return {
+        subtests: ['percentilAnimais', 'percentilFrutas', 'percentilPares'],
+        names: {
+          percentilAnimais: 'Animais',
+          percentilFrutas: 'Frutas',
+          percentilPares: 'Pares (Alternada)'
+        },
+        mainSubtest: 'percentilAnimais'
+      };
+    case 'BNTBR':
+      return {
+        subtests: ['percentil'],
+        names: {
+          percentil: 'Nomeação'
+        },
+        mainSubtest: 'percentil'
+      };
     default:
       return null;
   }
@@ -249,6 +292,244 @@ const renderBPA2Calculations = (calc: Record<string, number>) => {
   );
 };
 
+// Renderiza dados de entrada do TIN
+const renderTINInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.acertos ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 60)</p>
+  </div>
+);
+
+// Renderiza cálculos do TIN
+const renderTINCalculations = (calc: Record<string, number>) => {
+  const escorePadrao = calc.escorePadrao ?? '-';
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">Escore Padrão = Consulta tabela normativa por idade</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">Escore Padrão</span>
+        <span className="font-mono"><strong>{escorePadrao}</strong> (M=100, DP=15)</span>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;70: Muito Baixa</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">70-84: Baixa</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">85-114: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">115-129: Alta</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">≥130: Muito Alta</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Renderiza dados de entrada do PCFO
+const renderPCFOInputs = (rawScores: Record<string, number | string>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.acertos ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 40)</p>
+    {rawScores.schoolingLevel && (
+      <p className="text-xs text-muted-foreground mt-1">
+        Nível: {rawScores.schoolingLevel === 'infantil' ? 'Educação Infantil' : 'Ensino Fundamental'}
+      </p>
+    )}
+  </div>
+);
+
+// Renderiza cálculos do PCFO
+const renderPCFOCalculations = (calc: Record<string, number>) => {
+  const escorePadrao = calc.escorePadrao ?? '-';
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">Escore Padrão = Consulta tabela normativa por idade e escolaridade</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">Escore Padrão</span>
+        <span className="font-mono"><strong>{escorePadrao}</strong> (M=100, DP=15)</span>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;70: Muito Baixa</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">70-84: Baixa</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">85-114: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">115-129: Alta</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">≥130: Muito Alta</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Renderiza dados de entrada do TSBC
+const renderTSBCInputs = (rawScores: Record<string, number | string>) => (
+  <div className="space-y-3">
+    <div className="grid grid-cols-2 gap-3">
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Ordem Direta (acertos)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.ordemDireta ?? '-'}</Badge>
+      </div>
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Ordem Inversa (acertos)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.ordemInversa ?? '-'}</Badge>
+      </div>
+    </div>
+    <div className="p-2 bg-muted/30 rounded-lg text-center">
+      <p className="text-xs text-muted-foreground">
+        Tipo de Escola: <strong>{rawScores.schoolType === 'publica' ? 'Pública' : 'Privada'}</strong>
+      </p>
+    </div>
+  </div>
+);
+
+// Renderiza cálculos do TSBC
+const renderTSBCCalculations = (calc: Record<string, number>) => {
+  const escorePadraoOD = calc.escorePadraoOD ?? '-';
+  const escorePadraoOI = calc.escorePadraoOI ?? '-';
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">EP = Consulta tabela normativa por idade e tipo de escola</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+          <span className="font-medium">EP Ordem Direta</span>
+          <span className="font-mono"><strong>{escorePadraoOD}</strong></span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+          <span className="font-medium">EP Ordem Inversa</span>
+          <span className="font-mono"><strong>{escorePadraoOI}</strong></span>
+        </div>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;70: Muito Baixa</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">70-84: Baixa</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">85-114: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">115-129: Alta</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">≥130: Muito Alta</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Renderiza dados de entrada do FVA
+const renderFVAInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Animais</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.animais ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Frutas</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.frutas ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Pares</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.pares ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+// Renderiza cálculos do FVA
+const renderFVACalculations = (calc: Record<string, string>) => {
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">Percentil = Consulta tabela normativa por idade</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Animais</span>
+          <span className="font-mono text-sm">{calc.percentilAnimais ?? '-'}</span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Frutas</span>
+          <span className="font-mono text-sm">{calc.percentilFrutas ?? '-'}</span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Pares</span>
+          <span className="font-mono text-sm">{calc.percentilPares ?? '-'}</span>
+        </div>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;5 ou 5: Inferior</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">5-25: Média Inferior</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">25-75: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">75-95: Média Superior</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">&gt;95: Superior</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Renderiza dados de entrada do BNT-BR
+const renderBNTBRInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.acertos ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 30)</p>
+  </div>
+);
+
+// Renderiza cálculos do BNT-BR
+const renderBNTBRCalculations = (calc: Record<string, number>) => {
+  const pontuacao = calc.pontuacao ?? '-';
+  const zScore = calc.zScore ?? 0;
+  const percentil = calc.percentil ?? '-';
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <span className="text-muted-foreground">Fórmula: </span>
+        <span className="font-mono">Z = (Acertos - Média) / DP → Percentil</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Pontuação</span>
+          <span className="font-mono text-sm">{pontuacao}</span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Z-Score</span>
+          <span className="font-mono text-sm">{typeof zScore === 'number' ? zScore.toFixed(2) : zScore}</span>
+        </div>
+        <div className="p-2 bg-primary/10 rounded-lg text-center">
+          <span className="font-medium block mb-1">Percentil</span>
+          <span className="font-mono text-sm">{percentil}</span>
+        </div>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+        <div className="flex flex-wrap gap-1 text-xs">
+          <Badge variant="outline" className="text-red-600 dark:text-red-400">≤5: Inferior</Badge>
+          <Badge variant="outline" className="text-orange-600 dark:text-orange-400">6-25: Média Inferior</Badge>
+          <Badge variant="outline" className="text-gray-600 dark:text-gray-400">26-74: Média</Badge>
+          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">75-94: Média Superior</Badge>
+          <Badge variant="outline" className="text-green-600 dark:text-green-400">≥95: Superior</Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function NeuroTestResults({
   testCode,
   testName,
@@ -300,6 +581,26 @@ export default function NeuroTestResults({
       case 'BPA2':
         inputSection = renderBPA2Inputs(rawScores, calculatedScores);
         calculationsSection = renderBPA2Calculations(calculatedScores);
+        break;
+      case 'TIN':
+        inputSection = renderTINInputs(rawScores);
+        calculationsSection = renderTINCalculations(calculatedScores);
+        break;
+      case 'PCFO':
+        inputSection = renderPCFOInputs(rawScores);
+        calculationsSection = renderPCFOCalculations(calculatedScores);
+        break;
+      case 'TSBC':
+        inputSection = renderTSBCInputs(rawScores);
+        calculationsSection = renderTSBCCalculations(calculatedScores);
+        break;
+      case 'FVA':
+        inputSection = renderFVAInputs(rawScores);
+        calculationsSection = renderFVACalculations(calculatedScores as unknown as Record<string, string>);
+        break;
+      case 'BNTBR':
+        inputSection = renderBNTBRInputs(rawScores);
+        calculationsSection = renderBNTBRCalculations(calculatedScores);
         break;
     }
 
@@ -380,6 +681,58 @@ export default function NeuroTestResults({
       lines.push('CÁLCULOS:');
       lines.push('- Fórmula: Score = Acertos - Erros - Omissões');
       lines.push(`- AG = ${calculatedScores.AC} + ${calculatedScores.AD} + ${calculatedScores.AA} = ${calculatedScores.AG}`);
+    } else if (testCode === 'TIN') {
+      lines.push(`- Total de Acertos: ${rawScores.acertos}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Escore Padrão: ${calculatedScores.escorePadrao ?? '-'} (M=100, DP=15)`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');
+    } else if (testCode === 'PCFO') {
+      lines.push(`- Total de Acertos: ${rawScores.acertos}`);
+      const schoolLevel = String(rawScores.schoolingLevel) === 'infantil' ? 'Educação Infantil' : 'Ensino Fundamental';
+      lines.push(`- Nível Escolar: ${schoolLevel}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Escore Padrão: ${calculatedScores.escorePadrao ?? '-'} (M=100, DP=15)`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');
+    } else if (testCode === 'TSBC') {
+      lines.push(`- Ordem Direta (acertos): ${rawScores.ordemDireta}`);
+      lines.push(`- Ordem Inversa (acertos): ${rawScores.ordemInversa}`);
+      const schoolType = String(rawScores.schoolType) === 'publica' ? 'Pública' : 'Privada';
+      lines.push(`- Tipo de Escola: ${schoolType}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Escore Padrão OD: ${calculatedScores.escorePadraoOD ?? '-'} (M=100, DP=15)`);
+      lines.push(`- Escore Padrão OI: ${calculatedScores.escorePadraoOI ?? '-'} (M=100, DP=15)`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');
+    } else if (testCode === 'FVA') {
+      lines.push(`- Animais: ${rawScores.animais}`);
+      lines.push(`- Frutas: ${rawScores.frutas || '-'}`);
+      lines.push(`- Pares: ${rawScores.pares || '-'}`);
+      lines.push('');
+      lines.push('RESULTADOS:');
+      lines.push(`- Animais: Percentil ${calculatedScores.percentilAnimais ?? '-'}`);
+      lines.push(`- Frutas: Percentil ${calculatedScores.percentilFrutas ?? '-'}`);
+      lines.push(`- Pares: Percentil ${calculatedScores.percentilPares ?? '-'}`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <5 ou 5: Inferior | 5-25: Média Inferior | 25-75: Média | 75-95: Média Superior | >95: Superior');
+    } else if (testCode === 'BNTBR') {
+      lines.push(`- Total de Acertos: ${rawScores.acertos}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Pontuação: ${calculatedScores.pontuacao}`);
+      lines.push(`- Z-Score: ${(calculatedScores.zScore ?? 0).toFixed(2)}`);
+      lines.push(`- Percentil: ${calculatedScores.percentil}`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- ≤5: Inferior | 6-25: Média Inferior | 26-74: Média | 75-94: Média Superior | ≥95: Superior');
     }
 
     lines.push('');
@@ -458,7 +811,8 @@ export default function NeuroTestResults({
               <TableHead>Variável</TableHead>
               <TableHead className="text-center">Bruto</TableHead>
               <TableHead className="text-center">Percentil</TableHead>
-              <TableHead className="text-right">Classificação</TableHead>
+              <TableHead className="text-center">Classificação</TableHead>
+              <TableHead className="w-10"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -467,9 +821,18 @@ export default function NeuroTestResults({
               const percentile = results.percentiles[code] ?? '-';
               const classification = results.classifications[code] ?? '-';
               const isMain = code === config.mainSubtest;
+
+              const copyRowToClipboard = () => {
+                const text = `${testName} - ${config.names[code] || code}: Bruto ${score}, Percentil ${percentile}, Classificação ${classification}`;
+                navigator.clipboard.writeText(text);
+                toast({
+                  title: "Linha copiada!",
+                  description: config.names[code] || code
+                });
+              };
               
               return (
-                <TableRow key={code} className={isMain ? 'bg-primary/5 font-medium' : ''}>
+                <TableRow key={code} className={`${isMain ? 'bg-primary/5 font-medium' : ''} group`}>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {isMain && <Brain className="h-4 w-4 text-primary" />}
@@ -478,10 +841,21 @@ export default function NeuroTestResults({
                   </TableCell>
                   <TableCell className="text-center font-mono">{score}</TableCell>
                   <TableCell className="text-center font-mono">{percentile}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                     <Badge variant={getClassificationVariant(String(classification))}>
                       {classification}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={copyRowToClipboard}
+                      title="Copiar linha"
+                    >
+                      <ClipboardCopy className="h-3.5 w-3.5" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               );

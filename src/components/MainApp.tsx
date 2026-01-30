@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, memo, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { LogOut, User, Camera } from 'lucide-react';
+import { LogOut, Camera, MessageSquare } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import {
@@ -19,17 +19,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GlobalSearch } from '@/components/GlobalSearch';
-import { QuickHelpCenter } from '@/components/QuickHelpCenter';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { NotificationBell } from '@/components/NotificationBell';
 import { Link } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
 import { PageSkeleton } from '@/components/ui/page-skeletons';
 import { UserAvatar } from '@/components/UserAvatar';
-import { UserProfileDialog } from '@/components/UserProfileDialog';
 import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
-import { PageTransition } from '@/components/ui/page-transition';
+
+// Lazy load header components - melhor LCP
+const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
+const QuickHelpCenter = lazy(() => import('@/components/QuickHelpCenter').then(m => ({ default: m.QuickHelpCenter })));
+const NotificationBell = lazy(() => import('@/components/NotificationBell').then(m => ({ default: m.NotificationBell })));
+const UserProfileDialog = lazy(() => import('@/components/UserProfileDialog').then(m => ({ default: m.UserProfileDialog })));
 
 // Lazy load page components
 const Clients = lazy(() => import('@/pages/Clients'));
@@ -107,20 +107,26 @@ export const MainApp = () => {
         <div className="min-h-screen w-full flex">
           <AppSidebar />
           
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-w-0 transition-all duration-150 ease-out">
             {/* Header with hamburger menu */}
             <header className="bg-card border-b border-border p-3 sm:p-4 sticky top-0 z-40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 sm:gap-4">
-                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 rounded-md border hover:bg-accent" />
+                  <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-lg border border-border bg-background hover:bg-accent transition-colors" />
                   <h1 className="text-base sm:text-xl font-bold text-primary hidden sm:block">FUNDAÇÃO DOM BOSCO</h1>
                   <h1 className="text-sm font-bold text-primary sm:hidden">FDB</h1>
                 </div>
                 
                 <div className="flex items-center gap-2 sm:gap-4">
-                  <QuickHelpCenter />
-                  <GlobalSearch />
-                  <NotificationBell />
+                  <Suspense fallback={<div className="h-9 w-9" />}>
+                    <QuickHelpCenter />
+                  </Suspense>
+                  <Suspense fallback={<div className="h-9 w-20 sm:w-24 bg-muted rounded-lg animate-pulse" />}>
+                    <GlobalSearch />
+                  </Suspense>
+                  <Suspense fallback={<div className="h-9 w-9 bg-muted rounded-lg animate-pulse" />}>
+                    <NotificationBell />
+                  </Suspense>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -191,20 +197,20 @@ export const MainApp = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   
-                  <UserProfileDialog 
-                    open={profileDialogOpen} 
-                    onOpenChange={setProfileDialogOpen} 
-                  />
+                  <Suspense fallback={null}>
+                    <UserProfileDialog 
+                      open={profileDialogOpen} 
+                      onOpenChange={setProfileDialogOpen} 
+                    />
+                  </Suspense>
                 </div>
               </div>
             </header>
 
-            {/* Main Content */}
             <main className="flex-1 p-4 lg:p-6">
               <PageBreadcrumb />
               <Suspense fallback={<PageSkeleton />}>
-                <div className="animate-page-enter">
-                  <Routes>
+                <Routes>
                     <Route path="/" element={
                       <ProtectedRoute requiredPermission="view_dashboard">
                         <Dashboard />
@@ -339,9 +345,8 @@ export const MainApp = () => {
                       </ProtectedRoute>
                     } />
                       
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </div>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
               </Suspense>
             </main>
           </div>

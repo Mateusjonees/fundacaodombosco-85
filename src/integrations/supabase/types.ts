@@ -2427,9 +2427,11 @@ export type Database = {
           client_id: string
           completed_at: string | null
           completed_by: string | null
+          confirmation_token: string | null
           created_at: string
           created_by: string | null
           description: string | null
+          email_sent_at: string | null
           employee_id: string | null
           end_time: string
           id: string
@@ -2437,6 +2439,10 @@ export type Database = {
           materials_used: Json | null
           notes: string | null
           patient_arrived: boolean | null
+          patient_confirmed: boolean | null
+          patient_confirmed_at: string | null
+          patient_declined: boolean | null
+          patient_declined_at: string | null
           payment_method: string | null
           session_amount: number | null
           session_notes: string | null
@@ -2453,9 +2459,11 @@ export type Database = {
           client_id: string
           completed_at?: string | null
           completed_by?: string | null
+          confirmation_token?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          email_sent_at?: string | null
           employee_id?: string | null
           end_time: string
           id?: string
@@ -2463,6 +2471,10 @@ export type Database = {
           materials_used?: Json | null
           notes?: string | null
           patient_arrived?: boolean | null
+          patient_confirmed?: boolean | null
+          patient_confirmed_at?: string | null
+          patient_declined?: boolean | null
+          patient_declined_at?: string | null
           payment_method?: string | null
           session_amount?: number | null
           session_notes?: string | null
@@ -2479,9 +2491,11 @@ export type Database = {
           client_id?: string
           completed_at?: string | null
           completed_by?: string | null
+          confirmation_token?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          email_sent_at?: string | null
           employee_id?: string | null
           end_time?: string
           id?: string
@@ -2489,6 +2503,10 @@ export type Database = {
           materials_used?: Json | null
           notes?: string | null
           patient_arrived?: boolean | null
+          patient_confirmed?: boolean | null
+          patient_confirmed_at?: string | null
+          patient_declined?: boolean | null
+          patient_declined_at?: string | null
           payment_method?: string | null
           session_amount?: number | null
           session_notes?: string | null

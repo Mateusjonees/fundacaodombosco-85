@@ -12,7 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown, Pill, ClipboardList, FileCheck2 } from 'lucide-react';
+import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown, Pill, ClipboardList, FileCheck2, Timer } from 'lucide-react';
+import TimeReportsTab from '@/components/TimeReportsTab';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -1199,8 +1200,12 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="attendance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
           <TabsTrigger value="attendance">Atendimentos</TabsTrigger>
+          <TabsTrigger value="tempo" className="flex items-center gap-1">
+            <Timer className="h-3 w-3 hidden sm:inline" />
+            Tempo
+          </TabsTrigger>
           <TabsTrigger value="sessions">Sessões</TabsTrigger>
           <TabsTrigger value="anamnesis">Anamneses</TabsTrigger>
           <TabsTrigger value="prescriptions">Receitas</TabsTrigger>
@@ -1208,6 +1213,20 @@ export default function Reports() {
           <TabsTrigger value="performance">Desempenho</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tempo">
+          <TimeReportsTab
+            attendanceReports={attendanceReports}
+            employees={employees}
+            selectedEmployee={selectedEmployee}
+            selectedClient={selectedClient}
+            selectedUnit={selectedUnit}
+            sessionType={sessionType}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            selectedMonth={selectedMonth}
+          />
+        </TabsContent>
 
         <TabsContent value="attendance">
           <Card>

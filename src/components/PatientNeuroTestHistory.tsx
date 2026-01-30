@@ -564,7 +564,8 @@ export default function PatientNeuroTestHistory({
                               <TableHead>Variável</TableHead>
                               <TableHead className="text-center">Bruto</TableHead>
                               <TableHead className="text-center">Percentil</TableHead>
-                              <TableHead className="text-right">Classificação</TableHead>
+                              <TableHead className="text-center">Classificação</TableHead>
+                              <TableHead className="w-10"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -574,8 +575,17 @@ export default function PatientNeuroTestHistory({
                               const classification = classifications[code] ?? '-';
                               const isMain = code === config.mainSubtest;
 
+                              const copyRowToClipboard = () => {
+                                const text = `${test.test_name} - ${config.names[code] || code}: Bruto ${score}, Percentil ${percentile}, Classificação ${classification}`;
+                                navigator.clipboard.writeText(text);
+                                toast({
+                                  title: "Linha copiada!",
+                                  description: config.names[code] || code
+                                });
+                              };
+
                               return (
-                                <TableRow key={code} className={isMain ? 'bg-primary/5 font-medium' : ''}>
+                                <TableRow key={code} className={`${isMain ? 'bg-primary/5 font-medium' : ''} group`}>
                                   <TableCell>
                                     <div className="flex items-center gap-2">
                                       {isMain && <Brain className="h-4 w-4 text-primary" />}
@@ -584,10 +594,21 @@ export default function PatientNeuroTestHistory({
                                   </TableCell>
                                   <TableCell className="text-center font-mono">{score}</TableCell>
                                   <TableCell className="text-center font-mono">{percentile}</TableCell>
-                                  <TableCell className="text-right">
+                                  <TableCell className="text-center">
                                     <Badge variant={getClassificationVariant(String(classification))}>
                                       {classification}
                                     </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={copyRowToClipboard}
+                                      title="Copiar linha"
+                                    >
+                                      <ClipboardCopy className="h-3.5 w-3.5" />
+                                    </Button>
                                   </TableCell>
                                 </TableRow>
                               );

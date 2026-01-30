@@ -45,6 +45,8 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
           patient_arrived,
           arrived_at,
           arrived_confirmed_by,
+          patient_declined,
+          patient_declined_at,
           clients (id, name, phone, cpf, email, unit),
           profiles (id, name, employee_role, phone, unit)
         `)

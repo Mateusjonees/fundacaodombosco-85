@@ -1,12 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Fundação Dom Bosco <onboarding@resend.dev>";
+
+const supabaseUrl = "https://vqphtzkdhfzdwbumexhe.supabase.co";
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface AppointmentEmailRequest {
@@ -18,18 +23,41 @@ interface AppointmentEmailRequest {
   appointmentType: string;
   notes?: string;
   unit?: string;
+  // Novos campos para confirmação
+  scheduleIds?: string[];
+  sessions?: Array<{
+    date: string;
+    time: string;
+    sessionNumber: number;
+  }>;
 }
 
 const getUnitInfo = (unit: string) => {
   switch (unit) {
     case 'madre':
-      return { name: 'Clínica Social Madre Clélia', color: '#3b82f6' };
+      return { 
+        name: 'Clínica Social Madre Clélia', 
+        color: '#3b82f6',
+        address: 'Rua Jaime Salse, 280 - Madre Gertrudes'
+      };
     case 'floresta':
-      return { name: 'Neuroavaliação Floresta', color: '#10b981' };
+      return { 
+        name: 'Neuroavaliação Floresta', 
+        color: '#10b981',
+        address: 'Rua Urucuia, 18 - Floresta'
+      };
     case 'atendimento_floresta':
-      return { name: 'Atendimento Floresta', color: '#8b5cf6' };
+      return { 
+        name: 'Atendimento Floresta', 
+        color: '#8b5cf6',
+        address: 'Rua Urucuia, 18 - Floresta'
+      };
     default:
-      return { name: 'Fundação Dom Bosco', color: '#3b82f6' };
+      return { 
+        name: 'Fundação Dom Bosco', 
+        color: '#3b82f6',
+        address: 'Rua Jaime Salse, 280 - Madre Gertrudes'
+      };
   }
 };
 
@@ -48,12 +76,77 @@ const handler = async (req: Request): Promise<Response> => {
       professionalName,
       appointmentType,
       notes,
-      unit = 'madre'
+      unit = 'madre',
+      scheduleIds = [],
+      sessions = []
     }: AppointmentEmailRequest = await req.json();
 
     console.log("Enviando email de confirmação para:", clientEmail);
+    console.log("Schedule IDs para gerar tokens:", scheduleIds);
 
     const unitInfo = getUnitInfo(unit);
+
+    // Gerar tokens únicos para cada agendamento e salvar no banco
+    let confirmationUrl = '';
+    if (scheduleIds.length > 0) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // Para o primeiro agendamento, gerar token e link de confirmação
+      const token = crypto.randomUUID();
+      
+      // Atualizar todos os agendamentos com o mesmo token
+      const { error: updateError } = await supabase
+        .from('schedules')
+        .update({ 
+          confirmation_token: token,
+          email_sent_at: new Date().toISOString()
+        })
+        .in('id', scheduleIds);
+
+      if (updateError) {
+        console.error("Erro ao salvar token:", updateError);
+        throw updateError;
+      }
+
+      confirmationUrl = `https://vqphtzkdhfzdwbumexhe.supabase.co/functions/v1/confirm-appointment?token=${token}`;
+      console.log("URL de confirmação gerada:", confirmationUrl);
+    }
+
+    // Gerar lista de sessões para o e-mail
+    const sessionsHtml = sessions.length > 1 ? `
+      <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+        <p style="color: #166534; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">
+          📋 Sessões agendadas (${sessions.length} sessões):
+        </p>
+        <ul style="margin: 0; padding-left: 20px; color: #166534; font-size: 13px;">
+          ${sessions.map(s => `<li style="margin: 4px 0;">Sessão ${s.sessionNumber}: ${s.date} às ${s.time}</li>`).join('')}
+        </ul>
+      </div>
+    ` : '';
+
+    const confirmationButtonHtml = confirmationUrl ? `
+      <div style="text-align: center; margin: 32px 0;">
+        <!-- Botão de Confirmação -->
+        <a href="${confirmationUrl}&action=confirm" 
+           style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 48px; text-decoration: none; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); margin-bottom: 16px;">
+          ✅ Confirmo minha presença
+        </a>
+        
+        <div style="margin: 16px 0;">
+          <span style="color: #9ca3af; font-size: 13px;">ou</span>
+        </div>
+        
+        <!-- Botão de Recusa -->
+        <a href="${confirmationUrl}&action=decline" 
+           style="display: inline-block; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 14px 40px; text-decoration: none; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);">
+          ❌ Não poderei comparecer
+        </a>
+        
+        <p style="color: #6b7280; font-size: 12px; margin-top: 16px;">
+          Clique em um dos botões acima para nos informar sobre sua presença
+        </p>
+      </div>
+    ` : '';
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -68,7 +161,7 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Header -->
             <div style="background: linear-gradient(135deg, ${unitInfo.color}, ${unitInfo.color}dd); padding: 32px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">
-                ✅ Agendamento Confirmado
+                📅 Novo Agendamento
               </h1>
               <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">
                 ${unitInfo.name}
@@ -82,14 +175,16 @@ const handler = async (req: Request): Promise<Response> => {
               </p>
               
               <p style="color: #6b7280; font-size: 14px; margin: 0 0 24px 0;">
-                Seu atendimento foi agendado com sucesso. Confira os detalhes abaixo:
+                ${sessions.length > 1 
+                  ? `Você tem ${sessions.length} sessões agendadas. Confira os detalhes abaixo:`
+                  : 'Seu atendimento foi agendado. Confira os detalhes abaixo:'}
               </p>
               
               <!-- Appointment Details Card -->
               <div style="background-color: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📅 Data:</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📅 ${sessions.length > 1 ? 'Primeira sessão:' : 'Data:'}</td>
                     <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${appointmentDate}</td>
                   </tr>
                   <tr>
@@ -104,8 +199,14 @@ const handler = async (req: Request): Promise<Response> => {
                     <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📋 Tipo:</td>
                     <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${appointmentType}</td>
                   </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📍 Local:</td>
+                    <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${unitInfo.address}</td>
+                  </tr>
                 </table>
               </div>
+              
+              ${sessionsHtml}
               
               ${notes ? `
               <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
@@ -115,6 +216,8 @@ const handler = async (req: Request): Promise<Response> => {
                 </p>
               </div>
               ` : ''}
+              
+              ${confirmationButtonHtml}
               
               <!-- Reminder -->
               <div style="background-color: #eff6ff; border-radius: 8px; padding: 16px; text-align: center;">
@@ -139,9 +242,11 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const { data, error } = await resend.emails.send({
-      from: "Fundação Dom Bosco <onboarding@resend.dev>",
+      from: fromEmail,
       to: [clientEmail],
-      subject: `Agendamento Confirmado - ${appointmentDate} às ${appointmentTime}`,
+      subject: sessions.length > 1 
+        ? `${sessions.length} Sessões Agendadas - ${appointmentDate}`
+        : `Agendamento Confirmado - ${appointmentDate} às ${appointmentTime}`,
       html: emailHtml,
     });
 
