@@ -1,139 +1,174 @@
 
 
-# Plano: Relatorio de Estatisticas de Tempo dos Atendimentos
+# Plano: Sistema de Confirmação de Agendamento por E-mail
 
-## Objetivo
-Adicionar uma nova aba dedicada ao levantamento de horas/minutos dos atendimentos, com calculos detalhados, filtros por periodo (mes, semana, ano), e agrupamentos por profissional, paciente, tipo de atendimento e unidade.
+## Resumo
 
-## Funcionalidades
+Adicionar ao formulário de novo agendamento uma opção **não obrigatória** para enviar e-mail de confirmação ao paciente. O e-mail conterá um botão de confirmação que, ao ser clicado, atualizará o status do agendamento para "Confirmado pelo Paciente" diretamente na agenda.
 
-### Nova Aba "Tempo" no Reports.tsx
+---
 
-A pagina de Relatorios ja possui as seguintes abas:
-- Atendimentos, Sessoes, Anamneses, Receitas, Laudos, Desempenho, Analytics
-
-Sera adicionada uma nova aba chamada **"Tempo"** com as seguintes funcionalidades:
-
-### 1. Cards de Resumo (Topo)
-- **Total de Horas**: Soma de todas as session_duration convertidas para horas
-- **Total de Minutos**: Soma total em minutos
-- **Media por Atendimento**: Duracao media em minutos
-- **Atendimentos Contabilizados**: Quantidade de atendimentos com duracao registrada
-
-### 2. Filtros de Periodo
-- **Agrupamento por**: Dia, Semana, Mes, Ano
-- **Periodo**: Selector de mes/data inicial/data final (reutiliza os filtros existentes)
-- **Profissional**: Combobox para filtrar por funcionario
-- **Paciente**: Combobox para filtrar por paciente
-- **Unidade**: MADRE, Floresta, Atendimento Floresta
-- **Tipo de Atendimento**: Consulta, Terapia, Avaliacao, etc.
-
-### 3. Tabela de Estatisticas Agrupadas
-| Periodo | Atendimentos | Horas Totais | Minutos Totais | Media (min) |
-|---------|--------------|--------------|----------------|-------------|
-| Jan/2025 | 45 | 67h 30min | 4050 | 90 |
-| Fev/2025 | 52 | 78h 15min | 4695 | 90.3 |
-
-### 4. Tabela por Profissional
-| Profissional | Atendimentos | Horas | Media | % do Total |
-|--------------|--------------|-------|-------|------------|
-| Maria Silva | 28 | 42h | 90min | 35% |
-| Joao Santos | 17 | 25h 30min | 90min | 21% |
-
-### 5. Tabela por Tipo de Atendimento
-| Tipo | Atendimentos | Horas | Media |
-|------|--------------|-------|-------|
-| Terapia | 35 | 52h 30min | 90min |
-| Avaliacao | 15 | 22h 30min | 90min |
-
-### 6. Exportacao PDF
-Botao para gerar PDF com todo o relatorio de tempo contendo:
-- Resumo geral
-- Estatisticas por periodo
-- Estatisticas por profissional
-- Estatisticas por tipo
-
-## Detalhes Tecnicos
-
-### Arquivo a Modificar
-
-**src/pages/Reports.tsx**
-
-### Novas Funcoes de Calculo
+## Fluxo do Usuário
 
 ```text
-getTotalMinutes()
-- Soma session_duration de todos os attendanceReports filtrados
-
-getTotalHours()
-- Converte total de minutos para horas decimais
-
-formatHoursMinutes(totalMinutes)
-- Formata como "Xh Ymin"
-
-getTimeByPeriod(groupBy: 'day' | 'week' | 'month' | 'year')
-- Agrupa atendimentos por periodo
-- Retorna array com: periodo, count, totalMinutes, avgMinutes
-
-getTimeByEmployee()
-- Agrupa por employee_id
-- Retorna: nome, count, totalMinutes, avgMinutes, percentual
-
-getTimeByType()
-- Agrupa por attendance_type
-- Retorna: tipo, count, totalMinutes, avgMinutes
++-------------------+     +----------------------+     +------------------+
+| Novo Agendamento  | --> | E-mail com detalhes  | --> | Paciente clica   |
+| [ ] Enviar e-mail |     | + botão "Confirmar"  |     | "Confirmo"       |
++-------------------+     +----------------------+     +------------------+
+                                                              |
+                                                              v
+                                                    +--------------------+
+                                                    | Agenda atualizada: |
+                                                    | "Paciente Confirmou|
+                                                    | que irá"           |
+                                                    +--------------------+
 ```
 
-### Nova TabsTrigger e TabsContent
+---
+
+## Alterações Necessárias
+
+### 1. Atualizar Tabela `schedules` no Banco de Dados
+
+Adicionar novas colunas para rastrear a confirmação do paciente:
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `confirmation_token` | `text` | Token único para link de confirmação |
+| `patient_confirmed` | `boolean` | Se o paciente confirmou presença |
+| `patient_confirmed_at` | `timestamp` | Data/hora da confirmação |
+| `email_sent_at` | `timestamp` | Quando o e-mail foi enviado |
+
+### 2. Atualizar Formulário de Agendamento (Schedule.tsx)
+
+- Adicionar campo Switch/Checkbox: **"Enviar confirmação por e-mail"**
+- O campo só aparece quando paciente tem e-mail cadastrado
+- Mostrar aviso amigável se paciente não tiver e-mail
+
+**Nova estrutura do state:**
+```text
+newAppointment: {
+  ...campos existentes,
+  sendConfirmationEmail: false  // novo campo
+}
+```
+
+### 3. Nova Edge Function: `confirm-appointment`
+
+Responsável por processar a confirmação do paciente via link.
+
+**Endpoint:** `GET /confirm-appointment?token=XXXX`
+
+**Ações:**
+1. Validar token
+2. Atualizar agendamento: `patient_confirmed = true`
+3. Retornar página HTML de sucesso
+
+### 4. Atualizar Edge Function: `send-appointment-email`
+
+Modificar para incluir:
+- Suporte a múltiplas sessões no e-mail
+- Botão de confirmação com link único
+- Gerar e salvar token de confirmação
+
+**Novo template de e-mail:**
+- Detalhes de todas as sessões agendadas
+- Botão verde: "Confirmo minha presença"
+- Design responsivo para celular
+
+### 5. Atualização Visual na Agenda
+
+Quando `patient_confirmed = true`:
+- Badge especial: "Paciente Confirmou"
+- Ícone diferenciado no card do agendamento
+- Cor verde indicando confirmação
+
+---
+
+## Detalhes Técnicos
+
+### Migração SQL
 
 ```text
-<TabsTrigger value="tempo">
-  <Clock className="h-4 w-4 mr-2" />
-  Tempo
-</TabsTrigger>
-
-<TabsContent value="tempo">
-  ... componente completo com cards, tabelas e filtros
-</TabsContent>
+ALTER TABLE schedules ADD COLUMN confirmation_token text;
+ALTER TABLE schedules ADD COLUMN patient_confirmed boolean DEFAULT false;
+ALTER TABLE schedules ADD COLUMN patient_confirmed_at timestamptz;
+ALTER TABLE schedules ADD COLUMN email_sent_at timestamptz;
+CREATE INDEX idx_schedules_confirmation_token ON schedules(confirmation_token);
 ```
 
-### Estrutura do Layout
+### Arquivos a Modificar
 
-```text
-+------------------------------------------+
-|  [Card]      [Card]      [Card]   [Card] |
-|  Total Hrs   Tot. Min    Media    Count  |
-+------------------------------------------+
-|  Filtros: [Agrupar Por] [Exportar PDF]   |
-+------------------------------------------+
-|  Tabela de Estatisticas por Periodo      |
-|  - Data/Semana/Mes | Atend. | Horas | Med|
-+------------------------------------------+
-|  [Accordion: Por Profissional]           |
-|  [Accordion: Por Tipo de Atendimento]    |
-+------------------------------------------+
-```
-
-### Dependencia Existente
-- Ja existe a funcao `getAverageDuration()` que calcula duracao media
-- Campo `session_duration` armazena duracao em minutos (number)
-- Filtros de periodo ja existem e serao reutilizados
-
-## Resumo das Alteracoes
-
-| Arquivo | Alteracao |
+| Arquivo | Alteração |
 |---------|-----------|
-| src/pages/Reports.tsx | Adicionar nova aba "Tempo" com estatisticas detalhadas |
-| src/pages/Reports.tsx | Novas funcoes de calculo e agrupamento |
-| src/pages/Reports.tsx | Funcao de exportar PDF especifico de tempo |
+| `src/pages/Schedule.tsx` | Adicionar checkbox de envio de e-mail, lógica de envio |
+| `src/components/ScheduleCard.tsx` | Mostrar badge "Paciente Confirmou" |
+| `supabase/functions/send-appointment-email/index.ts` | Gerar token, incluir link de confirmação |
+| `supabase/functions/confirm-appointment/index.ts` | **Novo arquivo** - processar confirmação |
+| `src/integrations/supabase/types.ts` | Atualizar tipos da tabela schedules |
 
-## Resultado Esperado
+### Fluxo de Confirmação
 
-O usuario podera:
-1. Ver o total de horas/minutos trabalhados no periodo
-2. Agrupar por dia, semana, mes ou ano
-3. Ver estatisticas por profissional individual
-4. Ver estatisticas por tipo de atendimento
-5. Exportar um PDF com todas as informacoes de tempo
-6. Aplicar todos os filtros existentes (funcionario, paciente, unidade, tipo)
+1. **Criação do Agendamento:**
+   - Se checkbox marcado, gerar UUID como `confirmation_token`
+   - Chamar edge function de e-mail com token
+   - Salvar `email_sent_at`
+
+2. **E-mail enviado:**
+   - Link: `https://fundacaodombosco-85.lovable.app/confirm?token=XXXX`
+   - Redireciona para edge function
+
+3. **Página de Confirmação:**
+   - HTML simples e bonito
+   - Mensagem: "Obrigado! Sua presença foi confirmada"
+   - Atualiza banco automaticamente
+
+---
+
+## Interface no Formulário
+
+Nova seção após "Observações":
+
+```text
+┌──────────────────────────────────────────────────┐
+│ 📧 Notificação por E-mail                        │
+├──────────────────────────────────────────────────┤
+│                                                   │
+│  [ ] Enviar e-mail de confirmação ao paciente    │
+│                                                   │
+│  ℹ️ O paciente receberá um e-mail com os dados   │
+│     do agendamento e poderá confirmar presença.  │
+│                                                   │
+└──────────────────────────────────────────────────┘
+```
+
+Se o paciente não tiver e-mail cadastrado:
+
+```text
+┌──────────────────────────────────────────────────┐
+│ ⚠️ Paciente não possui e-mail cadastrado.        │
+│    Não será possível enviar confirmação.         │
+└──────────────────────────────────────────────────┘
+```
+
+---
+
+## Considerações
+
+- **Não obrigatório:** O checkbox vem desmarcado por padrão
+- **Validação:** Só habilita se paciente tiver e-mail válido
+- **Múltiplas sessões:** E-mail lista todas as sessões criadas
+- **Segurança:** Token único por agendamento, expira após uso
+- **Performance:** Envio de e-mail é assíncrono, não bloqueia criação
+
+---
+
+## Estimativa de Trabalho
+
+1. Migração do banco de dados
+2. Nova edge function de confirmação
+3. Atualizar edge function de e-mail
+4. Modificar formulário de agendamento
+5. Atualizar visual do ScheduleCard
+6. Testes end-to-end
 
