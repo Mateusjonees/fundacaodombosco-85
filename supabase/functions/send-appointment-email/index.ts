@@ -3,6 +3,7 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Fundação Dom Bosco <onboarding@resend.dev>";
 
 const supabaseUrl = "https://vqphtzkdhfzdwbumexhe.supabase.co";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -209,7 +210,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const { data, error } = await resend.emails.send({
-      from: "Fundação Dom Bosco <onboarding@resend.dev>",
+      from: fromEmail,
       to: [clientEmail],
       subject: sessions.length > 1 
         ? `${sessions.length} Sessões Agendadas - ${appointmentDate}`
