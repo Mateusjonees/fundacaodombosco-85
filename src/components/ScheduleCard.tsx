@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -7,6 +8,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
 import { UserAvatar } from '@/components/UserAvatar';
+import { PatientQuickViewModal } from '@/components/PatientQuickViewModal';
+import { ProfessionalQuickViewModal } from '@/components/ProfessionalQuickViewModal';
 
 interface Schedule {
   id: string;
@@ -62,6 +65,9 @@ export const ScheduleCard = ({
   onPresenceUpdate,
   getStatusBadge
 }: ScheduleCardProps) => {
+  const [patientModalOpen, setPatientModalOpen] = useState(false);
+  const [professionalModalOpen, setProfessionalModalOpen] = useState(false);
+
   const professional = employees.find(emp => emp.user_id === schedule.employee_id);
   const unitStyle = unitColors[schedule.unit || 'madre'] || unitColors.madre;
   const isCompleted = schedule.status === 'completed';
@@ -69,6 +75,18 @@ export const ScheduleCard = ({
   const isPendingValidation = schedule.status === 'pending_validation';
 
   return (
+    <>
+      {/* Modais de Quick View */}
+      <PatientQuickViewModal
+        clientId={schedule.client_id}
+        open={patientModalOpen}
+        onOpenChange={setPatientModalOpen}
+      />
+      <ProfessionalQuickViewModal
+        professionalId={schedule.employee_id}
+        open={professionalModalOpen}
+        onOpenChange={setProfessionalModalOpen}
+      />
     <div 
       className={`group relative rounded-xl border bg-card transition-all duration-300 hover:shadow-lg ${
         schedule.patient_arrived && !isCompleted && !isCancelled && !isPendingValidation
@@ -126,17 +144,27 @@ export const ScheduleCard = ({
 
         {/* Conteúdo: Paciente e Profissional */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3">
-          {/* Paciente */}
-          <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-muted/50">
+          {/* Paciente - Clicável */}
+          <button
+            type="button"
+            onClick={() => setPatientModalOpen(true)}
+            className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer text-left group"
+          >
             <UserAvatar name={schedule.clients?.name} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="text-[10px] sm:text-xs text-muted-foreground">Paciente</p>
-              <p className="font-medium text-xs sm:text-sm truncate">{schedule.clients?.name || 'N/A'}</p>
+              <p className="font-medium text-xs sm:text-sm truncate group-hover:text-primary transition-colors">
+                {schedule.clients?.name || 'N/A'}
+              </p>
             </div>
-          </div>
+          </button>
 
-          {/* Profissional */}
-          <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-muted/50">
+          {/* Profissional - Clicável */}
+          <button
+            type="button"
+            onClick={() => setProfessionalModalOpen(true)}
+            className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer text-left group"
+          >
             <UserAvatar 
               name={professional?.name} 
               size="sm" 
@@ -144,9 +172,11 @@ export const ScheduleCard = ({
             />
             <div className="min-w-0 flex-1">
               <p className="text-[10px] sm:text-xs text-muted-foreground">Profissional</p>
-              <p className="font-medium text-xs sm:text-sm truncate">{professional?.name || 'Não atribuído'}</p>
+              <p className="font-medium text-xs sm:text-sm truncate group-hover:text-primary transition-colors">
+                {professional?.name || 'Não atribuído'}
+              </p>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Tipo de atendimento */}
@@ -280,5 +310,6 @@ export const ScheduleCard = ({
         </div>
       </div>
     </div>
+    </>
   );
 };
