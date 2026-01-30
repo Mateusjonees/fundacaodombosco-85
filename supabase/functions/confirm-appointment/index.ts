@@ -19,6 +19,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const url = new URL(req.url);
     const token = url.searchParams.get("token");
+    const action = url.searchParams.get("action") || "confirm"; // confirm ou decline
 
     if (!token) {
       return new Response(
@@ -30,14 +31,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("Processando confirmação para token:", token);
+    console.log("Processando ação para token:", token, "| Ação:", action);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Buscar agendamento pelo token
     const { data: schedule, error: fetchError } = await supabase
       .from("schedules")
-      .select("id, client_id, patient_confirmed, start_time, clients(name)")
+      .select("id, client_id, patient_confirmed, patient_declined, start_time, clients(name)")
       .eq("confirmation_token", token)
       .single();
 
@@ -56,6 +57,69 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    const clientName = (schedule.clients as any)?.name || "Paciente";
+    const appointmentDate = new Date(schedule.start_time).toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+    const appointmentTime = new Date(schedule.start_time).toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // Processar ação de RECUSA
+    if (action === "decline") {
+      // Verificar se já foi processado
+      if (schedule.patient_declined) {
+        return new Response(
+          generateHtmlPage(
+            "Já Registrado",
+            "Já recebemos sua resposta anteriormente. Entraremos em contato para reagendar.",
+            "info"
+          ),
+          {
+            status: 200,
+            headers: { "Content-Type": "text/html; charset=utf-8", ...corsHeaders },
+          }
+        );
+      }
+
+      // Atualizar agendamento como recusado
+      const { error: updateError } = await supabase
+        .from("schedules")
+        .update({
+          patient_declined: true,
+          patient_declined_at: new Date().toISOString(),
+          patient_confirmed: false,
+          notes: schedule.notes 
+            ? `${schedule.notes} | ⚠️ Paciente informou que não poderá comparecer (via e-mail)`
+            : "⚠️ Paciente informou que não poderá comparecer (via e-mail)"
+        })
+        .eq("id", schedule.id);
+
+      if (updateError) {
+        console.error("Erro ao atualizar agendamento:", updateError);
+        throw updateError;
+      }
+
+      console.log("Recusa processada com sucesso para agendamento:", schedule.id);
+
+      return new Response(
+        generateHtmlPage(
+          "Recebemos sua resposta",
+          `Obrigado por nos avisar, ${clientName}! Entraremos em contato para reagendar seu atendimento que estava marcado para ${appointmentDate} às ${appointmentTime}.`,
+          "warning"
+        ),
+        {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8", ...corsHeaders },
+        }
+      );
+    }
+
+    // Processar ação de CONFIRMAÇÃO (comportamento padrão)
     // Verificar se já foi confirmado
     if (schedule.patient_confirmed) {
       return new Response(
@@ -77,6 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
       .update({
         patient_confirmed: true,
         patient_confirmed_at: new Date().toISOString(),
+        patient_declined: false,
       })
       .eq("id", schedule.id);
 
@@ -86,18 +151,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Confirmação processada com sucesso para agendamento:", schedule.id);
-
-    const clientName = (schedule.clients as any)?.name || "Paciente";
-    const appointmentDate = new Date(schedule.start_time).toLocaleDateString("pt-BR", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-    const appointmentTime = new Date(schedule.start_time).toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
 
     return new Response(
       generateHtmlPage(
@@ -115,7 +168,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       generateHtmlPage(
         "Erro",
-        "Ocorreu um erro ao processar sua confirmação. Por favor, tente novamente mais tarde.",
+        "Ocorreu um erro ao processar sua resposta. Por favor, tente novamente mais tarde.",
         "error"
       ),
       {
@@ -126,11 +179,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-function generateHtmlPage(title: string, message: string, type: "success" | "error" | "info"): string {
+function generateHtmlPage(title: string, message: string, type: "success" | "error" | "info" | "warning"): string {
   const colors = {
     success: { bg: "#10b981", icon: "✅" },
     error: { bg: "#ef4444", icon: "❌" },
     info: { bg: "#3b82f6", icon: "ℹ️" },
+    warning: { bg: "#f59e0b", icon: "📞" },
   };
 
   const { bg, icon } = colors[type];
