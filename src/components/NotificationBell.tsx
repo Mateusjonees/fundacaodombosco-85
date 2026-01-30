@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Bell, Calendar, X, AlertCircle, MessageSquare, Clock, User, Check } from 'lucide-react';
 
 interface Notification {
@@ -49,9 +50,15 @@ export const NotificationBell = () => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const [hasAttendancePermission, setHasAttendancePermission] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [userUnit, setUserUnit] = useState<string | null>(null);
+  
+  // Usar hook centralizado para evitar query duplicada
+  const { userRole, userUnit } = useCurrentUser();
+  
+  // Calcular permissões de forma memorizada
+  const hasAttendancePermission = useMemo(() => {
+    const allowedRoles = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'];
+    return userRole ? allowedRoles.includes(userRole) : false;
+  }, [userRole]);
 
   // Query de notificações gerais
   const { data: notifications = [] } = useQuery({
@@ -133,34 +140,7 @@ export const NotificationBell = () => {
     enabled: !!user?.id,
   });
 
-  // Verificar permissões para atendimentos pendentes
-  useEffect(() => {
-    const checkPermissions = async () => {
-      if (!user) return;
-
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('employee_role, unit')
-          .eq('user_id', user.id)
-          .single();
-
-        const allowedRoles = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'];
-        const hasRole = profile && allowedRoles.includes(profile.employee_role);
-        
-        setHasAttendancePermission(hasRole);
-        setUserRole(profile?.employee_role || null);
-        setUserUnit(profile?.unit || null);
-      } catch (error) {
-        console.error('Error checking permissions:', error);
-        setHasAttendancePermission(false);
-      }
-    };
-
-    checkPermissions();
-  }, [user]);
-
-  // Carregar contagem de atendimentos pendentes
+  // Carregar contagem de atendimentos pendentes - usa permissões do hook centralizado
   useEffect(() => {
     if (!hasAttendancePermission) return;
 
