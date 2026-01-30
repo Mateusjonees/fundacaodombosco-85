@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import logo from '@/assets/fundacao-dom-bosco-logo-optimized.png';
 import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronDown, ChevronRight, Stethoscope, CalendarDays, Wallet, UsersRound, TrendingUp, MessageCircle, User, Tag, Sparkles } from 'lucide-react';
@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
@@ -375,16 +375,14 @@ const SidebarNavItem = memo(({
         </>}
     </NavLink>;
   if (collapsed) {
-    return <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div>{content}</div>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="font-medium bg-popover border shadow-lg">
-            {item.title}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>;
+    return <Tooltip>
+        <TooltipTrigger asChild>
+          <div>{content}</div>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="font-medium">
+          {item.title}
+        </TooltipContent>
+      </Tooltip>;
   }
   return content;
 });
@@ -395,8 +393,7 @@ export function AppSidebar() {
     isMobile,
     setOpenMobile
   } = useSidebar();
-  // No mobile, sempre mostrar expandido (drawer completo com texto)
-  const collapsed = isMobile ? false : state === 'collapsed';
+  const collapsed = state === 'collapsed';
   const location = useLocation();
   const {
     user
@@ -478,17 +475,17 @@ export function AppSidebar() {
     }
   };
   const categories = ['GESTÃO CLÍNICA', 'AGENDA', 'FINANCEIRO', 'ESTOQUE', 'EQUIPE', 'RELATÓRIOS', 'COMUNICAÇÃO', 'PESSOAL'];
-  return <Sidebar collapsible="icon" className={cn("sidebar-container border-r border-sidebar-border/50", collapsed ? "w-[72px]" : "w-72")}>
+  return <Sidebar className={cn("sidebar-container border-r border-sidebar-border/50", collapsed ? "w-[72px]" : "w-72")}>
       <SidebarContent className="flex flex-col h-full bg-gradient-to-b from-sidebar-background via-sidebar-background to-sidebar-accent/30">
         {/* Logo Header with glassmorphism */}
         <div className={cn("sidebar-header relative overflow-hidden border-b border-sidebar-border/30", collapsed ? "p-3" : "p-4")}>
           {/* Animated background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 animate-gradient" />
           
-              {!collapsed ? <div className="relative flex items-center gap-3">
+          {!collapsed ? <div className="relative flex items-center gap-3">
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-xl blur-sm" />
-                <img alt="Fundação Dom Bosco" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" className="relative h-11 w-auto object-contain rounded-lg" loading="lazy" decoding="async" fetchPriority="low" />
+                <img alt="Fundação Dom Bosco" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" className="relative h-11 w-auto object-contain rounded-lg" loading="lazy" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-foreground/80 tracking-wide">Sistema Clínico</span>
@@ -529,12 +526,8 @@ export function AppSidebar() {
             const isOpen = openCategories[category] ?? false;
             const hasActiveItem = groupedItems[category].some(item => isActive(item.url));
             if (collapsed) {
-              // Collapsed: show only icons with tooltips and category separators
-              return <div key={category} className="py-2">
-                    {/* Category separator with colored indicator */}
-                    <div className="flex items-center justify-center mb-2">
-                      <div className={cn("h-0.5 w-8 rounded-full", config?.iconBg?.replace('text-', 'bg-').replace('/15', '/40'))} />
-                    </div>
+              // Collapsed: show only icons with tooltips
+              return <div key={category} className="space-y-1 py-1">
                     {groupedItems[category].map(item => <SidebarMenuItem key={item.id}>
                         <SidebarMenuButton asChild>
                           <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} categoryConfig={config} />

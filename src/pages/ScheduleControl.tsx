@@ -748,31 +748,31 @@ ${notificationMessage}
       return 'evening';
     };
     let lastPeriod = '';
-    return <div className="space-y-4 md:space-y-6">
+    return <div className="space-y-6">
         {/* Cards de Resumo do Dia */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 animate-fade-in">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400">{dayStats.total}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Total</div>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{dayStats.total}</div>
+              <div className="text-sm text-muted-foreground font-medium">Total</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400">{dayStats.confirmed}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Confirmados</div>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{dayStats.confirmed}</div>
+              <div className="text-sm text-muted-foreground font-medium">Confirmados</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-amber-600 dark:text-amber-400">{dayStats.scheduled}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Agendados</div>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{dayStats.scheduled}</div>
+              <div className="text-sm text-muted-foreground font-medium">Agendados</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">{dayStats.cancelled}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Cancelados</div>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">{dayStats.cancelled}</div>
+              <div className="text-sm text-muted-foreground font-medium">Cancelados</div>
             </CardContent>
           </Card>
         </div>
@@ -1071,31 +1071,31 @@ ${notificationMessage}
       scheduled: schedules.filter(s => s.status === 'scheduled').length,
       cancelled: schedules.filter(s => s.status === 'cancelled').length
     };
-    return <div className="space-y-4 md:space-y-6">
+    return <div className="space-y-6">
         {/* Month Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 animate-fade-in">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
           <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400">{monthStats.total}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Total do Mês</div>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">{monthStats.total}</div>
+              <div className="text-sm text-muted-foreground font-medium">Total do Mês</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400">{monthStats.confirmed}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Confirmados</div>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{monthStats.confirmed}</div>
+              <div className="text-sm text-muted-foreground font-medium">Confirmados</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400">{monthStats.scheduled}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Agendados</div>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{monthStats.scheduled}</div>
+              <div className="text-sm text-muted-foreground font-medium">Agendados</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">{monthStats.cancelled}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Cancelados</div>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">{monthStats.cancelled}</div>
+              <div className="text-sm text-muted-foreground font-medium">Cancelados</div>
             </CardContent>
           </Card>
         </div>
@@ -1208,20 +1208,20 @@ ${notificationMessage}
         </Card>
       </div>;
   };
-  return <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+  return <div className="container mx-auto p-6 space-y-6">
       {/* Cabeçalho Moderno */}
       <div className="flex flex-col gap-4 animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="relative pl-3 sm:pl-4">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 via-purple-600 to-purple-700 rounded-full" />
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400 bg-clip-text text-transparent">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="relative">
+            <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 via-purple-600 to-purple-700 rounded-full" />
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400 bg-clip-text text-transparent">
               Controle de Agendamentos
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
+            <p className="text-muted-foreground mt-2">
               Gerencie agendamentos, confirme consultas e monitore presença
             </p>
           </div>
-          <Badge className="text-sm sm:text-lg px-3 sm:px-6 py-2 sm:py-3 w-fit bg-gradient-to-r from-purple-500/10 to-purple-600/10 text-purple-700 dark:text-purple-400 border-purple-500/20 shrink-0">
+          <Badge className="text-lg px-6 py-3 w-fit bg-gradient-to-r from-purple-500/10 to-purple-600/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
             <CalendarIcon className="h-4 w-4 mr-2" />
             {schedules.length} agendamento{schedules.length !== 1 ? 's' : ''}
           </Badge>
@@ -1230,47 +1230,44 @@ ${notificationMessage}
         {/* Filtros e navegação - Card Moderno */}
         <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-purple-500/5 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent pointer-events-none" />
-          <CardContent className="p-3 sm:p-4 md:p-6">
-            <div className="flex flex-col gap-3 md:gap-4">
-              {/* Linha 1: Visualização e Navegação de data */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                {/* Seletor de visualização */}
-                <Tabs value={viewMode} onValueChange={value => setViewMode(value as ViewMode)} className="w-full sm:w-auto sm:flex-1">
-                  <TabsList className="grid w-full grid-cols-3 h-9">
-                    <TabsTrigger value="day" className="text-xs sm:text-sm">Dia</TabsTrigger>
-                    <TabsTrigger value="week" className="text-xs sm:text-sm">Semana</TabsTrigger>
-                    <TabsTrigger value="month" className="text-xs sm:text-sm">Mês</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Seletor de visualização */}
+              <Tabs value={viewMode} onValueChange={value => setViewMode(value as ViewMode)} className="flex-1">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="day">Dia</TabsTrigger>
+                  <TabsTrigger value="week">Semana</TabsTrigger>
+                  <TabsTrigger value="month">Mês</TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-                {/* Navegação de data */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => navigateDate('prev')}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("justify-start text-left font-normal flex-1 sm:flex-none sm:w-[200px] md:w-[240px] h-9 text-xs sm:text-sm px-2 sm:px-3")}>
-                        <CalendarIcon className="mr-1 sm:mr-2 h-4 w-4 shrink-0" />
-                        <span className="truncate">{getDateRangeText()}</span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={selectedDate} onSelect={date => date && setSelectedDate(date)} initialFocus locale={ptBR} />
-                    </PopoverContent>
-                  </Popover>
+              {/* Navegação de data */}
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => navigateDate('prev')}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("justify-start text-left font-normal w-[240px]")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {getDateRangeText()}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={selectedDate} onSelect={date => date && setSelectedDate(date)} initialFocus locale={ptBR} />
+                  </PopoverContent>
+                </Popover>
 
-                  <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => navigateDate('next')}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button variant="outline" size="icon" onClick={() => navigateDate('next')}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
 
-              {/* Linha 2: Filtros */}
-              <div className="flex flex-col sm:flex-row gap-2">
+              {/* Filtros */}
+              <div className="flex gap-2">
                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                  <SelectTrigger className="w-full sm:w-[180px] md:w-[200px] h-9 text-xs sm:text-sm">
+                  <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Todos os profissionais" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1282,20 +1279,20 @@ ${notificationMessage}
                 </Select>
 
                 <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                  <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] h-9 text-xs sm:text-sm">
+                  <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Todas as unidades" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as unidades</SelectItem>
-                    <SelectItem value="madre">MADRE</SelectItem>
-                    <SelectItem value="floresta">Floresta</SelectItem>
-                    <SelectItem value="atendimento_floresta">Atend. Floresta</SelectItem>
+                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Button onClick={() => setPdfConfigDialogOpen(true)} variant="outline" className="gap-2 h-9 text-xs sm:text-sm w-full sm:w-auto" disabled={schedules.length === 0}>
+                <Button onClick={() => setPdfConfigDialogOpen(true)} variant="outline" className="gap-2" disabled={schedules.length === 0}>
                   <Download className="h-4 w-4" />
-                  <span className="sm:inline">Baixar PDF</span>
+                  Baixar PDF
                 </Button>
               </div>
             </div>

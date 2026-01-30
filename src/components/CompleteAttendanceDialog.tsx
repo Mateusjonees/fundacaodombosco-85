@@ -15,16 +15,8 @@ import NeuroTestSelector from './NeuroTestSelector';
 import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
 import NeuroTestFDTForm from './NeuroTestFDTForm';
 import NeuroTestRAVLTForm from './NeuroTestRAVLTForm';
-import NeuroTestTINForm, { type TINResults } from './NeuroTestTINForm';
-import NeuroTestPCFOForm, { type PCFOResults } from './NeuroTestPCFOForm';
-import NeuroTestTSBCForm from './NeuroTestTSBCForm';
-import NeuroTestFVAForm from './NeuroTestFVAForm';
-import NeuroTestBNTBRForm from './NeuroTestBNTBRForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
-import { type TSBCResults } from '@/data/neuroTests/tsbc';
-import { type FVAResults } from '@/data/neuroTests/fva';
-import { type BNTBRResults } from '@/data/neuroTests/bntbr';
 
 interface Schedule {
   id: string;
@@ -71,11 +63,6 @@ export default function CompleteAttendanceDialog({
   const [bpa2Results, setBpa2Results] = useState<BPA2Results | null>(null);
   const [fdtResults, setFdtResults] = useState<FDTResults | null>(null);
   const [ravltResults, setRavltResults] = useState<RAVLTResults | null>(null);
-  const [tinResults, setTinResults] = useState<TINResults | null>(null);
-  const [pcfoResults, setPcfoResults] = useState<PCFOResults | null>(null);
-  const [tsbcResults, setTsbcResults] = useState<TSBCResults | null>(null);
-  const [fvaResults, setFvaResults] = useState<FVAResults | null>(null);
-  const [bntbrResults, setBntbrResults] = useState<BNTBRResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -113,11 +100,6 @@ export default function CompleteAttendanceDialog({
       setBpa2Results(null);
       setFdtResults(null);
       setRavltResults(null);
-      setTinResults(null);
-      setPcfoResults(null);
-      setTsbcResults(null);
-      setFvaResults(null);
-      setBntbrResults(null);
     }
   }, [isOpen]);
 
@@ -133,16 +115,6 @@ export default function CompleteAttendanceDialog({
       setFdtResults(null);
     } else if (testCode === 'RAVLT') {
       setRavltResults(null);
-    } else if (testCode === 'TIN') {
-      setTinResults(null);
-    } else if (testCode === 'PCFO') {
-      setPcfoResults(null);
-    } else if (testCode === 'TSBC') {
-      setTsbcResults(null);
-    } else if (testCode === 'FVA') {
-      setFvaResults(null);
-    } else if (testCode === 'BNTBR') {
-      setBntbrResults(null);
     }
   };
 
@@ -156,26 +128,6 @@ export default function CompleteAttendanceDialog({
 
   const handleRavltResultsChange = useCallback((results: RAVLTResults) => {
     setRavltResults(results);
-  }, []);
-
-  const handleTinResultsChange = useCallback((results: TINResults) => {
-    setTinResults(results);
-  }, []);
-
-  const handlePcfoResultsChange = useCallback((results: PCFOResults) => {
-    setPcfoResults(results);
-  }, []);
-
-  const handleTsbcResultsChange = useCallback((results: TSBCResults) => {
-    setTsbcResults(results);
-  }, []);
-
-  const handleFvaResultsChange = useCallback((results: FVAResults | null) => {
-    setFvaResults(results);
-  }, []);
-
-  const handleBntbrResultsChange = useCallback((results: BNTBRResults | null) => {
-    setBntbrResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -333,101 +285,6 @@ export default function CompleteAttendanceDialog({
           });
         }
 
-        // TIN
-        if (tinResults && selectedTests.includes('TIN')) {
-          testsToSave.push({
-            client_id: schedule.client_id,
-            schedule_id: schedule.id,
-            attendance_report_id: attendanceReport?.id || null,
-            test_code: 'TIN',
-            test_name: 'TIN - Teste Infantil de Nomeação',
-            patient_age: patientAge,
-            raw_scores: JSON.parse(JSON.stringify(tinResults.rawScores)),
-            calculated_scores: JSON.parse(JSON.stringify(tinResults.calculatedScores)),
-            percentiles: {},
-            classifications: JSON.parse(JSON.stringify(tinResults.classifications)),
-            applied_by: user.id,
-            applied_at: now,
-            notes: tinResults.notes || null
-          });
-        }
-
-        // PCFO
-        if (pcfoResults && selectedTests.includes('PCFO')) {
-          testsToSave.push({
-            client_id: schedule.client_id,
-            schedule_id: schedule.id,
-            attendance_report_id: attendanceReport?.id || null,
-            test_code: 'PCFO',
-            test_name: 'PCFO - Prova de Consciência Fonológica por produção Oral',
-            patient_age: patientAge,
-            raw_scores: JSON.parse(JSON.stringify(pcfoResults.rawScores)),
-            calculated_scores: JSON.parse(JSON.stringify(pcfoResults.calculatedScores)),
-            percentiles: {},
-            classifications: JSON.parse(JSON.stringify(pcfoResults.classifications)),
-            applied_by: user.id,
-            applied_at: now,
-            notes: pcfoResults.notes || null
-          });
-        }
-
-        // TSBC
-        if (tsbcResults && selectedTests.includes('TSBC')) {
-          testsToSave.push({
-            client_id: schedule.client_id,
-            schedule_id: schedule.id,
-            attendance_report_id: attendanceReport?.id || null,
-            test_code: 'TSBC',
-            test_name: 'TSBC - Tarefa Span de Blocos (Corsi)',
-            patient_age: patientAge,
-            raw_scores: JSON.parse(JSON.stringify(tsbcResults.rawScores)),
-            calculated_scores: JSON.parse(JSON.stringify(tsbcResults.calculatedScores)),
-            percentiles: {},
-            classifications: JSON.parse(JSON.stringify(tsbcResults.classifications)),
-            applied_by: user.id,
-            applied_at: now,
-            notes: tsbcResults.notes || null
-          });
-        }
-
-        // FVA
-        if (fvaResults && selectedTests.includes('FVA')) {
-          testsToSave.push({
-            client_id: schedule.client_id,
-            schedule_id: schedule.id,
-            attendance_report_id: attendanceReport?.id || null,
-            test_code: 'FVA',
-            test_name: 'FVA - Fluência Verbal Alternada',
-            patient_age: patientAge,
-            raw_scores: JSON.parse(JSON.stringify(fvaResults.rawScores)),
-            calculated_scores: JSON.parse(JSON.stringify(fvaResults.calculatedScores)),
-            percentiles: {},
-            classifications: JSON.parse(JSON.stringify(fvaResults.classifications)),
-            applied_by: user.id,
-            applied_at: now,
-            notes: fvaResults.notes || null
-          });
-        }
-
-        // BNT-BR
-        if (bntbrResults && selectedTests.includes('BNTBR')) {
-          testsToSave.push({
-            client_id: schedule.client_id,
-            schedule_id: schedule.id,
-            attendance_report_id: attendanceReport?.id || null,
-            test_code: 'BNTBR',
-            test_name: 'BNT-BR - Teste de Nomeação de Boston',
-            patient_age: patientAge,
-            raw_scores: JSON.parse(JSON.stringify(bntbrResults.rawScores)),
-            calculated_scores: JSON.parse(JSON.stringify(bntbrResults.calculatedScores)),
-            percentiles: { percentil: bntbrResults.calculatedScores.percentil },
-            classifications: JSON.parse(JSON.stringify(bntbrResults.classifications)),
-            applied_by: user.id,
-            applied_at: now,
-            notes: bntbrResults.notes || null
-          });
-        }
-
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -553,49 +410,6 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleRavltResultsChange}
                     onRemove={() => handleRemoveTest('RAVLT')}
-                  />
-                )}
-
-                {/* Formulário TIN */}
-                {selectedTests.includes('TIN') && (
-                  <NeuroTestTINForm
-                    patientAge={patientAge}
-                    onResultsChange={handleTinResultsChange}
-                    onRemove={() => handleRemoveTest('TIN')}
-                  />
-                )}
-
-                {/* Formulário PCFO */}
-                {selectedTests.includes('PCFO') && (
-                  <NeuroTestPCFOForm
-                    patientAge={patientAge}
-                    onResultsChange={handlePcfoResultsChange}
-                  />
-                )}
-
-                {/* Formulário TSBC */}
-                {selectedTests.includes('TSBC') && (
-                  <NeuroTestTSBCForm
-                    patientAge={patientAge}
-                    onResultsChange={handleTsbcResultsChange}
-                    onRemove={() => handleRemoveTest('TSBC')}
-                  />
-                )}
-
-                {/* Formulário FVA */}
-                {selectedTests.includes('FVA') && (
-                  <NeuroTestFVAForm
-                    patientAge={patientAge}
-                    onResultsChange={handleFvaResultsChange}
-                  />
-                )}
-
-                {/* Formulário BNT-BR */}
-                {selectedTests.includes('BNTBR') && (
-                  <NeuroTestBNTBRForm
-                    patientAge={patientAge}
-                    onResultsChange={handleBntbrResultsChange}
-                    onRemove={() => handleRemoveTest('BNTBR')}
                   />
                 )}
               </div>

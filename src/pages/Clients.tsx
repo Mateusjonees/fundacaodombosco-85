@@ -51,7 +51,6 @@ import { AutoImportClientsDialog } from "@/components/AutoImportClientsDialog";
 import { PatientReportGenerator } from "@/components/PatientReportGenerator";
 import { MultiPatientReportGenerator } from "@/components/MultiPatientReportGenerator";
 import { ClientAssignmentManager } from "@/components/ClientAssignmentManager";
-import { PatientQuickViewModal } from "@/components/PatientQuickViewModal";
 import { importClientsFromFile } from "@/utils/importClients";
 import { executeDirectImport } from "@/utils/directImport";
 interface Client {
@@ -105,13 +104,7 @@ export default function Patients() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [reportClient, setReportClient] = useState<Client | null>(null);
-  const [quickViewClientId, setQuickViewClientId] = useState<string | null>(null);
   const { toast } = useToast();
-
-  // Função para abrir o quick view modal do paciente
-  const handleOpenQuickView = useCallback((clientId: string) => {
-    setQuickViewClientId(clientId);
-  }, []);
 
   // Função para selecionar cliente com persistência na URL e scroll
   const handleSelectClient = useCallback((client: Client) => {
@@ -119,15 +112,6 @@ export default function Patients() {
     setSearchParams({ clientId: client.id }, { replace: true });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [setSearchParams]);
-
-  // Função para abrir perfil completo a partir do quick view
-  const handleViewFullProfile = useCallback((clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    if (client) {
-      setQuickViewClientId(null);
-      handleSelectClient(client);
-    }
-  }, [clients, handleSelectClient]);
 
   // Função para voltar à lista limpando a URL
   const handleBackToList = useCallback(() => {
@@ -1029,7 +1013,7 @@ export default function Patients() {
                       showCheckbox={isCoordinatorOrDirector()}
                       showActions={true}
                       onSelect={() => toggleClientSelection(client.id)}
-                      onView={() => handleOpenQuickView(client.id)}
+                      onView={() => handleSelectClient(client)}
                       onEdit={isCoordinatorOrDirector() ? () => openEditDialog(client) : undefined}
                       onReport={isCoordinatorOrDirector() ? () => setReportClient(client) : undefined}
                       onToggleStatus={isCoordinatorOrDirector() ? () => handleToggleClientStatus(client.id, client.is_active) : undefined}
@@ -1196,16 +1180,6 @@ export default function Patients() {
           setIsMultiReportOpen(false);
           setSelectedClients([]);
         }} 
-      />
-
-      {/* Modal de visualização rápida do paciente */}
-      <PatientQuickViewModal
-        clientId={quickViewClientId}
-        open={!!quickViewClientId}
-        onOpenChange={(open) => {
-          if (!open) setQuickViewClientId(null);
-        }}
-        onViewFullProfile={handleViewFullProfile}
       />
     </div>
   );

@@ -42,7 +42,7 @@ export const FDT_TEST: NeuroTestDefinition = {
   fullName: 'Five Digit Test - Teste dos Cinco Dígitos',
   description: 'Avalia funções executivas: velocidade de processamento, atenção, controle inibitório e flexibilidade cognitiva.',
   minAge: 6,
-  maxAge: 99,
+  maxAge: 81,
   subtests: [
     {
       code: 'LEIT',

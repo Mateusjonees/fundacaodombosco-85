@@ -11,9 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { AlertCircle, Calendar, Clock, FileText, Plus, Search, User } from 'lucide-react';
-import { format, addDays, isWeekend } from 'date-fns';
+import { format, differenceInBusinessDays, addDays, isWeekend, isSaturday, isSunday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getTodayLocalISODate } from '@/lib/utils';
 
 // Função para calcular 15 dias úteis a partir de uma data
 const calculateBusinessDaysDeadline = (startDate: Date, businessDays: number = 15): Date => {
@@ -33,48 +32,6 @@ const calculateBusinessDaysDeadline = (startDate: Date, businessDays: number = 1
   }
   
   return currentDate;
-};
-
-/**
- * Calcula a diferença em dias úteis entre duas datas (formato YYYY-MM-DD)
- * Retorna positivo se ainda há dias restantes, negativo se vencido
- */
-const calculateBusinessDaysDifference = (deadlineDateStr: string): number => {
-  // Obter data de hoje no formato local
-  const todayStr = getTodayLocalISODate();
-  
-  // Parse das datas como componentes locais (evita problemas de timezone)
-  const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number);
-  const [deadYear, deadMonth, deadDay] = deadlineDateStr.split('-').map(Number);
-  
-  const today = new Date(todayYear, todayMonth - 1, todayDay);
-  const deadline = new Date(deadYear, deadMonth - 1, deadDay);
-  
-  // Se a data é igual, retorna 0
-  if (todayStr === deadlineDateStr) return 0;
-  
-  // Determinar direção da contagem
-  const isOverdue = today > deadline;
-  const startDate = isOverdue ? deadline : today;
-  const endDate = isOverdue ? today : deadline;
-  
-  let businessDays = 0;
-  let currentDate = new Date(startDate);
-  
-  // Avançar um dia para começar a contar
-  currentDate.setDate(currentDate.getDate() + 1);
-  
-  while (currentDate <= endDate) {
-    const dayOfWeek = currentDate.getDay();
-    // 0 = Domingo, 6 = Sábado
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      businessDays++;
-    }
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  
-  // Se vencido, retorna negativo
-  return isOverdue ? -businessDays : businessDays;
 };
 
 interface FeedbackControl {
@@ -299,7 +256,7 @@ export default function FeedbackControl() {
       console.log('🗓️ Data de início:', format(today, 'dd/MM/yyyy'));
       console.log('🗓️ Prazo calculado (15 dias úteis):', format(deadlineDate, 'dd/MM/yyyy'));
 
-      const { data: insertedData, error } = await supabase
+      const { error } = await supabase
         .from('client_feedback_control')
         .insert([{
           client_id: selectedClient.id,
@@ -307,24 +264,9 @@ export default function FeedbackControl() {
           created_by: user?.id || '',
           notes: notes || null,
           deadline_date: deadlineDateString,
-        }])
-        .select()
-        .single();
+        }]);
 
       if (error) throw error;
-
-      // Criar notificação para o funcionário vinculado
-      const employeeName = employees.find(e => e.user_id === selectedEmployee)?.name || 'Funcionário';
-      
-      await supabase
-        .from('notifications')
-        .insert([{
-          user_id: selectedEmployee,
-          title: '📋 Nova Devolutiva Atribuída',
-          message: `Você foi designado para a devolutiva do paciente ${selectedClient.name}. Prazo: ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })} (15 dias úteis).`,
-          type: 'feedback_control',
-          is_read: false,
-        }]);
 
       toast.success(`Cliente adicionado! Prazo: ${format(deadlineDate, 'dd/MM/yyyy', { locale: ptBR })}`);
       setShowAddDialog(false);
@@ -341,9 +283,10 @@ export default function FeedbackControl() {
   };
 
   const calculateRemainingDays = (deadlineDate: string) => {
-    // Extrair apenas a parte da data (YYYY-MM-DD)
-    const datePart = deadlineDate.split('T')[0];
-    return calculateBusinessDaysDifference(datePart);
+    const deadline = new Date(deadlineDate + 'T23:59:59');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return differenceInBusinessDays(deadline, today);
   };
 
   const getStatusBadge = (status: string, remainingDays: number) => {

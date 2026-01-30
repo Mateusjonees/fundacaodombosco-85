@@ -5,52 +5,9 @@
     <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/3WF77CQiGnfJw3tdycD5KYgot9b2/uploads/1758120101867-Captura de tela 2025-07-10 090457.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Performance: Preconnect to critical origins -->
+    <!-- Preconnect to critical origins -->
     <link rel="preconnect" href="https://vqphtzkdhfzdwbumexhe.supabase.co" crossorigin>
     <link rel="dns-prefetch" href="https://vqphtzkdhfzdwbumexhe.supabase.co">
-    
-    <!-- Performance: Font preload -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Mobile Performance -->
-    <meta name="theme-color" content="#1b75bc">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    
-    <!-- Critical CSS inline for faster LCP -->
-    <style>
-      /* Critical loading state - inline for instant rendering */
-      #root:empty {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        background: linear-gradient(180deg, hsl(210 40% 98%), hsl(203 30% 95%));
-      }
-      #root:empty::after {
-        content: '';
-        width: 32px;
-        height: 32px;
-        border: 3px solid hsl(203 79% 43% / 0.2);
-        border-top-color: hsl(203 79% 43%);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      @media (prefers-color-scheme: dark) {
-        #root:empty {
-          background: linear-gradient(180deg, hsl(210 30% 10%), hsl(203 30% 15%));
-        }
-        #root:empty::after {
-          border-color: hsl(203 79% 50% / 0.2);
-          border-top-color: hsl(203 79% 50%);
-        }
-      }
-    </style>
     
     <title>Sistema de Gestão - Fundação Dom Bosco</title>
   </head>
