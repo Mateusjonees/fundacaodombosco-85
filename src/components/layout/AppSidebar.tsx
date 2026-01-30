@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback, useMemo } from 'react';
+import { useState, useEffect, memo, useCallback, useMemo, lazy, Suspense } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import logo from '@/assets/fundacao-dom-bosco-logo-optimized.png';
 import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronDown, ChevronRight, Stethoscope, CalendarDays, Wallet, UsersRound, TrendingUp, MessageCircle, User, Tag, Sparkles } from 'lucide-react';
@@ -485,10 +485,10 @@ export function AppSidebar() {
           {/* Animated background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 animate-gradient" />
           
-          {!collapsed ? <div className="relative flex items-center gap-3">
+              {!collapsed ? <div className="relative flex items-center gap-3">
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-xl blur-sm" />
-                <img alt="Fundação Dom Bosco" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" className="relative h-11 w-auto object-contain rounded-lg" loading="lazy" />
+                <img alt="Fundação Dom Bosco" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" className="relative h-11 w-auto object-contain rounded-lg" loading="lazy" decoding="async" fetchPriority="low" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-foreground/80 tracking-wide">Sistema Clínico</span>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, memo, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { LogOut, User, Camera } from 'lucide-react';
+import { LogOut, Camera, MessageSquare } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import {
@@ -19,17 +19,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GlobalSearch } from '@/components/GlobalSearch';
-import { QuickHelpCenter } from '@/components/QuickHelpCenter';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { NotificationBell } from '@/components/NotificationBell';
 import { Link } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
 import { PageSkeleton } from '@/components/ui/page-skeletons';
 import { UserAvatar } from '@/components/UserAvatar';
-import { UserProfileDialog } from '@/components/UserProfileDialog';
 import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
-import { PageTransition } from '@/components/ui/page-transition';
+
+// Lazy load header components - melhor LCP
+const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
+const QuickHelpCenter = lazy(() => import('@/components/QuickHelpCenter').then(m => ({ default: m.QuickHelpCenter })));
+const NotificationBell = lazy(() => import('@/components/NotificationBell').then(m => ({ default: m.NotificationBell })));
+const UserProfileDialog = lazy(() => import('@/components/UserProfileDialog').then(m => ({ default: m.UserProfileDialog })));
 
 // Lazy load page components
 const Clients = lazy(() => import('@/pages/Clients'));
@@ -118,9 +118,15 @@ export const MainApp = () => {
                 </div>
                 
                 <div className="flex items-center gap-2 sm:gap-4">
-                  <QuickHelpCenter />
-                  <GlobalSearch />
-                  <NotificationBell />
+                  <Suspense fallback={<div className="h-9 w-9" />}>
+                    <QuickHelpCenter />
+                  </Suspense>
+                  <Suspense fallback={<div className="h-9 w-20 sm:w-24 bg-muted rounded-lg animate-pulse" />}>
+                    <GlobalSearch />
+                  </Suspense>
+                  <Suspense fallback={<div className="h-9 w-9 bg-muted rounded-lg animate-pulse" />}>
+                    <NotificationBell />
+                  </Suspense>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -191,20 +197,20 @@ export const MainApp = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   
-                  <UserProfileDialog 
-                    open={profileDialogOpen} 
-                    onOpenChange={setProfileDialogOpen} 
-                  />
+                  <Suspense fallback={null}>
+                    <UserProfileDialog 
+                      open={profileDialogOpen} 
+                      onOpenChange={setProfileDialogOpen} 
+                    />
+                  </Suspense>
                 </div>
               </div>
             </header>
 
-            {/* Main Content */}
             <main className="flex-1 p-4 lg:p-6">
               <PageBreadcrumb />
               <Suspense fallback={<PageSkeleton />}>
-                <div className="animate-page-enter">
-                  <Routes>
+                <Routes>
                     <Route path="/" element={
                       <ProtectedRoute requiredPermission="view_dashboard">
                         <Dashboard />
@@ -339,9 +345,8 @@ export const MainApp = () => {
                       </ProtectedRoute>
                     } />
                       
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </div>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
               </Suspense>
             </main>
           </div>
