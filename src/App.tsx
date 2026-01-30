@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
 import { supabase } from "@/integrations/supabase/client";
+import { checkForUpdates } from "@/utils/cacheControl";
 
 // Lazy load components para reduzir bundle inicial
 const LoginForm = lazy(() => import("@/components/auth/LoginForm").then(m => ({ default: m.LoginForm })));
@@ -112,18 +113,25 @@ const AppContent = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Verifica se há nova versão ao iniciar
+  useEffect(() => {
+    checkForUpdates();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
