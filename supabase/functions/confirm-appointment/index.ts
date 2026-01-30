@@ -35,10 +35,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Função para obter endereço baseado na unidade
+    const getAddressByUnit = (unit: string | null): string => {
+      if (unit === 'madre') {
+        return 'Rua Jaime Salse, 280 - Madre Gertrudes';
+      }
+      // Floresta, atendimento_floresta, neuro e outros
+      return 'Rua Urucuia, 18 - Floresta';
+    };
+
     // Buscar agendamento pelo token
     const { data: schedule, error: fetchError } = await supabase
       .from("schedules")
-      .select("id, client_id, patient_confirmed, patient_declined, start_time, clients(name)")
+      .select("id, client_id, patient_confirmed, patient_declined, start_time, unit, clients(name)")
       .eq("confirmation_token", token)
       .single();
 
@@ -58,6 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const clientName = (schedule.clients as any)?.name || "Paciente";
+    const address = getAddressByUnit(schedule.unit);
     const appointmentDate = new Date(schedule.start_time).toLocaleDateString("pt-BR", {
       weekday: "long",
       day: "2-digit",
@@ -109,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         generateHtmlPage(
           "Recebemos sua resposta",
-          `Obrigado por nos avisar, ${clientName}! Entraremos em contato para reagendar seu atendimento que estava marcado para ${appointmentDate} às ${appointmentTime}.`,
+          `Obrigado por nos avisar, ${clientName}! Entraremos em contato para reagendar seu atendimento que estava marcado para ${appointmentDate} às ${appointmentTime}.<br><br>📍 <strong>Local:</strong> ${address}`,
           "warning"
         ),
         {
@@ -155,7 +165,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       generateHtmlPage(
         "Presença Confirmada!",
-        `Obrigado, ${clientName}! Sua presença foi confirmada para o dia ${appointmentDate} às ${appointmentTime}. Até lá!`,
+        `Obrigado, ${clientName}! Sua presença foi confirmada para o dia ${appointmentDate} às ${appointmentTime}.<br><br>📍 <strong>Local:</strong> ${address}<br><br>Até lá!`,
         "success"
       ),
       {
