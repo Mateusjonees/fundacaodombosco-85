@@ -1,38 +1,59 @@
 
-# Verificação: Sistema de Testes Neuropsicológicos
+# Plano: Adicionar Botao de Copiar Linha Individual nos Testes
 
-## Status Atual - Tudo Funcionando Corretamente
+## Contexto
+O sistema de testes neuropsicologicos exibe os resultados em tabelas com colunas: Variavel, Bruto, Percentil, Classificacao. Atualmente existe apenas o botao "Copiar para Laudo" que copia todos os dados do teste. O usuario quer poder copiar **cada linha individualmente**.
 
-### 1. Seleção de Escola no TSBC
-O formulário do teste TSBC **já possui** a opção de selecionar entre escola **Pública** ou **Privada**. Quando o profissional seleciona o teste TSBC na finalização de atendimento, aparece um seletor de tipo de escola antes de preencher os resultados.
+## Objetivo
+Adicionar um botao de copiar ao lado de cada linha na tabela de resultados dos testes, permitindo copiar apenas aquela linha especifica para usar em laudos ou documentos.
 
-### 2. Testes Disponíveis para Neuroavaliação (Floresta)
-Os testes neuropsicológicos **já aparecem automaticamente** na tela de "Finalizar Atendimento" para pacientes da unidade Floresta. O sistema filtra os testes pela idade do paciente:
+## Implementacao
 
-| Teste | Faixa Etária | Particularidades |
-|-------|--------------|------------------|
-| **BPA-2** | 6-81 anos | Bateria completa de atenção |
-| **RAVLT** | 6-89 anos | Memória auditivo-verbal |
-| **FDT** | 6-99 anos | Velocidade e atenção |
-| **TIN** | 3-14 anos | Nomeação infantil |
-| **PCFO** | 3-14 anos | Consciência fonológica (diferencia Educação Infantil/Ensino Fundamental) |
-| **TSBC** | 4-10 anos | Span de Blocos (diferencia escola pública/privada) |
+### Arquivos a Modificar
 
-### 3. Como Funciona
+**1. src/components/PatientNeuroTestHistory.tsx**
+- Adicionar botao de copiar em cada linha da tabela de resultados (linhas 570-595)
+- O botao ficara na ultima coluna ou como um icone discreto
+- Formato do texto copiado: `[Nome do Teste] - [Variavel]: Bruto [valor], Percentil [valor], Classificacao [valor]`
 
-1. Profissional agenda atendimento para paciente da unidade **Floresta**
-2. Ao finalizar o atendimento, o sistema calcula a idade do paciente
-3. Na seção "Testes Neuropsicológicos" aparecem todos os testes compatíveis com aquela idade
-4. O profissional seleciona os testes que foram aplicados
-5. Cada teste abre seu formulário específico com os campos necessários
-6. O TSBC especificamente mostra o seletor de **Pública/Privada**
-7. Os resultados são salvos automaticamente no banco de dados
+**2. src/components/NeuroTestResults.tsx**
+- Este componente tambem exibe resultados de testes (usado na validacao de atendimentos)
+- Aplicar a mesma logica de botao de copiar por linha
 
-## Conclusão
+## Detalhes Tecnicos
 
-**Nenhuma alteração é necessária** - o sistema já está funcionando conforme esperado:
-- O TSBC já tem seleção de tipo de escola
-- Todos os testes aparecem para pacientes da unidade Floresta
-- A filtragem por idade está funcionando corretamente
+### Formato do Texto Copiado
+Exemplo para BPA-2:
+```
+BPA-2 - Atencao Concentrada (AC): Bruto 85, Percentil 50, Classificacao Media
+```
 
-Se você deseja que eu **teste o fluxo** para confirmar que tudo está funcionando, posso criar um atendimento de teste e verificar na prática.
+### Layout do Botao
+- Icone pequeno de clipboard (ClipboardCopy) no inicio ou fim de cada linha
+- Aparece ao passar o mouse (hover) para nao poluir visualmente
+- Ao clicar, mostra toast de confirmacao "Linha copiada!"
+
+### Alteracoes na Tabela
+```text
+Antes:
+| Variavel           | Bruto | Percentil | Classificacao |
+| Atencao Concentrada|   85  |     50    |     Media     |
+
+Depois:
+| Variavel           | Bruto | Percentil | Classificacao | Copiar |
+| Atencao Concentrada|   85  |     50    |     Media     |   [icon] |
+```
+
+Ou alternativamente, o icone pode ficar na coluna Variavel, antes do nome.
+
+## Resumo das Mudancas
+
+| Arquivo | Mudanca |
+|---------|---------|
+| PatientNeuroTestHistory.tsx | Adicionar coluna/botao de copiar em cada linha da tabela |
+| NeuroTestResults.tsx | Mesma funcionalidade para consistencia |
+
+## Beneficios
+- Permite copiar resultados individuais para laudos
+- Maior flexibilidade ao compor documentos clinicos
+- Interacao rapida sem precisar copiar e editar texto completo
