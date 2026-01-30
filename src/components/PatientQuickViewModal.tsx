@@ -14,6 +14,7 @@ interface PatientQuickViewModalProps {
   clientId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onViewFullProfile?: (clientId: string) => void;
 }
 
 const unitColors: Record<string, { bg: string; text: string; label: string }> = {
@@ -22,7 +23,7 @@ const unitColors: Record<string, { bg: string; text: string; label: string }> = 
   atendimento_floresta: { bg: 'bg-purple-500/10', text: 'text-purple-700 dark:text-purple-400', label: 'ATEND. FLORESTA' },
 };
 
-export const PatientQuickViewModal = ({ clientId, open, onOpenChange }: PatientQuickViewModalProps) => {
+export const PatientQuickViewModal = ({ clientId, open, onOpenChange, onViewFullProfile }: PatientQuickViewModalProps) => {
   const navigate = useNavigate();
 
   const { data: client, isLoading } = useQuery({
@@ -75,7 +76,11 @@ export const PatientQuickViewModal = ({ clientId, open, onOpenChange }: PatientQ
 
   const handleViewFullProfile = () => {
     onOpenChange(false);
-    navigate(`/clients?clientId=${clientId}`);
+    if (onViewFullProfile && clientId) {
+      onViewFullProfile(clientId);
+    } else {
+      navigate(`/clients?clientId=${clientId}`);
+    }
   };
 
   return (
