@@ -26,6 +26,8 @@ interface Schedule {
   arrived_confirmed_by?: string;
   patient_confirmed?: boolean;
   patient_confirmed_at?: string;
+  patient_declined?: boolean;
+  patient_declined_at?: string;
   email_sent_at?: string;
   clients?: { name: string };
   profiles?: { name: string };
@@ -131,7 +133,12 @@ export const ScheduleCard = ({
           </div>
           
           <div className="flex items-center gap-2 flex-wrap">
-            {schedule.patient_confirmed && !isCompleted && !isCancelled && !isPendingValidation && (
+            {schedule.patient_declined && !isCompleted && !isCancelled && !isPendingValidation && (
+              <Badge className="bg-orange-500 text-white text-[10px] sm:text-xs">
+                ⚠️ Não poderá comparecer
+              </Badge>
+            )}
+            {schedule.patient_confirmed && !schedule.patient_declined && !isCompleted && !isCancelled && !isPendingValidation && (
               <Badge className="bg-blue-500 text-white text-[10px] sm:text-xs">
                 ✓ Confirmou que irá
               </Badge>
@@ -141,7 +148,7 @@ export const ScheduleCard = ({
                 ✓ Presente
               </Badge>
             )}
-            <Badge 
+            <Badge
               variant={getStatusBadge(schedule.status).variant}
               className={`text-[10px] sm:text-xs ${getStatusBadge(schedule.status).className || ''}`}
             >

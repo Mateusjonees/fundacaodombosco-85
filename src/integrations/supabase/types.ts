@@ -2441,6 +2441,8 @@ export type Database = {
           patient_arrived: boolean | null
           patient_confirmed: boolean | null
           patient_confirmed_at: string | null
+          patient_declined: boolean | null
+          patient_declined_at: string | null
           payment_method: string | null
           session_amount: number | null
           session_notes: string | null
@@ -2471,6 +2473,8 @@ export type Database = {
           patient_arrived?: boolean | null
           patient_confirmed?: boolean | null
           patient_confirmed_at?: string | null
+          patient_declined?: boolean | null
+          patient_declined_at?: string | null
           payment_method?: string | null
           session_amount?: number | null
           session_notes?: string | null
@@ -2501,6 +2505,8 @@ export type Database = {
           patient_arrived?: boolean | null
           patient_confirmed?: boolean | null
           patient_confirmed_at?: string | null
+          patient_declined?: boolean | null
+          patient_declined_at?: string | null
           payment_method?: string | null
           session_amount?: number | null
           session_notes?: string | null

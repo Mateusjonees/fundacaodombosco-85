@@ -110,12 +110,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     const confirmationButtonHtml = confirmationUrl ? `
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${confirmationUrl}" 
-           style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 48px; text-decoration: none; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
+        <!-- Botão de Confirmação -->
+        <a href="${confirmationUrl}&action=confirm" 
+           style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 48px; text-decoration: none; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); margin-bottom: 16px;">
           ✅ Confirmo minha presença
         </a>
-        <p style="color: #6b7280; font-size: 12px; margin-top: 12px;">
-          Clique no botão acima para confirmar que você irá comparecer
+        
+        <div style="margin: 16px 0;">
+          <span style="color: #9ca3af; font-size: 13px;">ou</span>
+        </div>
+        
+        <!-- Botão de Recusa -->
+        <a href="${confirmationUrl}&action=decline" 
+           style="display: inline-block; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 14px 40px; text-decoration: none; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);">
+          ❌ Não poderei comparecer
+        </a>
+        
+        <p style="color: #6b7280; font-size: 12px; margin-top: 16px;">
+          Clique em um dos botões acima para nos informar sobre sua presença
         </p>
       </div>
     ` : '';
