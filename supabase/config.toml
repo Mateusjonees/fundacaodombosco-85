@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.api-financeiro]
 verify_jwt = false
+
+[functions.send-appointment-email]
+verify_jwt = false
+
+[functions.confirm-appointment]
+verify_jwt = false

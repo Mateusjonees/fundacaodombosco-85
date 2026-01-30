@@ -24,6 +24,9 @@ interface Schedule {
   patient_arrived?: boolean;
   arrived_at?: string;
   arrived_confirmed_by?: string;
+  patient_confirmed?: boolean;
+  patient_confirmed_at?: string;
+  email_sent_at?: string;
   clients?: { name: string };
   profiles?: { name: string };
 }
@@ -127,7 +130,12 @@ export const ScheduleCard = ({
             </Badge>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {schedule.patient_confirmed && !isCompleted && !isCancelled && !isPendingValidation && (
+              <Badge className="bg-blue-500 text-white text-[10px] sm:text-xs">
+                ✓ Confirmou que irá
+              </Badge>
+            )}
             {schedule.patient_arrived && !isCompleted && !isCancelled && !isPendingValidation && (
               <Badge className="bg-emerald-500 text-white text-[10px] sm:text-xs animate-pulse">
                 ✓ Presente
