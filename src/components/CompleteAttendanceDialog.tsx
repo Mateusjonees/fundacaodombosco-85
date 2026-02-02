@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Loader2, Brain } from 'lucide-react';
+import { FileText, Loader2, Brain, Maximize2, Minimize2 } from 'lucide-react';
 import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NeuroTestSelector from './NeuroTestSelector';
@@ -63,6 +63,7 @@ export default function CompleteAttendanceDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [sessionNotes, setSessionNotes] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState<SelectedMaterial[]>([]);
   
@@ -503,12 +504,31 @@ export default function CompleteAttendanceDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent className={`flex flex-col p-0 gap-0 transition-all duration-200 ${
+        isMaximized 
+          ? 'w-[98vw] max-w-[98vw] h-[98vh] max-h-[98vh]' 
+          : 'w-[95vw] max-w-2xl h-[90vh] max-h-[90vh]'
+      }`}>
         <DialogHeader className="px-4 sm:px-6 py-4 border-b shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <FileText className="h-5 w-5" />
-            Finalizar Atendimento
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <FileText className="h-5 w-5" />
+              Finalizar Atendimento
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMaximized(!isMaximized)}
+              className="h-8 w-8 shrink-0"
+              title={isMaximized ? "Minimizar" : "Maximizar"}
+            >
+              {isMaximized ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground">
             {schedule.clients?.name} • {new Date(schedule.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             {isNeuroUnit && patientAge > 0 && (
