@@ -21,6 +21,7 @@ import NeuroTestTSBCForm from './NeuroTestTSBCForm';
 import NeuroTestFVAForm from './NeuroTestFVAForm';
 import NeuroTestBNTBRForm from './NeuroTestBNTBRForm';
 import NeuroTestTrilhasForm, { type TrilhasResults } from './NeuroTestTrilhasForm';
+import NeuroTestTMTAdultoForm, { type TMTAdultoResults } from './NeuroTestTMTAdultoForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -79,6 +80,7 @@ export default function CompleteAttendanceDialog({
   const [fvaResults, setFvaResults] = useState<FVAResults | null>(null);
   const [bntbrResults, setBntbrResults] = useState<BNTBRResults | null>(null);
   const [trilhasResults, setTrilhasResults] = useState<TrilhasResults | null>(null);
+  const [tmtAdultoResults, setTmtAdultoResults] = useState<TMTAdultoResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -122,6 +124,7 @@ export default function CompleteAttendanceDialog({
       setFvaResults(null);
       setBntbrResults(null);
       setTrilhasResults(null);
+      setTmtAdultoResults(null);
     }
   }, [isOpen]);
 
@@ -149,6 +152,8 @@ export default function CompleteAttendanceDialog({
       setBntbrResults(null);
     } else if (testCode === 'TRILHAS') {
       setTrilhasResults(null);
+    } else if (testCode === 'TMT_ADULTO') {
+      setTmtAdultoResults(null);
     }
   };
 
@@ -186,6 +191,10 @@ export default function CompleteAttendanceDialog({
 
   const handleTrilhasResultsChange = useCallback((results: TrilhasResults) => {
     setTrilhasResults(results);
+  }, []);
+
+  const handleTmtAdultoResultsChange = useCallback((results: TMTAdultoResults) => {
+    setTmtAdultoResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -457,6 +466,25 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // TMT Adulto
+        if (tmtAdultoResults && selectedTests.includes('TMT_ADULTO')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TMT_ADULTO',
+            test_name: 'TMT - Teste de Trilhas Adulto',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(tmtAdultoResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(tmtAdultoResults.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(tmtAdultoResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(tmtAdultoResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: tmtAdultoResults.notes || null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -653,6 +681,15 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleTrilhasResultsChange}
                     onRemove={() => handleRemoveTest('TRILHAS')}
+                  />
+                )}
+
+                {/* Formulário TMT Adulto */}
+                {selectedTests.includes('TMT_ADULTO') && (
+                  <NeuroTestTMTAdultoForm
+                    patientAge={patientAge}
+                    onResultsChange={handleTmtAdultoResultsChange}
+                    onRemove={() => handleRemoveTest('TMT_ADULTO')}
                   />
                 )}
               </div>
