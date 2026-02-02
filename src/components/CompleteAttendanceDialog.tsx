@@ -20,6 +20,7 @@ import NeuroTestPCFOForm, { type PCFOResults } from './NeuroTestPCFOForm';
 import NeuroTestTSBCForm from './NeuroTestTSBCForm';
 import NeuroTestFVAForm from './NeuroTestFVAForm';
 import NeuroTestBNTBRForm from './NeuroTestBNTBRForm';
+import NeuroTestTrilhasForm, { type TrilhasResults } from './NeuroTestTrilhasForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -77,6 +78,7 @@ export default function CompleteAttendanceDialog({
   const [tsbcResults, setTsbcResults] = useState<TSBCResults | null>(null);
   const [fvaResults, setFvaResults] = useState<FVAResults | null>(null);
   const [bntbrResults, setBntbrResults] = useState<BNTBRResults | null>(null);
+  const [trilhasResults, setTrilhasResults] = useState<TrilhasResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -119,6 +121,7 @@ export default function CompleteAttendanceDialog({
       setTsbcResults(null);
       setFvaResults(null);
       setBntbrResults(null);
+      setTrilhasResults(null);
     }
   }, [isOpen]);
 
@@ -144,6 +147,8 @@ export default function CompleteAttendanceDialog({
       setFvaResults(null);
     } else if (testCode === 'BNTBR') {
       setBntbrResults(null);
+    } else if (testCode === 'TRILHAS') {
+      setTrilhasResults(null);
     }
   };
 
@@ -177,6 +182,10 @@ export default function CompleteAttendanceDialog({
 
   const handleBntbrResultsChange = useCallback((results: BNTBRResults | null) => {
     setBntbrResults(results);
+  }, []);
+
+  const handleTrilhasResultsChange = useCallback((results: TrilhasResults) => {
+    setTrilhasResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -429,6 +438,25 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // Trilhas A e B
+        if (trilhasResults && selectedTests.includes('TRILHAS')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TRILHAS',
+            test_name: 'Teste de Trilhas: Partes A e B',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(trilhasResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(trilhasResults.calculatedScores)),
+            percentiles: {},
+            classifications: JSON.parse(JSON.stringify(trilhasResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: trilhasResults.notes || null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -616,6 +644,15 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleBntbrResultsChange}
                     onRemove={() => handleRemoveTest('BNTBR')}
+                  />
+                )}
+
+                {/* Formulário Trilhas A e B */}
+                {selectedTests.includes('TRILHAS') && (
+                  <NeuroTestTrilhasForm
+                    patientAge={patientAge}
+                    onResultsChange={handleTrilhasResultsChange}
+                    onRemove={() => handleRemoveTest('TRILHAS')}
                   />
                 )}
               </div>
