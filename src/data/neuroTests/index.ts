@@ -20,6 +20,8 @@ export * from './bntbr';
 export * from './bntbrNorms';
 export * from './trilhas';
 export * from './trilhasStandardScores';
+export * from './trilhasPreEscolar';
+export * from './trilhasPreEscolarStandardScores';
 // TMT Adulto exports (avoiding conflicts with getAgeGroup)
 export { 
   TMT_ADULTO_TEST, 
@@ -48,6 +50,7 @@ import { FVA_TEST } from './fva';
 import { BNTBR_TEST } from './bntbr';
 import { TRILHAS_TEST } from './trilhas';
 import { TMT_ADULTO_TEST } from './tmtAdulto';
+import { TRILHAS_PRE_ESCOLAR_TEST } from './trilhasPreEscolar';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -60,7 +63,8 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   FVA_TEST,
   BNTBR_TEST,
   TRILHAS_TEST,
-  TMT_ADULTO_TEST
+  TMT_ADULTO_TEST,
+  TRILHAS_PRE_ESCOLAR_TEST
 ];
 
 /**
