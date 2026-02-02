@@ -23,12 +23,14 @@ import NeuroTestBNTBRForm from './NeuroTestBNTBRForm';
 import NeuroTestTrilhasForm, { type TrilhasResults } from './NeuroTestTrilhasForm';
 import NeuroTestTMTAdultoForm, { type TMTAdultoResults } from './NeuroTestTMTAdultoForm';
 import NeuroTestTrilhasPreEscolarForm from './NeuroTestTrilhasPreEscolarForm';
+import NeuroTestFASForm from './NeuroTestFASForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
 import { type FVAResults } from '@/data/neuroTests/fva';
 import { type BNTBRResults } from '@/data/neuroTests/bntbr';
 import { type TrilhasPreEscolarTestResult } from '@/data/neuroTests/trilhasPreEscolar';
+import { type FASTestResult } from '@/data/neuroTests/fas';
 
 interface Schedule {
   id: string;
@@ -84,6 +86,7 @@ export default function CompleteAttendanceDialog({
   const [trilhasResults, setTrilhasResults] = useState<TrilhasResults | null>(null);
   const [tmtAdultoResults, setTmtAdultoResults] = useState<TMTAdultoResults | null>(null);
   const [trilhasPreEscolarResults, setTrilhasPreEscolarResults] = useState<TrilhasPreEscolarTestResult | null>(null);
+  const [fasResults, setFasResults] = useState<FASTestResult | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -129,6 +132,7 @@ export default function CompleteAttendanceDialog({
       setTrilhasResults(null);
       setTmtAdultoResults(null);
       setTrilhasPreEscolarResults(null);
+      setFasResults(null);
     }
   }, [isOpen]);
 
@@ -160,6 +164,8 @@ export default function CompleteAttendanceDialog({
       setTmtAdultoResults(null);
     } else if (testCode === 'TRILHAS_PRE_ESCOLAR') {
       setTrilhasPreEscolarResults(null);
+    } else if (testCode === 'FAS') {
+      setFasResults(null);
     }
   };
 
@@ -205,6 +211,10 @@ export default function CompleteAttendanceDialog({
 
   const handleTrilhasPreEscolarResultsChange = useCallback((results: TrilhasPreEscolarTestResult | null) => {
     setTrilhasPreEscolarResults(results);
+  }, []);
+
+  const handleFasResultsChange = useCallback((results: FASTestResult | null) => {
+    setFasResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -523,6 +533,32 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // FAS
+        if (fasResults && selectedTests.includes('FAS')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'FAS',
+            test_name: 'FAS - Teste de Fluência Verbal Fonêmica',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify({
+              letraF: fasResults.letraF,
+              letraA: fasResults.letraA,
+              letraS: fasResults.letraS
+            })),
+            calculated_scores: JSON.parse(JSON.stringify({
+              totalFAS: fasResults.totalFAS,
+              zScore: fasResults.zScore
+            })),
+            percentiles: { percentil: fasResults.percentile },
+            classifications: { classification: fasResults.classification },
+            applied_by: user.id,
+            applied_at: now,
+            notes: null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -736,6 +772,14 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestTrilhasPreEscolarForm
                     patientAge={patientAge}
                     onResultsChange={handleTrilhasPreEscolarResultsChange}
+                  />
+                )}
+
+                {/* Formulário FAS */}
+                {selectedTests.includes('FAS') && (
+                  <NeuroTestFASForm
+                    patientAge={patientAge}
+                    onResultsChange={handleFasResultsChange}
                   />
                 )}
               </div>
