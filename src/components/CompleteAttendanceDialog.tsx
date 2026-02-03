@@ -27,6 +27,7 @@ import NeuroTestFASForm from './NeuroTestFASForm';
 import NeuroTestHaylingAdultoForm, { type HaylingResults } from './NeuroTestHaylingAdultoForm';
 import NeuroTestHaylingInfantilForm from './NeuroTestHaylingInfantilForm';
 import NeuroTestTFVForm from './NeuroTestTFVForm';
+import NeuroTestTOMForm from './NeuroTestTOMForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -36,6 +37,7 @@ import { type TrilhasPreEscolarTestResult } from '@/data/neuroTests/trilhasPreEs
 import { type FASTestResult } from '@/data/neuroTests/fas';
 import { type HaylingInfantilResults } from '@/data/neuroTests/haylingInfantil';
 import { type TFVResults } from '@/data/neuroTests/tfv';
+import { type TOMTestResult } from '@/data/neuroTests/tom';
 
 interface Schedule {
   id: string;
@@ -95,6 +97,7 @@ export default function CompleteAttendanceDialog({
   const [haylingAdultoResults, setHaylingAdultoResults] = useState<HaylingResults | null>(null);
   const [haylingInfantilResults, setHaylingInfantilResults] = useState<HaylingInfantilResults | null>(null);
   const [tfvResults, setTfvResults] = useState<TFVResults | null>(null);
+  const [tomResults, setTomResults] = useState<TOMTestResult | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -144,6 +147,7 @@ export default function CompleteAttendanceDialog({
       setHaylingAdultoResults(null);
       setHaylingInfantilResults(null);
       setTfvResults(null);
+      setTomResults(null);
     }
   }, [isOpen]);
 
@@ -183,6 +187,8 @@ export default function CompleteAttendanceDialog({
       setHaylingInfantilResults(null);
     } else if (testCode === 'TFV') {
       setTfvResults(null);
+    } else if (testCode === 'TOM') {
+      setTomResults(null);
     }
   };
 
@@ -244,6 +250,10 @@ export default function CompleteAttendanceDialog({
 
   const handleTfvResultsChange = useCallback((results: TFVResults | null) => {
     setTfvResults(results);
+  }, []);
+
+  const handleTomResultsChange = useCallback((results: TOMTestResult | null) => {
+    setTomResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -678,6 +688,29 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // TOM
+        if (tomResults && selectedTests.includes('TOM')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TOM',
+            test_name: 'ToM - Bateria de Tarefas para Avaliação da Teoria da Mente',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify({
+              totalScore: tomResults.totalScore
+            })),
+            calculated_scores: JSON.parse(JSON.stringify({
+              zScore: tomResults.zScore
+            })),
+            percentiles: { percentil: tomResults.percentile },
+            classifications: { classification: tomResults.classification },
+            applied_by: user.id,
+            applied_at: now,
+            notes: null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -924,6 +957,14 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestTFVForm
                     patientAge={patientAge}
                     onResultsChange={handleTfvResultsChange}
+                  />
+                )}
+
+                {/* Formulário TOM */}
+                {selectedTests.includes('TOM') && (
+                  <NeuroTestTOMForm
+                    patientAge={patientAge}
+                    onResultsChange={handleTomResultsChange}
                   />
                 )}
               </div>

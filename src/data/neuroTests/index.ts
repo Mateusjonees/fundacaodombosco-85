@@ -25,6 +25,7 @@ export * from './trilhasPreEscolarStandardScores';
 export * from './fas';
 export * from './haylingAdulto';
 export * from './haylingInfantil';
+export * from './tom';
 // TFV exports (avoiding conflicts with SchoolType and lookupPercentile)
 export { 
   TFV_TEST, 
@@ -70,6 +71,7 @@ import { FAS_TEST } from './fas';
 import { HAYLING_ADULTO_TEST } from './haylingAdulto';
 import { HAYLING_INFANTIL_TEST } from './haylingInfantil';
 import { TFV_TEST } from './tfv';
+import { TOM_TEST } from './tom';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -88,6 +90,7 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   HAYLING_ADULTO_TEST,
   HAYLING_INFANTIL_TEST,
   TFV_TEST as unknown as NeuroTestDefinition,
+  TOM_TEST,
 ];
 
 /**
