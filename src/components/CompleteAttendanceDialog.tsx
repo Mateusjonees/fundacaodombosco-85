@@ -25,6 +25,7 @@ import NeuroTestTMTAdultoForm, { type TMTAdultoResults } from './NeuroTestTMTAdu
 import NeuroTestTrilhasPreEscolarForm from './NeuroTestTrilhasPreEscolarForm';
 import NeuroTestFASForm from './NeuroTestFASForm';
 import NeuroTestHaylingAdultoForm, { type HaylingResults } from './NeuroTestHaylingAdultoForm';
+import NeuroTestHaylingInfantilForm from './NeuroTestHaylingInfantilForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -32,6 +33,7 @@ import { type FVAResults } from '@/data/neuroTests/fva';
 import { type BNTBRResults } from '@/data/neuroTests/bntbr';
 import { type TrilhasPreEscolarTestResult } from '@/data/neuroTests/trilhasPreEscolar';
 import { type FASTestResult } from '@/data/neuroTests/fas';
+import { type HaylingInfantilResults } from '@/data/neuroTests/haylingInfantil';
 
 interface Schedule {
   id: string;
@@ -89,6 +91,7 @@ export default function CompleteAttendanceDialog({
   const [trilhasPreEscolarResults, setTrilhasPreEscolarResults] = useState<TrilhasPreEscolarTestResult | null>(null);
   const [fasResults, setFasResults] = useState<FASTestResult | null>(null);
   const [haylingAdultoResults, setHaylingAdultoResults] = useState<HaylingResults | null>(null);
+  const [haylingInfantilResults, setHaylingInfantilResults] = useState<HaylingInfantilResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -136,6 +139,7 @@ export default function CompleteAttendanceDialog({
       setTrilhasPreEscolarResults(null);
       setFasResults(null);
       setHaylingAdultoResults(null);
+      setHaylingInfantilResults(null);
     }
   }, [isOpen]);
 
@@ -171,6 +175,8 @@ export default function CompleteAttendanceDialog({
       setFasResults(null);
     } else if (testCode === 'HAYLING_ADULTO') {
       setHaylingAdultoResults(null);
+    } else if (testCode === 'HAYLING_INFANTIL') {
+      setHaylingInfantilResults(null);
     }
   };
 
@@ -224,6 +230,10 @@ export default function CompleteAttendanceDialog({
 
   const handleHaylingAdultoResultsChange = useCallback((results: HaylingResults | null) => {
     setHaylingAdultoResults(results);
+  }, []);
+
+  const handleHaylingInfantilResultsChange = useCallback((results: HaylingInfantilResults | null) => {
+    setHaylingInfantilResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -590,6 +600,42 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // Hayling Infantil
+        if (haylingInfantilResults && selectedTests.includes('HAYLING_INFANTIL')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'HAYLING_INFANTIL',
+            test_name: 'Teste Hayling - Versão Infantil',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify({
+              parteATempo: haylingInfantilResults.parteATempo.raw,
+              parteBTempo: haylingInfantilResults.parteBTempo.raw,
+              parteBErros: haylingInfantilResults.parteBErros.raw,
+              schoolType: haylingInfantilResults.schoolType
+            })),
+            calculated_scores: JSON.parse(JSON.stringify({
+              inibicaoBA: haylingInfantilResults.inibicaoBA.raw
+            })),
+            percentiles: JSON.parse(JSON.stringify({
+              parteATempo: haylingInfantilResults.parteATempo.percentile,
+              parteBTempo: haylingInfantilResults.parteBTempo.percentile,
+              parteBErros: haylingInfantilResults.parteBErros.percentile,
+              inibicaoBA: haylingInfantilResults.inibicaoBA.percentile
+            })),
+            classifications: JSON.parse(JSON.stringify({
+              parteATempo: haylingInfantilResults.parteATempo.classification,
+              parteBTempo: haylingInfantilResults.parteBTempo.classification,
+              parteBErros: haylingInfantilResults.parteBErros.classification,
+              inibicaoBA: haylingInfantilResults.inibicaoBA.classification
+            })),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Tipo de escola: ${haylingInfantilResults.schoolType === 'privada' ? 'Privada' : 'Pública'}`
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -820,6 +866,14 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleHaylingAdultoResultsChange}
                     onRemove={() => handleRemoveTest('HAYLING_ADULTO')}
+                  />
+                )}
+
+                {/* Formulário Hayling Infantil */}
+                {selectedTests.includes('HAYLING_INFANTIL') && (
+                  <NeuroTestHaylingInfantilForm
+                    patientAge={patientAge}
+                    onResultsChange={handleHaylingInfantilResultsChange}
                   />
                 )}
               </div>
