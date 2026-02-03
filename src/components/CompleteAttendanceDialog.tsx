@@ -31,6 +31,7 @@ import NeuroTestTOMForm from './NeuroTestTOMForm';
 import NeuroTestTaylorForm from './NeuroTestTaylorForm';
 import NeuroTestTRPPForm from './NeuroTestTRPPForm';
 import NeuroTestFPTInfantilForm from './NeuroTestFPTInfantilForm';
+import NeuroTestFPTAdultoForm from './NeuroTestFPTAdultoForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -44,6 +45,7 @@ import { type TOMTestResult } from '@/data/neuroTests/tom';
 import { type TaylorResults } from '@/data/neuroTests/taylor';
 import { type TRPPResults } from '@/data/neuroTests/trpp';
 import { type FPTInfantilResults } from '@/data/neuroTests/fptInfantil';
+import { type FPTAdultoResults } from '@/data/neuroTests/fptAdulto';
 
 interface Schedule {
   id: string;
@@ -107,6 +109,7 @@ export default function CompleteAttendanceDialog({
   const [taylorResults, setTaylorResults] = useState<TaylorResults | null>(null);
   const [trppResults, setTrppResults] = useState<TRPPResults | null>(null);
   const [fptInfantilResults, setFptInfantilResults] = useState<FPTInfantilResults | null>(null);
+  const [fptAdultoResults, setFptAdultoResults] = useState<FPTAdultoResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -160,6 +163,7 @@ export default function CompleteAttendanceDialog({
       setTaylorResults(null);
       setTrppResults(null);
       setFptInfantilResults(null);
+      setFptAdultoResults(null);
     }
   }, [isOpen]);
 
@@ -207,6 +211,8 @@ export default function CompleteAttendanceDialog({
       setTrppResults(null);
     } else if (testCode === 'FPT_INFANTIL') {
       setFptInfantilResults(null);
+    } else if (testCode === 'FPT_ADULTO') {
+      setFptAdultoResults(null);
     }
   };
 
@@ -284,6 +290,10 @@ export default function CompleteAttendanceDialog({
 
   const handleFptInfantilResultsChange = useCallback((results: FPTInfantilResults | null) => {
     setFptInfantilResults(results);
+  }, []);
+
+  const handleFptAdultoResultsChange = useCallback((results: FPTAdultoResults | null) => {
+    setFptAdultoResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -823,6 +833,30 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // FPT Adulto
+        if (fptAdultoResults && selectedTests.includes('FPT_ADULTO')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'FPT_ADULTO',
+            test_name: 'FPT - Five-Point Test (Versão Adulto)',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify({
+              desenhosUnicos: fptAdultoResults.rawScore,
+              ageGroup: fptAdultoResults.ageGroup
+            })),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: { percentil: fptAdultoResults.percentile },
+            classifications: JSON.parse(JSON.stringify({
+              desenhosUnicos: fptAdultoResults.classification
+            })),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Faixa etária: ${fptAdultoResults.ageGroup}`
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -1101,6 +1135,14 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestFPTInfantilForm
                     patientAge={patientAge}
                     onResultsChange={handleFptInfantilResultsChange}
+                  />
+                )}
+
+                {/* Formulário FPT Adulto */}
+                {selectedTests.includes('FPT_ADULTO') && (
+                  <NeuroTestFPTAdultoForm
+                    patientAge={patientAge}
+                    onResultsChange={handleFptAdultoResultsChange}
                   />
                 )}
               </div>
