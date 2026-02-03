@@ -25,6 +25,18 @@ export * from './trilhasPreEscolarStandardScores';
 export * from './fas';
 export * from './haylingAdulto';
 export * from './haylingInfantil';
+// TFV exports (avoiding conflicts with SchoolType and lookupPercentile)
+export { 
+  TFV_TEST, 
+  calculateTFVResults,
+  isAgeValidForTFV,
+  lookupTFVPercentile,
+  getClassificationFromPercentile as getTFVClassification
+} from './tfv';
+export type { 
+  TFVResults, 
+  TFVSchoolType
+} from './tfv';
 // TMT Adulto exports (avoiding conflicts with getAgeGroup)
 export { 
   TMT_ADULTO_TEST, 
@@ -57,6 +69,7 @@ import { TRILHAS_PRE_ESCOLAR_TEST } from './trilhasPreEscolar';
 import { FAS_TEST } from './fas';
 import { HAYLING_ADULTO_TEST } from './haylingAdulto';
 import { HAYLING_INFANTIL_TEST } from './haylingInfantil';
+import { TFV_TEST } from './tfv';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -73,7 +86,8 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   TRILHAS_PRE_ESCOLAR_TEST,
   FAS_TEST,
   HAYLING_ADULTO_TEST,
-  HAYLING_INFANTIL_TEST
+  HAYLING_INFANTIL_TEST,
+  TFV_TEST as unknown as NeuroTestDefinition,
 ];
 
 /**

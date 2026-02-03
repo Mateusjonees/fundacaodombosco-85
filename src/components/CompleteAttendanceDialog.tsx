@@ -26,6 +26,7 @@ import NeuroTestTrilhasPreEscolarForm from './NeuroTestTrilhasPreEscolarForm';
 import NeuroTestFASForm from './NeuroTestFASForm';
 import NeuroTestHaylingAdultoForm, { type HaylingResults } from './NeuroTestHaylingAdultoForm';
 import NeuroTestHaylingInfantilForm from './NeuroTestHaylingInfantilForm';
+import NeuroTestTFVForm from './NeuroTestTFVForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -34,6 +35,7 @@ import { type BNTBRResults } from '@/data/neuroTests/bntbr';
 import { type TrilhasPreEscolarTestResult } from '@/data/neuroTests/trilhasPreEscolar';
 import { type FASTestResult } from '@/data/neuroTests/fas';
 import { type HaylingInfantilResults } from '@/data/neuroTests/haylingInfantil';
+import { type TFVResults } from '@/data/neuroTests/tfv';
 
 interface Schedule {
   id: string;
@@ -92,6 +94,7 @@ export default function CompleteAttendanceDialog({
   const [fasResults, setFasResults] = useState<FASTestResult | null>(null);
   const [haylingAdultoResults, setHaylingAdultoResults] = useState<HaylingResults | null>(null);
   const [haylingInfantilResults, setHaylingInfantilResults] = useState<HaylingInfantilResults | null>(null);
+  const [tfvResults, setTfvResults] = useState<TFVResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -140,6 +143,7 @@ export default function CompleteAttendanceDialog({
       setFasResults(null);
       setHaylingAdultoResults(null);
       setHaylingInfantilResults(null);
+      setTfvResults(null);
     }
   }, [isOpen]);
 
@@ -177,6 +181,8 @@ export default function CompleteAttendanceDialog({
       setHaylingAdultoResults(null);
     } else if (testCode === 'HAYLING_INFANTIL') {
       setHaylingInfantilResults(null);
+    } else if (testCode === 'TFV') {
+      setTfvResults(null);
     }
   };
 
@@ -234,6 +240,10 @@ export default function CompleteAttendanceDialog({
 
   const handleHaylingInfantilResultsChange = useCallback((results: HaylingInfantilResults | null) => {
     setHaylingInfantilResults(results);
+  }, []);
+
+  const handleTfvResultsChange = useCallback((results: TFVResults | null) => {
+    setTfvResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -636,6 +646,38 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // TFV
+        if (tfvResults && selectedTests.includes('TFV')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TFV',
+            test_name: 'TFV - Tarefas de Fluência Verbal',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify({
+              fluenciaLivre: tfvResults.fluenciaLivre.raw,
+              fluenciaFonemica: tfvResults.fluenciaFonemica.raw,
+              fluenciaSemantica: tfvResults.fluenciaSemantica.raw,
+              schoolType: tfvResults.schoolType
+            })),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({
+              fluenciaLivre: tfvResults.fluenciaLivre.percentile,
+              fluenciaFonemica: tfvResults.fluenciaFonemica.percentile,
+              fluenciaSemantica: tfvResults.fluenciaSemantica.percentile
+            })),
+            classifications: JSON.parse(JSON.stringify({
+              fluenciaLivre: tfvResults.fluenciaLivre.classification,
+              fluenciaFonemica: tfvResults.fluenciaFonemica.classification,
+              fluenciaSemantica: tfvResults.fluenciaSemantica.classification
+            })),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Tipo de escola: ${tfvResults.schoolType === 'privada' ? 'Privada' : 'Pública'}`
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -874,6 +916,14 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestHaylingInfantilForm
                     patientAge={patientAge}
                     onResultsChange={handleHaylingInfantilResultsChange}
+                  />
+                )}
+
+                {/* Formulário TFV */}
+                {selectedTests.includes('TFV') && (
+                  <NeuroTestTFVForm
+                    patientAge={patientAge}
+                    onResultsChange={handleTfvResultsChange}
                   />
                 )}
               </div>
