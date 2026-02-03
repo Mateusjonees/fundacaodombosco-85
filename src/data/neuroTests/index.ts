@@ -27,6 +27,7 @@ export * from './haylingAdulto';
 export * from './haylingInfantil';
 export * from './tom';
 export * from './taylor';
+export * from './trpp';
 // TFV exports (avoiding conflicts with SchoolType and lookupPercentile)
 export { 
   TFV_TEST, 
@@ -74,6 +75,7 @@ import { HAYLING_INFANTIL_TEST } from './haylingInfantil';
 import { TFV_TEST } from './tfv';
 import { TOM_TEST } from './tom';
 import { TAYLOR_TEST } from './taylor';
+import { TRPP_TEST } from './trpp';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -94,6 +96,7 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   TFV_TEST as unknown as NeuroTestDefinition,
   TOM_TEST,
   TAYLOR_TEST,
+  TRPP_TEST,
 ];
 
 /**
