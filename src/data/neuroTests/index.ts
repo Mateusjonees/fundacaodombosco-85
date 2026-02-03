@@ -28,6 +28,19 @@ export * from './haylingInfantil';
 export * from './tom';
 export * from './taylor';
 export * from './trpp';
+// FPT Infantil exports
+export {
+  FPT_INFANTIL_TEST,
+  SCHOOL_YEAR_OPTIONS,
+  calculateFPTInfantilResults,
+  isAgeValidForFPTInfantil,
+  lookupFPTInfantilPercentile,
+  getFPTInfantilClassification
+} from './fptInfantil';
+export type {
+  SchoolYear as FPTSchoolYear,
+  FPTInfantilResults
+} from './fptInfantil';
 // TFV exports (avoiding conflicts with SchoolType and lookupPercentile)
 export { 
   TFV_TEST, 
@@ -76,6 +89,7 @@ import { TFV_TEST } from './tfv';
 import { TOM_TEST } from './tom';
 import { TAYLOR_TEST } from './taylor';
 import { TRPP_TEST } from './trpp';
+import { FPT_INFANTIL_TEST } from './fptInfantil';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -97,6 +111,7 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   TOM_TEST,
   TAYLOR_TEST,
   TRPP_TEST,
+  FPT_INFANTIL_TEST,
 ];
 
 /**
