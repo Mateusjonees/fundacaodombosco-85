@@ -28,6 +28,7 @@ import NeuroTestHaylingAdultoForm, { type HaylingResults } from './NeuroTestHayl
 import NeuroTestHaylingInfantilForm from './NeuroTestHaylingInfantilForm';
 import NeuroTestTFVForm from './NeuroTestTFVForm';
 import NeuroTestTOMForm from './NeuroTestTOMForm';
+import NeuroTestTaylorForm from './NeuroTestTaylorForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -38,6 +39,7 @@ import { type FASTestResult } from '@/data/neuroTests/fas';
 import { type HaylingInfantilResults } from '@/data/neuroTests/haylingInfantil';
 import { type TFVResults } from '@/data/neuroTests/tfv';
 import { type TOMTestResult } from '@/data/neuroTests/tom';
+import { type TaylorResults } from '@/data/neuroTests/taylor';
 
 interface Schedule {
   id: string;
@@ -98,6 +100,7 @@ export default function CompleteAttendanceDialog({
   const [haylingInfantilResults, setHaylingInfantilResults] = useState<HaylingInfantilResults | null>(null);
   const [tfvResults, setTfvResults] = useState<TFVResults | null>(null);
   const [tomResults, setTomResults] = useState<TOMTestResult | null>(null);
+  const [taylorResults, setTaylorResults] = useState<TaylorResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -148,6 +151,7 @@ export default function CompleteAttendanceDialog({
       setHaylingInfantilResults(null);
       setTfvResults(null);
       setTomResults(null);
+      setTaylorResults(null);
     }
   }, [isOpen]);
 
@@ -189,6 +193,8 @@ export default function CompleteAttendanceDialog({
       setTfvResults(null);
     } else if (testCode === 'TOM') {
       setTomResults(null);
+    } else if (testCode === 'TAYLOR') {
+      setTaylorResults(null);
     }
   };
 
@@ -254,6 +260,10 @@ export default function CompleteAttendanceDialog({
 
   const handleTomResultsChange = useCallback((results: TOMTestResult | null) => {
     setTomResults(results);
+  }, []);
+
+  const handleTaylorResultsChange = useCallback((results: TaylorResults | null) => {
+    setTaylorResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -711,6 +721,37 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // Taylor
+        if (taylorResults && selectedTests.includes('TAYLOR')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TAYLOR',
+            test_name: 'Taylor - Figura Complexa Modificada de Taylor',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify({
+              copia: taylorResults.rawScores.copia,
+              reproducaoMemoria: taylorResults.rawScores.reproducaoMemoria
+            })),
+            calculated_scores: JSON.parse(JSON.stringify({
+              zScoreCopia: taylorResults.zScores.copia,
+              zScoreReproducao: taylorResults.zScores.reproducaoMemoria
+            })),
+            percentiles: JSON.parse(JSON.stringify({
+              copia: taylorResults.percentiles.copia,
+              reproducaoMemoria: taylorResults.percentiles.reproducaoMemoria
+            })),
+            classifications: JSON.parse(JSON.stringify({
+              copia: taylorResults.classifications.copia,
+              reproducaoMemoria: taylorResults.classifications.reproducaoMemoria
+            })),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Grupo etário: ${taylorResults.ageGroup}`
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -965,6 +1006,14 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestTOMForm
                     patientAge={patientAge}
                     onResultsChange={handleTomResultsChange}
+                  />
+                )}
+
+                {/* Formulário Taylor */}
+                {selectedTests.includes('TAYLOR') && (
+                  <NeuroTestTaylorForm
+                    patientAge={patientAge}
+                    onResultsChange={handleTaylorResultsChange}
                   />
                 )}
               </div>
