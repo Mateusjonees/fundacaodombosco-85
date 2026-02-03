@@ -29,6 +29,7 @@ import NeuroTestHaylingInfantilForm from './NeuroTestHaylingInfantilForm';
 import NeuroTestTFVForm from './NeuroTestTFVForm';
 import NeuroTestTOMForm from './NeuroTestTOMForm';
 import NeuroTestTaylorForm from './NeuroTestTaylorForm';
+import NeuroTestTRPPForm from './NeuroTestTRPPForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -40,6 +41,7 @@ import { type HaylingInfantilResults } from '@/data/neuroTests/haylingInfantil';
 import { type TFVResults } from '@/data/neuroTests/tfv';
 import { type TOMTestResult } from '@/data/neuroTests/tom';
 import { type TaylorResults } from '@/data/neuroTests/taylor';
+import { type TRPPResults } from '@/data/neuroTests/trpp';
 
 interface Schedule {
   id: string;
@@ -101,6 +103,7 @@ export default function CompleteAttendanceDialog({
   const [tfvResults, setTfvResults] = useState<TFVResults | null>(null);
   const [tomResults, setTomResults] = useState<TOMTestResult | null>(null);
   const [taylorResults, setTaylorResults] = useState<TaylorResults | null>(null);
+  const [trppResults, setTrppResults] = useState<TRPPResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -152,6 +155,7 @@ export default function CompleteAttendanceDialog({
       setTfvResults(null);
       setTomResults(null);
       setTaylorResults(null);
+      setTrppResults(null);
     }
   }, [isOpen]);
 
@@ -195,6 +199,8 @@ export default function CompleteAttendanceDialog({
       setTomResults(null);
     } else if (testCode === 'TAYLOR') {
       setTaylorResults(null);
+    } else if (testCode === 'TRPP') {
+      setTrppResults(null);
     }
   };
 
@@ -264,6 +270,10 @@ export default function CompleteAttendanceDialog({
 
   const handleTaylorResultsChange = useCallback((results: TaylorResults | null) => {
     setTaylorResults(results);
+  }, []);
+
+  const handleTrppResultsChange = useCallback((results: TRPPResults | null) => {
+    setTrppResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -752,6 +762,33 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // TRPP
+        if (trppResults && selectedTests.includes('TRPP')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TRPP',
+            test_name: 'TRPP - Teste de Repetição de Palavras e Pseudopalavras',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify({
+              palavras: trppResults.rawScores.palavras,
+              pseudopalavras: trppResults.rawScores.pseudopalavras
+            })),
+            calculated_scores: JSON.parse(JSON.stringify({
+              total: trppResults.calculatedScores.total,
+              escorePadrao: trppResults.calculatedScores.escorePadrao
+            })),
+            percentiles: {},
+            classifications: JSON.parse(JSON.stringify({
+              total: trppResults.classifications.total
+            })),
+            applied_by: user.id,
+            applied_at: now,
+            notes: null
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -1014,6 +1051,14 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestTaylorForm
                     patientAge={patientAge}
                     onResultsChange={handleTaylorResultsChange}
+                  />
+                )}
+
+                {/* Formulário TRPP */}
+                {selectedTests.includes('TRPP') && (
+                  <NeuroTestTRPPForm
+                    patientAge={patientAge}
+                    onResultsChange={handleTrppResultsChange}
                   />
                 )}
               </div>
