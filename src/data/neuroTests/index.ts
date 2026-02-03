@@ -23,6 +23,7 @@ export * from './trilhasStandardScores';
 export * from './trilhasPreEscolar';
 export * from './trilhasPreEscolarStandardScores';
 export * from './fas';
+export * from './haylingAdulto';
 // TMT Adulto exports (avoiding conflicts with getAgeGroup)
 export { 
   TMT_ADULTO_TEST, 
@@ -53,6 +54,7 @@ import { TRILHAS_TEST } from './trilhas';
 import { TMT_ADULTO_TEST } from './tmtAdulto';
 import { TRILHAS_PRE_ESCOLAR_TEST } from './trilhasPreEscolar';
 import { FAS_TEST } from './fas';
+import { HAYLING_ADULTO_TEST } from './haylingAdulto';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -67,7 +69,8 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   TRILHAS_TEST,
   TMT_ADULTO_TEST,
   TRILHAS_PRE_ESCOLAR_TEST,
-  FAS_TEST
+  FAS_TEST,
+  HAYLING_ADULTO_TEST
 ];
 
 /**
