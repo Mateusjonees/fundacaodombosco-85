@@ -41,6 +41,20 @@ export type {
   SchoolYear as FPTSchoolYear,
   FPTInfantilResults
 } from './fptInfantil';
+// FPT Adulto exports
+export {
+  FPT_ADULTO_TEST,
+  AGE_GROUP_OPTIONS as FPT_ADULTO_AGE_GROUP_OPTIONS,
+  calculateFPTAdultoResults,
+  isAgeValidForFPTAdulto,
+  getAgeGroupForFPTAdulto,
+  lookupFPTAdultoPercentile,
+  getFPTAdultoClassification
+} from './fptAdulto';
+export type {
+  FPTAdultoAgeGroup,
+  FPTAdultoResults
+} from './fptAdulto';
 // TFV exports (avoiding conflicts with SchoolType and lookupPercentile)
 export { 
   TFV_TEST, 
@@ -90,6 +104,7 @@ import { TOM_TEST } from './tom';
 import { TAYLOR_TEST } from './taylor';
 import { TRPP_TEST } from './trpp';
 import { FPT_INFANTIL_TEST } from './fptInfantil';
+import { FPT_ADULTO_TEST } from './fptAdulto';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -112,6 +127,7 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   TAYLOR_TEST,
   TRPP_TEST,
   FPT_INFANTIL_TEST,
+  FPT_ADULTO_TEST,
 ];
 
 /**
