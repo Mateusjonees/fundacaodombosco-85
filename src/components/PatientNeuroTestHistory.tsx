@@ -31,6 +31,7 @@ interface NeuroTestResult {
 interface PatientNeuroTestHistoryProps {
   clientId: string;
   clientName: string;
+  clientBirthDate?: string;
 }
 
 interface TestConfig {
@@ -276,7 +277,8 @@ const renderBPA2Calculations = (calc: Record<string, number>) => {
 
 export default function PatientNeuroTestHistory({
   clientId,
-  clientName
+  clientName,
+  clientBirthDate
 }: PatientNeuroTestHistoryProps) {
   const { toast } = useToast();
   const [tests, setTests] = useState<NeuroTestResult[]>([]);
@@ -512,10 +514,29 @@ export default function PatientNeuroTestHistory({
     );
   }
 
+  // Calcular idade do paciente
+  const calculateAge = (birthDate?: string): number => {
+    if (!birthDate) return 0;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const clientAge = calculateAge(clientBirthDate);
+
   return (
     <div className="space-y-6">
       {/* Calculadora de Scores */}
-      <NeuroScoreCalculator />
+      <NeuroScoreCalculator 
+        clientId={clientId} 
+        clientAge={clientAge} 
+        onSaved={fetchTests}
+      />
       
       {/* Histórico de Testes */}
       <Card>

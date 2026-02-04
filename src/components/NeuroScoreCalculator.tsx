@@ -6,8 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calculator, BarChart3, TrendingUp, ClipboardCopy, RotateCcw } from 'lucide-react';
+import { Calculator, BarChart3, TrendingUp, ClipboardCopy, RotateCcw, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface NeuroScoreCalculatorProps {
+  clientId?: string;
+  clientAge?: number;
+  onSaved?: () => void;
+}
 
 /**
  * Calculadora de Percentis e Z-Scores para testes neuropsicológicos
@@ -76,8 +83,9 @@ const getClassificationVariant = (classification: string): 'default' | 'secondar
   return 'secondary';
 };
 
-export default function NeuroScoreCalculator() {
+export default function NeuroScoreCalculator({ clientId, clientAge, onSaved }: NeuroScoreCalculatorProps) {
   const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
   
   // Estado para Percentil
   const [selectedPercentileTest, setSelectedPercentileTest] = useState('');
@@ -176,6 +184,92 @@ export default function NeuroScoreCalculator() {
     setMean('');
     setStandardDeviation('');
     setZScoreResult(null);
+  };
+
+  // Salvar resultado no banco de dados
+  const saveResult = async (type: 'percentile' | 'zscore') => {
+    if (!clientId) {
+      toast({ title: 'Erro', description: 'ID do paciente não encontrado.', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let testCode: string;
+      let testName: string;
+      let rawScoresData: Record<string, number | string>;
+      let calculatedScoresData: Record<string, number | string>;
+      let percentilesData: Record<string, number | string>;
+      let classificationsData: Record<string, string>;
+      let notes: string;
+
+      if (type === 'percentile' && percentileResult) {
+        const test = PERCENTILE_TESTS.find(t => t.id === selectedPercentileTest);
+        testCode = `CALC_${selectedPercentileTest}`;
+        testName = `${test?.name || selectedPercentileTest} (Cálculo Manual)`;
+        
+        rawScoresData = { valor_informado: percentileResult.percentile };
+        calculatedScoresData = { percentil: percentileResult.percentile };
+        percentilesData = { resultado: percentileResult.percentile };
+        classificationsData = { resultado: percentileResult.classification };
+        notes = `Cálculo manual de percentil. Tipo: ${percentileType === 'exact' ? 'Exato' : 'Faixa'}. Valor: ${percentileResult.percentile}`;
+      } else if (type === 'zscore' && zScoreResult) {
+        const test = ZSCORE_TESTS.find(t => t.id === selectedZScoreTest);
+        testCode = `CALC_${selectedZScoreTest}`;
+        testName = `${test?.name || selectedZScoreTest} (Cálculo Manual)`;
+        
+        rawScoresData = { 
+          pontuacao: parseFloat(rawScore), 
+          media: parseFloat(mean), 
+          desvio_padrao: parseFloat(standardDeviation) 
+        };
+        calculatedScoresData = { zScore: zScoreResult.zScore };
+        percentilesData = { zScore: zScoreResult.zScore };
+        classificationsData = { resultado: zScoreResult.classification };
+        notes = `Cálculo manual de Z-Score. Fórmula: (${rawScore} - ${mean}) / ${standardDeviation} = ${zScoreResult.zScore.toFixed(2)}`;
+      } else {
+        toast({ title: 'Erro', description: 'Calcule o resultado antes de salvar.', variant: 'destructive' });
+        setSaving(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('neuro_test_results')
+        .insert({
+          client_id: clientId,
+          test_code: testCode,
+          test_name: testName,
+          patient_age: clientAge || 0,
+          raw_scores: rawScoresData,
+          calculated_scores: calculatedScoresData,
+          percentiles: percentilesData,
+          classifications: classificationsData,
+          applied_by: user?.id,
+          applied_at: new Date().toISOString(),
+          notes: notes
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'Salvo!', description: 'Resultado registrado no histórico do paciente.' });
+      
+      // Limpar após salvar
+      if (type === 'percentile') {
+        resetPercentile();
+      } else {
+        resetZScore();
+      }
+      
+      // Callback para atualizar a lista
+      onSaved?.();
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast({ title: 'Erro', description: 'Falha ao salvar o resultado.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -284,10 +378,23 @@ export default function NeuroScoreCalculator() {
                 <div className="p-4 bg-primary/5 border rounded-lg space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Resultado:</span>
-                    <Button variant="ghost" size="sm" onClick={() => copyResult('percentile')}>
-                      <ClipboardCopy className="h-4 w-4 mr-1" />
-                      Copiar
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => copyResult('percentile')}>
+                        <ClipboardCopy className="h-4 w-4 mr-1" />
+                        Copiar
+                      </Button>
+                      {clientId && (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={() => saveResult('percentile')}
+                          disabled={saving}
+                        >
+                          <Save className="h-4 w-4 mr-1" />
+                          {saving ? 'Salvando...' : 'Salvar'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
@@ -383,10 +490,23 @@ export default function NeuroScoreCalculator() {
                 <div className="p-4 bg-primary/5 border rounded-lg space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Resultado:</span>
-                    <Button variant="ghost" size="sm" onClick={() => copyResult('zscore')}>
-                      <ClipboardCopy className="h-4 w-4 mr-1" />
-                      Copiar
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => copyResult('zscore')}>
+                        <ClipboardCopy className="h-4 w-4 mr-1" />
+                        Copiar
+                      </Button>
+                      {clientId && (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={() => saveResult('zscore')}
+                          disabled={saving}
+                        >
+                          <Save className="h-4 w-4 mr-1" />
+                          {saving ? 'Salvando...' : 'Salvar'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
