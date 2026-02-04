@@ -1700,6 +1700,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
                       <PatientNeuroTestHistory
                         clientId={client.id}
                         clientName={client.name}
+                        clientBirthDate={client.birth_date || undefined}
                       />
                     </TabsContent>
                   )}
