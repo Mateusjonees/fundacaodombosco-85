@@ -9,6 +9,7 @@ import { Brain, Calendar, ChevronDown, ClipboardCopy, Calculator, FileInput, Use
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
+import NeuroScoreCalculator from './NeuroScoreCalculator';
 
 interface NeuroTestResult {
   id: string;
@@ -512,15 +513,20 @@ export default function PatientNeuroTestHistory({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <Brain className="h-5 w-5 text-primary" />
-          Histórico de Testes Neuropsicológicos
-          <Badge variant="secondary" className="ml-auto">{tests.length} teste(s)</Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-6">
+      {/* Calculadora de Scores */}
+      <NeuroScoreCalculator />
+      
+      {/* Histórico de Testes */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
+            Histórico de Testes Neuropsicológicos
+            <Badge variant="secondary" className="ml-auto">{tests.length} teste(s)</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
         <Accordion type="single" collapsible className="w-full">
           {tests.map((test) => {
             const config = getTestConfig(test.test_code);
@@ -652,6 +658,7 @@ export default function PatientNeuroTestHistory({
         </Accordion>
       </CardContent>
     </Card>
+    </div>
   );
 }
 
