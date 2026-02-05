@@ -106,24 +106,6 @@ import { TRPP_TEST } from './trpp';
 import { FPT_INFANTIL_TEST } from './fptInfantil';
 import { FPT_ADULTO_TEST } from './fptAdulto';
 
-// Definições de testes de cálculo manual (percentil e z-score)
-const MANUAL_CALC_TESTS: NeuroTestDefinition[] = [
-  // Testes baseados em Percentil
-  { code: 'CALC_FVA', name: 'FVA (Cálculo Manual)', fullName: 'Fluência Verbal Animais - Cálculo Manual', description: 'Cálculo manual de percentil', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_TFV', name: 'TFV (Cálculo Manual)', fullName: 'Teste de Fluência Verbal - Cálculo Manual', description: 'Cálculo manual de percentil', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_TMT', name: 'TMT (Cálculo Manual)', fullName: 'Trail Making Test - Cálculo Manual', description: 'Cálculo manual de percentil', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_FPT_ADULTO', name: 'FPT Adulto (Cálculo Manual)', fullName: 'Five-Point Test Adulto - Cálculo Manual', description: 'Cálculo manual de percentil', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_HAYLING_INFANTIL', name: 'Hayling Infantil (Cálculo Manual)', fullName: 'Hayling Infantil - Cálculo Manual', description: 'Cálculo manual de percentil', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  // Testes baseados em Z-Score
-  { code: 'CALC_BNTBR', name: 'BNT-BR (Cálculo Manual)', fullName: 'Boston Naming Test - Cálculo Manual', description: 'Cálculo manual de Z-Score', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_SPAN_DIGITOS', name: 'Span de Dígitos (Cálculo Manual)', fullName: 'Span de Dígitos - Cálculo Manual', description: 'Cálculo manual de Z-Score', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_CUBOS_CORSI', name: 'Cubos de Corsi (Cálculo Manual)', fullName: 'Cubos de Corsi - Cálculo Manual', description: 'Cálculo manual de Z-Score', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_HAYLING_ADULTO', name: 'Hayling Adulto (Cálculo Manual)', fullName: 'Hayling Adulto - Cálculo Manual', description: 'Cálculo manual de Z-Score', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_TAYLOR', name: 'Taylor (Cálculo Manual)', fullName: 'Figura Complexa de Taylor - Cálculo Manual', description: 'Cálculo manual de Z-Score', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_TOM', name: 'TOM (Cálculo Manual)', fullName: 'Teoria da Mente - Cálculo Manual', description: 'Cálculo manual de Z-Score', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-  { code: 'CALC_FAS', name: 'FAS (Cálculo Manual)', fullName: 'Fluência Fonêmica FAS - Cálculo Manual', description: 'Cálculo manual de Z-Score', minAge: 0, maxAge: 99, subtests: [], calculatedScores: [] },
-];
-
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   BPA2_TEST,
@@ -146,7 +128,6 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   TRPP_TEST,
   FPT_INFANTIL_TEST,
   FPT_ADULTO_TEST,
-  ...MANUAL_CALC_TESTS,
 ];
 
 /**
@@ -163,11 +144,4 @@ export const getTestsForAge = (age: number): NeuroTestDefinition[] => {
   return AVAILABLE_NEURO_TESTS.filter(
     test => age >= test.minAge && age <= test.maxAge
   );
-};
-
-/**
- * Verifica se o teste é de cálculo manual
- */
-export const isManualCalcTest = (testCode: string): boolean => {
-  return testCode.startsWith('CALC_');
 };

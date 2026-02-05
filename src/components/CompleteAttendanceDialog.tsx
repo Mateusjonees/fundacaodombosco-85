@@ -32,8 +32,6 @@ import NeuroTestTaylorForm from './NeuroTestTaylorForm';
 import NeuroTestTRPPForm from './NeuroTestTRPPForm';
 import NeuroTestFPTInfantilForm from './NeuroTestFPTInfantilForm';
 import NeuroTestFPTAdultoForm from './NeuroTestFPTAdultoForm';
-import NeuroTestManualCalcForm, { type ManualCalcResults } from './NeuroTestManualCalcForm';
-import { isManualCalcTest } from '@/data/neuroTests';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -112,7 +110,6 @@ export default function CompleteAttendanceDialog({
   const [trppResults, setTrppResults] = useState<TRPPResults | null>(null);
   const [fptInfantilResults, setFptInfantilResults] = useState<FPTInfantilResults | null>(null);
   const [fptAdultoResults, setFptAdultoResults] = useState<FPTAdultoResults | null>(null);
-  const [manualCalcResults, setManualCalcResults] = useState<Record<string, ManualCalcResults | null>>({});
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
 
@@ -167,7 +164,6 @@ export default function CompleteAttendanceDialog({
       setTrppResults(null);
       setFptInfantilResults(null);
       setFptAdultoResults(null);
-      setManualCalcResults({});
     }
   }, [isOpen]);
 
@@ -217,18 +213,8 @@ export default function CompleteAttendanceDialog({
       setFptInfantilResults(null);
     } else if (testCode === 'FPT_ADULTO') {
       setFptAdultoResults(null);
-    } else if (isManualCalcTest(testCode)) {
-      setManualCalcResults(prev => {
-        const newState = { ...prev };
-        delete newState[testCode];
-        return newState;
-      });
     }
   };
-
-  const handleManualCalcResultsChange = useCallback((testCode: string) => (results: ManualCalcResults | null) => {
-    setManualCalcResults(prev => ({ ...prev, [testCode]: results }));
-  }, []);
 
   const handleBpa2ResultsChange = useCallback((results: BPA2Results) => {
     setBpa2Results(results);
@@ -871,35 +857,6 @@ export default function CompleteAttendanceDialog({
           });
         }
 
-        // Testes de cálculo manual (Percentil e Z-Score)
-        Object.entries(manualCalcResults).forEach(([testCode, results]) => {
-          if (results && selectedTests.includes(testCode)) {
-            testsToSave.push({
-              client_id: schedule.client_id,
-              schedule_id: schedule.id,
-              attendance_report_id: attendanceReport?.id || null,
-              test_code: testCode,
-              test_name: results.testName,
-              patient_age: patientAge,
-              raw_scores: JSON.parse(JSON.stringify(results.rawInputs)),
-              calculated_scores: JSON.parse(JSON.stringify({
-                [results.type === 'percentile' ? 'percentil' : 'zScore']: results.result
-              })),
-              percentiles: results.type === 'percentile' 
-                ? { resultado: results.result } 
-                : { zScore: results.result },
-              classifications: JSON.parse(JSON.stringify({
-                resultado: results.classification
-              })),
-              applied_by: user.id,
-              applied_at: now,
-              notes: results.type === 'percentile' 
-                ? `Cálculo manual de percentil: ${results.result}`
-                : `Cálculo manual de Z-Score: ${results.result}`
-            });
-          }
-        });
-
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -1188,17 +1145,6 @@ export default function CompleteAttendanceDialog({
                     onResultsChange={handleFptAdultoResultsChange}
                   />
                 )}
-
-                {/* Formulários de Cálculo Manual (Percentil e Z-Score) */}
-                {selectedTests.filter(isManualCalcTest).map(testCode => (
-                  <NeuroTestManualCalcForm
-                    key={testCode}
-                    testCode={testCode}
-                    testName={testCode}
-                    onResultsChange={handleManualCalcResultsChange(testCode)}
-                    onRemove={() => handleRemoveTest(testCode)}
-                  />
-                ))}
               </div>
             )}
 
