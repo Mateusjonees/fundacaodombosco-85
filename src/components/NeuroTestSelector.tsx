@@ -107,7 +107,10 @@ export default function NeuroTestSelector({
                 <button
                   key={test.code}
                   type="button"
-                  onClick={() => onSelectTest(test.code)}
+                  onClick={() => {
+                    onSelectTest(test.code);
+                    setSearchTerm(''); // Limpa a busca após selecionar
+                  }}
                   className="w-full flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors text-left"
                 >
                   <div>
