@@ -499,7 +499,7 @@ export function AppSidebar() {
               </div>
             </div> : <div className="relative flex justify-center">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-xl blur-sm" />
-              <img src={logo} alt="FDB" className="relative h-9 w-9 object-contain rounded-lg" loading="lazy" />
+              <img alt="FDB" className="relative h-9 w-9 object-contain rounded-lg" loading="lazy" src="/lovable-uploads/12d10c14-c39b-4936-8278-6b4465ada7b2.jpg" />
             </div>}
         </div>
 
