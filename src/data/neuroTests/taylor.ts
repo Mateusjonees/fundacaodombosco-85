@@ -103,7 +103,8 @@ const zScoreToPercentile = (z: number): number => {
   const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-z * z);
 
   const percentile = 0.5 * (1.0 + sign * y) * 100;
-  return Math.round(percentile * 100) / 100;
+  // Arredonda para número inteiro (91.49 → 91, 91.55 → 92)
+  return Math.round(percentile);
 };
 
 /**
