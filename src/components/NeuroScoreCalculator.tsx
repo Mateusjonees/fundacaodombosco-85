@@ -75,6 +75,31 @@ const getZScoreClassification = (zScore: number): string => {
   return 'Médio';
 };
 
+/**
+ * Converte Z-score para percentil usando a fórmula NORM.S.DIST do Excel
+ * Baseado na função de distribuição cumulativa da normal padrão
+ */
+const zScoreToPercentile = (z: number): number => {
+  // Aproximação da função de erro (erf) - Abramowitz and Stegun
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+
+  const sign = z < 0 ? -1 : 1;
+  const absZ = Math.abs(z) / Math.sqrt(2);
+
+  const t = 1.0 / (1.0 + p * absZ);
+  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absZ * absZ);
+
+  const cdf = 0.5 * (1.0 + sign * y);
+  
+  // Retorna o percentil arredondado (equivalente a NORM.S.DIST(z)*100)
+  return Math.round(cdf * 100);
+};
+
 // Badge variant por classificação
 const getClassificationVariant = (classification: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
   if (classification.includes('Inferior') && !classification.includes('Média')) return 'destructive';
@@ -99,7 +124,7 @@ export default function NeuroScoreCalculator({ clientId, clientAge, onSaved }: N
   const [rawScore, setRawScore] = useState('');
   const [mean, setMean] = useState('');
   const [standardDeviation, setStandardDeviation] = useState('');
-  const [zScoreResult, setZScoreResult] = useState<{ zScore: number; classification: string } | null>(null);
+  const [zScoreResult, setZScoreResult] = useState<{ zScore: number; percentile: number; classification: string } | null>(null);
 
   // Calcular percentil
   const calculatePercentile = () => {
@@ -147,9 +172,10 @@ export default function NeuroScoreCalculator({ clientId, clientAge, onSaved }: N
     }
     
     const zScore = (score - m) / sd;
+    const percentile = zScoreToPercentile(zScore);
     const classification = getZScoreClassification(zScore);
     
-    setZScoreResult({ zScore: Math.round(zScore * 100) / 100, classification });
+    setZScoreResult({ zScore: Math.round(zScore * 100) / 100, percentile, classification });
   };
 
   // Copiar resultado
@@ -160,7 +186,7 @@ export default function NeuroScoreCalculator({ clientId, clientAge, onSaved }: N
       text = `${testName}: Percentil ${percentileResult.percentile}, Classificação ${percentileResult.classification}`;
     } else if (type === 'zscore' && zScoreResult) {
       const testName = ZSCORE_TESTS.find(t => t.id === selectedZScoreTest)?.name || selectedZScoreTest;
-      text = `${testName}: Z-Score ${zScoreResult.zScore.toFixed(2)}, Classificação ${zScoreResult.classification}`;
+      text = `${testName}: Z-Score ${zScoreResult.zScore.toFixed(2)}, Percentil ${zScoreResult.percentile}, Classificação ${zScoreResult.classification}`;
     }
     
     if (text) {
@@ -225,10 +251,10 @@ export default function NeuroScoreCalculator({ clientId, clientAge, onSaved }: N
           media: parseFloat(mean), 
           desvio_padrao: parseFloat(standardDeviation) 
         };
-        calculatedScoresData = { zScore: zScoreResult.zScore };
-        percentilesData = { zScore: zScoreResult.zScore };
+        calculatedScoresData = { zScore: zScoreResult.zScore, percentil: zScoreResult.percentile };
+        percentilesData = { resultado: zScoreResult.percentile };
         classificationsData = { resultado: zScoreResult.classification };
-        notes = `Cálculo manual de Z-Score. Fórmula: (${rawScore} - ${mean}) / ${standardDeviation} = ${zScoreResult.zScore.toFixed(2)}`;
+        notes = `Cálculo manual de Z-Score. Fórmula: (${rawScore} - ${mean}) / ${standardDeviation} = ${zScoreResult.zScore.toFixed(2)} → Percentil ${zScoreResult.percentile}`;
       } else {
         toast({ title: 'Erro', description: 'Calcule o resultado antes de salvar.', variant: 'destructive' });
         setSaving(false);
@@ -508,10 +534,14 @@ export default function NeuroScoreCalculator({ clientId, clientAge, onSaved }: N
                       )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground mb-1">Z-Score</p>
                       <p className="text-2xl font-bold">{zScoreResult.zScore.toFixed(2)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Percentil</p>
+                      <p className="text-2xl font-bold text-primary">{zScoreResult.percentile}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground mb-1">Classificação</p>
@@ -521,7 +551,7 @@ export default function NeuroScoreCalculator({ clientId, clientAge, onSaved }: N
                     </div>
                   </div>
                   <div className="text-center text-xs text-muted-foreground">
-                    Fórmula: ({rawScore} - {mean}) / {standardDeviation} = {zScoreResult.zScore.toFixed(2)}
+                    Fórmula: ({rawScore} - {mean}) / {standardDeviation} = {zScoreResult.zScore.toFixed(2)} → P{zScoreResult.percentile}
                   </div>
                 </div>
               )}
