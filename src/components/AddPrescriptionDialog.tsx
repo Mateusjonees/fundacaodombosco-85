@@ -59,19 +59,19 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
 
   const uploadFile = async (file: File): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${clientId}/${Date.now()}.${fileExt}`;
-    const filePath = `prescriptions/${fileName}`;
+    const sanitizedName = file.name.replace(/[{}[\]<>\s]/g, '_');
+    const fileName = `${clientId}/${Date.now()}_${sanitizedName}`;
 
     const { error } = await supabase.storage
-      .from('client-documents')
-      .upload(filePath, file);
+      .from('prescriptions')
+      .upload(fileName, file);
 
     if (error) {
       console.error('Error uploading file:', error);
       return null;
     }
 
-    return filePath;
+    return fileName;
   };
 
   const handleSubmit = async () => {
@@ -139,30 +139,33 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2.5 text-lg">
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Pill className="h-5 w-5 text-primary" />
+            </div>
             Nova Receita
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-5 py-2">
           {/* Data e Tipo de Atendimento */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="prescription-date">Data da Prescrição</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="prescription-date" className="text-sm font-medium">Data da Prescrição</Label>
               <Input
                 id="prescription-date"
                 type="date"
                 value={prescriptionDate}
                 onChange={(e) => setPrescriptionDate(e.target.value)}
+                className="h-11 rounded-xl"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="service-type">Tipo de Atendimento</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="service-type" className="text-sm font-medium">Tipo de Atendimento</Label>
               <Select value={serviceType} onValueChange={(v: 'sus' | 'private') => setServiceType(v)}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -173,70 +176,67 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
             </div>
           </div>
 
-          {/* Caixa única de Receita */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Receita
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder="Escreva aqui o conteúdo da receita: medicamentos, dosagens, orientações, etc..."
-                value={prescriptionText}
-                onChange={(e) => setPrescriptionText(e.target.value)}
-                rows={10}
-                className="resize-none"
-              />
+          {/* Caixa de Receita */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              Conteúdo da Receita
+            </Label>
+            <Textarea
+              placeholder="Escreva aqui o conteúdo da receita: medicamentos, dosagens, orientações, etc..."
+              value={prescriptionText}
+              onChange={(e) => setPrescriptionText(e.target.value)}
+              rows={8}
+              className="resize-none rounded-xl border-border/60 focus:border-primary/50"
+            />
+          </div>
 
-              {/* Upload de arquivo */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Ou anexe um arquivo</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
+          {/* Upload de arquivo */}
+          <div className="space-y-3 p-4 bg-muted/30 rounded-xl border border-dashed border-border/60">
+            <Label className="text-sm font-medium text-muted-foreground">Ou anexe um arquivo</Label>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="gap-2 rounded-xl hover:bg-primary/5 hover:border-primary/30"
+              >
+                <Upload className="h-4 w-4" />
+                Selecionar Arquivo
+              </Button>
+              {uploadedFile && (
+                <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 px-3 py-2 rounded-xl">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm truncate max-w-[200px] font-medium">{uploadedFile.name}</span>
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive rounded-full"
+                    onClick={handleRemoveFile}
                   >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Selecionar Arquivo
+                    <X className="h-3.5 w-3.5" />
                   </Button>
-                  {uploadedFile && (
-                    <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm truncate max-w-[200px]">{uploadedFile.name}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                        onClick={handleRemoveFile}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Formatos aceitos: PDF, JPG, PNG, DOC, DOCX (máx. 10MB)
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              PDF, JPG, PNG, DOC, DOCX (máx. 10MB)
+            </p>
+          </div>
 
           {/* Opções de exibição no PDF */}
-          <div className="space-y-3 pt-2 border-t">
-            <Label className="text-sm font-medium text-muted-foreground">Opções de exibição no PDF</Label>
-            <div className="flex flex-col gap-3">
+          <div className="space-y-3 pt-2 border-t border-border/40">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Opções do PDF</Label>
+            <div className="flex flex-wrap gap-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="show-prescription-date"
@@ -244,7 +244,7 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
                   onCheckedChange={(checked) => setShowPrescriptionDate(checked === true)}
                 />
                 <Label htmlFor="show-prescription-date" className="text-sm font-normal cursor-pointer">
-                  Incluir Data de Lançamento no PDF
+                  Data de Lançamento
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -254,20 +254,21 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
                   onCheckedChange={(checked) => setShowPrintDate(checked === true)}
                 />
                 <Label htmlFor="show-print-date" className="text-sm font-normal cursor-pointer">
-                  Incluir Data de Impressão no PDF
+                  Data de Impressão
                 </Label>
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
             Cancelar
           </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={createPrescription.isPending || isUploading || (!prescriptionText.trim() && !uploadedFile)}
+            className="rounded-xl gap-2"
           >
             {isUploading ? 'Enviando...' : createPrescription.isPending ? 'Salvando...' : 'Salvar Receita'}
           </Button>
