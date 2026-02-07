@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, FileCheck2, Calendar, User, Download, Eye, FileText, Trash2, Upload, Printer, X, FileDown } from 'lucide-react';
+import { Plus, FileCheck2, Calendar, User, Download, Eye, FileText, Trash2, Upload, Printer, X, FileDown, ClipboardCheck } from 'lucide-react';
 import { useLaudos, useCreateLaudo, useDeleteLaudo, Laudo } from '@/hooks/useLaudos';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +64,7 @@ export default function ClientLaudoManager({
   const [laudoDate, setLaudoDate] = useState(getTodayLocalISODate());
   const [laudoType, setLaudoType] = useState('neuropsicologico');
   const [laudoText, setLaudoText] = useState('');
+  const [diagnosisText, setDiagnosisText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -226,6 +227,14 @@ export default function ClientLaudoManager({
         file_path: filePath
       });
 
+      // Atualizar diagnóstico do cliente se preenchido
+      if (diagnosisText.trim()) {
+        await supabase
+          .from('clients')
+          .update({ diagnosis: diagnosisText.trim() })
+          .eq('id', client.id);
+      }
+
       // Reset form
       resetForm();
       setAddDialogOpen(false);
@@ -256,6 +265,7 @@ export default function ClientLaudoManager({
     setLaudoDate(getTodayLocalISODate());
     setLaudoType('neuropsicologico');
     setLaudoText('');
+    setDiagnosisText('');
     setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -425,6 +435,21 @@ export default function ClientLaudoManager({
                 Conteúdo do Laudo
               </Label>
               <Textarea placeholder="Escreva aqui o conteúdo do laudo..." value={laudoText} onChange={e => setLaudoText(e.target.value)} rows={8} className="resize-none rounded-xl border-border/60 focus:border-primary/50" />
+            </div>
+
+            {/* Diagnóstico - atualiza automaticamente o cliente */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4 text-emerald-600" />
+                Diagnóstico
+                <span className="text-xs text-muted-foreground font-normal">(atualiza o cadastro do paciente)</span>
+              </Label>
+              <Input 
+                placeholder="Ex: TEA, TDAH, Dislexia..." 
+                value={diagnosisText} 
+                onChange={e => setDiagnosisText(e.target.value)} 
+                className="h-11 rounded-xl border-border/60 focus:border-emerald-500/50" 
+              />
             </div>
 
             {/* Upload de arquivo */}
