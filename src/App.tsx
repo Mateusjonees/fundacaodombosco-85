@@ -17,15 +17,19 @@ const SignUpForm = lazy(() => import("@/components/auth/SignUpForm").then(m => (
 const MainApp = lazy(() => import("@/components/MainApp").then(m => ({ default: m.MainApp })));
 const ChangeOwnPasswordDialog = lazy(() => import("@/components/ChangeOwnPasswordDialog").then(m => ({ default: m.ChangeOwnPasswordDialog })));
 
-// QueryClient otimizado com cache mais agressivo
+// QueryClient otimizado com cache agressivo e deduplicação
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutos - dados considerados frescos
-      gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache
-      refetchOnWindowFocus: false, // Evitar refetch ao focar janela
-      refetchOnReconnect: false, // Evitar refetch ao reconectar
-      retry: 1, // Reduzir tentativas de retry
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+      refetchOnMount: false, // Evitar refetch ao montar componente se dados em cache
+    },
+    mutations: {
+      retry: 0,
     },
   },
 });
