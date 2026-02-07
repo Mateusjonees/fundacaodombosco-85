@@ -164,17 +164,8 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     order_index: 5
   });
 
-  // Neuroavaliação - apenas diretores
-  if (permissions.isDirector()) {
-    items.push({
-      id: 'neuroassessment',
-      title: 'Neuroavaliação',
-      url: '/neuroassessment',
-      icon: 'Brain',
-      category: 'GESTÃO CLÍNICA',
-      order_index: 5.5
-    });
-  }
+
+
 
   // 📅 AGENDA
   if (permissions.canViewAllSchedules() || permissions.isProfessional() || customPermissions.hasPermission('view_schedules')) {
@@ -262,17 +253,8 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     });
   }
 
-  // Anamnese Digital - apenas diretores (movido para GESTÃO CLÍNICA)
-  if (permissions.isDirector()) {
-    items.push({
-      id: 'anamnesis',
-      title: 'Anamnese Digital',
-      url: '/anamnesis',
-      icon: 'ClipboardList',
-      category: 'GESTÃO CLÍNICA',
-      order_index: 5.6
-    });
-  }
+
+
 
   // 📊 RELATÓRIOS
   if (permissions.canViewReports() || customPermissions.hasPermission('view_reports')) {
