@@ -8,6 +8,8 @@ import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
 import { supabase } from "@/integrations/supabase/client";
 import { checkForUpdates } from "@/utils/cacheControl";
+import { PWAInstallBanner } from "@/components/PWAInstallBanner";
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 
 // Lazy load components para reduzir bundle inicial
 const LoginForm = lazy(() => import("@/components/auth/LoginForm").then(m => ({ default: m.LoginForm })));
@@ -127,6 +129,8 @@ const App = () => {
           <Sonner />
           <AuthProvider>
             <AppContent />
+            <PWAInstallBanner />
+            <NotificationPermissionBanner />
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
