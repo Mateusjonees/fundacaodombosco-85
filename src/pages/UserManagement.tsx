@@ -776,6 +776,56 @@ export default function UserManagement() {
               </CardContent>
             </Card>
 
+            {/* Seção: Cargos Personalizados */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  Cargos Personalizados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {jobPositions.filter(p => p.is_active).map(position => {
+                    // Verificar se o usuário já tem este cargo
+                    // Usamos o estado local para isso
+                    return (
+                      <div key={position.id} className="flex items-center justify-between p-2 border rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: position.color }}
+                          />
+                          <div>
+                            <span className="text-sm font-medium">{position.name}</span>
+                            {position.description && (
+                              <p className="text-xs text-muted-foreground">{position.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (selectedUser) {
+                              assignUserToPosition(selectedUser.id, position.id);
+                            }
+                          }}
+                        >
+                          Atribuir
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  {jobPositions.filter(p => p.is_active).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhum cargo personalizado ativo. Crie cargos na aba "Cargos Personalizados".
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Seção: Permissões por Categoria */}
             {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => <Card key={categoryKey}>
                 <CardHeader className="pb-3">
