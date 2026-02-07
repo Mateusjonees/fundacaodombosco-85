@@ -38,6 +38,7 @@ import {
   UserRound,
   LayoutGrid,
   List,
+  X,
 } from "lucide-react";
 import { PatientCard } from "@/components/PatientCard";
 import { PageHeader } from "@/components/ui/page-header";
@@ -102,7 +103,8 @@ export default function Patients() {
     searchTerm: debouncedSearch || undefined,
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [openTabs, setOpenTabs] = useState<Client[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [reportClient, setReportClient] = useState<Client | null>(null);
   const [quickViewClientId, setQuickViewClientId] = useState<string | null>(null);
@@ -115,7 +117,11 @@ export default function Patients() {
 
   // Função para selecionar cliente com persistência na URL e scroll
   const handleSelectClient = useCallback((client: Client) => {
-    setSelectedClient(client);
+    setOpenTabs(prev => {
+      if (prev.find(t => t.id === client.id)) return prev;
+      return [...prev, client];
+    });
+    setActiveTabId(client.id);
     setSearchParams({ clientId: client.id }, { replace: true });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [setSearchParams]);
@@ -129,9 +135,18 @@ export default function Patients() {
     }
   }, [clients, handleSelectClient]);
 
-  // Função para voltar à lista limpando a URL
+  // Função para fechar uma aba
+  const handleCloseTab = useCallback((clientId: string) => {
+    setOpenTabs(prev => prev.filter(t => t.id !== clientId));
+    setActiveTabId(prevActive => {
+      if (prevActive === clientId) return null;
+      return prevActive;
+    });
+  }, []);
+
+  // Função para voltar à lista
   const handleBackToList = useCallback(() => {
-    setSelectedClient(null);
+    setActiveTabId(null);
     searchParams.delete('clientId');
     setSearchParams(searchParams, { replace: true });
   }, [searchParams, setSearchParams]);
@@ -199,14 +214,15 @@ export default function Patients() {
   // Restaurar cliente via URL se clientId estiver presente
   useEffect(() => {
     const clientId = searchParams.get('clientId');
-    if (clientId && clients.length > 0 && !selectedClient) {
+    if (clientId && clients.length > 0 && !openTabs.find(t => t.id === clientId)) {
       const clientToOpen = clients.find(c => c.id === clientId);
       if (clientToOpen) {
-        setSelectedClient(clientToOpen);
+        setOpenTabs(prev => [...prev, clientToOpen]);
+        setActiveTabId(clientId);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
-  }, [searchParams, clients, selectedClient]);
+  }, [searchParams, clients]);
 
   // React Query carrega automaticamente os clientes
 
@@ -499,18 +515,53 @@ export default function Patients() {
       }),
     [clients, unitFilter, ageFilter, professionalFilter, clientAssignments, employees, isCoordinatorOrDirector],
   );
-  if (selectedClient) {
+  const activeClient = openTabs.find(t => t.id === activeTabId) || null;
+
+  if (activeTabId && activeClient) {
     return (
-      <div className="space-y-6">
-        <Button variant="outline" onClick={handleBackToList} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Voltar para Lista
-        </Button>
+      <div className="space-y-0 animate-fade-in">
+        {/* Tab bar */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-4 border-b border-border/50 scrollbar-thin">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToList}
+            className="shrink-0 gap-1.5 text-muted-foreground hover:text-foreground rounded-t-lg rounded-b-none border-b-2 border-transparent hover:border-primary/30 px-3 h-9"
+          >
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Lista</span>
+          </Button>
+          {openTabs.map((tab) => (
+            <div
+              key={tab.id}
+              className={`shrink-0 flex items-center gap-1 rounded-t-lg rounded-b-none border-b-2 px-3 h-9 cursor-pointer transition-all ${
+                tab.id === activeTabId
+                  ? "border-primary bg-primary/10 text-primary font-medium"
+                  : "border-transparent hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+              onClick={() => {
+                setActiveTabId(tab.id);
+                setSearchParams({ clientId: tab.id }, { replace: true });
+              }}
+            >
+              <span className="text-sm max-w-[120px] sm:max-w-[180px] truncate">{tab.name.split(' ')[0]}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCloseTab(tab.id);
+                }}
+                className="ml-1 p-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+
         <ClientDetailsView
-          client={selectedClient}
+          client={activeClient}
           onEdit={() => {
-            handleBackToList();
-            openEditDialog(selectedClient);
+            openEditDialog(activeClient);
           }}
           onBack={handleBackToList}
           onRefresh={refreshClients}
