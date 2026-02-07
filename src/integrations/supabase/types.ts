@@ -3189,7 +3189,7 @@ export type Database = {
             }[]
           }
         | {
-            Args: { user_uuid?: string }
+            Args: { user_uuid: string }
             Returns: {
               granted: boolean
               permission: Database["public"]["Enums"]["permission_action"]
