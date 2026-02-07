@@ -331,3 +331,16 @@
     box-shadow: var(--shadow-sm);
   }
 }
+
+/* Hide browser credential/autofill icons inside inputs */
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-textfield-decoration-container {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+}
