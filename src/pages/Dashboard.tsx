@@ -111,6 +111,11 @@ export default function Dashboard() {
               </>
             )}
           </div>
+
+          {/* Charts inline to avoid gap */}
+          {isDirectorOrCoordinator && (
+            <DashboardCharts />
+          )}
         </div>
 
         {/* Right Column */}
@@ -119,11 +124,6 @@ export default function Dashboard() {
           <BirthdayAlerts />
         </div>
       </div>
-
-      {/* Charts */}
-      {isDirectorOrCoordinator && (
-        <DashboardCharts />
-      )}
     </div>
   );
 }

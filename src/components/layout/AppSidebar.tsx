@@ -535,8 +535,10 @@ export function AppSidebar() {
           </div>
         </ScrollArea>
         
-        {/* Footer Section - Compact */}
-        
+        {/* Footer Section */}
+        <div className="p-2 border-t border-border/30">
+          <UserAvatarFooter collapsed={collapsed} onLogout={handleLogout} />
+        </div>
       </SidebarContent>
     </Sidebar>;
 }
