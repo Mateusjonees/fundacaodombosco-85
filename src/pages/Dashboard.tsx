@@ -66,7 +66,7 @@ export default function Dashboard() {
             <p className="text-primary-foreground/70 text-sm font-medium">
               Bom {new Date().getHours() < 12 ? 'dia' : new Date().getHours() < 18 ? 'tarde' : 'noite'},
             </p>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{userName}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">{userName}</h1>
             <Badge className="mt-2 bg-white/15 hover:bg-white/20 border-0 text-primary-foreground text-xs">
               {userRole ? ROLE_LABELS[userRole] : 'Usuário'}
             </Badge>

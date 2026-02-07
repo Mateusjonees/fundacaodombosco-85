@@ -357,7 +357,7 @@ export default function DirectMessages() {
                       </Avatar>
                       <div className="flex-1 text-left min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium truncate">{conv.user.name}</p>
+                          <p className="font-medium truncate uppercase">{conv.user.name}</p>
                           {conv.unreadCount > 0 && (
                             <Badge className="bg-purple-500 text-white text-xs shrink-0">
                               {conv.unreadCount}
@@ -397,7 +397,7 @@ export default function DirectMessages() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left">
-                      <p className="font-medium">{u.name}</p>
+                      <p className="font-medium uppercase">{u.name}</p>
                       <p className="text-xs text-muted-foreground">{u.employee_role}</p>
                     </div>
                   </button>
@@ -419,7 +419,7 @@ export default function DirectMessages() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-lg">{selectedUser.name}</CardTitle>
+                    <CardTitle className="text-lg uppercase">{selectedUser.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">{selectedUser.employee_role}</p>
                   </div>
                 </div>

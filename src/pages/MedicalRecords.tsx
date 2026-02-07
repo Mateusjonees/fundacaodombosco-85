@@ -183,7 +183,7 @@ export default function MedicalRecords() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <p className="font-medium">{client.name}</p>
+                          <p className="font-medium uppercase">{client.name}</p>
                           <p className="text-sm text-muted-foreground">
                             {client.cpf || 'CPF não informado'}
                           </p>

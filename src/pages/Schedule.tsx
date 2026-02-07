@@ -684,8 +684,7 @@ export default function Schedule() {
     )
   }));
 
-  console.log('Today schedules:', todaySchedules); // Debug log
-  console.log('User can see patient presence buttons:', userProfile?.employee_role === 'receptionist'); // Debug log
+  // Debug removido para performance
 
   // Estatísticas do dia
   const dayStats = {
