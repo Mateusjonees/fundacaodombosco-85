@@ -127,6 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <!-- Header -->
             <div style="background: linear-gradient(135deg, ${unitInfo.color}, ${unitInfo.color}dd); padding: 32px; text-align: center;">
+              <img src="https://fundacaodombosco-85.lovable.app/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" alt="Fundação Dom Bosco" style="max-width: 180px; height: auto; margin-bottom: 16px;" />
               <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">
                 📅 Lembrete de Agendamento
               </h1>
