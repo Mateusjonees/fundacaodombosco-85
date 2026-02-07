@@ -64,6 +64,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [employeeReports, setEmployeeReports] = useState<any[]>([]);
   const [medicalRecords, setMedicalRecords] = useState<any[]>([]);
+  const [neuroTestResults, setNeuroTestResults] = useState<any[]>([]);
   const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [clientNotes, setClientNotes] = useState<any[]>([]);
@@ -314,6 +315,33 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
       } else {
         setLaudos([]);
       }
+
+      // Carregar testes neuropsicológicos
+      const { data: neuroData, error: neuroError } = await supabase
+        .from('neuro_test_results')
+        .select('*')
+        .eq('client_id', client.id)
+        .order('applied_at', { ascending: false });
+
+      if (neuroError) throw neuroError;
+
+      // Enriquecer com nomes dos aplicadores
+      let enrichedNeuroData = neuroData || [];
+      if (neuroData && neuroData.length > 0) {
+        const neuroApplierIds = [...new Set(neuroData.map(n => n.applied_by).filter(Boolean))];
+        if (neuroApplierIds.length > 0) {
+          const { data: neuroProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', neuroApplierIds);
+          
+          enrichedNeuroData = neuroData.map(n => ({
+            ...n,
+            applier_name: neuroProfiles?.find(p => p.user_id === n.applied_by)?.name || 'Profissional'
+          }));
+        }
+      }
+      setNeuroTestResults(enrichedNeuroData);
 
       setAttendanceRecords((attendanceData || []).map(record => ({
         ...record,
@@ -1043,6 +1071,84 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Testes Neuropsicológicos */}
+          {neuroTestResults.length > 0 && (
+            <div className="report-section" style={{ pageBreakBefore: 'auto' }}>
+              <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
+                TESTES NEUROPSICOLÓGICOS APLICADOS
+              </h2>
+              <div className="space-y-4">
+                {neuroTestResults.map((test: any) => {
+                  const percentiles = test.percentiles as Record<string, number | string> || {};
+                  const classifications = test.classifications as Record<string, string> || {};
+                  const calculatedScores = test.calculated_scores as Record<string, number> || {};
+                  const rawScores = test.raw_scores as Record<string, number> || {};
+
+                  // Get all variable keys from percentiles
+                  const variables = Object.keys(percentiles);
+
+                  return (
+                    <div key={test.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h3 className="font-semibold text-gray-800">{test.test_name}</h3>
+                          <p className="text-xs text-gray-500">
+                            Código: {test.test_code} | Idade do paciente: {test.patient_age} anos
+                          </p>
+                        </div>
+                        <Badge variant="secondary">
+                          {new Date(test.applied_at).toLocaleDateString('pt-BR')}
+                        </Badge>
+                      </div>
+
+                      {test.applier_name && (
+                        <p className="text-xs text-gray-500 mb-3">Aplicado por: {test.applier_name}</p>
+                      )}
+
+                      <div className="mb-3">
+                        <p className="text-sm font-medium text-gray-600 mb-2">Resultados e Classificações:</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {variables.map((key) => {
+                            const percentile = percentiles[key];
+                            const classification = classifications[key] || '-';
+                            const score = calculatedScores[key] ?? rawScores[key] ?? '-';
+                            const classColor = String(classification).includes('Inferior') 
+                              ? 'bg-red-100 text-red-800 border-red-300'
+                              : String(classification).includes('Superior')
+                                ? 'bg-green-100 text-green-800 border-green-300'
+                                : 'bg-yellow-100 text-yellow-800 border-yellow-300';
+
+                            return (
+                              <div key={key} className="border border-gray-200 rounded-lg p-2.5">
+                                <p className="font-medium text-sm text-gray-800 mb-1">{key}</p>
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium border ${classColor}`}>
+                                    {classification}
+                                  </span>
+                                  <span className="text-xs text-gray-500">Pc {percentile ?? '-'}</span>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  {test.test_code === 'BPA2' ? 'Calc' : 'Bruto'}: {score}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {test.notes && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                          <p className="text-xs text-gray-500 italic mb-0.5">Notas do aplicador:</p>
+                          <p className="text-gray-700">{test.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
