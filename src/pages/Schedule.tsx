@@ -734,15 +734,15 @@ export default function Schedule() {
       
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Sidebar: Calendário + Filtros compactos */}
-        <div className="w-full lg:w-64 space-y-3">
+        <div className="w-full lg:w-72 shrink-0 space-y-3">
           <Card className="border shadow-sm">
-            <CardContent className="p-2">
+            <CardContent className="p-3">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
                 locale={ptBR}
-                className="rounded-lg w-full [&_.rdp-day]:h-8 [&_.rdp-day]:w-8"
+                className="rounded-lg w-full"
               />
             </CardContent>
           </Card>
