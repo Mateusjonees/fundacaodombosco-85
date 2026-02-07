@@ -18,9 +18,9 @@ const ClinicalKPIs = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('schedules')
-        .select('id, status, employee_id, service_type, appointment_date')
-        .gte('appointment_date', monthStart)
-        .lte('appointment_date', monthEnd);
+        .select('id, status, employee_id, title, start_time')
+        .gte('start_time', monthStart)
+        .lte('start_time', monthEnd + 'T23:59:59');
       if (error) throw error;
       return data;
     },
@@ -38,7 +38,13 @@ const ClinicalKPIs = () => {
   const { data: absences = [] } = useQuery({
     queryKey: ['kpi-absences', monthStart],
     queryFn: async () => {
-      const { data, error } = await supabase.from('absence_records').select('id').gte('absence_date', monthStart);
+      // Contar cancelamentos como faltas
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('id')
+        .eq('status', 'cancelled')
+        .gte('start_time', monthStart)
+        .lte('start_time', monthEnd + 'T23:59:59');
       if (error) throw error;
       return data;
     },
@@ -68,9 +74,9 @@ const ClinicalKPIs = () => {
   const totalIncome = financials.filter((f: any) => f.type === 'income').reduce((s: number, f: any) => s + Number(f.amount), 0);
   const totalExpense = financials.filter((f: any) => f.type === 'expense').reduce((s: number, f: any) => s + Number(f.amount), 0);
 
-  // By service type
+  // By service type (using title field)
   const byServiceType = schedules.reduce((acc: any, s: any) => {
-    const type = s.service_type || 'Outros';
+    const type = s.title || 'Outros';
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});
