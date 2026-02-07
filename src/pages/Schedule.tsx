@@ -696,384 +696,262 @@ export default function Schedule() {
   };
 
   return (
-    <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="container mx-auto p-2 sm:p-4 space-y-4 animate-fade-in">
       <PatientArrivedNotification />
       <ScheduleAlerts />
       
-      {/* Header */}
-      <PageHeader
-        title="Agenda de Atendimentos"
-        description="Gerencie seus compromissos e visualize os horários disponíveis"
-        icon={<CalendarIcon className="h-6 w-6" />}
-        iconColor="blue"
-        actions={
-          <Button 
-            className="gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 border-0 shadow-lg" 
-            onClick={() => {
-              setEditingSchedule(null);
-              const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
-              setNewAppointment({
-                client_id: '',
-                employee_id: defaultEmployeeId,
-                title: 'Consulta',
-                start_time: '',
-                end_time: '',
-                notes: '',
-                unit: userProfile?.unit || 'madre',
-                sessionCount: 1,
-                sendConfirmationEmail: false
-              });
-              setIsDialogOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" />
-            Novo Agendamento
-          </Button>
-        }
-      />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatsCard
-          title="Total do Dia"
-          value={dayStats.total}
-          icon={<ClipboardList className="h-5 w-5" />}
-          variant="blue"
-        />
-        <StatsCard
-          title="Presentes"
-          value={dayStats.confirmed}
-          icon={<UserCheck className="h-5 w-5" />}
-          variant="green"
-        />
-        <StatsCard
-          title="Aguardando"
-          value={dayStats.pending}
-          icon={<Clock className="h-5 w-5" />}
-          variant="orange"
-        />
-        <StatsCard
-          title="Concluídos"
-          value={dayStats.completed}
-          icon={<CheckCircle className="h-5 w-5" />}
-          variant="default"
-        />
+      {/* Header compacto */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Agenda</h1>
+          <p className="text-sm text-muted-foreground">
+            {format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+          </p>
+        </div>
+        <Button 
+          className="gap-2" 
+          onClick={() => {
+            setEditingSchedule(null);
+            const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
+            setNewAppointment({
+              client_id: '',
+              employee_id: defaultEmployeeId,
+              title: 'Consulta',
+              start_time: '',
+              end_time: '',
+              notes: '',
+              unit: userProfile?.unit || 'madre',
+              sessionCount: 1,
+              sendConfirmationEmail: false
+            });
+            setIsDialogOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Novo Agendamento</span>
+        </Button>
       </div>
       
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-        {/* Sidebar esquerda com calendário e controles */}
-        <div className="w-full lg:w-72">
-          <div className="space-y-4">
-            {/* Calendário */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* Sidebar: Calendário + Filtros compactos */}
+        <div className="w-full lg:w-64 space-y-3">
+          <Card className="border shadow-sm">
+            <CardContent className="p-2">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                locale={ptBR}
+                className="rounded-lg w-full [&_.rdp-day]:h-8 [&_.rdp-day]:w-8"
+              />
+            </CardContent>
+          </Card>
+
+          {isAdmin && (
             <Card className="border shadow-sm">
-              <CardContent className="p-2 sm:p-3">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  locale={ptBR}
-                  className="rounded-lg w-full [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 sm:[&_.rdp-day]:h-9 sm:[&_.rdp-day]:w-9"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Filtros para Administradores */}
-            {isAdmin && (
-              <Card className="border shadow-sm">
-                <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
-                  <CardTitle className="flex items-center gap-2 text-xs sm:text-sm">
-                    <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                    Filtros
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
-                  <div>
-                    <Label className="text-[10px] sm:text-xs">Profissional</Label>
-                    <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                      <SelectTrigger className="h-8 sm:h-9 mt-1 text-xs sm:text-sm">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {employees.map((emp) => (
-                          <SelectItem key={emp.user_id} value={emp.user_id}>
-                            {emp.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {userRole === 'director' && (
-                    <div>
-                      <Label className="text-[10px] sm:text-xs">Unidade</Label>
-                      <Select value={filterUnit} onValueChange={setFilterUnit}>
-                        <SelectTrigger className="h-8 sm:h-9 mt-1 text-xs sm:text-sm">
-                          <SelectValue placeholder="Todas" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas</SelectItem>
-                          <SelectItem value="madre">MADRE</SelectItem>
-                          <SelectItem value="floresta">Floresta</SelectItem>
-                          <SelectItem value="atendimento_floresta">Atend. Floresta</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-
-        {/* Conteúdo principal */}
-        <div className="flex-1">
-          <div className="space-y-4">
-            {/* Barra de pesquisa e visualização */}
-            <Card className="border shadow-sm">
-              <CardContent className="py-2 sm:py-3 px-3 sm:px-4">
-                <div className="flex flex-col gap-2 sm:gap-3">
-                  {/* Linha 1: Pesquisa + Toggle */}
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    {/* Pesquisa */}
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Buscar paciente, profissional..."
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        className="pl-8 sm:pl-9 pr-8 sm:pr-9 h-8 sm:h-9 text-xs sm:text-sm"
-                      />
-                      {searchText && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 sm:h-7 sm:w-7 p-0"
-                          onClick={() => setSearchText('')}
-                        >
-                          <X className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Toggle Dia/Semana */}
-                    <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')}>
-                      <ToggleGroupItem value="day" aria-label="Dia" className="gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3">
-                        <LayoutList className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        <span className="text-xs sm:text-sm">Dia</span>
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="week" aria-label="Semana" className="gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3">
-                        <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        <span className="text-xs sm:text-sm">Semana</span>
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
-
-                  {/* Linha 2: Filtro de horário (opcional, colapsável em mobile) */}
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="time"
-                      value={filterTimeStart}
-                      onChange={(e) => setFilterTimeStart(e.target.value)}
-                      className="w-20 sm:w-24 h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                    <span className="text-muted-foreground text-xs sm:text-sm">-</span>
-                    <Input
-                      type="time"
-                      value={filterTimeEnd}
-                      onChange={(e) => setFilterTimeEnd(e.target.value)}
-                      className="w-20 sm:w-24 h-8 sm:h-9 text-xs sm:text-sm"
-                    />
-                    {(filterTimeStart || filterTimeEnd) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => { setFilterTimeStart(''); setFilterTimeEnd(''); }}
-                        className="h-8 sm:h-9 w-8 sm:w-9 p-0"
-                      >
-                        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      </Button>
-                    )}
-                  </div>
+              <CardContent className="p-3 space-y-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Profissional</Label>
+                  <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                    <SelectTrigger className="h-8 mt-1 text-sm">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp.user_id} value={emp.user_id}>
+                          {emp.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Filtros ativos */}
-                {(searchText || filterTimeStart || filterTimeEnd || filterEmployee !== 'all' || filterUnit !== 'all') && (
-                  <div className="flex flex-wrap items-center gap-2 pt-3 mt-3 border-t">
-                    <span className="text-xs text-muted-foreground">Filtros:</span>
-                    {searchText && (
-                      <Badge variant="secondary" className="gap-1 text-xs">
-                        "{searchText}"
-                        <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchText('')} />
-                      </Badge>
-                    )}
-                    {filterEmployee !== 'all' && (
-                      <Badge variant="secondary" className="gap-1 text-xs">
-                        {employees.find(e => e.user_id === filterEmployee)?.name}
-                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterEmployee('all')} />
-                      </Badge>
-                    )}
-                    {filterUnit !== 'all' && (
-                      <Badge variant="secondary" className="gap-1 text-xs">
-                        {filterUnit === 'madre' ? 'MADRE' : filterUnit === 'floresta' ? 'Floresta' : 'Atend. Floresta'}
-                        <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterUnit('all')} />
-                      </Badge>
-                    )}
+                {userRole === 'director' && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Unidade</Label>
+                    <Select value={filterUnit} onValueChange={setFilterUnit}>
+                      <SelectTrigger className="h-8 mt-1 text-sm">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="madre">MADRE</SelectItem>
+                        <SelectItem value="floresta">Floresta</SelectItem>
+                        <SelectItem value="atendimento_floresta">Atend. Floresta</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </CardContent>
             </Card>
-
-            {/* Lista de Agendamentos */}
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-3 border-b">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" />
-                    {viewMode === 'day' ? 'Agenda do Dia' : 'Agenda da Semana'}
-                    <span className="text-sm font-normal text-muted-foreground">
-                      - {viewMode === 'day' 
-                        ? format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
-                        : `${format(weekStart, "dd/MM", { locale: ptBR })} a ${format(addDays(weekStart, 6), "dd/MM", { locale: ptBR })}`
-                      }
-                    </span>
-                  </CardTitle>
-                  <Badge variant="outline">{filteredSchedules.length} agendamento(s)</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                {loading ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <Card key={i} className="border-0 shadow-lg">
-                        <CardContent className="p-6">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <Skeleton className="h-10 w-32" />
-                              <Skeleton className="h-6 w-20" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <Skeleton className="h-16 w-full" />
-                              <Skeleton className="h-16 w-full" />
-                            </div>
-                            <Skeleton className="h-12 w-full" />
-                            <div className="flex justify-between">
-                              <Skeleton className="h-8 w-24" />
-                              <div className="flex gap-2">
-                                <Skeleton className="h-9 w-20" />
-                                <Skeleton className="h-9 w-24" />
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : filteredSchedules.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block p-6 bg-gradient-to-br from-gray-500/10 to-gray-600/10 rounded-full mb-4">
-                      <CalendarIcon className="h-16 w-16 text-gray-400" />
-                    </div>
-                    <p className="text-xl font-bold bg-gradient-to-r from-gray-600 to-gray-500 bg-clip-text text-transparent">
-                      Nenhum agendamento {viewMode === 'day' ? 'para esta data' : 'nesta semana'}
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      Clique em "Novo Agendamento" para adicionar compromissos
-                    </p>
-                  </div>
-                ) : viewMode === 'week' ? (
-                  /* Visualização Semanal */
-                  <div className="space-y-6">
-                    {schedulesByDay.map(({ date, schedules: daySchedules }) => (
-                      <div key={date.toISOString()} className="space-y-3">
-                        <div className={`flex items-center gap-3 p-3 rounded-lg ${
-                          isSameDay(date, new Date()) 
-                            ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/10 border border-blue-500/30' 
-                            : 'bg-muted/30'
-                        }`}>
-                          <CalendarDays className={`h-5 w-5 ${isSameDay(date, new Date()) ? 'text-blue-600' : 'text-muted-foreground'}`} />
-                          <span className={`font-bold ${isSameDay(date, new Date()) ? 'text-blue-600' : ''}`}>
-                            {format(date, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                          </span>
-                          <Badge variant="secondary" className="ml-auto">
-                            {daySchedules.length} agendamento(s)
-                          </Badge>
-                        </div>
-                        
-                        {daySchedules.length === 0 ? (
-                          <p className="text-sm text-muted-foreground pl-4">Nenhum agendamento</p>
-                        ) : (
-                          <div className="space-y-3 pl-4">
-                            {daySchedules.map((schedule) => (
-                              <ScheduleCard 
-                                key={schedule.id}
-                                schedule={schedule}
-                                employees={employees}
-                                userProfile={userProfile}
-                                isAdmin={isAdmin}
-                                canCancelSchedules={canCancelSchedules}
-                                canDeleteSchedules={canDeleteSchedules}
-                                onEdit={handleEditSchedule}
-                                onRedirect={handleRedirect}
-                                onCancelClick={() => {
-                                  setSelectedScheduleForAction(schedule);
-                                  setCancelDialogOpen(true);
-                                }}
-                                onDeleteClick={() => {
-                                  setSelectedScheduleForAction(schedule);
-                                  setDeleteDialogOpen(true);
-                                }}
-                                onCompleteClick={() => {
-                                  setSelectedScheduleForAction(schedule);
-                                  setCompleteDialogOpen(true);
-                                }}
-                                onPresenceUpdate={refetchSchedules}
-                                getStatusBadge={getStatusBadge}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* Visualização Diária */
-                  <div className="space-y-4">
-                     {filteredSchedules.map((schedule) => (
-                       <ScheduleCard 
-                         key={schedule.id}
-                         schedule={schedule}
-                         employees={employees}
-                         userProfile={userProfile}
-                         isAdmin={isAdmin}
-                         canCancelSchedules={canCancelSchedules}
-                         canDeleteSchedules={canDeleteSchedules}
-                         onEdit={handleEditSchedule}
-                         onRedirect={handleRedirect}
-                         onCancelClick={() => {
-                           setSelectedScheduleForAction(schedule);
-                           setCancelDialogOpen(true);
-                         }}
-                         onDeleteClick={() => {
-                           setSelectedScheduleForAction(schedule);
-                           setDeleteDialogOpen(true);
-                         }}
-                         onCompleteClick={() => {
-                           setSelectedScheduleForAction(schedule);
-                           setCompleteDialogOpen(true);
-                         }}
-                         onPresenceUpdate={refetchSchedules}
-                         getStatusBadge={getStatusBadge}
-                       />
-                     ))}
-                   </div>
-                 )}
-               </CardContent>
-            </Card>
-          </div>
+          )}
         </div>
-        
-        {/* Dialogs */}
+
+        {/* Conteúdo principal */}
+        <div className="flex-1 space-y-3">
+          {/* Barra: pesquisa + toggle dia/semana */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar paciente, profissional..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="pl-8 h-9 text-sm"
+              />
+              {searchText && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => setSearchText('')}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')}>
+              <ToggleGroupItem value="day" aria-label="Dia" className="gap-1 h-9 px-3 text-sm">
+                <LayoutList className="h-4 w-4" />
+                Dia
+              </ToggleGroupItem>
+              <ToggleGroupItem value="week" aria-label="Semana" className="gap-1 h-9 px-3 text-sm">
+                <CalendarDays className="h-4 w-4" />
+                Semana
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
+          {/* Filtros ativos */}
+          {(searchText || filterEmployee !== 'all' || filterUnit !== 'all') && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {searchText && (
+                <Badge variant="secondary" className="gap-1 text-xs">
+                  "{searchText}"
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchText('')} />
+                </Badge>
+              )}
+              {filterEmployee !== 'all' && (
+                <Badge variant="secondary" className="gap-1 text-xs">
+                  {employees.find(e => e.user_id === filterEmployee)?.name}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterEmployee('all')} />
+                </Badge>
+              )}
+              {filterUnit !== 'all' && (
+                <Badge variant="secondary" className="gap-1 text-xs">
+                  {filterUnit === 'madre' ? 'MADRE' : filterUnit === 'floresta' ? 'Floresta' : 'Atend. Floresta'}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterUnit('all')} />
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Resumo do dia inline */}
+          <div className="flex items-center gap-4 text-sm text-muted-foreground px-1">
+            <span>{filteredSchedules.length} agendamento(s)</span>
+            {dayStats.confirmed > 0 && <span className="text-green-600">{dayStats.confirmed} presente(s)</span>}
+            {dayStats.completed > 0 && <span className="text-primary">{dayStats.completed} concluído(s)</span>}
+          </div>
+
+          {/* Lista de Agendamentos */}
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : filteredSchedules.length === 0 ? (
+            <div className="text-center py-16">
+              <CalendarIcon className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm font-medium text-muted-foreground">
+                Nenhum agendamento {viewMode === 'day' ? 'para esta data' : 'nesta semana'}
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Clique em "Novo Agendamento" para adicionar
+              </p>
+            </div>
+          ) : viewMode === 'week' ? (
+            <div className="space-y-4">
+              {schedulesByDay.map(({ date, schedules: daySchedules }) => (
+                <div key={date.toISOString()} className="space-y-2">
+                  <div className={`flex items-center justify-between py-1.5 px-2 rounded-md text-sm ${
+                    isSameDay(date, new Date()) 
+                      ? 'bg-primary/10 text-primary font-semibold' 
+                      : 'text-muted-foreground'
+                  }`}>
+                    <span>{format(date, "EEE, dd/MM", { locale: ptBR })}</span>
+                    <span className="text-xs">{daySchedules.length}</span>
+                  </div>
+                  
+                  {daySchedules.length === 0 ? (
+                    <p className="text-xs text-muted-foreground/50 pl-2">—</p>
+                  ) : (
+                    <div className="space-y-2 pl-1">
+                      {daySchedules.map((schedule) => (
+                        <ScheduleCard 
+                          key={schedule.id}
+                          schedule={schedule}
+                          employees={employees}
+                          userProfile={userProfile}
+                          isAdmin={isAdmin}
+                          canCancelSchedules={canCancelSchedules}
+                          canDeleteSchedules={canDeleteSchedules}
+                          onEdit={handleEditSchedule}
+                          onRedirect={handleRedirect}
+                          onCancelClick={() => {
+                            setSelectedScheduleForAction(schedule);
+                            setCancelDialogOpen(true);
+                          }}
+                          onDeleteClick={() => {
+                            setSelectedScheduleForAction(schedule);
+                            setDeleteDialogOpen(true);
+                          }}
+                          onCompleteClick={() => {
+                            setSelectedScheduleForAction(schedule);
+                            setCompleteDialogOpen(true);
+                          }}
+                          onPresenceUpdate={refetchSchedules}
+                          getStatusBadge={getStatusBadge}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredSchedules.map((schedule) => (
+                <ScheduleCard 
+                  key={schedule.id}
+                  schedule={schedule}
+                  employees={employees}
+                  userProfile={userProfile}
+                  isAdmin={isAdmin}
+                  canCancelSchedules={canCancelSchedules}
+                  canDeleteSchedules={canDeleteSchedules}
+                  onEdit={handleEditSchedule}
+                  onRedirect={handleRedirect}
+                  onCancelClick={() => {
+                    setSelectedScheduleForAction(schedule);
+                    setCancelDialogOpen(true);
+                  }}
+                  onDeleteClick={() => {
+                    setSelectedScheduleForAction(schedule);
+                    setDeleteDialogOpen(true);
+                  }}
+                  onCompleteClick={() => {
+                    setSelectedScheduleForAction(schedule);
+                    setCompleteDialogOpen(true);
+                  }}
+                  onPresenceUpdate={refetchSchedules}
+                  getStatusBadge={getStatusBadge}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Create/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
