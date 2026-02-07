@@ -387,24 +387,26 @@ export default function ClientLaudoManager({
 
       {/* Add Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileCheck2 className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2.5 text-lg">
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <FileCheck2 className="h-5 w-5 text-primary" />
+              </div>
               Novo Laudo
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-2">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="laudo-date">Data do Laudo</Label>
-                <Input id="laudo-date" type="date" value={laudoDate} onChange={e => setLaudoDate(e.target.value)} />
+              <div className="space-y-1.5">
+                <Label htmlFor="laudo-date" className="text-sm font-medium">Data do Laudo</Label>
+                <Input id="laudo-date" type="date" value={laudoDate} onChange={e => setLaudoDate(e.target.value)} className="h-11 rounded-xl" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="laudo-type">Tipo</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="laudo-type" className="text-sm font-medium">Tipo</Label>
                 <Select value={laudoType} onValueChange={setLaudoType}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -416,48 +418,44 @@ export default function ClientLaudoManager({
               </div>
             </div>
 
-            {/* Caixa única de Laudo */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Laudo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea placeholder="Escreva aqui o conteúdo do laudo..." value={laudoText} onChange={e => setLaudoText(e.target.value)} rows={10} className="resize-none" />
+            {/* Conteúdo do Laudo */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                Conteúdo do Laudo
+              </Label>
+              <Textarea placeholder="Escreva aqui o conteúdo do laudo..." value={laudoText} onChange={e => setLaudoText(e.target.value)} rows={8} className="resize-none rounded-xl border-border/60 focus:border-primary/50" />
+            </div>
 
-                {/* Upload de arquivo */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Ou anexe um arquivo</Label>
-                  <div className="flex items-center gap-2">
-                    <Input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={handleFileChange} className="hidden" />
-                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Selecionar Arquivo
+            {/* Upload de arquivo */}
+            <div className="space-y-3 p-4 bg-muted/30 rounded-xl border border-dashed border-border/60">
+              <Label className="text-sm font-medium text-muted-foreground">Ou anexe um arquivo</Label>
+              <div className="flex items-center gap-3 flex-wrap">
+                <Input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={handleFileChange} className="hidden" />
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-2 rounded-xl hover:bg-primary/5 hover:border-primary/30">
+                  <Upload className="h-4 w-4" />
+                  Selecionar Arquivo
+                </Button>
+                {selectedFile && <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 px-3 py-2 rounded-xl">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="text-sm truncate max-w-[200px] font-medium">{selectedFile.name}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive rounded-full" onClick={handleRemoveFile}>
+                      <X className="h-3.5 w-3.5" />
                     </Button>
-                    {selectedFile && <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
-                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={handleRemoveFile}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Formatos aceitos: PDF, JPG, PNG, DOC, DOCX (máx. 10MB)
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                  </div>}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                PDF, JPG, PNG, DOC, DOCX (máx. 10MB)
+              </p>
+            </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)} className="rounded-xl">
               Cancelar
             </Button>
-            <Button onClick={handleSubmit} disabled={uploading || !laudoText.trim() && !selectedFile}>
-              {uploading ? 'Salvando...' : 'Salvar Laudo'}
+            <Button onClick={handleSubmit} disabled={uploading || (!laudoText.trim() && !selectedFile)} className="rounded-xl gap-2">
+              {uploading ? 'Enviando...' : 'Salvar Laudo'}
             </Button>
           </DialogFooter>
         </DialogContent>
