@@ -102,22 +102,16 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
               <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Email
               </Label>
-              <div className="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50">
-                  <rect width="20" height="16" x="2" y="4" rx="2" />
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                </svg>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
-                  required 
-                  disabled={isLoading} 
-                  placeholder="seu@email.com"
-                  className="pl-10 h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
-                />
-              </div>
+              <Input 
+                id="email" 
+                type="email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                required 
+                disabled={isLoading} 
+                placeholder="seu@email.com"
+                className="h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
+              />
             </div>
 
             <div className="form-group">
@@ -125,10 +119,6 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                 Senha
               </Label>
               <div className="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50">
-                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
                 <Input 
                   id="password" 
                   type={showPassword ? 'text' : 'password'} 
@@ -137,7 +127,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                   required 
                   disabled={isLoading} 
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
+                  className="pr-10 h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
                 />
                 <button
                   type="button"
