@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 import { 
   Heart, 
   Search, 
@@ -18,9 +19,10 @@ import {
   Clock,
   AlertCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CheckCircle
 } from 'lucide-react';
-import { format, addDays, subDays, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
+import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isSameMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ClientDetailsView from '@/components/ClientDetailsView';
 
@@ -50,6 +52,8 @@ interface Schedule {
   clients?: { name: string };
 }
 
+type ViewMode = 'day' | 'week' | 'month';
+
 const MyPatients: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -61,6 +65,8 @@ const MyPatients: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [completeSchedule, setCompleteSchedule] = useState<Schedule | null>(null);
 
   useEffect(() => {
     // Permitir acesso para todos os usuários autenticados
@@ -75,14 +81,26 @@ const MyPatients: React.FC = () => {
 
     loadMyPatients();
     loadMySchedules();
-  }, [user, selectedDate]);
+  }, [user, selectedDate, viewMode]);
 
   const loadMySchedules = async () => {
     if (!user) return;
 
     try {
-      const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+      // Calcular range baseado no viewMode
+      let rangeStart: Date, rangeEnd: Date;
+      if (viewMode === 'day') {
+        rangeStart = new Date(selectedDate);
+        rangeStart.setHours(0, 0, 0, 0);
+        rangeEnd = new Date(selectedDate);
+        rangeEnd.setHours(23, 59, 59, 999);
+      } else if (viewMode === 'month') {
+        rangeStart = startOfMonth(selectedDate);
+        rangeEnd = endOfMonth(selectedDate);
+      } else {
+        rangeStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+        rangeEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+      }
 
       let query = supabase
         .from('schedules')
@@ -97,8 +115,8 @@ const MyPatients: React.FC = () => {
           notes,
           clients (name)
         `)
-        .gte('start_time', weekStart.toISOString())
-        .lte('start_time', weekEnd.toISOString())
+        .gte('start_time', rangeStart.toISOString())
+        .lte('start_time', rangeEnd.toISOString())
         .order('start_time');
 
       // Para todos os usuários, filtrar apenas agendamentos dos clientes vinculados
@@ -225,12 +243,41 @@ const MyPatients: React.FC = () => {
     );
   };
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newWeekStart = direction === 'prev' 
-      ? subDays(currentWeekStart, 7)
-      : addDays(currentWeekStart, 7);
-    setCurrentWeekStart(newWeekStart);
-    setSelectedDate(newWeekStart);
+  const navigatePeriod = (direction: 'prev' | 'next') => {
+    if (viewMode === 'day') {
+      const newDate = direction === 'prev' ? subDays(selectedDate, 1) : addDays(selectedDate, 1);
+      setSelectedDate(newDate);
+    } else if (viewMode === 'month') {
+      const newDate = direction === 'prev' ? subMonths(selectedDate, 1) : addMonths(selectedDate, 1);
+      setSelectedDate(newDate);
+    } else {
+      const newWeekStart = direction === 'prev' 
+        ? subDays(currentWeekStart, 7)
+        : addDays(currentWeekStart, 7);
+      setCurrentWeekStart(newWeekStart);
+      setSelectedDate(newWeekStart);
+    }
+  };
+
+  const getMonthDays = () => {
+    const start = startOfMonth(selectedDate);
+    const end = endOfMonth(selectedDate);
+    const days: Date[] = [];
+    let current = start;
+    while (current <= end) {
+      days.push(current);
+      current = addDays(current, 1);
+    }
+    return days;
+  };
+
+  const getPeriodLabel = () => {
+    if (viewMode === 'day') {
+      return format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
+    } else if (viewMode === 'month') {
+      return format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR });
+    }
+    return `${format(currentWeekStart, "dd/MM", { locale: ptBR })} - ${format(addDays(currentWeekStart, 6), "dd/MM", { locale: ptBR })}`;
   };
 
   const getWeekDays = () => {
@@ -294,104 +341,161 @@ const MyPatients: React.FC = () => {
             </div>
           </div>
 
-          {/* Agenda Semanal - Layout responsivo */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-blue-500/5 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent pointer-events-none" />
-            <CardHeader className="relative border-b border-gradient-to-r from-transparent via-blue-500/20 to-transparent px-3 sm:px-6 py-3 sm:py-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-xl">
-                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg">
-                    <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
+          {/* Agenda - Layout responsivo com modos de visualização */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-primary/5 overflow-hidden">
+            <CardHeader className="relative border-b px-3 sm:px-6 py-3 sm:py-4">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+                    <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    <span className="font-bold text-primary">
+                      {viewMode === 'day' ? 'Agenda do Dia' : viewMode === 'month' ? 'Agenda do Mês' : 'Agenda da Semana'}
+                    </span>
+                  </CardTitle>
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+                    {(['day', 'week', 'month'] as ViewMode[]).map(mode => (
+                      <Button
+                        key={mode}
+                        size="sm"
+                        variant={viewMode === mode ? 'default' : 'ghost'}
+                        onClick={() => setViewMode(mode)}
+                        className="h-7 px-2 sm:px-3 text-xs"
+                      >
+                        {mode === 'day' ? 'Dia' : mode === 'week' ? 'Semana' : 'Mês'}
+                      </Button>
+                    ))}
                   </div>
-                  <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent font-bold">
-                    Agenda da Semana
-                  </span>
-                </CardTitle>
-                <div className="flex items-center justify-between sm:justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => navigateWeek('prev')}
-                    className="h-8 w-8 p-0 hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
-                  >
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => navigatePeriod('prev')} className="h-8 w-8 p-0">
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="font-semibold text-xs sm:text-sm min-w-[140px] sm:min-w-[200px] text-center bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-                    {format(currentWeekStart, "dd/MM", { locale: ptBR })} - {format(addDays(currentWeekStart, 6), "dd/MM", { locale: ptBR })}
+                  <span className="font-semibold text-xs sm:text-sm min-w-[160px] sm:min-w-[220px] text-center text-primary capitalize">
+                    {getPeriodLabel()}
                   </span>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => navigateWeek('next')}
-                    className="h-8 w-8 p-0 hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/50 transition-all duration-300"
-                  >
+                  <Button variant="outline" size="sm" onClick={() => navigatePeriod('next')} className="h-8 w-8 p-0">
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="relative p-3 sm:p-6">
-              {/* Mobile: scroll horizontal / Desktop: grid */}
-              <div className="flex md:grid md:grid-cols-7 gap-2 sm:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
-                {getWeekDays().map((day) => {
-                  const daySchedules = getDaySchedules(day);
-                  const isToday = isSameDay(day, new Date());
-                  
-                  return (
-                    <div 
-                      key={day.toDateString()} 
-                      className={`group flex-shrink-0 w-[120px] sm:w-[140px] md:w-auto snap-center p-2 sm:p-4 border rounded-xl transition-all duration-300 hover:shadow-lg ${
-                        isToday 
-                          ? 'bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border-blue-500/40 shadow-md' 
-                          : 'bg-gradient-to-br from-background to-muted/20 hover:border-blue-500/20'
-                      }`}
-                    >
-                      <div className="text-center mb-2 sm:mb-3">
-                        <div className={`font-semibold text-xs sm:text-sm uppercase tracking-wider ${
-                          isToday ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
-                        }`}>
-                          {format(day, 'EEE', { locale: ptBR })}
+              {viewMode === 'day' ? (
+                /* Visualização do Dia */
+                <div className="space-y-2">
+                  {getDaySchedules(selectedDate).length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center py-8">Sem agendamentos para este dia</div>
+                  ) : (
+                    getDaySchedules(selectedDate).map(schedule => (
+                      <div key={schedule.id} className="flex items-center justify-between p-3 border rounded-lg bg-card hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3">
+                          <div className="text-primary font-bold text-sm flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {format(new Date(schedule.start_time), 'HH:mm')}
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">{schedule.clients?.name || schedule.title}</div>
+                            <Badge variant={getStatusColor(schedule.status)} className="text-[10px] mt-0.5">
+                              {getStatusLabel(schedule.status)}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className={`text-xl sm:text-3xl font-extrabold ${
+                        {(schedule.status === 'scheduled' || schedule.status === 'confirmed') && (
+                          <Button size="sm" variant="outline" onClick={() => setCompleteSchedule(schedule)} className="gap-1 text-xs">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Finalizar</span>
+                          </Button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : viewMode === 'month' ? (
+                /* Visualização do Mês */
+                <div className="grid grid-cols-7 gap-1">
+                  {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map(d => (
+                    <div key={d} className="text-center text-[10px] sm:text-xs font-semibold text-muted-foreground py-1">{d}</div>
+                  ))}
+                  {/* Preencher dias vazios antes do início do mês */}
+                  {Array.from({ length: (startOfMonth(selectedDate).getDay() + 6) % 7 }).map((_, i) => (
+                    <div key={`empty-${i}`} />
+                  ))}
+                  {getMonthDays().map(day => {
+                    const dayScheds = getDaySchedules(day);
+                    const isToday = isSameDay(day, new Date());
+                    return (
+                      <div
+                        key={day.toDateString()}
+                        onClick={() => { setSelectedDate(day); setViewMode('day'); }}
+                        className={`p-1 sm:p-2 border rounded-lg text-center cursor-pointer transition-all hover:shadow-md min-h-[40px] sm:min-h-[60px] ${
+                          isToday ? 'bg-primary/10 border-primary/40' : 'hover:border-primary/20'
+                        }`}
+                      >
+                        <div className={`text-xs sm:text-sm font-bold ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                          {format(day, 'd')}
+                        </div>
+                        {dayScheds.length > 0 && (
+                          <div className="mt-0.5">
+                            <Badge variant="secondary" className="text-[9px] px-1 py-0">{dayScheds.length}</Badge>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Visualização da Semana */
+                <div className="flex md:grid md:grid-cols-7 gap-2 sm:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
+                  {getWeekDays().map((day) => {
+                    const daySchedules = getDaySchedules(day);
+                    const isToday = isSameDay(day, new Date());
+                    return (
+                      <div 
+                        key={day.toDateString()} 
+                        className={`group flex-shrink-0 w-[120px] sm:w-[140px] md:w-auto snap-center p-2 sm:p-4 border rounded-xl transition-all duration-300 hover:shadow-lg cursor-pointer ${
                           isToday 
-                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 bg-clip-text text-transparent' 
-                            : 'text-foreground'
-                        }`}>
-                          {format(day, 'dd', { locale: ptBR })}
+                            ? 'bg-primary/10 border-primary/40 shadow-md' 
+                            : 'bg-gradient-to-br from-background to-muted/20 hover:border-primary/20'
+                        }`}
+                        onClick={() => { setSelectedDate(day); setViewMode('day'); }}
+                      >
+                        <div className="text-center mb-2 sm:mb-3">
+                          <div className={`font-semibold text-xs sm:text-sm uppercase tracking-wider ${
+                            isToday ? 'text-primary' : 'text-muted-foreground'
+                          }`}>
+                            {format(day, 'EEE', { locale: ptBR })}
+                          </div>
+                          <div className={`text-xl sm:text-3xl font-extrabold ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                            {format(day, 'dd', { locale: ptBR })}
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 sm:space-y-2">
+                          {daySchedules.length === 0 ? (
+                            <div className="text-[10px] sm:text-xs text-muted-foreground text-center py-2 sm:py-4 bg-muted/30 rounded-lg">Sem agenda</div>
+                          ) : (
+                            daySchedules.slice(0, 2).map((schedule) => (
+                              <div key={schedule.id} className="p-2 sm:p-3 bg-card border rounded-lg text-xs hover:shadow-md transition-all duration-200">
+                                <div className="font-bold text-xs sm:text-sm text-primary flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })}
+                                </div>
+                                <div className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs">
+                                  {schedule.clients?.name || 'Cliente N/A'}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                          {daySchedules.length > 2 && (
+                            <div className="text-[10px] sm:text-xs text-center text-primary font-medium">
+                              +{daySchedules.length - 2} mais
+                            </div>
+                          )}
                         </div>
                       </div>
-                      
-                      <div className="space-y-1.5 sm:space-y-2">
-                        {daySchedules.length === 0 ? (
-                          <div className="text-[10px] sm:text-xs text-muted-foreground text-center py-2 sm:py-4 bg-muted/30 rounded-lg">
-                            Sem agenda
-                          </div>
-                        ) : (
-                          daySchedules.slice(0, 2).map((schedule) => (
-                            <div 
-                              key={schedule.id} 
-                              className="group/schedule p-2 sm:p-3 bg-gradient-to-br from-background to-muted/30 border rounded-lg text-xs hover:shadow-md hover:border-blue-500/30 transition-all duration-200"
-                            >
-                              <div className="font-bold text-xs sm:text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })}
-                              </div>
-                              <div className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs">
-                                {schedule.clients?.name || 'Cliente N/A'}
-                              </div>
-                            </div>
-                          ))
-                        )}
-                        {daySchedules.length > 2 && (
-                          <div className="text-[10px] sm:text-xs text-center text-blue-600 dark:text-blue-400 font-medium">
-                            +{daySchedules.length - 2} mais
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -563,6 +667,17 @@ const MyPatients: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Diálogo de finalizar atendimento */}
+      <CompleteAttendanceDialog
+        schedule={completeSchedule}
+        isOpen={!!completeSchedule}
+        onClose={() => setCompleteSchedule(null)}
+        onComplete={() => {
+          setCompleteSchedule(null);
+          loadMySchedules();
+        }}
+      />
     </div>
   );
 };
