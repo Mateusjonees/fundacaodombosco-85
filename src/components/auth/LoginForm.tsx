@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -15,6 +15,7 @@ interface LoginFormProps {
 export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -124,14 +125,22 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                 <Input 
                   id="password" 
-                  type="password" 
+                  type={showPassword ? 'text' : 'password'} 
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
                   required 
                   disabled={isLoading} 
                   placeholder="••••••••"
-                  className="pl-10 h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
+                  className="pl-10 pr-10 h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
