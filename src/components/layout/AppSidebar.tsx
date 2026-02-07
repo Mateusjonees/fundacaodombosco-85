@@ -447,7 +447,7 @@ export function AppSidebar() {
                 <img alt="Fundação Dom Bosco" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" className="relative h-11 w-auto object-contain rounded-lg" loading="lazy" decoding="async" fetchPriority="low" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-foreground/80 tracking-wide">Sistema Clínico</span>
+                <span className="text-xs font-semibold text-foreground/80 tracking-wide">Clínica</span>
                 <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                   <Sparkles className="h-3 w-3 text-primary" />
                   Fundação Dom Bosco
