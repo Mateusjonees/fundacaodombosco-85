@@ -1270,10 +1270,10 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
           {/* Right Column - Tabs */}
           <div className="lg:col-span-8">
             <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 px-3 sm:px-6">
                 <Tabs defaultValue="history" className="w-full">
                   {/* Tabs reorganizadas para fluxo de trabalho diário */}
-                  <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 mb-6">
+                  <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 mb-6 overflow-x-auto">
                     <TabsTrigger value="history" className="flex-1 min-w-[100px] text-xs md:text-sm py-2">
                       <Activity className="h-4 w-4 mr-1.5" />
                       <span className="hidden sm:inline">Atendimentos</span>
@@ -1605,7 +1605,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
                     {documents.length > 0 ? (
                       <div className="space-y-3">
                         {documents.map((doc) => (
-                          <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-2">
                             <div className="flex-1">
                               <p className="font-medium text-sm">{doc.document_name}</p>
                               <p className="text-xs text-muted-foreground">
@@ -1688,7 +1688,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
 
         {/* Dialog para Vincular Profissional */}
         <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[95vw] max-w-2xl">
             <DialogHeader>
               <DialogTitle>Vincular Profissional ao Cliente</DialogTitle>
             </DialogHeader>

@@ -468,14 +468,14 @@ export default function UserManagement() {
       </div>;
   }
   return <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Gerenciar Usuários e Permissões</h1>
-          <p className="text-muted-foreground">Controle total sobre usuários, cargos e permissões do sistema</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Gerenciar Usuários</h1>
+          <p className="text-muted-foreground text-sm">Controle de usuários, cargos e permissões</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canManageUsers}
-          {canManageUsers && <Button variant="outline" onClick={() => {
+          {canManageUsers && <Button variant="outline" size="sm" onClick={() => {
           setIsCreateEmployeeDialogOpen(true);
         }}>
               <Crown className="h-4 w-4 mr-2" />
@@ -483,12 +483,12 @@ export default function UserManagement() {
             </Button>}
           {canManageRoles && <Dialog open={isPositionDialogOpen} onOpenChange={setIsPositionDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" size="sm">
                   <Briefcase className="h-4 w-4 mr-2" />
                   Novo Cargo
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="w-[95vw] max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Criar Novo Cargo</DialogTitle>
                 </DialogHeader>
@@ -534,63 +534,99 @@ export default function UserManagement() {
         <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <Users className="h-5 w-5" />
-                  Usuários do Sistema ({filteredUsers.length})
+                  Usuários ({filteredUsers.length})
                 </CardTitle>
-                <Input placeholder="Buscar usuários..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-sm" />
+                <Input placeholder="Buscar usuários..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full sm:max-w-sm" />
               </div>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map(user => <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name || 'Sem nome'}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={user.is_active ? "default" : "secondary"}>
-                          {user.is_active ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(user.created_at), 'dd/MM/yyyy', {
-                      locale: ptBR
-                    })}
-                      </TableCell>
-                      <TableCell className="space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => {
-                      setSelectedUser(user);
-                      loadUserPermissions(user.id);
-                      setIsPermissionDialogOpen(true);
-                    }}>
-                          <Shield className="h-4 w-4" />
+            <CardContent className="px-0 sm:px-6">
+              {/* Mobile: Cards / Desktop: Table */}
+              <div className="block sm:hidden space-y-3 px-4">
+                {filteredUsers.map(user => (
+                  <Card key={user.id} className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium uppercase truncate">{user.name || 'Sem nome'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant={user.is_active ? "default" : "secondary"} className="text-xs">
+                            {user.is_active ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => {
+                          setSelectedUser(user);
+                          loadUserPermissions(user.id);
+                          setIsPermissionDialogOpen(true);
+                        }}>
+                          <Shield className="h-3.5 w-3.5" />
                         </Button>
-                        {canChangePasswords && <Button size="sm" variant="outline" onClick={() => {
-                      setPasswordChange({
-                        ...passwordChange,
-                        userId: user.id
-                      });
-                      setIsPasswordDialogOpen(true);
-                    }}>
-                             <Key className="h-4 w-4" />
-                           </Button>}
-                        <Button size="sm" variant="outline" onClick={() => handleDeleteUser(user.id, user.name)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4" />
+                        {canChangePasswords && <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => {
+                          setPasswordChange({ ...passwordChange, userId: user.id });
+                          setIsPasswordDialogOpen(true);
+                        }}>
+                          <Key className="h-3.5 w-3.5" />
+                        </Button>}
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteUser(user.id, user.name)}>
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                      </TableCell>
-                    </TableRow>)}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              <div className="hidden sm:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Criado em</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map(user => <TableRow key={user.id}>
+                        <TableCell className="font-medium uppercase">{user.name || 'Sem nome'}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.is_active ? "default" : "secondary"}>
+                            {user.is_active ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="space-x-2">
+                          <Button size="sm" variant="outline" onClick={() => {
+                        setSelectedUser(user);
+                        loadUserPermissions(user.id);
+                        setIsPermissionDialogOpen(true);
+                      }}>
+                            <Shield className="h-4 w-4" />
+                          </Button>
+                          {canChangePasswords && <Button size="sm" variant="outline" onClick={() => {
+                        setPasswordChange({ ...passwordChange, userId: user.id });
+                        setIsPasswordDialogOpen(true);
+                      }}>
+                               <Key className="h-4 w-4" />
+                             </Button>}
+                          <Button size="sm" variant="outline" onClick={() => handleDeleteUser(user.id, user.name)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>)}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
