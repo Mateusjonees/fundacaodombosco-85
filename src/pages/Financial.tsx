@@ -954,7 +954,7 @@ export default function Financial() {
                         {new Date(record.date).toLocaleDateString('pt-BR')}
                       </TableCell>
                       <TableCell>{translateCategory(record.category)}</TableCell>
-                      <TableCell>{record.clients?.name || '-'}</TableCell>
+                      <TableCell className="uppercase">{record.clients?.name || '-'}</TableCell>
                       <TableCell>{record.description || '-'}</TableCell>
                       <TableCell className="text-green-600 font-medium">
                         + R$ {record.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -1053,7 +1053,7 @@ export default function Financial() {
                         <TableRow key={`${payment.type}-${payment.id}`} className={isOverdue ? 'bg-red-50' : ''}>
                           <TableCell className="font-medium">
                             <div>
-                              <p>{payment.client_name || 'Paciente não identificado'}</p>
+                              <p className="uppercase">{payment.client_name || 'Paciente não identificado'}</p>
                               {payment.client_phone && (
                                 <p className="text-xs text-muted-foreground">
                                   {payment.client_phone}

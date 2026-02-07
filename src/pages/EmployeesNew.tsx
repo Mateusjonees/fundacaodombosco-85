@@ -645,7 +645,7 @@ export default function EmployeesNew() {
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{employee.name}</p>
+                            <p className="font-medium uppercase">{employee.name}</p>
                             <p className="text-sm text-muted-foreground">{employee.email}</p>
                           </div>
                         </div>

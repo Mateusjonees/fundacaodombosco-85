@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Heart, 
   Search, 
@@ -295,9 +296,14 @@ const MyPatients: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center py-8">
-          <div className="text-lg">Carregando pacientes...</div>
+      <div className="container mx-auto p-3 sm:p-6 space-y-4">
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-12 w-full rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+          ))}
         </div>
       </div>
     );
@@ -394,7 +400,7 @@ const MyPatients: React.FC = () => {
                             {format(new Date(schedule.start_time), 'HH:mm')}
                           </div>
                           <div>
-                            <div className="font-medium text-sm">{schedule.clients?.name || schedule.title}</div>
+                            <div className="font-medium text-sm uppercase">{schedule.clients?.name || schedule.title}</div>
                             <Badge variant={getStatusColor(schedule.status)} className="text-[10px] mt-0.5">
                               {getStatusLabel(schedule.status)}
                             </Badge>
@@ -479,7 +485,7 @@ const MyPatients: React.FC = () => {
                                   <Clock className="h-3 w-3" />
                                   {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })}
                                 </div>
-                                <div className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs">
+                            <div className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs uppercase">
                                   {schedule.clients?.name || 'Cliente N/A'}
                                 </div>
                               </div>
@@ -576,9 +582,9 @@ const MyPatients: React.FC = () => {
                     <CardHeader className="pb-3 pt-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg font-semibold text-foreground truncate">
-                            {client.name}
-                          </CardTitle>
+                          <CardTitle className="text-lg font-semibold text-foreground truncate uppercase">
+                             {client.name}
+                           </CardTitle>
                           {age !== null && (
                             <p className="text-sm text-muted-foreground mt-0.5">
                               {age} anos {isMinor && <span className="text-amber-600 dark:text-amber-400">(Menor)</span>}

@@ -187,7 +187,7 @@ export const MainApp = () => {
                             />
                           </div>
                           <div className="flex flex-col">
-                            <p className="text-sm font-bold text-foreground leading-tight">
+                            <p className="text-sm font-bold text-foreground leading-tight uppercase">
                               {userName}
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
