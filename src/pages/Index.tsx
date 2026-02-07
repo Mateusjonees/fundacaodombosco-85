@@ -4,6 +4,7 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
 import { MainApp } from '@/components/MainApp';
 import { ChangeOwnPasswordDialog } from '@/components/ChangeOwnPasswordDialog';
+import { PWAInstallBanner } from '@/components/PWAInstallBanner';
 import { Loader2 } from 'lucide-react';
 
 const AppContent = () => {
@@ -48,12 +49,15 @@ const AppContent = () => {
     }
     
     return (
-      <LoginForm 
-        onSuccess={() => {
-          setShowApp(true);
-        }}
-        onSwitchToSignUp={() => setShowSignUp(true)}
-      />
+      <>
+        <LoginForm 
+          onSuccess={() => {
+            setShowApp(true);
+          }}
+          onSwitchToSignUp={() => setShowSignUp(true)}
+        />
+        <PWAInstallBanner />
+      </>
     );
   }
 
