@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function PatientArrivedNotification() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { sendNotification } = usePushNotifications();
 
   useEffect(() => {
     if (!user) return;
 
-    // Set up realtime listener for patient arrivals
     const channel = supabase
       .channel('patient-arrivals')
       .on(
@@ -25,7 +26,6 @@ export default function PatientArrivedNotification() {
           const newRecord = payload.new as any;
           const oldRecord = payload.old as any;
           
-          // Check if patient_arrived changed from false to true
           if (!oldRecord?.patient_arrived && newRecord?.patient_arrived) {            
             toast({
               title: "🔔 Paciente Chegou!",
@@ -33,23 +33,26 @@ export default function PatientArrivedNotification() {
               duration: 10000,
             });
 
-            // Play notification sound
+            // Notificação push nativa (funciona fora do sistema)
+            sendNotification('🔔 Paciente Chegou!', {
+              body: 'Seu próximo paciente chegou e está aguardando.',
+              tag: 'patient-arrived',
+              requireInteraction: true,
+            });
+
             playNotificationSound();
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, toast]);
+  }, [user?.id, toast, sendNotification]);
 
   const playNotificationSound = () => {
     try {
-      // Create multiple beeps for better attention
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
       const playBeep = (frequency: number, delay: number) => {
@@ -69,7 +72,6 @@ export default function PatientArrivedNotification() {
         }, delay);
       };
 
-      // Play a sequence of beeps (like a notification bell)
       playBeep(800, 0);
       playBeep(600, 200);
       playBeep(800, 400);
@@ -78,5 +80,5 @@ export default function PatientArrivedNotification() {
     }
   };
 
-  return null; // This component only handles notifications, no UI
+  return null;
 }
