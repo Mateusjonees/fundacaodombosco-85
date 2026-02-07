@@ -2,7 +2,7 @@ import { MeetingAlertManager } from '@/components/MeetingAlertManager';
 
 export default function MeetingAlerts() {
   return (
-    <div className="container mx-auto p-6">
+    <div className="w-full p-4 md:p-6">
       <MeetingAlertManager />
     </div>
   );
