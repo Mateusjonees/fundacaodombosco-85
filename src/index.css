@@ -6,132 +6,124 @@
   :root {
     /* Modern Blue & Green Theme - Fundação Dom Bosco */
     --background: 210 40% 98%;
-    --foreground: 210 20% 15%;
+    --foreground: 215 25% 17%;
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 15%;
+    --card-foreground: 215 25% 17%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 15%;
+    --popover-foreground: 215 25% 17%;
     --primary: 203 79% 43%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 203 70% 55%;
-    --secondary: 112 42% 57%;
+    --secondary: 152 52% 48%;
     --secondary-foreground: 0 0% 100%;
     --muted: 210 30% 96%;
-    --muted-foreground: 210 15% 45%;
+    --muted-foreground: 215 15% 45%;
     --accent: 203 70% 95%;
-    --accent-foreground: 203 79% 43%;
-    --destructive: 0 84% 60%;
+    --accent-foreground: 203 79% 38%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 25% 90%;
+    --border: 214 20% 91%;
     --input: 0 0% 100%;
     --ring: 203 79% 43%;
     --radius: 0.75rem;
     
-    /* Modern Healthcare Colors */
-    --medical-primary: 203 79% 43%;
-    --medical-secondary: 112 42% 57%;
-    --medical-accent: 203 70% 95%;
-    --success: 142 70% 45%;
-    --warning: 45 90% 60%;
+    /* Semantic status */
+    --success: 152 60% 42%;
+    --warning: 38 92% 50%;
     --info: 203 79% 43%;
     
     /* Login specific colors */
     --login-bg-start: 210 40% 98%;
     --login-bg-end: 203 30% 95%;
     --login-form-bg: 0 0% 100%;
-    --login-text: 210 20% 15%;
-    --login-input-border: 210 25% 90%;
+    --login-text: 215 25% 17%;
+    --login-input-border: 214 20% 91%;
     --login-input-focus: 203 79% 43%;
     
     /* Modern Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(203 79% 43%), hsl(203 70% 55%));
-    --gradient-secondary: linear-gradient(135deg, hsl(112 42% 57%), hsl(112 50% 65%));
-    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%), hsl(203 30% 95%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(203 70% 98%));
+    --gradient-secondary: linear-gradient(135deg, hsl(152 52% 48%), hsl(152 50% 58%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%), hsl(210 35% 96%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 40% 99%));
     
     /* Modern Shadows */
-    --shadow-professional: 0 4px 20px -2px rgba(27, 117, 188, 0.1);
-    --shadow-elegant: 0 8px 30px -8px rgba(27, 117, 188, 0.15);
-    --shadow-glow: 0 0 40px rgba(27, 117, 188, 0.2);
+    --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.03);
+    --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.06), 0 2px 6px -2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 32px -4px rgba(0,0,0,0.08), 0 4px 12px -4px rgba(0,0,0,0.04);
+    --shadow-xl: 0 20px 48px -8px rgba(0,0,0,0.1), 0 8px 20px -6px rgba(0,0,0,0.05);
+    --shadow-glow: 0 0 32px rgba(27, 117, 188, 0.12);
     
-    /* Chart colors for healthcare data */
+    /* Chart colors */
     --chart-1: 203 79% 43%;
-    --chart-2: 112 42% 57%;
-    --chart-3: 203 60% 60%;
-    --chart-4: 112 35% 45%;
-    --chart-5: 203 50% 70%;
+    --chart-2: 152 52% 48%;
+    --chart-3: 262 52% 55%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 340 65% 55%;
     
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 210 20% 15%;
+    --sidebar-foreground: 215 25% 17%;
     --sidebar-primary: 203 79% 43%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 203 70% 95%;
-    --sidebar-accent-foreground: 203 79% 43%;
-    --sidebar-border: 210 25% 90%;
+    --sidebar-accent-foreground: 203 79% 38%;
+    --sidebar-border: 214 20% 91%;
     --sidebar-ring: 203 79% 43%;
 
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .dark {
-    /* Modern Dark Theme - Fundação Dom Bosco */
-    --background: 210 30% 10%;
-    --foreground: 210 15% 95%;
-    --card: 210 25% 12%;
-    --card-foreground: 210 15% 95%;
-    --popover: 210 25% 12%;
-    --popover-foreground: 210 15% 95%;
+    --background: 222 30% 8%;
+    --foreground: 210 20% 95%;
+    --card: 222 25% 11%;
+    --card-foreground: 210 20% 95%;
+    --popover: 222 25% 11%;
+    --popover-foreground: 210 20% 95%;
     --primary: 203 79% 50%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 203 70% 60%;
-    --secondary: 112 42% 60%;
+    --secondary: 152 52% 55%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 210 20% 18%;
-    --muted-foreground: 210 15% 65%;
-    --accent: 203 60% 25%;
-    --accent-foreground: 203 79% 80%;
-    --destructive: 0 84% 60%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 215 15% 60%;
+    --accent: 203 50% 20%;
+    --accent-foreground: 203 70% 78%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 20% 22%;
-    --input: 210 25% 15%;
+    --border: 222 18% 18%;
+    --input: 222 25% 13%;
     --ring: 203 79% 50%;
     
-    /* Dark Mode Healthcare Colors */
-    --medical-primary: 203 79% 50%;
-    --medical-secondary: 112 42% 60%;
-    --medical-accent: 203 60% 25%;
-    --success: 142 65% 50%;
-    --warning: 45 85% 65%;
+    --success: 152 55% 50%;
+    --warning: 38 88% 55%;
     --info: 203 79% 50%;
     
-    /* Login specific colors - Dark Mode */
-    --login-bg-start: 210 30% 10%;
-    --login-bg-end: 203 30% 15%;
-    --login-form-bg: 210 25% 12%;
-    --login-text: 210 15% 95%;
-    --login-input-border: 210 20% 22%;
+    --login-bg-start: 222 30% 8%;
+    --login-bg-end: 222 28% 12%;
+    --login-form-bg: 222 25% 11%;
+    --login-text: 210 20% 95%;
+    --login-input-border: 222 18% 18%;
     --login-input-focus: 203 79% 50%;
     
-    /* Dark mode gradients */
     --gradient-primary: linear-gradient(135deg, hsl(203 79% 50%), hsl(203 70% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(112 42% 60%), hsl(112 50% 70%));
-    --gradient-subtle: linear-gradient(180deg, hsl(210 30% 10%), hsl(203 30% 15%));
-    --gradient-card: linear-gradient(145deg, hsl(210 25% 12%), hsl(203 40% 18%));
+    --gradient-secondary: linear-gradient(135deg, hsl(152 52% 55%), hsl(152 50% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(222 30% 8%), hsl(222 28% 12%));
+    --gradient-card: linear-gradient(145deg, hsl(222 25% 11%), hsl(222 22% 13%));
     
-    /* Dark mode shadows */
-    --shadow-professional: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
-    --shadow-elegant: 0 8px 30px -8px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 40px rgba(27, 117, 188, 0.3);
+    --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.2), 0 1px 2px -1px rgba(0,0,0,0.15);
+    --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.3), 0 2px 6px -2px rgba(0,0,0,0.2);
+    --shadow-lg: 0 10px 32px -4px rgba(0,0,0,0.4), 0 4px 12px -4px rgba(0,0,0,0.25);
+    --shadow-xl: 0 20px 48px -8px rgba(0,0,0,0.5), 0 8px 20px -6px rgba(0,0,0,0.3);
+    --shadow-glow: 0 0 32px rgba(27, 117, 188, 0.2);
     
-    /* Dark sidebar */
-    --sidebar-background: 210 25% 12%;
-    --sidebar-foreground: 210 15% 95%;
+    --sidebar-background: 222 25% 11%;
+    --sidebar-foreground: 210 20% 95%;
     --sidebar-primary: 203 79% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 203 60% 25%;
-    --sidebar-accent-foreground: 203 79% 80%;
-    --sidebar-border: 210 20% 22%;
+    --sidebar-accent: 203 50% 20%;
+    --sidebar-accent-foreground: 203 70% 78%;
+    --sidebar-border: 222 18% 18%;
     --sidebar-ring: 203 79% 50%;
   }
 }
@@ -142,8 +134,28 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-family);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Smooth scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.35);
   }
 }
 
@@ -155,8 +167,9 @@
   }
 
   .login-form {
-    @apply bg-card p-8 rounded-xl shadow-2xl w-full max-w-md text-center border;
+    @apply bg-card p-8 rounded-2xl w-full max-w-md text-center border;
     border-color: hsl(var(--login-input-border));
+    box-shadow: var(--shadow-xl);
     backdrop-filter: blur(20px);
   }
 
@@ -169,7 +182,7 @@
   }
 
   .login-form .form-group input {
-    @apply w-full px-4 py-3 border rounded-lg text-sm bg-card transition-all;
+    @apply w-full px-4 py-3 border rounded-xl text-sm bg-card transition-all;
     border-color: hsl(var(--login-input-border));
   }
 
@@ -180,8 +193,9 @@
   }
 
   .login-bubble {
-    @apply absolute rounded-full opacity-60;
-    background: linear-gradient(135deg, hsla(var(--primary) / 0.1), hsla(var(--primary-glow) / 0.2));
+    @apply absolute rounded-full opacity-40;
+    background: linear-gradient(135deg, hsla(var(--primary) / 0.08), hsla(var(--primary-glow) / 0.15));
+    filter: blur(1px);
   }
 
   .bubble-1 {
@@ -204,7 +218,7 @@
   /* Professional Healthcare UI Components */
   .gradient-card {
     background: var(--gradient-card);
-    box-shadow: var(--shadow-professional);
+    box-shadow: var(--shadow-md);
   }
   
   .gradient-primary {
@@ -212,27 +226,27 @@
   }
   
   .shadow-professional {
-    box-shadow: var(--shadow-professional);
+    box-shadow: var(--shadow-md);
   }
   
   .shadow-elegant {
-    box-shadow: var(--shadow-elegant);
+    box-shadow: var(--shadow-lg);
   }
   
   .medical-border {
-    border: 1px solid hsl(var(--primary) / 0.2);
+    border: 1px solid hsl(var(--primary) / 0.15);
   }
   
   .medical-gradient {
     background: linear-gradient(135deg, 
-      hsl(var(--medical-primary) / 0.1), 
-      hsl(var(--medical-secondary) / 0.05));
+      hsl(var(--primary) / 0.06), 
+      hsl(var(--secondary) / 0.03));
   }
 
   .glass-effect {
     backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   /* Animations */
@@ -252,7 +266,7 @@
     }
     50% {
       opacity: 1;
-      transform: scale(1.05);
+      transform: scale(1.03);
     }
   }
 
@@ -283,7 +297,7 @@
     animation: slideUp 0.05s ease-out forwards;
   }
 
-  /* Sidebar specific styles - Ultra fast */
+  /* Sidebar specific styles */
   .sidebar-container {
     @apply transition-[width] duration-75 ease-out;
   }
@@ -312,6 +326,6 @@
   }
 
   .sidebar-user-card:hover {
-    @apply shadow-sm;
+    box-shadow: var(--shadow-sm);
   }
 }

@@ -11,21 +11,21 @@ interface PageHeaderProps {
 }
 
 const iconColorClasses = {
-  blue: "bg-blue-500/10 text-blue-500 dark:bg-blue-500/20",
-  green: "bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20",
-  purple: "bg-purple-500/10 text-purple-500 dark:bg-purple-500/20",
-  orange: "bg-orange-500/10 text-orange-500 dark:bg-orange-500/20",
-  red: "bg-red-500/10 text-red-500 dark:bg-red-500/20",
-  pink: "bg-pink-500/10 text-pink-500 dark:bg-pink-500/20",
+  blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-blue-500/20",
+  green: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20",
+  purple: "bg-purple-500/10 text-purple-600 dark:text-purple-400 ring-purple-500/20",
+  orange: "bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-orange-500/20",
+  red: "bg-red-500/10 text-red-600 dark:text-red-400 ring-red-500/20",
+  pink: "bg-pink-500/10 text-pink-600 dark:text-pink-400 ring-pink-500/20",
 };
 
 const borderColorClasses = {
-  blue: "from-blue-500 to-blue-600",
-  green: "from-emerald-500 to-emerald-600",
-  purple: "from-purple-500 to-purple-600",
-  orange: "from-orange-500 to-orange-600",
-  red: "from-red-500 to-red-600",
-  pink: "from-pink-500 to-pink-600",
+  blue: "from-blue-500 to-blue-400",
+  green: "from-emerald-500 to-emerald-400",
+  purple: "from-purple-500 to-purple-400",
+  orange: "from-orange-500 to-orange-400",
+  red: "from-red-500 to-red-400",
+  pink: "from-pink-500 to-pink-400",
 };
 
 export function PageHeader({
@@ -37,7 +37,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={cn("mb-6", className)}>
+    <div className={cn("mb-8", className)}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
           {/* Gradient border accent */}
@@ -45,7 +45,7 @@ export function PageHeader({
           
           {/* Icon */}
           {icon && (
-            <div className={cn("p-3 rounded-xl", iconColorClasses[iconColor])}>
+            <div className={cn("p-3 rounded-xl ring-1", iconColorClasses[iconColor])}>
               {icon}
             </div>
           )}
@@ -56,7 +56,7 @@ export function PageHeader({
               {title}
             </h1>
             {description && (
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1.5 max-w-lg">
                 {description}
               </p>
             )}
