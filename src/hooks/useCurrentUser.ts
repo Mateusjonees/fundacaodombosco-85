@@ -34,7 +34,7 @@ export const useCurrentUser = () => {
   const { user } = useAuth();
 
   const { data: profile, isLoading, error, refetch } = useQuery({
-    queryKey: ['current-user-profile', user?.id],
+    queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
 
@@ -47,8 +47,8 @@ export const useCurrentUser = () => {
       if (error) throw error;
       return data as UserProfile | null;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos de cache
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     enabled: !!user?.id,
   });
 

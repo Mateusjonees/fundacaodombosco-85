@@ -61,34 +61,28 @@ export const ROLE_LABELS: Record<EmployeeRole, string> = {
 export const useRolePermissions = () => {
   const { user } = useAuth();
 
-  // Usar React Query com cache de 10 minutos (permissões mudam raramente)
+  // Reutiliza o cache do perfil já carregado pelo useCurrentUser/preload
   const { data, isLoading } = useQuery({
-    queryKey: ['user-role-permissions', user?.id],
+    queryKey: ['user-profile', user?.id],
     queryFn: async () => {
-      if (!user?.id) return { role: null, unit: null };
+      if (!user?.id) return null;
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('employee_role, unit, is_active')
+        .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error || !data?.is_active) {
-        return { role: null, unit: null };
-      }
-
-      return { 
-        role: data.employee_role as EmployeeRole | null, 
-        unit: data.unit as string | null 
-      };
+      if (error) throw error;
+      return data;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutos
-    gcTime: 15 * 60 * 1000, // 15 minutos de cache
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     enabled: !!user?.id,
   });
 
-  const userRole = data?.role ?? null;
-  const userUnit = data?.unit ?? null;
+  const userRole = (data?.is_active !== false ? data?.employee_role : null) as EmployeeRole | null;
+  const userUnit = data?.unit as string | null;
 
   // Função para verificar se usuário tem um dos roles permitidos
   const hasAnyRole = (allowedRoles: EmployeeRole[]): boolean => {

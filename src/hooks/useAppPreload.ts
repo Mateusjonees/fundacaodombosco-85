@@ -21,14 +21,14 @@ export const useAppPreload = () => {
     // Execute all prefetch operations in parallel for maximum speed
     const prefetchPromises: Promise<void>[] = [];
 
-    // 1. Perfil do usuário (crítico - alta prioridade)
+    // 1. Perfil do usuário (crítico - compartilhado por useCurrentUser e useRolePermissions)
     prefetchPromises.push(
       queryClient.prefetchQuery({
         queryKey: ['user-profile', userId],
         queryFn: async () => {
           const { data } = await supabase
             .from('profiles')
-            .select('user_id, id, name, employee_role, department, unit, avatar_url, is_active, phone, email')
+            .select('*')
             .eq('user_id', userId)
             .single();
           return data;

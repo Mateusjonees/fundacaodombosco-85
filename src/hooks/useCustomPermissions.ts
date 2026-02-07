@@ -78,7 +78,7 @@ export const useCustomPermissions = () => {
 
   // Usar React Query com cache de 10 minutos
   const { data: permissions = [], isLoading, refetch } = useQuery({
-    queryKey: ['user-custom-permissions', user?.id],
+    queryKey: ['custom-permissions', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -93,8 +93,8 @@ export const useCustomPermissions = () => {
         source: item.source ?? 'system'
       })) as UserPermission[];
     },
-    staleTime: 10 * 60 * 1000, // 10 minutos
-    gcTime: 15 * 60 * 1000, // 15 minutos de cache
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     enabled: !!user?.id,
   });
 
