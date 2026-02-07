@@ -17,19 +17,19 @@ const StatCard = ({
   icon: any; 
   color: string;
 }) => (
-  <Card className="group relative overflow-hidden border border-border/50 hover:border-border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
-    <CardContent className="p-5">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+  <Card className="group relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-md">
+    <CardContent className="p-3 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="space-y-1 sm:space-y-2 min-w-0">
+          <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground truncate">
             {title}
           </p>
-          <p className={`text-3xl font-extrabold tracking-tight ${color}`}>
+          <p className={`text-xl sm:text-3xl font-extrabold tracking-tight ${color}`}>
             {value}
           </p>
         </div>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${color.replace('text-', 'bg-').split(' ')[0]}/10 group-hover:scale-110 transition-transform duration-300`}>
-          <Icon className={`h-6 w-6 ${color.split(' ')[0]}`} />
+        <div className={`flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl ${color.replace('text-', 'bg-').split(' ')[0]}/10`}>
+          <Icon className={`h-4 w-4 sm:h-6 sm:w-6 ${color.split(' ')[0]}`} />
         </div>
       </div>
     </CardContent>
@@ -57,17 +57,16 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in">
-      {/* Welcome */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-glow p-6 sm:p-8 text-primary-foreground">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDE4YzMuMzE0IDAgNiAyLjY4NiA2IDZTM5LjMxNCAxMiAzNiAxMnMtNiAyLjY4Ni02IDYgMi42ODYgNiA2IDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-primary-foreground/70 text-sm font-medium">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Welcome - compacto no mobile */}
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-glow p-4 sm:p-8 text-primary-foreground">
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+          <div className="space-y-0.5 sm:space-y-1">
+            <p className="text-primary-foreground/70 text-xs sm:text-sm font-medium">
               Bom {new Date().getHours() < 12 ? 'dia' : new Date().getHours() < 18 ? 'tarde' : 'noite'},
             </p>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">{userName}</h1>
-            <Badge className="mt-2 bg-white/15 hover:bg-white/20 border-0 text-primary-foreground text-xs">
+            <h1 className="text-lg sm:text-3xl font-bold tracking-tight uppercase">{userName}</h1>
+            <Badge className="mt-1 sm:mt-2 bg-white/15 hover:bg-white/20 border-0 text-primary-foreground text-[10px] sm:text-xs">
               {userRole ? ROLE_LABELS[userRole] : 'Usuário'}
             </Badge>
           </div>
@@ -78,10 +77,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
             <StatCard
               title={isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
               value={stats.totalClients}
