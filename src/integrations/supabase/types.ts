@@ -3181,21 +3181,14 @@ export type Database = {
           unit_cost: number
         }[]
       }
-      get_user_permissions:
-        | {
-            Args: never
-            Returns: {
-              permission: Database["public"]["Enums"]["permission_type"]
-            }[]
-          }
-        | {
-            Args: { user_uuid: string }
-            Returns: {
-              granted: boolean
-              permission: Database["public"]["Enums"]["permission_action"]
-              source: string
-            }[]
-          }
+      get_user_permissions: {
+        Args: { user_uuid: string }
+        Returns: {
+          granted: boolean
+          permission: Database["public"]["Enums"]["permission_action"]
+          source: string
+        }[]
+      }
       get_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["employee_role"]
