@@ -116,7 +116,7 @@ export default function MedicalRecords() {
   };
 
   return (
-    <div className="container mx-auto p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+    <div className="w-full p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
       {/* Header moderno com gradiente */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 text-white shadow-lg">
         <div className="absolute inset-0 bg-black/10" />

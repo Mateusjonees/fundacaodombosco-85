@@ -479,7 +479,7 @@ export default function FeedbackControl() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6 animate-fade-in">
+    <div className="w-full p-4 md:p-6 space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
@@ -631,7 +631,7 @@ export default function FeedbackControl() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {filteredFeedbacks.map((feedback) => {
             const remainingDays = calculateRemainingDays(feedback.deadline_date);
             const isOverdue = remainingDays < 0;
