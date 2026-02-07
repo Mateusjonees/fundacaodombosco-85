@@ -1356,58 +1356,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
                       </CardContent>
                     </Card>
 
-                    {/* Laudo Section */}
-                    <Card className={`border-2 ${laudoInfo ? 'border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-blue-500/10' : 'border-slate-500/20 bg-muted/30'}`}>
-                      <CardContent className="pt-5">
-                        <div className="flex items-start gap-4">
-                          <div className={`p-3 rounded-xl ${laudoInfo ? 'bg-blue-500/20' : 'bg-muted'}`}>
-                            <FileCheck2 className={`h-6 w-6 ${laudoInfo ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-lg">Laudo</h3>
-                                {loadingLaudo ? (
-                                  <Badge variant="outline" className="animate-pulse">Carregando...</Badge>
-                                ) : laudoInfo ? (
-                                  <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                                    <FileCheck2 className="h-3 w-3 mr-1" />
-                                    Disponível
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-muted-foreground">
-                                    Pendente
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              {laudoInfo && (
-                                <div className="flex gap-2">
-                                  <Button size="sm" variant="outline" onClick={handleViewLaudo}>
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    Visualizar
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={handleDownloadLaudo}>
-                                    <Download className="h-4 w-4 mr-1" />
-                                    Baixar
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                            
-                            {laudoInfo ? (
-                              <p className="text-sm text-muted-foreground">
-                                Concluído em: {new Date(laudoInfo.completed_at).toLocaleDateString('pt-BR')}
-                              </p>
-                            ) : (
-                              <p className="text-sm text-muted-foreground italic">
-                                O laudo será disponibilizado após a conclusão do processo de devolutiva
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+
+
 
                     {/* Clinical Info Cards */}
                     <div className="grid gap-4 md:grid-cols-2">
