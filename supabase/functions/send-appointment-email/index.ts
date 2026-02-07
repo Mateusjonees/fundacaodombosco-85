@@ -81,35 +81,24 @@ const handler = async (req: Request): Promise<Response> => {
       sessions = []
     }: AppointmentEmailRequest = await req.json();
 
-    console.log("Enviando email de confirmação para:", clientEmail);
-    console.log("Schedule IDs para gerar tokens:", scheduleIds);
+    console.log("Enviando email de lembrete para:", clientEmail);
 
     const unitInfo = getUnitInfo(unit);
 
-    // Gerar tokens únicos para cada agendamento e salvar no banco
-    let confirmationUrl = '';
+    // Registrar que o email foi enviado
     if (scheduleIds.length > 0) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // Para o primeiro agendamento, gerar token e link de confirmação
-      const token = crypto.randomUUID();
-      
-      // Atualizar todos os agendamentos com o mesmo token
       const { error: updateError } = await supabase
         .from('schedules')
         .update({ 
-          confirmation_token: token,
           email_sent_at: new Date().toISOString()
         })
         .in('id', scheduleIds);
 
       if (updateError) {
-        console.error("Erro ao salvar token:", updateError);
-        throw updateError;
+        console.error("Erro ao registrar envio:", updateError);
       }
-
-      confirmationUrl = `https://vqphtzkdhfzdwbumexhe.supabase.co/functions/v1/confirm-appointment?token=${token}`;
-      console.log("URL de confirmação gerada:", confirmationUrl);
     }
 
     // Gerar lista de sessões para o e-mail
@@ -124,29 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     ` : '';
 
-    const confirmationButtonHtml = confirmationUrl ? `
-      <div style="text-align: center; margin: 32px 0;">
-        <!-- Botão de Confirmação -->
-        <a href="${confirmationUrl}&action=confirm" 
-           style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 48px; text-decoration: none; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); margin-bottom: 16px;">
-          ✅ Confirmo minha presença
-        </a>
-        
-        <div style="margin: 16px 0;">
-          <span style="color: #9ca3af; font-size: 13px;">ou</span>
-        </div>
-        
-        <!-- Botão de Recusa -->
-        <a href="${confirmationUrl}&action=decline" 
-           style="display: inline-block; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 14px 40px; text-decoration: none; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);">
-          ❌ Não poderei comparecer
-        </a>
-        
-        <p style="color: #6b7280; font-size: 12px; margin-top: 16px;">
-          Clique em um dos botões acima para nos informar sobre sua presença
-        </p>
-      </div>
-    ` : '';
+    // E-mail é apenas lembrete, sem botões de confirmação
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -161,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Header -->
             <div style="background: linear-gradient(135deg, ${unitInfo.color}, ${unitInfo.color}dd); padding: 32px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">
-                📅 Novo Agendamento
+                📅 Lembrete de Agendamento
               </h1>
               <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">
                 ${unitInfo.name}
@@ -217,7 +184,7 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               ` : ''}
               
-              ${confirmationButtonHtml}
+              
               
               <!-- Reminder -->
               <div style="background-color: #eff6ff; border-radius: 8px; padding: 16px; text-align: center;">
@@ -245,8 +212,8 @@ const handler = async (req: Request): Promise<Response> => {
       from: fromEmail,
       to: [clientEmail],
       subject: sessions.length > 1 
-        ? `${sessions.length} Sessões Agendadas - ${appointmentDate}`
-        : `Agendamento Confirmado - ${appointmentDate} às ${appointmentTime}`,
+        ? `Lembrete: ${sessions.length} Sessões Agendadas - ${appointmentDate}`
+        : `Lembrete de Agendamento - ${appointmentDate} às ${appointmentTime}`,
       html: emailHtml,
     });
 
