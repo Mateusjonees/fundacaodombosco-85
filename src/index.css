@@ -141,6 +141,17 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
+  /* Mobile keyboard: keep inputs visible */
+  @supports (height: 100dvh) {
+    html, body {
+      height: 100dvh;
+    }
+  }
+
+  input:focus, textarea:focus, select:focus {
+    scroll-margin-bottom: 120px;
+  }
+
   /* Smooth scrollbar */
   ::-webkit-scrollbar {
     width: 5px;
@@ -164,13 +175,20 @@
 @layer components {
   /* ======= Login ======= */
   .login-container {
-    @apply flex justify-center items-center min-h-screen w-full fixed top-0 left-0 z-50;
+    @apply flex justify-center items-center min-h-screen w-full fixed top-0 left-0 z-50 overflow-y-auto;
     background: linear-gradient(
       160deg, 
       hsl(var(--login-bg-start)), 
       hsl(var(--login-bg-mid)) 40%, 
       hsl(var(--login-bg-end))
     );
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  @media (max-height: 600px) {
+    .login-container {
+      @apply items-start py-8;
+    }
   }
 
   .login-form {
