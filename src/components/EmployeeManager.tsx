@@ -346,7 +346,7 @@ export const EmployeeManager = () => {
               <TableBody>
                 {employees.map((employee) => (
                   <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{employee.name}</TableCell>
+                    <TableCell className="font-medium uppercase">{employee.name}</TableCell>
                     <TableCell>{employee.email || '-'}</TableCell>
                     <TableCell>
                       <Badge variant="outline">

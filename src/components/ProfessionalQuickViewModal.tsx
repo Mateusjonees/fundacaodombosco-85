@@ -122,7 +122,7 @@ export const ProfessionalQuickViewModal = ({ professionalId, open, onOpenChange 
                   role={professional.employee_role}
                 />
                 <div className="flex-1 min-w-0">
-                  <h2 className="font-bold text-base sm:text-lg truncate">{professional.name}</h2>
+                  <h2 className="font-bold text-base sm:text-lg truncate uppercase">{professional.name}</h2>
                   <Badge variant="secondary" className="text-[10px] sm:text-xs mt-1">
                     <Briefcase className="h-3 w-3 mr-1" />
                     {roleLabels[professional.employee_role] || professional.employee_role}

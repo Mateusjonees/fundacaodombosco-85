@@ -566,7 +566,7 @@ const UserAvatarFooter = memo(({
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="end" className="min-w-[180px]">
           <div className="px-2 py-1.5 mb-1">
-            <p className="font-medium text-sm">{userName || 'Usuário'}</p>
+            <p className="font-medium text-sm uppercase">{userName || 'Usuário'}</p>
             <p className="text-xs text-muted-foreground">{userRole}</p>
           </div>
           <DropdownMenuSeparator />
@@ -591,7 +591,7 @@ const UserAvatarFooter = memo(({
             <UserAvatar name={userName} avatarUrl={avatarUrl} role={userRole} size="sm" />
           </div>
           <div className="relative flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate text-foreground">{userName || 'Usuário'}</p>
+            <p className="text-sm font-semibold truncate text-foreground uppercase">{userName || 'Usuário'}</p>
             <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {userRole || 'Carregando...'}
