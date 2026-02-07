@@ -189,26 +189,13 @@ export default function Employees() {
     
     setDeleting(true);
     try {
-      // Chama a edge function para deletar o usuário
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || 'https://uzcfscnbkbeqxmjgxklq.supabase.co'}/functions/v1/delete-users`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${sessionData.session?.access_token}`,
-          },
-          body: JSON.stringify({ userId: employeeToDelete.user_id }),
-        }
-      );
+      // Chama a edge function para deletar o usuário via SDK
+      const { data: result, error } = await supabase.functions.invoke('delete-users', {
+        body: { userId: employeeToDelete.user_id }
+      });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao deletar funcionário');
-      }
+      if (error) throw new Error(error.message || 'Erro ao deletar funcionário');
+      if (result?.error) throw new Error(result.error);
 
       toast({
         title: "Sucesso",

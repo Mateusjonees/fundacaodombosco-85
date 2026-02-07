@@ -34,6 +34,11 @@ interface EmployeeData {
   employee_role: string;
   phone?: string;
   document_cpf?: string;
+  document_rg?: string;
+  birth_date?: string;
+  address?: string;
+  unit?: string;
+  units?: string[];
   department?: string;
   salary?: number;
   is_active: boolean;
@@ -429,8 +434,14 @@ export default function EmployeeControl() {
                         <div><strong>Email:</strong> {selectedEmployee.email || 'N/A'}</div>
                         <div><strong>Telefone:</strong> {selectedEmployee.phone || 'N/A'}</div>
                         <div><strong>CPF:</strong> {selectedEmployee.document_cpf || 'N/A'}</div>
+                        <div><strong>RG:</strong> {selectedEmployee.document_rg || 'N/A'}</div>
+                        <div><strong>Data de Nascimento:</strong> {selectedEmployee.birth_date ? format(new Date(selectedEmployee.birth_date), 'dd/MM/yyyy') : 'N/A'}</div>
                         <div><strong>Cargo:</strong> {ROLE_LABELS[selectedEmployee.employee_role as keyof typeof ROLE_LABELS]}</div>
                         <div><strong>Departamento:</strong> {selectedEmployee.department || 'N/A'}</div>
+                        <div><strong>Unidade Principal:</strong> {selectedEmployee.unit || 'N/A'}</div>
+                        <div><strong>Unidades de Atuação:</strong> {selectedEmployee.units && Array.isArray(selectedEmployee.units) && selectedEmployee.units.length > 0 ? selectedEmployee.units.join(', ') : 'N/A'}</div>
+                        <div><strong>Salário:</strong> {selectedEmployee.salary ? `R$ ${Number(selectedEmployee.salary).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}</div>
+                        <div><strong>Endereço:</strong> {selectedEmployee.address || 'N/A'}</div>
                         <div><strong>Data de Contratação:</strong> {selectedEmployee.hire_date ? format(new Date(selectedEmployee.hire_date), 'dd/MM/yyyy') : 'N/A'}</div>
                       </div>
                     </div>
