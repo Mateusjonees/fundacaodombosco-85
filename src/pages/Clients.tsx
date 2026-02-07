@@ -103,8 +103,13 @@ export default function Patients() {
     searchTerm: debouncedSearch || undefined,
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [openTabs, setOpenTabs] = useState<Client[]>([]);
-  const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const [openTabIds, setOpenTabIds] = useState<string[]>(() => {
+    const tabs = searchParams.get('tabs');
+    return tabs ? tabs.split(',').filter(Boolean) : [];
+  });
+  const [activeTabId, setActiveTabId] = useState<string | null>(() => {
+    return searchParams.get('clientId') || null;
+  });
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [reportClient, setReportClient] = useState<Client | null>(null);
   const [quickViewClientId, setQuickViewClientId] = useState<string | null>(null);
@@ -115,16 +120,29 @@ export default function Patients() {
     setQuickViewClientId(clientId);
   }, []);
 
+  // Derivar os clientes abertos dos IDs
+  const openTabs = useMemo(() => {
+    return openTabIds.map(id => clients.find(c => c.id === id)).filter(Boolean) as Client[];
+  }, [openTabIds, clients]);
+
+  // Sync URL com tabs abertas
+  const syncTabsToUrl = useCallback((tabIds: string[], active: string | null) => {
+    const params = new URLSearchParams();
+    if (tabIds.length > 0) params.set('tabs', tabIds.join(','));
+    if (active) params.set('clientId', active);
+    setSearchParams(params, { replace: true });
+  }, [setSearchParams]);
+
   // Função para selecionar cliente com persistência na URL e scroll
   const handleSelectClient = useCallback((client: Client) => {
-    setOpenTabs(prev => {
-      if (prev.find(t => t.id === client.id)) return prev;
-      return [...prev, client];
+    setOpenTabIds(prev => {
+      const newTabs = prev.includes(client.id) ? prev : [...prev, client.id];
+      syncTabsToUrl(newTabs, client.id);
+      return newTabs;
     });
     setActiveTabId(client.id);
-    setSearchParams({ clientId: client.id }, { replace: true });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [setSearchParams]);
+  }, [syncTabsToUrl]);
 
   // Função para abrir perfil completo a partir do quick view
   const handleViewFullProfile = useCallback((clientId: string) => {
@@ -137,19 +155,24 @@ export default function Patients() {
 
   // Função para fechar uma aba
   const handleCloseTab = useCallback((clientId: string) => {
-    setOpenTabs(prev => prev.filter(t => t.id !== clientId));
-    setActiveTabId(prevActive => {
-      if (prevActive === clientId) return null;
-      return prevActive;
+    setOpenTabIds(prev => {
+      const newTabs = prev.filter(id => id !== clientId);
+      const newActive = activeTabId === clientId
+        ? (newTabs.length > 0 ? newTabs[newTabs.length - 1] : null)
+        : activeTabId;
+      setActiveTabId(newActive);
+      syncTabsToUrl(newTabs, newActive);
+      return newTabs;
     });
-  }, []);
+  }, [activeTabId, syncTabsToUrl]);
 
   // Função para voltar à lista
   const handleBackToList = useCallback(() => {
     setActiveTabId(null);
-    searchParams.delete('clientId');
-    setSearchParams(searchParams, { replace: true });
-  }, [searchParams, setSearchParams]);
+    const params = new URLSearchParams();
+    if (openTabIds.length > 0) params.set('tabs', openTabIds.join(','));
+    setSearchParams(params, { replace: true });
+  }, [openTabIds, setSearchParams]);
 
   // Função para invalidar cache ao invés de reload
   const refreshClients = useCallback(() => {
@@ -211,18 +234,23 @@ export default function Patients() {
     loadClientAssignments();
   }, [user]);
 
-  // Restaurar cliente via URL se clientId estiver presente
+  // Restaurar tabs via URL (já inicializadas no useState, apenas garantir activeTab)
   useEffect(() => {
     const clientId = searchParams.get('clientId');
-    if (clientId && clients.length > 0 && !openTabs.find(t => t.id === clientId)) {
-      const clientToOpen = clients.find(c => c.id === clientId);
-      if (clientToOpen) {
-        setOpenTabs(prev => [...prev, clientToOpen]);
-        setActiveTabId(clientId);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+    const tabsParam = searchParams.get('tabs');
+    if (tabsParam && clients.length > 0) {
+      const tabIds = tabsParam.split(',').filter(Boolean);
+      setOpenTabIds(prev => {
+        const merged = [...new Set([...prev, ...tabIds])];
+        return merged;
+      });
     }
-  }, [searchParams, clients]);
+    if (clientId && clients.length > 0) {
+      setActiveTabId(clientId);
+      // Garante que o clientId ativo está nas tabs
+      setOpenTabIds(prev => prev.includes(clientId) ? prev : [...prev, clientId]);
+    }
+  }, [clients]);
 
   // React Query carrega automaticamente os clientes
 
@@ -541,7 +569,7 @@ export default function Patients() {
               }`}
               onClick={() => {
                 setActiveTabId(tab.id);
-                setSearchParams({ clientId: tab.id }, { replace: true });
+                syncTabsToUrl(openTabIds, tab.id);
               }}
             >
               <span className="text-sm max-w-[120px] sm:max-w-[180px] truncate">{tab.name.split(' ')[0]}</span>
