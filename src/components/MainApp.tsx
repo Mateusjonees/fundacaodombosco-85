@@ -1,5 +1,5 @@
-import { lazy, Suspense, useState, memo, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useState, memo, useMemo, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -56,16 +55,48 @@ const ContractTemplates = lazy(() => import('@/pages/ContractTemplates'));
 const CustomRoles = lazy(() => import('@/pages/CustomRoles'));
 const Anamnesis = lazy(() => import('@/pages/Anamnesis'));
 
+// Memoized route config to avoid re-creating on every render
+const AppRoutes = memo(() => (
+  <Suspense fallback={<PageSkeleton />}>
+    <Routes>
+      <Route path="/" element={<ProtectedRoute requiredPermission="view_dashboard"><Dashboard /></ProtectedRoute>} />
+      <Route path="/clients" element={<ProtectedRoute requiredPermission="view_clients"><Clients /></ProtectedRoute>} />
+      <Route path="/schedule" element={<ProtectedRoute requiredPermission="view_schedules"><Schedule /></ProtectedRoute>} />
+      <Route path="/schedule-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><ScheduleControl /></ProtectedRoute>} />
+      <Route path="/attendance-validation" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><AttendanceValidation /></ProtectedRoute>} />
+      <Route path="/feedback-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><FeedbackControl /></ProtectedRoute>} />
+      <Route path="/financial" element={<ProtectedRoute requiredPermission="view_financial"><Financial /></ProtectedRoute>} />
+      <Route path="/contracts" element={<ProtectedRoute requiredPermission="view_contracts"><Contracts /></ProtectedRoute>} />
+      <Route path="/stock" element={<ProtectedRoute requiredPermission="view_stock"><StockManager /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute requiredPermission="view_reports"><Reports /></ProtectedRoute>} />
+      <Route path="/my-patients" element={<MyPatients />} />
+      <Route path="/medical-records" element={<ProtectedRoute requiredPermission="view_medical_records"><MedicalRecords /></ProtectedRoute>} />
+      <Route path="/employees-new" element={<ProtectedRoute requiredPermission="view_employees"><EmployeesNew /></ProtectedRoute>} />
+      <Route path="/employee-control" element={<ProtectedRoute allowedRoles={['director']}><EmployeeControl /></ProtectedRoute>} />
+      <Route path="/users" element={<ProtectedRoute requiredPermission="manage_users" allowedRoles={['director']}><UserManagement /></ProtectedRoute>} />
+      <Route path="/messages" element={<DirectMessages />} />
+      <Route path="/my-files" element={<ProtectedRoute requiredPermission="view_files"><MyFiles /></ProtectedRoute>} />
+      <Route path="/timesheet" element={<ProtectedRoute requiredPermission="view_timesheet"><Timesheet /></ProtectedRoute>} />
+      <Route path="/meeting-alerts" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><MeetingAlerts /></ProtectedRoute>} />
+      <Route path="/neuroassessment" element={<ProtectedRoute allowedRoles={['director']}><Neuroassessment /></ProtectedRoute>} />
+      <Route path="/contract-templates" element={<ProtectedRoute allowedRoles={['director']}><ContractTemplates /></ProtectedRoute>} />
+      <Route path="/custom-roles" element={<ProtectedRoute allowedRoles={['director']}><CustomRoles /></ProtectedRoute>} />
+      <Route path="/anamnesis" element={<ProtectedRoute allowedRoles={['director']}><Anamnesis /></ProtectedRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </Suspense>
+));
+AppRoutes.displayName = 'AppRoutes';
+
 export const MainApp = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   
-  // Usar hook centralizado com cache
   const { profile, userName, userRole, avatarUrl } = useCurrentUser();
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logAction({
         entityType: 'auth',
@@ -99,7 +130,7 @@ export const MainApp = () => {
         description: "Ocorreu um erro inesperado.",
       });
     }
-  };
+  }, [logAction, toast, user?.email]);
 
   return (
     <Router>
@@ -216,148 +247,10 @@ export const MainApp = () => {
               </div>
             </header>
 
-            <main className="flex-1 p-4 lg:p-6">
-              <PageBreadcrumb />
-              <Suspense fallback={<PageSkeleton />}>
-                <Routes>
-                    <Route path="/" element={
-                      <ProtectedRoute requiredPermission="view_dashboard">
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                  
-                    <Route path="/clients" element={
-                      <ProtectedRoute requiredPermission="view_clients">
-                        <Clients />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/schedule" element={
-                      <ProtectedRoute requiredPermission="view_schedules">
-                        <Schedule />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/schedule-control" element={
-                      <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}>
-                        <ScheduleControl />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/attendance-validation" element={
-                      <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}>
-                        <AttendanceValidation />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/feedback-control" element={
-                      <ProtectedRoute allowedRoles={['director', 'coordinator_floresta', 'coordinator_atendimento_floresta']}>
-                        <FeedbackControl />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/financial" element={
-                      <ProtectedRoute requiredPermission="view_financial">
-                        <Financial />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/contracts" element={
-                      <ProtectedRoute requiredPermission="view_contracts">
-                        <Contracts />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/stock" element={
-                      <ProtectedRoute requiredPermission="view_stock">
-                        <StockManager />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/reports" element={
-                      <ProtectedRoute requiredPermission="view_reports">
-                        <Reports />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/my-patients" element={
-                      <MyPatients />
-                    } />
-                    
-                    <Route path="/medical-records" element={
-                      <ProtectedRoute requiredPermission="view_medical_records">
-                        <MedicalRecords />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/employees-new" element={
-                      <ProtectedRoute requiredPermission="view_employees">
-                        <EmployeesNew />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/employee-control" element={
-                      <ProtectedRoute allowedRoles={['director']}>
-                        <EmployeeControl />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/users" element={
-                      <ProtectedRoute requiredPermission="manage_users" allowedRoles={['director']}>
-                        <UserManagement />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/messages" element={
-                      <DirectMessages />
-                    } />
-                    
-                    <Route path="/my-files" element={
-                      <ProtectedRoute requiredPermission="view_files">
-                        <MyFiles />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/timesheet" element={
-                      <ProtectedRoute requiredPermission="view_timesheet">
-                        <Timesheet />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/meeting-alerts" element={
-                      <ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}>
-                        <MeetingAlerts />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/neuroassessment" element={
-                      <ProtectedRoute allowedRoles={['director']}>
-                        <Neuroassessment />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/contract-templates" element={
-                      <ProtectedRoute allowedRoles={['director']}>
-                        <ContractTemplates />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/custom-roles" element={
-                      <ProtectedRoute allowedRoles={['director']}>
-                        <CustomRoles />
-                      </ProtectedRoute>
-                    } />
-                    
-                    <Route path="/anamnesis" element={
-                      <ProtectedRoute allowedRoles={['director']}>
-                        <Anamnesis />
-                      </ProtectedRoute>
-                    } />
-                      
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </main>
+             <main className="flex-1 p-4 lg:p-6">
+               <PageBreadcrumb />
+               <AppRoutes />
+             </main>
           </div>
         </div>
       </SidebarProvider>
