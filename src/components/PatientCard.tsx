@@ -137,12 +137,11 @@ export function PatientCard({
               className="pt-2"
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect?.();
               }}
             >
               <Checkbox 
                 checked={isSelected}
-                onCheckedChange={onSelect}
+                onCheckedChange={() => onSelect?.()}
                 className="h-5 w-5 rounded-full border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
             </div>
