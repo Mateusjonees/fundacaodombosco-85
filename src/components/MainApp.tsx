@@ -54,6 +54,7 @@ const Neuroassessment = lazy(() => import('@/pages/Neuroassessment'));
 const ContractTemplates = lazy(() => import('@/pages/ContractTemplates'));
 const CustomRoles = lazy(() => import('@/pages/CustomRoles'));
 const Anamnesis = lazy(() => import('@/pages/Anamnesis'));
+const Install = lazy(() => import('@/pages/Install'));
 
 // Memoized route config to avoid re-creating on every render
 const AppRoutes = memo(() => (
@@ -82,6 +83,7 @@ const AppRoutes = memo(() => (
       <Route path="/contract-templates" element={<ProtectedRoute allowedRoles={['director']}><ContractTemplates /></ProtectedRoute>} />
       <Route path="/custom-roles" element={<ProtectedRoute allowedRoles={['director']}><CustomRoles /></ProtectedRoute>} />
       <Route path="/anamnesis" element={<ProtectedRoute allowedRoles={['director']}><Anamnesis /></ProtectedRoute>} />
+      <Route path="/install" element={<Install />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </Suspense>
