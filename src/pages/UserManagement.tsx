@@ -852,31 +852,122 @@ export default function UserManagement() {
               </CardContent>
             </Card>
 
+            {/* Ações em Massa */}
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">Ações rápidas para todas as permissões</p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                      onClick={async () => {
+                        if (!selectedUser) return;
+                        const allPermissions = Object.values(PERMISSION_CATEGORIES).flatMap(c => c.permissions);
+                        for (const perm of allPermissions) {
+                          await supabase.from('user_specific_permissions').upsert({
+                            user_id: selectedUser.id,
+                            permission: perm,
+                            granted: true,
+                            updated_at: new Date().toISOString()
+                          }, { onConflict: 'user_id,permission' });
+                        }
+                        await loadUserPermissions(selectedUser.id);
+                        toast({ title: 'Todas as permissões concedidas!' });
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Conceder Todas
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                      onClick={async () => {
+                        if (!selectedUser) return;
+                        const allPermissions = Object.values(PERMISSION_CATEGORIES).flatMap(c => c.permissions);
+                        for (const perm of allPermissions) {
+                          await supabase.from('user_specific_permissions').upsert({
+                            user_id: selectedUser.id,
+                            permission: perm,
+                            granted: false,
+                            updated_at: new Date().toISOString()
+                          }, { onConflict: 'user_id,permission' });
+                        }
+                        await loadUserPermissions(selectedUser.id);
+                        toast({ title: 'Todas as permissões revogadas!' });
+                      }}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Revogar Todas
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Seção: Permissões por Categoria */}
-            {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => <Card key={categoryKey}>
+            {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => {
+              const categoryPermissionStates = category.permissions.map(p => {
+                const override = userPermissions.find(up => up.permission === p);
+                return { permission: p, granted: override?.granted ?? false, hasOverride: !!override };
+              });
+              const allGranted = categoryPermissionStates.every(p => p.granted);
+              const someGranted = categoryPermissionStates.some(p => p.granted);
+
+              return <Card key={categoryKey}>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{category.label}</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{category.label}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={allGranted ? 'default' : someGranted ? 'secondary' : 'outline'} className="text-xs">
+                        {categoryPermissionStates.filter(p => p.granted).length}/{categoryPermissionStates.length}
+                      </Badge>
+                      <Switch
+                        checked={allGranted}
+                        onCheckedChange={async (checked) => {
+                          if (!selectedUser) return;
+                          for (const perm of category.permissions) {
+                            await supabase.from('user_specific_permissions').upsert({
+                              user_id: selectedUser.id,
+                              permission: perm,
+                              granted: checked,
+                              updated_at: new Date().toISOString()
+                            }, { onConflict: 'user_id,permission' });
+                          }
+                          await loadUserPermissions(selectedUser.id);
+                          toast({ title: `${category.label}: ${checked ? 'todas concedidas' : 'todas revogadas'}` });
+                        }}
+                      />
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {category.permissions.map(permission => {
-                  const userPermission = userPermissions.find(p => p.permission === permission);
-                  const hasOverride = !!userPermission;
-                  return <div key={permission} className="flex items-center justify-between space-x-2">
-                          <div className="flex-1">
-                            <Label htmlFor={permission} className="text-sm font-medium">
-                              {PERMISSION_LABELS[permission]}
-                            </Label>
-                            {hasOverride && <p className="text-xs text-muted-foreground">
-                                Personalizado: {userPermission.granted ? 'Permitido' : 'Negado'}
-                              </p>}
-                          </div>
-                          <Switch id={permission} checked={userPermission?.granted ?? false} onCheckedChange={granted => updateUserPermission(selectedUser!.id, permission, granted)} />
-                        </div>;
-                })}
+                      const userPermission = userPermissions.find(p => p.permission === permission);
+                      const isGranted = userPermission?.granted ?? false;
+                      const hasOverride = !!userPermission;
+                      return <div key={permission} className="flex items-center justify-between space-x-2">
+                        <div className="flex-1">
+                          <Label htmlFor={permission} className="text-sm font-medium">
+                            {PERMISSION_LABELS[permission]}
+                          </Label>
+                          {hasOverride && <p className={`text-xs ${isGranted ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                            {isGranted ? '✓ Permitido' : '✗ Negado'}
+                          </p>}
+                          {!hasOverride && <p className="text-xs text-muted-foreground italic">
+                            Não configurado
+                          </p>}
+                        </div>
+                        <Switch id={permission} checked={isGranted} onCheckedChange={granted => updateUserPermission(selectedUser!.id, permission, granted)} />
+                      </div>;
+                    })}
                   </div>
                 </CardContent>
-              </Card>)}
+              </Card>;
+            })}
           </div>
         </DialogContent>
       </Dialog>
