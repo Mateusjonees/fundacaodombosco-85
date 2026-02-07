@@ -10,9 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit2, Trash2, Tag, Palette } from 'lucide-react';
+import { Plus, Edit2, Trash2, Tag, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { PERMISSION_LABELS, PERMISSION_CATEGORIES, type PermissionAction } from '@/hooks/useCustomPermissions';
 
 interface CustomJobPosition {
   id: string;
@@ -21,13 +22,22 @@ interface CustomJobPosition {
   color: string | null;
   is_active: boolean;
   created_at: string;
+  permissions: Record<string, boolean> | null;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const castPositions = (data: any[]): CustomJobPosition[] => data.map(d => ({
+  ...d,
+  permissions: (d.permissions && typeof d.permissions === 'object' && !Array.isArray(d.permissions)) ? d.permissions as Record<string, boolean> : null
+}));
 
 export default function CustomRoles() {
   const [positions, setPositions] = useState<CustomJobPosition[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<CustomJobPosition | null>(null);
+  const [editingPermissions, setEditingPermissions] = useState<CustomJobPosition | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -54,7 +64,7 @@ export default function CustomRoles() {
         description: 'Erro ao carregar cargos personalizados'
       });
     } else {
-      setPositions(data || []);
+      setPositions(castPositions(data || []));
     }
     setLoading(false);
   };
@@ -325,6 +335,18 @@ export default function CustomRoles() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => {
+                              setEditingPermissions(position);
+                              setPermissionsDialogOpen(true);
+                            }}
+                            className="h-8 w-8"
+                            title="Permissões"
+                          >
+                            <Shield className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleEdit(position)}
                             className="h-8 w-8"
                           >
@@ -348,6 +370,60 @@ export default function CustomRoles() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog de Permissões do Cargo */}
+      <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Permissões do Cargo: {editingPermissions?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {editingPermissions && Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => (
+              <Card key={categoryKey}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">{category.label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {category.permissions.map((permission) => {
+                      const currentPermissions = editingPermissions.permissions || {};
+                      const isGranted = currentPermissions[permission] === true;
+                      return (
+                        <div key={permission} className="flex items-center justify-between space-x-2">
+                          <Label htmlFor={`role-perm-${permission}`} className="text-sm">
+                            {PERMISSION_LABELS[permission]}
+                          </Label>
+                          <Switch
+                            id={`role-perm-${permission}`}
+                            checked={isGranted}
+                            onCheckedChange={async (checked) => {
+                              const newPermissions = { ...currentPermissions, [permission]: checked };
+                              const { error } = await supabase
+                                .from('custom_job_positions')
+                                .update({ permissions: newPermissions })
+                                .eq('id', editingPermissions.id);
+                              if (error) {
+                                toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao salvar permissão.' });
+                              } else {
+                                setEditingPermissions({ ...editingPermissions, permissions: newPermissions });
+                                setPositions(prev => prev.map(p => p.id === editingPermissions.id ? { ...p, permissions: newPermissions } : p));
+                                toast({ title: 'Sucesso', description: `Permissão "${PERMISSION_LABELS[permission]}" ${checked ? 'ativada' : 'desativada'}.` });
+                              }
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -27,6 +27,8 @@ interface User {
   last_sign_in_at?: string;
   is_active?: boolean;
   positions?: JobPosition[];
+  units?: string[];
+  unit?: string;
 }
 interface JobPosition {
   id: string;
@@ -111,7 +113,7 @@ export default function UserManagement() {
   };
   const loadUsers = async () => {
     try {
-      // Buscar usuários da tabela profiles
+      // Buscar usuários da tabela profiles com campos de unidades
       const {
         data: profiles,
         error
@@ -120,7 +122,9 @@ export default function UserManagement() {
           name,
           email,
           is_active,
-          created_at
+          created_at,
+          units,
+          unit
         `).order('name');
       if (error) throw error;
       const usersData = profiles?.map(profile => ({
@@ -128,7 +132,9 @@ export default function UserManagement() {
         email: profile.email || 'Não informado',
         name: profile.name,
         created_at: profile.created_at,
-        is_active: profile.is_active
+        is_active: profile.is_active,
+        units: profile.units || [],
+        unit: profile.unit || ''
       })) || [];
       setUsers(usersData);
     } catch (error) {
@@ -716,6 +722,61 @@ export default function UserManagement() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
+            {/* Seção: Unidades de Acesso */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Unidades de Acesso</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[
+                    { value: 'madre', label: 'Madre' },
+                    { value: 'floresta', label: 'Floresta' },
+                    { value: 'atendimento_floresta', label: 'Atendimento Floresta' },
+                    { value: 'neuro', label: 'Neuro' },
+                    { value: 'sede', label: 'Sede' },
+                    { value: 'todas', label: 'Todas' },
+                  ].map(unitOption => {
+                    const userUnits = selectedUser?.units || [];
+                    const isChecked = userUnits.includes(unitOption.value);
+                    return (
+                      <div key={unitOption.value} className="flex items-center space-x-2">
+                        <Switch
+                          id={`unit-${unitOption.value}`}
+                          checked={isChecked}
+                          onCheckedChange={async (checked) => {
+                            if (!selectedUser) return;
+                            const currentUnits = selectedUser.units || [];
+                            const newUnits = checked
+                              ? [...currentUnits, unitOption.value]
+                              : currentUnits.filter(u => u !== unitOption.value);
+                            
+                            const { error } = await supabase
+                              .from('profiles')
+                              .update({ units: newUnits })
+                              .eq('user_id', selectedUser.id);
+                            
+                            if (error) {
+                              toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao atualizar unidades.' });
+                            } else {
+                              toast({ title: 'Sucesso', description: `Unidade "${unitOption.label}" ${checked ? 'adicionada' : 'removida'}.` });
+                              setSelectedUser({ ...selectedUser, units: newUnits });
+                              // Atualizar na lista também
+                              setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, units: newUnits } : u));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`unit-${unitOption.value}`} className="text-sm font-medium">
+                          {unitOption.label}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Seção: Permissões por Categoria */}
             {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => <Card key={categoryKey}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">{category.label}</CardTitle>
