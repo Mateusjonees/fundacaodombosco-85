@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { offlineDB, STORES } from '@/utils/offlineDB';
+import { addToSyncQueue } from '@/utils/syncQueue';
 
 interface ScheduleFilters {
   status?: string;
@@ -10,7 +12,7 @@ interface ScheduleFilters {
 }
 
 /**
- * Hook otimizado para carregar agendamentos com cache e permissões
+ * Hook otimizado para carregar agendamentos com cache offline
  */
 export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFilters) => {
   return useQuery({
@@ -20,113 +22,112 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
       let endDate: Date;
 
       if (filters?.viewMode === 'week') {
-        // Calcular início e fim da semana (segunda a domingo)
         const dayOfWeek = date.getDay();
-        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Ajustar para segunda-feira
+        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
         startDate = new Date(date);
         startDate.setDate(date.getDate() + diff);
         startDate.setHours(0, 0, 0, 0);
-        
         endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
       } else {
         startDate = new Date(date);
         startDate.setHours(0, 0, 0, 0);
-        
         endDate = new Date(date);
         endDate.setHours(23, 59, 59, 999);
       }
 
-      let query = supabase
-        .from('schedules')
-        .select(`
-          *,
-          patient_arrived,
-          arrived_at,
-          arrived_confirmed_by,
-          patient_declined,
-          patient_declined_at,
-          clients (id, name, phone, cpf, email, unit),
-          profiles (id, name, employee_role, phone, unit)
-        `)
-        .gte('start_time', startDate.toISOString())
-        .lte('start_time', endDate.toISOString())
-        .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
-        .order('start_time');
+      if (navigator.onLine) {
+        try {
+          let query = supabase
+            .from('schedules')
+            .select(`
+              *,
+              patient_arrived,
+              arrived_at,
+              arrived_confirmed_by,
+              patient_declined,
+              patient_declined_at,
+              clients (id, name, phone, cpf, email, unit),
+              profiles (id, name, employee_role, phone, unit)
+            `)
+            .gte('start_time', startDate.toISOString())
+            .lte('start_time', endDate.toISOString())
+            .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
+            .order('start_time');
 
-      // Aplicar filtros de permissão baseados no role
-      if (userProfile) {
-        if (userProfile.employee_role === 'coordinator_madre') {
-          // Coordenador Madre vê todos os pacientes da unidade madre (ativos e inativos)
-          const { data: clientsInUnit } = await supabase
-            .from('clients')
-            .select('id')
-            .or('unit.eq.madre,unit.is.null');
-          const clientIds = clientsInUnit?.map(c => c.id) || [];
-          if (clientIds.length > 0) query = query.in('client_id', clientIds);
-        } else if (userProfile.employee_role === 'coordinator_floresta') {
-          // Coordenador Floresta vê todos os pacientes da unidade floresta (ativos e inativos)
-          const { data: clientsInUnit } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('unit', 'floresta');
-          const clientIds = clientsInUnit?.map(c => c.id) || [];
-          if (clientIds.length > 0) query = query.in('client_id', clientIds);
-        } else if (userProfile.employee_role === 'coordinator_atendimento_floresta') {
-          // Coordenador Atendimento Floresta (Neuro) vê todos os pacientes da unidade (ativos e inativos)
-          const { data: clientsInUnit } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('unit', 'atendimento_floresta');
-          const clientIds = clientsInUnit?.map(c => c.id) || [];
-          if (clientIds.length > 0) query = query.in('client_id', clientIds);
-        } else if (userProfile.employee_role === 'receptionist') {
-          // Recepcionista vê todos os pacientes da sua unidade (ativos e inativos)
-          const userUnit = userProfile.unit || 'madre';
-          const { data: clientsInUnit } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('unit', userUnit);
-          const clientIds = clientsInUnit?.map(c => c.id) || [];
-          if (clientIds.length > 0) query = query.in('client_id', clientIds);
-        } else if (userProfile.employee_role !== 'director') {
-          query = query.eq('employee_id', userProfile.user_id);
+          // Filtros de permissão
+          if (userProfile) {
+            if (userProfile.employee_role === 'coordinator_madre') {
+              const { data: clientsInUnit } = await supabase.from('clients').select('id').or('unit.eq.madre,unit.is.null');
+              const clientIds = clientsInUnit?.map(c => c.id) || [];
+              if (clientIds.length > 0) query = query.in('client_id', clientIds);
+            } else if (userProfile.employee_role === 'coordinator_floresta') {
+              const { data: clientsInUnit } = await supabase.from('clients').select('id').eq('unit', 'floresta');
+              const clientIds = clientsInUnit?.map(c => c.id) || [];
+              if (clientIds.length > 0) query = query.in('client_id', clientIds);
+            } else if (userProfile.employee_role === 'coordinator_atendimento_floresta') {
+              const { data: clientsInUnit } = await supabase.from('clients').select('id').eq('unit', 'atendimento_floresta');
+              const clientIds = clientsInUnit?.map(c => c.id) || [];
+              if (clientIds.length > 0) query = query.in('client_id', clientIds);
+            } else if (userProfile.employee_role === 'receptionist') {
+              const userUnit = userProfile.unit || 'madre';
+              const { data: clientsInUnit } = await supabase.from('clients').select('id').eq('unit', userUnit);
+              const clientIds = clientsInUnit?.map(c => c.id) || [];
+              if (clientIds.length > 0) query = query.in('client_id', clientIds);
+            } else if (userProfile.employee_role !== 'director') {
+              query = query.eq('employee_id', userProfile.user_id);
+            }
+          }
+
+          if (filters?.status) query = query.eq('status', filters.status);
+          if (filters?.employeeId) query = query.eq('employee_id', filters.employeeId);
+          if (filters?.clientId) query = query.eq('client_id', filters.clientId);
+
+          const { data, error } = await query;
+
+          if (error) {
+            const fallbackQuery = supabase
+              .from('schedules')
+              .select(`*, clients (name)`)
+              .gte('start_time', startDate.toISOString())
+              .lte('start_time', endDate.toISOString())
+              .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
+              .order('start_time');
+            const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+            if (fallbackError) throw fallbackError;
+            const result = fallbackData || [];
+            await offlineDB.putMany(STORES.schedules, result).catch(() => {});
+            return result;
+          }
+
+          const result = data || [];
+          await offlineDB.putMany(STORES.schedules, result).catch(() => {});
+          await offlineDB.setLastSync('schedules').catch(() => {});
+          return result;
+        } catch (err) {
+          console.warn('[useSchedules] Erro online, tentando cache:', err);
         }
       }
 
-      // Filtros adicionais
-      if (filters?.status) {
-        query = query.eq('status', filters.status);
-      }
-      if (filters?.employeeId) {
-        query = query.eq('employee_id', filters.employeeId);
-      }
-      if (filters?.clientId) {
-        query = query.eq('client_id', filters.clientId);
-      }
-
-      const { data, error } = await query;
+      // Fallback offline
+      console.log('[useSchedules] Carregando agendamentos do cache offline');
+      let cached = await offlineDB.getAll<any>(STORES.schedules);
       
-      if (error) {
-        // Fallback sem profiles se houver erro
-        const fallbackQuery = supabase
-          .from('schedules')
-          .select(`*, clients (name)`)
-          .gte('start_time', startDate.toISOString())
-          .lte('start_time', endDate.toISOString())
-          .in('status', ['scheduled', 'confirmed', 'completed', 'cancelled', 'pending_validation'])
-          .order('start_time');
+      // Filtrar por data
+      cached = cached.filter(s => {
+        const t = new Date(s.start_time);
+        return t >= startDate && t <= endDate;
+      });
 
-        const { data: fallbackData, error: fallbackError } = await fallbackQuery;
-        if (fallbackError) throw fallbackError;
-
-        return fallbackData || [];
-      }
+      if (filters?.status) cached = cached.filter(s => s.status === filters.status);
+      if (filters?.employeeId) cached = cached.filter(s => s.employee_id === filters.employeeId);
+      if (filters?.clientId) cached = cached.filter(s => s.client_id === filters.clientId);
       
-      return data || [];
+      cached.sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+      return cached;
     },
-    staleTime: 30000, // 30 segundos
+    staleTime: 30000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     enabled: !!userProfile,
@@ -134,21 +135,30 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
 };
 
 /**
- * Hook para criar agendamento
+ * Hook para criar agendamento (com suporte offline)
  */
 export const useCreateSchedule = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (scheduleData: any) => {
-      const { data, error } = await supabase
-        .from('schedules')
-        .insert([scheduleData])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      if (navigator.onLine) {
+        const { data, error } = await supabase
+          .from('schedules')
+          .insert([scheduleData])
+          .select()
+          .single();
+        if (error) throw error;
+        await offlineDB.put(STORES.schedules, data).catch(() => {});
+        return data;
+      }
+
+      // Offline: salva localmente e na fila de sync
+      const tempId = crypto.randomUUID();
+      const localData = { ...scheduleData, id: tempId, _offline: true };
+      await offlineDB.put(STORES.schedules, localData);
+      await addToSyncQueue('schedules', 'insert', scheduleData);
+      return localData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
@@ -157,22 +167,31 @@ export const useCreateSchedule = () => {
 };
 
 /**
- * Hook para atualizar agendamento
+ * Hook para atualizar agendamento (com suporte offline)
  */
 export const useUpdateSchedule = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { data: updated, error } = await supabase
-        .from('schedules')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return updated;
+      if (navigator.onLine) {
+        const { data: updated, error } = await supabase
+          .from('schedules')
+          .update(data)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        await offlineDB.put(STORES.schedules, updated).catch(() => {});
+        return updated;
+      }
+
+      // Offline
+      const existing = await offlineDB.get<any>(STORES.schedules, id);
+      const merged = { ...existing, ...data, id };
+      await offlineDB.put(STORES.schedules, merged);
+      await addToSyncQueue('schedules', 'update', data, id);
+      return merged;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
@@ -188,12 +207,13 @@ export const useDeleteSchedule = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('schedules')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      if (navigator.onLine) {
+        const { error } = await supabase.from('schedules').delete().eq('id', id);
+        if (error) throw error;
+      } else {
+        await addToSyncQueue('schedules', 'delete', {}, id);
+      }
+      await offlineDB.delete(STORES.schedules, id).catch(() => {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
@@ -215,28 +235,35 @@ export const useTodaySchedules = (userProfile?: any) => {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      let query = supabase
-        .from('schedules')
-        .select(`
-          id,
-          title,
-          start_time,
-          status,
-          clients (name),
-          profiles (name)
-        `)
-        .gte('start_time', today.toISOString())
-        .lt('start_time', tomorrow.toISOString())
-        .order('start_time');
+      if (navigator.onLine) {
+        try {
+          let query = supabase
+            .from('schedules')
+            .select(`id, title, start_time, status, clients (name), profiles (name)`)
+            .gte('start_time', today.toISOString())
+            .lt('start_time', tomorrow.toISOString())
+            .order('start_time');
 
-      if (userProfile.employee_role === 'staff') {
-        query = query.eq('employee_id', userProfile.user_id);
+          if (userProfile.employee_role === 'staff') {
+            query = query.eq('employee_id', userProfile.user_id);
+          }
+
+          const { data, error } = await query;
+          if (error) throw error;
+          return data || [];
+        } catch {
+          // Fallback
+        }
       }
 
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data || [];
+      // Offline
+      let cached = await offlineDB.getAll<any>(STORES.schedules);
+      cached = cached.filter(s => {
+        const t = new Date(s.start_time);
+        return t >= today && t < tomorrow;
+      });
+      cached.sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+      return cached;
     },
     staleTime: 60000,
     enabled: !!userProfile,

@@ -5,6 +5,7 @@ import { SignUpForm } from '@/components/auth/SignUpForm';
 import { MainApp } from '@/components/MainApp';
 import { ChangeOwnPasswordDialog } from '@/components/ChangeOwnPasswordDialog';
 import { PWAInstallBanner } from '@/components/PWAInstallBanner';
+import { OfflineStatusBar } from '@/components/OfflineStatusBar';
 import { Loader2 } from 'lucide-react';
 
 const AppContent = () => {
@@ -64,6 +65,7 @@ const AppContent = () => {
   return (
     <>
       <MainApp />
+      <OfflineStatusBar />
       <ChangeOwnPasswordDialog
         isOpen={mustChangePassword}
         onSuccess={() => setMustChangePassword(false)}
