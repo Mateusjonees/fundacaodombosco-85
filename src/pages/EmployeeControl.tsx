@@ -418,11 +418,11 @@ export default function EmployeeControl() {
               </div>
             ) : (
               <Tabs defaultValue="overview" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-                  <TabsTrigger value="attendances">Atendimentos</TabsTrigger>
-                  <TabsTrigger value="timesheet">Ponto</TabsTrigger>
-                  <TabsTrigger value="financial">Financeiro</TabsTrigger>
+                <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
+                  <TabsTrigger value="overview" className="text-xs sm:text-sm">Visão Geral</TabsTrigger>
+                  <TabsTrigger value="attendances" className="text-xs sm:text-sm">Atendimentos</TabsTrigger>
+                  <TabsTrigger value="timesheet" className="text-xs sm:text-sm">Ponto</TabsTrigger>
+                  <TabsTrigger value="financial" className="text-xs sm:text-sm">Financeiro</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4">

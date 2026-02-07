@@ -505,7 +505,7 @@ export default function Financial() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-fade-in">
         <div className="relative">
           <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 via-emerald-600 to-emerald-700 rounded-full" />
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
             Painel Financeiro
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -630,7 +630,7 @@ export default function Financial() {
       </div>
 
       {/* Financial Summary Cards - Design Moderno */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
@@ -640,7 +640,7 @@ export default function Financial() {
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
               R$ {currentMonthIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -658,7 +658,7 @@ export default function Financial() {
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
+            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
               R$ {currentMonthExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Materiais adquiridos</p>
@@ -674,7 +674,7 @@ export default function Financial() {
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
               R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -692,7 +692,7 @@ export default function Financial() {
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
               R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -710,7 +710,7 @@ export default function Financial() {
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className={`text-2xl font-bold ${balance >= 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-red-600 to-red-500'} bg-clip-text text-transparent`}>
+            <div className={`text-xl sm:text-2xl font-bold ${balance >= 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-red-600 to-red-500'} bg-clip-text text-transparent`}>
               R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
@@ -726,7 +726,7 @@ export default function Financial() {
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
+            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
               {currentMonthRecords.filter(r => r.type === 'income').length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Este mês</p>

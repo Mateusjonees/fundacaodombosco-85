@@ -1200,18 +1200,18 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="attendance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
-          <TabsTrigger value="attendance">Atendimentos</TabsTrigger>
-          <TabsTrigger value="tempo" className="flex items-center gap-1">
+        <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
+          <TabsTrigger value="attendance" className="text-xs sm:text-sm">Atendimentos</TabsTrigger>
+          <TabsTrigger value="tempo" className="flex items-center gap-1 text-xs sm:text-sm">
             <Timer className="h-3 w-3 hidden sm:inline" />
             Tempo
           </TabsTrigger>
-          <TabsTrigger value="sessions">Sessões</TabsTrigger>
-          <TabsTrigger value="anamnesis">Anamneses</TabsTrigger>
-          <TabsTrigger value="prescriptions">Receitas</TabsTrigger>
-          <TabsTrigger value="laudos">Laudos</TabsTrigger>
-          <TabsTrigger value="performance">Desempenho</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="sessions" className="text-xs sm:text-sm">Sessões</TabsTrigger>
+          <TabsTrigger value="anamnesis" className="text-xs sm:text-sm">Anamneses</TabsTrigger>
+          <TabsTrigger value="prescriptions" className="text-xs sm:text-sm">Receitas</TabsTrigger>
+          <TabsTrigger value="laudos" className="text-xs sm:text-sm">Laudos</TabsTrigger>
+          <TabsTrigger value="performance" className="text-xs sm:text-sm">Desempenho</TabsTrigger>
+          <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tempo">
