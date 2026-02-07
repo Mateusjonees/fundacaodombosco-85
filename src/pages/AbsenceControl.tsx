@@ -24,7 +24,23 @@ const AbsenceControl = () => {
 
   const startDate = format(subDays(new Date(), parseInt(period)), 'yyyy-MM-dd');
 
-  const { data: absences = [], isLoading } = useQuery({
+  // Buscar agendamentos cancelados do sistema como faltas
+  const { data: cancelledSchedules = [], isLoading: loadingSchedules } = useQuery({
+    queryKey: ['cancelled-schedules', period],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('id, client_id, start_time, status, notes, clients(name, phone)')
+        .eq('status', 'cancelled')
+        .gte('start_time', startDate)
+        .order('start_time', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Buscar registros manuais de faltas
+  const { data: manualAbsences = [], isLoading: loadingManual } = useQuery({
     queryKey: ['absence-records', period],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -36,6 +52,25 @@ const AbsenceControl = () => {
       return data;
     },
   });
+
+  const isLoading = loadingSchedules || loadingManual;
+
+  // Combinar dados: agendamentos cancelados + faltas manuais
+  const absences = [
+    ...cancelledSchedules.map((s: any) => ({
+      id: s.id,
+      client_id: s.client_id,
+      absence_date: s.start_time?.split('T')[0] || s.start_time,
+      notes: s.notes,
+      consecutive_count: 1,
+      clients: s.clients,
+      source: 'schedule',
+    })),
+    ...manualAbsences.map((a: any) => ({
+      ...a,
+      source: 'manual',
+    })),
+  ];
 
   const { data: clients = [] } = useQuery({
     queryKey: ['clients-simple'],
@@ -201,9 +236,10 @@ const AbsenceControl = () => {
                       {a.notes && ` • ${a.notes}`}
                     </p>
                   </div>
-                  <Badge variant={a.consecutive_count >= 3 ? 'destructive' : a.consecutive_count >= 2 ? 'secondary' : 'outline'}>
-                    {a.consecutive_count}ª falta
-                  </Badge>
+                  <div className="flex gap-2 items-center">
+                    {a.source === 'schedule' && <Badge variant="outline" className="text-xs">Agenda</Badge>}
+                    <Badge variant="secondary">Falta</Badge>
+                  </div>
                 </div>
               ))}
             </div>}
