@@ -1,3 +1,6 @@
+/* Performance: Ensure font swap for faster text rendering */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -139,6 +142,9 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-family);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-display: swap;
+    /* Optimize content rendering */
+    text-rendering: optimizeSpeed;
   }
 
   /* Mobile keyboard: keep inputs visible */
