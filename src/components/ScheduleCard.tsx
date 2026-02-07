@@ -168,7 +168,7 @@ export const ScheduleCard = ({
             <UserAvatar name={schedule.clients?.name} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="text-[10px] sm:text-xs text-muted-foreground">Paciente</p>
-              <p className="font-medium text-xs sm:text-sm truncate group-hover:text-primary transition-colors">
+              <p className="font-medium text-xs sm:text-sm truncate group-hover:text-primary transition-colors uppercase">
                 {schedule.clients?.name || 'N/A'}
               </p>
             </div>
@@ -187,7 +187,7 @@ export const ScheduleCard = ({
             />
             <div className="min-w-0 flex-1">
               <p className="text-[10px] sm:text-xs text-muted-foreground">Profissional</p>
-              <p className="font-medium text-xs sm:text-sm truncate group-hover:text-primary transition-colors">
+              <p className="font-medium text-xs sm:text-sm truncate group-hover:text-primary transition-colors uppercase">
                 {professional?.name || 'Não atribuído'}
               </p>
             </div>
@@ -310,7 +310,7 @@ export const ScheduleCard = ({
                     <SelectContent>
                       {employees.filter(emp => emp.user_id !== schedule.employee_id).map((employee) => (
                         <SelectItem key={employee.user_id} value={employee.user_id}>
-                          {employee.name}
+                          <span className="uppercase">{employee.name}</span>
                         </SelectItem>
                       ))}
                     </SelectContent>

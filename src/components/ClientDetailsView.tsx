@@ -992,7 +992,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
               {/* Info Principal */}
               <div className="flex-1 space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-2xl md:text-3xl font-bold">{client.name}</h1>
+                  <h1 className="text-2xl md:text-3xl font-bold uppercase">{client.name}</h1>
                   <Badge 
                     variant={client.is_active ? 'default' : 'secondary'}
                     className={client.is_active ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : ''}

@@ -131,7 +131,7 @@ export function PatientCard({
 
           {/* Nome + unidade + status */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm text-foreground truncate leading-tight">
+            <h3 className="font-semibold text-sm text-foreground truncate leading-tight uppercase">
               {client.name}
             </h3>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
