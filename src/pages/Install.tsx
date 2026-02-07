@@ -34,32 +34,27 @@ const BrowserInstructions = ({ browser, isInstallable, installing, onInstall }: 
 }) => {
   // Chrome/Edge/Samsung — botão automático + fallback
   if (browser === 'chrome' || browser === 'edge' || browser === 'samsung') {
-    if (isInstallable) {
-      return (
+    return (
+      <div className="space-y-4">
         <Button
           size="lg"
           onClick={onInstall}
-          disabled={installing}
+          disabled={installing || !isInstallable}
           className="gap-2 text-base px-10 h-14 rounded-xl shadow-lg shadow-primary/20"
         >
           <Download className="h-5 w-5" />
           {installing ? 'Instalando...' : 'Instalar com 1 Clique'}
         </Button>
-      );
-    }
-    // Fallback quando o prompt não disparou ainda
-    return (
-      <Card className="text-left">
-        <CardContent className="p-5 space-y-3">
-          <p className="text-sm font-medium text-foreground">
-            Para instalar, siga este passo:
-          </p>
-          <div className="flex items-start gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">1</span>
-            <p>Toque no menu <Menu className="inline h-4 w-4 mx-0.5" /> do navegador e selecione <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong></p>
-          </div>
-        </CardContent>
-      </Card>
+        {!isInstallable && (
+          <Card className="text-left">
+            <CardContent className="p-5 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Se o botão não funcionar, toque no menu <Menu className="inline h-4 w-4 mx-0.5" /> do navegador e selecione <strong>"Instalar aplicativo"</strong>
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     );
   }
 
