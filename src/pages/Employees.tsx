@@ -298,10 +298,10 @@ export default function Employees() {
 
       {isDirector ? (
         <Tabs defaultValue="list" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="list">Lista de Funcionários</TabsTrigger>
-            <TabsTrigger value="permissions">Gerenciar Permissões</TabsTrigger>
-            <TabsTrigger value="roles">Gerenciar Cargos</TabsTrigger>
+          <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
+            <TabsTrigger value="list" className="text-xs sm:text-sm">Funcionários</TabsTrigger>
+            <TabsTrigger value="permissions" className="text-xs sm:text-sm">Permissões</TabsTrigger>
+            <TabsTrigger value="roles" className="text-xs sm:text-sm">Cargos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="list" className="space-y-4">
@@ -403,104 +403,100 @@ export default function Employees() {
                   Lista de Funcionários
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
+              <CardContent className="pt-4 px-0 sm:px-6">
                 {loading ? (
-                  <p className="text-muted-foreground text-center py-8">Carregando funcionários...</p>
+                  <p className="text-muted-foreground text-center py-8 px-4">Carregando funcionários...</p>
                 ) : filteredEmployees.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
+                  <p className="text-muted-foreground text-center py-8 px-4">
                     {searchTerm ? 'Nenhum funcionário encontrado.' : 'Nenhum funcionário cadastrado.'}
                   </p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead className="font-semibold">Funcionário</TableHead>
-                          <TableHead className="font-semibold">Cargo</TableHead>
-                          <TableHead className="font-semibold">Telefone</TableHead>
-                          <TableHead className="font-semibold">Status</TableHead>
-                          <TableHead className="font-semibold">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredEmployees.map((employee, index) => (
-                          <TableRow 
-                            key={employee.id}
-                            className={index % 2 === 1 ? "bg-muted/20" : ""}
-                          >
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <UserAvatar name={employee.name} size="sm" role={employee.employee_role} />
-                                <span className="font-medium">{employee.name}</span>
+                  <>
+                    {/* Mobile: Cards */}
+                    <div className="block sm:hidden space-y-3 px-4">
+                      {filteredEmployees.map((employee) => (
+                        <Card key={employee.id} className="p-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <UserAvatar name={employee.name} size="sm" role={employee.employee_role} />
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm uppercase truncate">{employee.name}</p>
+                                <Badge variant="outline" className="text-xs mt-0.5">
+                                  {ROLE_LABELS[employee.employee_role] || employee.employee_role}
+                                </Badge>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <StatusBadge 
+                                    status={employee.is_active ? 'Ativo' : 'Inativo'} 
+                                    variant={employee.is_active ? 'success' : 'default'} 
+                                  />
+                                </div>
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="font-medium">
-                                {ROLE_LABELS[employee.employee_role] || employee.employee_role}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">{employee.phone || '-'}</TableCell>
-                            <TableCell>
-                              <StatusBadge 
-                                status={employee.is_active ? 'Ativo' : 'Inativo'} 
-                                variant={employee.is_active ? 'success' : 'default'} 
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => openEditDialog(employee)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => openPermissionsDialog(employee)}
-                                >
-                                  <Settings className="h-4 w-4" />
-                                </Button>
-                                <PasswordManager 
-                                  employeeId={employee.user_id}
-                                  employeeName={employee.name || 'Funcionário'}
-                                  employeeEmail={employee.phone || 'email@exemplo.com'}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleToggleActive(employee)}
-                                  title={employee.is_active ? 'Desativar' : 'Reativar'}
-                                >
-                                  {employee.is_active ? (
-                                    <UserX className="h-4 w-4 text-amber-500" />
-                                  ) : (
-                                    <UserCheck className="h-4 w-4 text-emerald-500" />
-                                  )}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleDeleteClick(employee)}
-                                  title="Deletar permanentemente"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditDialog(employee)}>
+                                <Edit className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openPermissionsDialog(employee)}>
+                                <Settings className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDeleteClick(employee)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                    {/* Desktop: Table */}
+                    <div className="hidden sm:block overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50 hover:bg-muted/50">
+                            <TableHead className="font-semibold">Funcionário</TableHead>
+                            <TableHead className="font-semibold">Cargo</TableHead>
+                            <TableHead className="font-semibold hidden md:table-cell">Telefone</TableHead>
+                            <TableHead className="font-semibold">Status</TableHead>
+                            <TableHead className="font-semibold">Ações</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredEmployees.map((employee, index) => (
+                            <TableRow key={employee.id} className={index % 2 === 1 ? "bg-muted/20" : ""}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <UserAvatar name={employee.name} size="sm" role={employee.employee_role} />
+                                  <span className="font-medium uppercase">{employee.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-medium">
+                                  {ROLE_LABELS[employee.employee_role] || employee.employee_role}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground hidden md:table-cell">{employee.phone || '-'}</TableCell>
+                              <TableCell>
+                                <StatusBadge status={employee.is_active ? 'Ativo' : 'Inativo'} variant={employee.is_active ? 'success' : 'default'} />
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Eye className="h-4 w-4" /></Button>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditDialog(employee)}><Edit className="h-4 w-4" /></Button>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openPermissionsDialog(employee)}><Settings className="h-4 w-4" /></Button>
+                                  <PasswordManager employeeId={employee.user_id} employeeName={employee.name || 'Funcionário'} employeeEmail={employee.phone || 'email@exemplo.com'} />
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleToggleActive(employee)} title={employee.is_active ? 'Desativar' : 'Reativar'}>
+                                    {employee.is_active ? <UserX className="h-4 w-4 text-amber-500" /> : <UserCheck className="h-4 w-4 text-emerald-500" />}
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteClick(employee)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
