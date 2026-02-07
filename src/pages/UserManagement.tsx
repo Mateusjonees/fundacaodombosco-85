@@ -246,6 +246,29 @@ export default function UserManagement() {
       });
     }
   };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Tem certeza que deseja deletar permanentemente o usuário ${userName}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-users', {
+        body: { userId }
+      });
+      if (error) throw error;
+      toast({
+        title: "Usuário excluído",
+        description: `${userName} foi removido permanentemente do sistema.`,
+      });
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir usuário",
+        description: error.message,
+      });
+    }
+  };
   const createJobPosition = async () => {
     try {
       const {
@@ -559,8 +582,11 @@ export default function UserManagement() {
                       });
                       setIsPasswordDialogOpen(true);
                     }}>
-                            <Key className="h-4 w-4" />
-                          </Button>}
+                             <Key className="h-4 w-4" />
+                           </Button>}
+                        <Button size="sm" variant="outline" onClick={() => handleDeleteUser(user.id, user.name)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>)}
                 </TableBody>
