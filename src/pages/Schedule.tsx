@@ -736,13 +736,19 @@ export default function Schedule() {
         {/* Sidebar: Calendário + Filtros compactos */}
         <div className="w-full lg:w-72 shrink-0 space-y-3">
           <Card className="border shadow-sm">
-            <CardContent className="p-3">
+            <CardContent className="p-3 flex justify-center">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
                 locale={ptBR}
-                className="rounded-lg w-full"
+                className="rounded-lg"
+                classNames={{
+                  head_row: "flex w-full justify-between",
+                  head_cell: "text-muted-foreground rounded-md flex-1 text-center font-normal text-[0.8rem]",
+                  row: "flex w-full mt-2 justify-between",
+                  cell: "h-9 flex-1 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                }}
               />
             </CardContent>
           </Card>
