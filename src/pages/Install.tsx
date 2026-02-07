@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { Link } from 'react-router-dom';
+
 
 const Install = () => {
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
@@ -21,9 +21,9 @@ const Install = () => {
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/" className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-5 w-5" />
-          </Link>
+          </a>
           <h1 className="text-lg font-semibold text-foreground">Instalar o Sistema</h1>
         </div>
       </header>

@@ -171,8 +171,21 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
           )}
         </div>
 
+        {/* Install App Link */}
+        <div className="text-center mt-4">
+          <a
+            href="/install"
+            className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            Instalar o aplicativo
+          </a>
+        </div>
+
         {/* Footer text */}
-        <p className="text-center text-xs text-white/30 mt-6">
+        <p className="text-center text-xs text-white/30 mt-2">
           Fundação Dom Bosco · Sistema de Gestão
         </p>
       </div>

@@ -16,6 +16,7 @@ const LoginForm = lazy(() => import("@/components/auth/LoginForm").then(m => ({ 
 const SignUpForm = lazy(() => import("@/components/auth/SignUpForm").then(m => ({ default: m.SignUpForm })));
 const MainApp = lazy(() => import("@/components/MainApp").then(m => ({ default: m.MainApp })));
 const ChangeOwnPasswordDialog = lazy(() => import("@/components/ChangeOwnPasswordDialog").then(m => ({ default: m.ChangeOwnPasswordDialog })));
+const Install = lazy(() => import("@/pages/Install"));
 
 // QueryClient otimizado com cache agressivo e deduplicação
 const queryClient = new QueryClient({
@@ -79,6 +80,15 @@ const AppContent = () => {
 
   if (loading) {
     return <LoadingSpinner />;
+  }
+
+  // Página de instalação pública (acessível sem login)
+  if (window.location.pathname === '/install') {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <Install />
+      </Suspense>
+    );
   }
 
   if (!user) {
