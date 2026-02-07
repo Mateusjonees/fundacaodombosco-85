@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Bell, Plus, Calendar, MapPin, Users, Clock, Trash2, Edit, Eye, CheckCircle, XCircle, Filter, UserPlus, UserMinus, ExternalLink } from 'lucide-react';
+import { Bell, Plus, Calendar, MapPin, Users, Clock, Trash2, Edit, Eye, CheckCircle, XCircle, Filter, UserPlus, UserMinus, ExternalLink, Mail, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface MeetingAlert {
@@ -63,7 +63,7 @@ export const MeetingAlertManager = () => {
   const [selectedAlert, setSelectedAlert] = useState<MeetingAlert | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('');
-
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [newAlert, setNewAlert] = useState({
     title: '',
     message: '',
@@ -154,6 +154,73 @@ export const MeetingAlertManager = () => {
     }
   };
 
+  // Função para enviar e-mail de reunião aos participantes
+  const sendMeetingEmail = async (data: {
+    participantIds: string[];
+    meetingTitle: string;
+    meetingDate: string;
+    meetingTime: string;
+    meetingLocation: string;
+    meetingRoom: string;
+    meetingMessage: string;
+    virtualLink?: string;
+    createdByName: string;
+  }, alertId?: string) => {
+    if (alertId) setSendingEmail(alertId);
+    try {
+      const response = await supabase.functions.invoke('send-meeting-email', {
+        body: data,
+      });
+
+      if (response.error) {
+        console.error('Erro ao enviar e-mail:', response.error);
+        toast({
+          variant: "destructive",
+          title: "Aviso",
+          description: "Reunião salva, mas houve erro ao enviar e-mails.",
+        });
+      } else {
+        const result = response.data;
+        if (result.sent > 0) {
+          toast({
+            title: "📧 E-mails enviados",
+            description: `${result.sent} de ${result.total} e-mails enviados com sucesso.`,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao chamar edge function:', err);
+    } finally {
+      if (alertId) setSendingEmail(null);
+    }
+  };
+
+  // Enviar e-mail manual para participantes de uma reunião existente
+  const handleSendEmailToParticipants = async (alert: MeetingAlert) => {
+    if (!alert.participants || alert.participants.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem participantes",
+        description: "Esta reunião não tem participantes para notificar.",
+      });
+      return;
+    }
+
+    const creatorName = employees.find(e => e.user_id === alert.created_by)?.name || 'Organizador';
+    
+    await sendMeetingEmail({
+      participantIds: alert.participants,
+      meetingTitle: alert.title,
+      meetingDate: format(new Date(alert.meeting_date), 'dd/MM/yyyy'),
+      meetingTime: format(new Date(alert.meeting_date), 'HH:mm'),
+      meetingLocation: alert.meeting_location || '',
+      meetingRoom: alert.meeting_room || '',
+      meetingMessage: alert.message,
+      virtualLink: alert.virtual_link || undefined,
+      createdByName: creatorName,
+    }, alert.id);
+  };
+
   const handleCreateAlert = async () => {
     if (!newAlert.title || !newAlert.message || !newAlert.meeting_date || !newAlert.meeting_time) {
       toast({
@@ -210,11 +277,29 @@ export const MeetingAlertManager = () => {
         await supabase
           .from('appointment_notifications')
           .insert(notifications);
+
+        // Buscar nome do criador para o e-mail
+        const creatorName = employees.find(e => e.user_id === user?.id)?.name || 'Organizador';
+
+        // Enviar e-mail para participantes convidados
+        sendMeetingEmail({
+          participantIds: newAlert.participants,
+          meetingTitle: newAlert.title,
+          meetingDate: format(new Date(meetingDateTime), 'dd/MM/yyyy'),
+          meetingTime: format(new Date(meetingDateTime), 'HH:mm'),
+          meetingLocation: newAlert.meeting_location,
+          meetingRoom: newAlert.meeting_room,
+          meetingMessage: newAlert.message,
+          virtualLink: newAlert.virtual_link || undefined,
+          createdByName: creatorName,
+        });
       }
 
       toast({
         title: "Sucesso",
-        description: "Reunião criada com sucesso!",
+        description: newAlert.participants.length > 0 
+          ? "Reunião criada e e-mails enviados aos participantes!" 
+          : "Reunião criada com sucesso!",
       });
 
       setIsCreateDialogOpen(false);
@@ -855,6 +940,19 @@ export const MeetingAlertManager = () => {
                           </Button>
                           {canManageMeetings && (
                             <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSendEmailToParticipants(alert)}
+                                disabled={sendingEmail === alert.id || !alert.participants?.length}
+                                title="Enviar e-mail aos participantes"
+                              >
+                                {sendingEmail === alert.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Mail className="h-3 w-3" />
+                                )}
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
