@@ -93,7 +93,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
               Bem-vindo de volta
             </h1>
             <p className="text-sm text-muted-foreground">
-              Acesse o sistema de gestão clínica
+              Acesse o sistema Clínica
             </p>
           </div>
 
@@ -186,7 +186,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
 
         {/* Footer text */}
         <p className="text-center text-xs text-white/30 mt-2">
-          Fundação Dom Bosco · Sistema de Gestão
+          Fundação Dom Bosco · Clínica
         </p>
       </div>
     </div>
