@@ -55,6 +55,15 @@ const ContractTemplates = lazy(() => import('@/pages/ContractTemplates'));
 const CustomRoles = lazy(() => import('@/pages/CustomRoles'));
 const Anamnesis = lazy(() => import('@/pages/Anamnesis'));
 const Install = lazy(() => import('@/pages/Install'));
+// New modules
+const WaitList = lazy(() => import('@/pages/WaitList'));
+const AbsenceControl = lazy(() => import('@/pages/AbsenceControl'));
+const TherapeuticPlans = lazy(() => import('@/pages/TherapeuticPlans'));
+const ConsentTerms = lazy(() => import('@/pages/ConsentTerms'));
+const InternalReferrals = lazy(() => import('@/pages/InternalReferrals'));
+const ClinicalKPIs = lazy(() => import('@/pages/ClinicalKPIs'));
+const AuditLogs = lazy(() => import('@/pages/AuditLogs'));
+const PatientPortal = lazy(() => import('@/pages/PatientPortal'));
 
 // Memoized route config to avoid re-creating on every render
 const AppRoutes = memo(() => (
@@ -84,6 +93,14 @@ const AppRoutes = memo(() => (
       <Route path="/custom-roles" element={<ProtectedRoute allowedRoles={['director']}><CustomRoles /></ProtectedRoute>} />
       <Route path="/anamnesis" element={<ProtectedRoute allowedRoles={['director']}><Anamnesis /></ProtectedRoute>} />
       <Route path="/install" element={<Install />} />
+      <Route path="/wait-list" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><WaitList /></ProtectedRoute>} />
+      <Route path="/absence-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><AbsenceControl /></ProtectedRoute>} />
+      <Route path="/therapeutic-plans" element={<TherapeuticPlans />} />
+      <Route path="/consent-terms" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><ConsentTerms /></ProtectedRoute>} />
+      <Route path="/referrals" element={<InternalReferrals />} />
+      <Route path="/kpis" element={<ProtectedRoute allowedRoles={['director']}><ClinicalKPIs /></ProtectedRoute>} />
+      <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['director']}><AuditLogs /></ProtectedRoute>} />
+      <Route path="/patient-portal/:token" element={<PatientPortal />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </Suspense>
