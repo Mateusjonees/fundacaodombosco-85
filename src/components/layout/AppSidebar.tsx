@@ -155,14 +155,36 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       order_index: 4
     });
   }
-  items.push({
-    id: 'feedback-control',
-    title: 'Controle de Devolutiva',
-    url: '/feedback-control',
-    icon: 'FileCheck',
-    category: 'GESTÃO CLÍNICA',
-    order_index: 5
-  });
+  if (permissions.isDirector() || permissions.isCoordinator()) {
+    items.push({
+      id: 'feedback-control',
+      title: 'Controle de Devolutiva',
+      url: '/feedback-control',
+      icon: 'FileCheck',
+      category: 'GESTÃO CLÍNICA',
+      order_index: 5
+    });
+  }
+  if (permissions.isProfessional() || permissions.isCoordinator() || permissions.isDirector()) {
+    items.push({
+      id: 'anamnesis',
+      title: 'Anamnese',
+      url: '/anamnesis',
+      icon: 'ClipboardList',
+      category: 'GESTÃO CLÍNICA',
+      order_index: 5.5
+    });
+  }
+  if (permissions.isDirector() || permissions.isCoordinator() || permissions.hasAnyRole(['psychologist', 'psychopedagogue'])) {
+    items.push({
+      id: 'neuroassessment',
+      title: 'Neuroavaliação',
+      url: '/neuroassessment',
+      icon: 'Brain',
+      category: 'GESTÃO CLÍNICA',
+      order_index: 5.6
+    });
+  }
 
 
 
@@ -187,15 +209,16 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       category: 'AGENDA',
       order_index: 7
     });
-    items.push({
-      id: 'meeting-alerts',
-      title: 'Alertas de Reunião',
-      url: '/meeting-alerts',
-      icon: 'Bell',
-      category: 'AGENDA',
-      order_index: 8
-    });
   }
+  // Reuniões visíveis para todos (profissionais podem ver/inscrever-se)
+  items.push({
+    id: 'meeting-alerts',
+    title: 'Alertas de Reunião',
+    url: '/meeting-alerts',
+    icon: 'Bell',
+    category: 'AGENDA',
+    order_index: 8
+  });
 
   // 💰 FINANCEIRO - Apenas diretores
   if (permissions.isDirector() || customPermissions.hasPermission('view_financial')) {
