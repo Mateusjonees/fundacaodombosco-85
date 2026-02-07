@@ -80,6 +80,8 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
             <img 
               alt="Fundação Dom Bosco" 
               src="/lovable-uploads/d1e09cd0-006f-4737-87e4-4824049ed50a.png" 
+              width="224"
+              height="224"
               className="relative h-32 w-auto object-contain drop-shadow-2xl" 
               fetchPriority="high"
             />
@@ -134,6 +136,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
                   tabIndex={-1}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
