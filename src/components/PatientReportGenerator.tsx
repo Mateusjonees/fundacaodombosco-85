@@ -136,7 +136,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
       // Carregar medical records
       const { data: medicalData, error: medicalError } = await supabase
         .from('medical_records')
-        .select('id, session_date, session_type, progress_notes, treatment_plan, symptoms, session_duration, employee_id')
+        .select('id, session_date, session_type, progress_notes, treatment_plan, symptoms, session_duration, employee_id, vital_signs, medications, next_appointment_notes')
         .eq('client_id', client.id)
         .order('session_date', { ascending: false });
 
@@ -977,29 +977,60 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
                       </div>
 
                       {record.session_duration && (
-                        <div className="mb-3">
+                        <div className="mb-2">
                           <span className="font-medium text-gray-600 text-sm">Duração:</span> {record.session_duration} minutos
+                        </div>
+                      )}
+
+                      {/* Sinais Vitais */}
+                      {record.vital_signs && Object.keys(record.vital_signs).length > 0 && (
+                        <div className="mb-3 p-2 bg-red-50 rounded-lg">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Sinais Vitais:</div>
+                          <div className="flex flex-wrap gap-3 text-sm">
+                            {Object.entries(record.vital_signs).map(([key, value]) => (
+                              <span key={key}><strong>{key}:</strong> {String(value)}</span>
+                            ))}
+                          </div>
                         </div>
                       )}
 
                       {record.symptoms && (
                         <div className="mb-3">
-                          <div className="font-medium text-gray-600 text-sm mb-1">Sintomas:</div>
+                          <div className="font-medium text-gray-600 text-sm mb-1">Queixa / Sintomas:</div>
                           <div className="text-sm bg-gray-50 p-2 rounded">{record.symptoms}</div>
                         </div>
                       )}
 
                       {record.progress_notes && (
                         <div className="mb-3">
-                          <div className="font-medium text-gray-600 text-sm mb-1">Notas de Progresso:</div>
-                          <div className="text-sm bg-gray-50 p-2 rounded">{record.progress_notes}</div>
+                          <div className="font-medium text-gray-600 text-sm mb-1">Evolução:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded whitespace-pre-wrap">{record.progress_notes}</div>
                         </div>
                       )}
 
                       {record.treatment_plan && (
                         <div className="mb-3">
-                          <div className="font-medium text-gray-600 text-sm mb-1">Plano de Tratamento:</div>
-                          <div className="text-sm bg-gray-50 p-2 rounded">{record.treatment_plan}</div>
+                          <div className="font-medium text-gray-600 text-sm mb-1">Conduta / Plano Terapêutico:</div>
+                          <div className="text-sm bg-gray-50 p-2 rounded whitespace-pre-wrap">{record.treatment_plan}</div>
+                        </div>
+                      )}
+
+                      {/* Medicações */}
+                      {record.medications && record.medications.length > 0 && (
+                        <div className="mb-3">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Medicações:</div>
+                          <div className="text-sm bg-purple-50 p-2 rounded">
+                            {record.medications.map((med: any, idx: number) => (
+                              <div key={idx}>• {typeof med === 'string' ? med : med.name || '-'}</div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {record.next_appointment_notes && (
+                        <div className="mb-2">
+                          <div className="font-medium text-gray-600 text-sm mb-1">Próxima Sessão:</div>
+                          <div className="text-sm bg-amber-50 p-2 rounded">{record.next_appointment_notes}</div>
                         </div>
                       )}
                     </div>

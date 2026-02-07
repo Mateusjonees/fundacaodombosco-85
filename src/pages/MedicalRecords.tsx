@@ -246,19 +246,35 @@ export default function MedicalRecords() {
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
+                {/* Resumo rápido */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  <div className="text-center p-3 rounded-lg bg-primary/5 border">
+                    <p className="text-2xl font-bold text-primary">{medicalRecords.length}</p>
+                    <p className="text-xs text-muted-foreground">Registros</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-green-500/5 border">
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {medicalRecords.filter(r => r.status === 'completed').length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Completos</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-purple-500/5 border">
+                    <p className="text-sm font-bold text-purple-600 dark:text-purple-400">
+                      {medicalRecords[0] ? new Date(medicalRecords[0].session_date).toLocaleDateString('pt-BR') : '-'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Último Atend.</p>
+                  </div>
+                </div>
+
                 <Tabs defaultValue="timeline" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 bg-muted/50">
-                    <TabsTrigger value="timeline" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
+                  <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                    <TabsTrigger value="timeline" className="data-[state=active]:bg-background">
                       <Activity className="w-4 h-4 mr-2" />
-                      Timeline
+                      Prontuário
                     </TabsTrigger>
-                    <TabsTrigger value="info" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
+                    <TabsTrigger value="info" className="data-[state=active]:bg-background">
                       <User className="w-4 h-4 mr-2" />
                       Informações
-                    </TabsTrigger>
-                    <TabsTrigger value="history" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
-                      <ClipboardList className="w-4 h-4 mr-2" />
-                      Histórico
                     </TabsTrigger>
                   </TabsList>
 
@@ -304,8 +320,8 @@ export default function MedicalRecords() {
                         </div>
 
                         {selectedClient.diagnosis && (
-                          <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                            <p className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-1">Diagnóstico</p>
+                          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                            <p className="text-sm font-medium text-primary mb-1">Diagnóstico</p>
                             <p className="text-sm">{selectedClient.diagnosis}</p>
                           </div>
                         )}
@@ -318,33 +334,6 @@ export default function MedicalRecords() {
                         )}
                       </CardContent>
                     </Card>
-                  </TabsContent>
-
-                  <TabsContent value="history" className="space-y-4 mt-6">
-                    <div className="grid grid-cols-3 gap-4">
-                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
-                        <CardContent className="p-4 text-center">
-                          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{medicalRecords.length}</p>
-                          <p className="text-sm text-blue-700 dark:text-blue-300">Registros</p>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/30 border-green-200 dark:border-green-800">
-                        <CardContent className="p-4 text-center">
-                          <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                            {medicalRecords.filter(r => r.status === 'completed').length}
-                          </p>
-                          <p className="text-sm text-green-700 dark:text-green-300">Completos</p>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
-                        <CardContent className="p-4 text-center">
-                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                            {medicalRecords[0] ? new Date(medicalRecords[0].session_date).toLocaleDateString('pt-BR') : '-'}
-                          </p>
-                          <p className="text-sm text-purple-700 dark:text-purple-300">Último Atend.</p>
-                        </CardContent>
-                      </Card>
-                    </div>
                   </TabsContent>
                 </Tabs>
               </CardContent>
