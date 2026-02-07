@@ -551,10 +551,15 @@ export default function PatientNeuroTestHistory({
         <Accordion type="single" collapsible className="w-full">
           {tests.map((test) => {
             const config = getTestConfig(test.test_code);
-            if (!config) return null;
-
             const percentiles = test.percentiles as Record<string, number>;
             const classifications = test.classifications as Record<string, string>;
+            const calculatedScores = test.calculated_scores as Record<string, number>;
+            const rawScores = test.raw_scores as Record<string, number>;
+
+            // Se não tem config específica, gera automaticamente a partir dos percentiles
+            const subtestKeys = config ? config.subtests : Object.keys(percentiles);
+            const subtestNames = config ? config.names : Object.fromEntries(Object.keys(percentiles).map(k => [k, k]));
+            
             
             return (
               <AccordionItem key={test.id} value={test.id}>
@@ -574,8 +579,8 @@ export default function PatientNeuroTestHistory({
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4 pt-2">
-                    {/* Seções de entrada e cálculos */}
-                    {renderInputAndCalculations(test)}
+                    {/* Seções de entrada e cálculos (apenas para testes com config) */}
+                    {config && renderInputAndCalculations(test)}
 
                     {/* Tabela de resultados */}
                     <Collapsible defaultOpen>
@@ -596,18 +601,21 @@ export default function PatientNeuroTestHistory({
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {config.subtests.map(code => {
-                              const score = getScoreValue(test, code, config);
+                            {subtestKeys.map(code => {
+                              const score = config 
+                                ? getScoreValue(test, code, config)
+                                : (calculatedScores[code] ?? rawScores[code] ?? '-');
                               const percentile = percentiles[code] ?? '-';
                               const classification = classifications[code] ?? '-';
-                              const isMain = code === config.mainSubtest;
+                              const isMain = config ? code === config.mainSubtest : false;
 
                               const copyRowToClipboard = () => {
-                                const text = `${test.test_name} - ${config.names[code] || code}: Bruto ${score}, Percentil ${percentile}, Classificação ${classification}`;
+                                const displayName = subtestNames[code] || code;
+                                const text = `${test.test_name} - ${displayName}: Bruto ${score}, Percentil ${percentile}, Classificação ${classification}`;
                                 navigator.clipboard.writeText(text);
                                 toast({
                                   title: "Linha copiada!",
-                                  description: config.names[code] || code
+                                  description: displayName
                                 });
                               };
 
@@ -616,7 +624,7 @@ export default function PatientNeuroTestHistory({
                                   <TableCell>
                                     <div className="flex items-center gap-2">
                                       {isMain && <Brain className="h-4 w-4 text-primary" />}
-                                      <span>{config.names[code] || code}</span>
+                                      <span>{subtestNames[code] || code}</span>
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-center font-mono">{score}</TableCell>
