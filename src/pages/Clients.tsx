@@ -599,47 +599,58 @@ export default function Patients() {
   );
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
 
+  // Renderizar tab bar de navegação (lista + pacientes abertos)
+  const renderTabBar = () => {
+    if (openTabIds.length === 0) return null;
+    return (
+      <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-4 border-b border-border/50 scrollbar-thin">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleBackToList}
+          className={`shrink-0 gap-1.5 rounded-t-lg rounded-b-none border-b-2 px-3 h-9 ${
+            !activeTabId
+              ? "border-primary bg-primary/10 text-primary font-medium"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30"
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          <span className="hidden sm:inline">Lista</span>
+        </Button>
+        {openTabs.map((tab) => (
+          <div
+            key={tab.id}
+            className={`shrink-0 flex items-center gap-1 rounded-t-lg rounded-b-none border-b-2 px-3 h-9 cursor-pointer transition-all ${
+              tab.id === activeTabId
+                ? "border-primary bg-primary/10 text-primary font-medium"
+                : "border-transparent hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            }`}
+            onClick={() => {
+              setActiveTabId(tab.id);
+              syncTabsToUrl(openTabIds, tab.id);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            <span className="text-sm max-w-[120px] sm:max-w-[180px] truncate">{tab.name.split(' ')[0]}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCloseTab(tab.id);
+              }}
+              className="ml-1 p-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   if (activeTabId && activeClient) {
     return (
       <div className="space-y-0 animate-fade-in">
-        {/* Tab bar */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-4 border-b border-border/50 scrollbar-thin">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBackToList}
-            className="shrink-0 gap-1.5 text-muted-foreground hover:text-foreground rounded-t-lg rounded-b-none border-b-2 border-transparent hover:border-primary/30 px-3 h-9"
-          >
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Lista</span>
-          </Button>
-          {openTabs.map((tab) => (
-            <div
-              key={tab.id}
-              className={`shrink-0 flex items-center gap-1 rounded-t-lg rounded-b-none border-b-2 px-3 h-9 cursor-pointer transition-all ${
-                tab.id === activeTabId
-                  ? "border-primary bg-primary/10 text-primary font-medium"
-                  : "border-transparent hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-              onClick={() => {
-                setActiveTabId(tab.id);
-                syncTabsToUrl(openTabIds, tab.id);
-              }}
-            >
-              <span className="text-sm max-w-[120px] sm:max-w-[180px] truncate">{tab.name.split(' ')[0]}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCloseTab(tab.id);
-                }}
-                className="ml-1 p-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-
+        {renderTabBar()}
         <ClientDetailsView
           client={activeClient}
           onEdit={() => {
@@ -667,6 +678,9 @@ export default function Patients() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Tab bar de navegação entre lista e pacientes abertos */}
+      {renderTabBar()}
+
       {/* Header */}
       <PageHeader
         title="Gerenciar Pacientes"
