@@ -2,53 +2,39 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
-import logo from '@/assets/fundacao-dom-bosco-logo-optimized.png';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
+
 interface LoginFormProps {
   onSuccess: () => void;
   onSwitchToSignUp?: () => void;
 }
-export const LoginForm = ({
-  onSuccess,
-  onSwitchToSignUp
-}: LoginFormProps) => {
+
+export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Log login attempt
       await AuditService.logAction({
         entityType: 'auth',
         action: 'login_attempted',
-        metadata: {
-          user_email: email
-        }
+        metadata: { user_email: email }
       });
-      const {
-        data,
-        error
-      } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
       if (error) {
-        // Log failed login
         await AuditService.logAction({
           entityType: 'auth',
           action: 'login_failed',
-          metadata: {
-            user_email: email,
-            error_message: error.message
-          }
+          metadata: { user_email: email, error_message: error.message }
         });
         toast({
           variant: "destructive",
@@ -57,20 +43,17 @@ export const LoginForm = ({
         });
         return;
       }
+
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao sistema."
       });
       onSuccess();
     } catch (error) {
-      // Log unexpected error
       await AuditService.logAction({
         entityType: 'auth',
         action: 'login_error',
-        metadata: {
-          user_email: email,
-          error: 'unexpected_error'
-        }
+        metadata: { user_email: email, error: 'unexpected_error' }
       });
       toast({
         variant: "destructive",
@@ -81,39 +64,105 @@ export const LoginForm = ({
       setIsLoading(false);
     }
   };
-  return <div className="login-container">
-      <div className="login-bubble bubble-1"></div>
-      <div className="login-bubble bubble-2"></div>
-      <div className="login-bubble bubble-3"></div>
+
+  return (
+    <div className="login-container">
+      <div className="login-bubble bubble-1" />
+      <div className="login-bubble bubble-2" />
+      <div className="login-bubble bubble-3" />
       
-      <Card className="login-form">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <img alt="Fundação Dom Bosco - Sistema de Gestão Clínica e Neuropsicológica" width="168" height="128" fetchPriority="high" src="/lovable-uploads/d1e09cd0-006f-4737-87e4-4824049ed50a.png" className="h-48 w-auto object-contain" />
+      <div className="relative z-10 w-full max-w-md px-4">
+        {/* Logo floating above card */}
+        <div className="flex justify-center mb-8">
+          <div className="relative">
+            <div className="absolute -inset-3 bg-white/10 rounded-3xl blur-xl" />
+            <img 
+              alt="Fundação Dom Bosco" 
+              src="/lovable-uploads/d1e09cd0-006f-4737-87e4-4824049ed50a.png" 
+              className="relative h-32 w-auto object-contain drop-shadow-2xl" 
+              fetchPriority="high"
+            />
           </div>
-          
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        </div>
+
+        {/* Card */}
+        <div className="login-form">
+          <div className="space-y-1 mb-8">
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
+              Bem-vindo de volta
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Acesse o sistema de gestão clínica
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="form-group">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading} placeholder="seu@email.com" />
+              <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Email
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)} 
+                  required 
+                  disabled={isLoading} 
+                  placeholder="seu@email.com"
+                  className="pl-10 h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
+                />
+              </div>
             </div>
+
             <div className="form-group">
-              <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required disabled={isLoading} placeholder="Sua senha" />
+              <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Senha
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  required 
+                  disabled={isLoading} 
+                  placeholder="••••••••"
+                  className="pl-10 h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
+                />
+              </div>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Entrando...' : 'Entrar'}
+
+            <Button 
+              type="submit" 
+              className="w-full h-12 rounded-xl text-sm font-semibold gap-2 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Entrando...' : (
+                <>
+                  Entrar
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </Button>
           </form>
-          
-          {onSwitchToSignUp && false && <div className="mt-4 text-center">
-              <Button variant="link" onClick={onSwitchToSignUp} disabled={isLoading}>
+
+          {onSwitchToSignUp && false && (
+            <div className="mt-6 text-center">
+              <Button variant="link" onClick={onSwitchToSignUp} disabled={isLoading} className="text-xs">
                 Não tem uma conta? Criar conta
               </Button>
-            </div>}
-        </CardContent>
-      </Card>
-    </div>;
+            </div>
+          )}
+        </div>
+
+        {/* Footer text */}
+        <p className="text-center text-xs text-white/30 mt-6">
+          Fundação Dom Bosco · Sistema de Gestão
+        </p>
+      </div>
+    </div>
+  );
 };
