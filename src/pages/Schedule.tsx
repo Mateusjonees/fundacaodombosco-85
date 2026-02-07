@@ -695,7 +695,7 @@ export default function Schedule() {
   };
 
   return (
-    <div className="container mx-auto p-2 sm:p-4 space-y-4 animate-fade-in">
+    <div className="w-full p-2 sm:p-4 space-y-4 animate-fade-in">
       <PatientArrivedNotification />
       <ScheduleAlerts />
       
