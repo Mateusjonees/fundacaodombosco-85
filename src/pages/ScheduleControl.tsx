@@ -1208,7 +1208,7 @@ ${notificationMessage}
         </Card>
       </div>;
   };
-  return <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+  return <div className="w-full p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Cabeçalho Moderno */}
       <div className="flex flex-col gap-4 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
