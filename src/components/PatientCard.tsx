@@ -13,7 +13,8 @@ import {
   Building2,
   Brain,
   Stethoscope as StethoscopeIcon,
-  Clipboard
+  Clipboard,
+  Trash2
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 
@@ -40,6 +41,7 @@ interface PatientCardProps {
   onEdit?: () => void;
   onReport?: () => void;
   onToggleStatus?: () => void;
+  onDelete?: () => void;
 }
 
 const getUnitConfig = (unit?: string) => {
@@ -104,7 +106,8 @@ export function PatientCard({
   onView,
   onEdit,
   onReport,
-  onToggleStatus
+  onToggleStatus,
+  onDelete
 }: PatientCardProps) {
   const unitConfig = getUnitConfig(client.unit);
   const age = calculateAge(client.birth_date);
@@ -268,6 +271,18 @@ export function PatientCard({
                   title={client.is_active ? "Desativar" : "Ativar"}
                 >
                   <Power className="h-4 w-4" />
+                </Button>
+              )}
+
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onDelete}
+                  className="h-9 w-9 rounded-lg transition-all hover:bg-destructive/10 hover:text-destructive"
+                  title="Excluir permanentemente"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>

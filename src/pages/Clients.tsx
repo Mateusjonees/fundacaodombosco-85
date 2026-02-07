@@ -39,6 +39,8 @@ import {
   LayoutGrid,
   List,
   X,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { PatientCard } from "@/components/PatientCard";
 import { PageHeader } from "@/components/ui/page-header";
@@ -228,6 +230,8 @@ export default function Patients() {
   const [isImporting, setIsImporting] = useState(false);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [isMultiReportOpen, setIsMultiReportOpen] = useState(false);
+  const [deleteConfirmClient, setDeleteConfirmClient] = useState<Client | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   useEffect(() => {
     loadUserProfile();
     loadEmployees();
@@ -393,6 +397,56 @@ export default function Patients() {
     });
   };
 
+  // Exclusão permanente de cliente (apenas diretores)
+  const handleDeleteClient = async () => {
+    if (!deleteConfirmClient) return;
+    setIsDeleting(true);
+    try {
+      // Limpar registros vinculados em cascata
+      const clientId = deleteConfirmClient.id;
+      
+      await Promise.all([
+        supabase.from('client_assignments').delete().eq('client_id', clientId),
+        supabase.from('client_notes').delete().eq('client_id', clientId),
+        supabase.from('client_documents').delete().eq('client_id', clientId),
+        supabase.from('client_laudos').delete().eq('client_id', clientId),
+        supabase.from('medical_records').delete().eq('client_id', clientId),
+        supabase.from('neuro_test_results').delete().eq('client_id', clientId),
+        supabase.from('client_feedback_control').delete().eq('client_id', clientId),
+      ]);
+
+      // Remover agendamentos e notificações
+      await Promise.all([
+        supabase.from('appointment_notifications').delete().eq('client_id', clientId),
+        supabase.from('schedules').delete().eq('client_id', clientId),
+        supabase.from('attendance_reports').delete().eq('client_id', clientId),
+        supabase.from('client_payments').delete().eq('client_id', clientId),
+      ]);
+
+      // Deletar o cliente
+      const { error } = await supabase.from('clients').delete().eq('id', clientId);
+      if (error) throw error;
+
+      toast({
+        title: "Paciente excluído",
+        description: `${deleteConfirmClient.name} foi excluído permanentemente.`,
+      });
+
+      // Fechar tab se estiver aberta
+      handleCloseTab(clientId);
+      setDeleteConfirmClient(null);
+      refreshClients();
+    } catch (error: any) {
+      console.error("Error deleting client:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir",
+        description: error?.message || "Não foi possível excluir o paciente. Pode haver registros vinculados.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   // Funções de seleção múltipla
   const toggleClientSelection = (clientId: string) => {
     setSelectedClients(prev => 
@@ -1112,6 +1166,7 @@ export default function Patients() {
                       onEdit={isCoordinatorOrDirector() ? () => openEditDialog(client) : undefined}
                       onReport={isCoordinatorOrDirector() ? () => setReportClient(client) : undefined}
                       onToggleStatus={isCoordinatorOrDirector() ? () => handleToggleClientStatus(client.id, client.is_active) : undefined}
+                      onDelete={canDeleteClients() ? () => setDeleteConfirmClient(client) : undefined}
                     />
                   ))}
                 </div>
@@ -1227,6 +1282,17 @@ export default function Patients() {
                                 >
                                   <Power className="h-4 w-4" />
                                 </Button>
+                                {canDeleteClients() && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setDeleteConfirmClient(client)}
+                                    className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-all"
+                                    title="Excluir permanentemente"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>
@@ -1286,6 +1352,45 @@ export default function Patients() {
         }}
         onViewFullProfile={handleViewFullProfile}
       />
+
+      {/* Dialog de confirmação de exclusão */}
+      <Dialog open={!!deleteConfirmClient} onOpenChange={(open) => !open && setDeleteConfirmClient(null)}>
+        <DialogContent className="w-[95vw] max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5 text-destructive">
+              <div className="p-2 bg-destructive/10 rounded-xl">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              Excluir Paciente Permanentemente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir <strong className="text-foreground">{deleteConfirmClient?.name}</strong>?
+            </p>
+            <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-xl text-sm space-y-1">
+              <p className="font-medium text-destructive">⚠️ Esta ação é irreversível!</p>
+              <p className="text-muted-foreground text-xs">
+                Todos os dados serão removidos: prontuários, agendamentos, laudos, receitas, notas, pagamentos e vinculações.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirmClient(null)} className="rounded-xl">
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteClient} 
+              disabled={isDeleting}
+              className="rounded-xl gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? 'Excluindo...' : 'Excluir Permanentemente'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
