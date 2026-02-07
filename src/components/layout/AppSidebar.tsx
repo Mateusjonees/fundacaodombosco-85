@@ -1,7 +1,7 @@
 import { useState, useEffect, memo, useCallback, useMemo, lazy, Suspense } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import logo from '@/assets/fundacao-dom-bosco-logo-optimized.png';
-import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronDown, ChevronRight, Stethoscope, CalendarDays, Wallet, UsersRound, TrendingUp, MessageCircle, User, Tag, Sparkles, ListOrdered, UserX, Target, FileSignature, ArrowRightLeft, Activity } from 'lucide-react';
+import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronDown, ChevronRight, Stethoscope, CalendarDays, Wallet, UsersRound, TrendingUp, MessageCircle, User, Tag, Sparkles } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,10 +18,29 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 // Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
-  Home, UserPlus, Users, Calendar, ClipboardList, UserCheck, FolderOpen,
-  DollarSign, BarChart3, Package, Settings, Archive, CheckSquare, Shield,
-  Heart, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, Tag,
-  ListOrdered, UserX, Target, FileSignature, ArrowRightLeft, Activity,
+  Home,
+  UserPlus,
+  Users,
+  Calendar,
+  ClipboardList,
+  UserCheck,
+  FolderOpen,
+  DollarSign,
+  BarChart3,
+  Package,
+  Settings,
+  Archive,
+  CheckSquare,
+  Shield,
+  Heart,
+  MessageSquare,
+  FileCheck,
+  FileText,
+  Folder,
+  Clock,
+  Bell,
+  Brain,
+  Tag
 };
 
 // Category icons, colors and gradients - visual design
@@ -145,27 +164,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     order_index: 5
   });
 
-  // Fila de Espera
-  if (permissions.isDirector() || permissions.isCoordinator() || permissions.hasAnyRole(['receptionist'])) {
-    items.push({ id: 'wait-list', title: 'Fila de Espera', url: '/wait-list', icon: 'ListOrdered', category: 'GESTÃO CLÍNICA', order_index: 5.1 });
-  }
-  // Controle de Faltas
-  if (permissions.isDirector() || permissions.isCoordinator()) {
-    items.push({ id: 'absence-control', title: 'Controle de Faltas', url: '/absence-control', icon: 'UserX', category: 'GESTÃO CLÍNICA', order_index: 5.2 });
-  }
-  // Planos Terapêuticos
-  if (permissions.isProfessional() || permissions.isCoordinator() || permissions.isDirector()) {
-    items.push({ id: 'therapeutic-plans', title: 'Planos Terapêuticos', url: '/therapeutic-plans', icon: 'Target', category: 'GESTÃO CLÍNICA', order_index: 5.3 });
-  }
-  // Termos de Consentimento
-  if (permissions.isDirector() || permissions.isCoordinator()) {
-    items.push({ id: 'consent-terms', title: 'Termos de Consentimento', url: '/consent-terms', icon: 'FileSignature', category: 'GESTÃO CLÍNICA', order_index: 5.4 });
-  }
-  // Encaminhamentos Internos
-  if (permissions.isProfessional() || permissions.isCoordinator() || permissions.isDirector()) {
-    items.push({ id: 'referrals', title: 'Encaminhamentos', url: '/referrals', icon: 'ArrowRightLeft', category: 'GESTÃO CLÍNICA', order_index: 5.5 });
-  }
-
 
 
 
@@ -254,10 +252,7 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       order_index: 13
     });
   }
-  // Auditoria
-  if (permissions.isDirector()) {
-    items.push({ id: 'audit-logs', title: 'Auditoria', url: '/audit-logs', icon: 'Shield', category: 'EQUIPE', order_index: 14 });
-  }
+
 
 
 
@@ -271,9 +266,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       category: 'RELATÓRIOS',
       order_index: 15
     });
-  }
-  if (permissions.isDirector()) {
-    items.push({ id: 'kpis', title: 'Indicadores Clínicos', url: '/kpis', icon: 'Activity', category: 'RELATÓRIOS', order_index: 15.1 });
   }
 
   // 💬 COMUNICAÇÃO

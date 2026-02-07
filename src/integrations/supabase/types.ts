@@ -14,54 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      absence_records: {
-        Row: {
-          absence_date: string
-          client_id: string
-          consecutive_count: number
-          created_at: string
-          id: string
-          notes: string | null
-          schedule_id: string | null
-          was_notified: boolean
-        }
-        Insert: {
-          absence_date: string
-          client_id: string
-          consecutive_count?: number
-          created_at?: string
-          id?: string
-          notes?: string | null
-          schedule_id?: string | null
-          was_notified?: boolean
-        }
-        Update: {
-          absence_date?: string
-          client_id?: string
-          consecutive_count?: number
-          created_at?: string
-          id?: string
-          notes?: string | null
-          schedule_id?: string | null
-          was_notified?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "absence_records_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "absence_records_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "schedules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       anamnesis_questions: {
         Row: {
           anamnesis_type_id: string
@@ -1075,93 +1027,6 @@ export type Database = {
         }
         Relationships: []
       }
-      consent_records: {
-        Row: {
-          client_id: string
-          created_at: string
-          created_by: string | null
-          id: string
-          ip_address: string | null
-          signature_data: string
-          signed_at: string
-          template_id: string
-          user_agent: string | null
-          witness_name: string | null
-        }
-        Insert: {
-          client_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          ip_address?: string | null
-          signature_data: string
-          signed_at?: string
-          template_id: string
-          user_agent?: string | null
-          witness_name?: string | null
-        }
-        Update: {
-          client_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          ip_address?: string | null
-          signature_data?: string
-          signed_at?: string
-          template_id?: string
-          user_agent?: string | null
-          witness_name?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "consent_records_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consent_records_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "consent_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      consent_templates: {
-        Row: {
-          category: string
-          content: string
-          created_at: string
-          created_by: string | null
-          id: string
-          is_active: boolean
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          category?: string
-          content: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          content?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       contract_templates: {
         Row: {
           content: string
@@ -1836,53 +1701,6 @@ export type Database = {
           },
         ]
       }
-      internal_referrals: {
-        Row: {
-          client_id: string
-          created_at: string
-          from_professional: string
-          id: string
-          notes: string | null
-          reason: string
-          response_notes: string | null
-          status: string
-          to_professional: string
-          updated_at: string
-        }
-        Insert: {
-          client_id: string
-          created_at?: string
-          from_professional: string
-          id?: string
-          notes?: string | null
-          reason: string
-          response_notes?: string | null
-          status?: string
-          to_professional: string
-          updated_at?: string
-        }
-        Update: {
-          client_id?: string
-          created_at?: string
-          from_professional?: string
-          id?: string
-          notes?: string | null
-          reason?: string
-          response_notes?: string | null
-          status?: string
-          to_professional?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "internal_referrals_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       medical_records: {
         Row: {
           attachments: Json | null
@@ -2214,44 +2032,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
-      }
-      patient_portal_tokens: {
-        Row: {
-          client_id: string
-          created_at: string
-          created_by: string | null
-          expires_at: string
-          id: string
-          is_active: boolean
-          token: string
-        }
-        Insert: {
-          client_id: string
-          created_at?: string
-          created_by?: string | null
-          expires_at?: string
-          id?: string
-          is_active?: boolean
-          token?: string
-        }
-        Update: {
-          client_id?: string
-          created_at?: string
-          created_by?: string | null
-          expires_at?: string
-          id?: string
-          is_active?: boolean
-          token?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "patient_portal_tokens_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       payment_installments: {
         Row: {
@@ -2670,10 +2450,8 @@ export type Database = {
           employee_id: string | null
           end_time: string
           id: string
-          is_online: boolean
           location: string | null
           materials_used: Json | null
-          meeting_link: string | null
           notes: string | null
           patient_arrived: boolean | null
           patient_confirmed: boolean | null
@@ -2704,10 +2482,8 @@ export type Database = {
           employee_id?: string | null
           end_time: string
           id?: string
-          is_online?: boolean
           location?: string | null
           materials_used?: Json | null
-          meeting_link?: string | null
           notes?: string | null
           patient_arrived?: boolean | null
           patient_confirmed?: boolean | null
@@ -2738,10 +2514,8 @@ export type Database = {
           employee_id?: string | null
           end_time?: string
           id?: string
-          is_online?: boolean
           location?: string | null
           materials_used?: Json | null
-          meeting_link?: string | null
           notes?: string | null
           patient_arrived?: boolean | null
           patient_confirmed?: boolean | null
@@ -3018,91 +2792,6 @@ export type Database = {
         }
         Relationships: []
       }
-      therapeutic_plans: {
-        Row: {
-          client_id: string
-          created_at: string
-          end_date: string | null
-          id: string
-          objectives: Json
-          professional_id: string | null
-          start_date: string
-          status: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          client_id: string
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          objectives?: Json
-          professional_id?: string | null
-          start_date?: string
-          status?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          client_id?: string
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          objectives?: Json
-          professional_id?: string | null
-          start_date?: string
-          status?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "therapeutic_plans_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      therapeutic_progress: {
-        Row: {
-          created_at: string
-          id: string
-          notes: string | null
-          plan_id: string
-          progress_value: number
-          recorded_by: string | null
-          session_date: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notes?: string | null
-          plan_id: string
-          progress_value?: number
-          recorded_by?: string | null
-          session_date?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notes?: string | null
-          plan_id?: string
-          progress_value?: number
-          recorded_by?: string | null
-          session_date?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "therapeutic_progress_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "therapeutic_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_files: {
         Row: {
           category: string | null
@@ -3344,56 +3033,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
-      }
-      wait_list: {
-        Row: {
-          client_id: string
-          created_at: string
-          created_by: string | null
-          id: string
-          notes: string | null
-          position: number
-          priority: string
-          specialty: string
-          status: string
-          unit: string
-          updated_at: string
-        }
-        Insert: {
-          client_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          position?: number
-          priority?: string
-          specialty: string
-          status?: string
-          unit?: string
-          updated_at?: string
-        }
-        Update: {
-          client_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          position?: number
-          priority?: string
-          specialty?: string
-          status?: string
-          unit?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wait_list_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {

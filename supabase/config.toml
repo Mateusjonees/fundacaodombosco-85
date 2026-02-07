@@ -26,6 +26,3 @@ verify_jwt = false
 
 [functions.confirm-appointment]
 verify_jwt = false
-
-[functions.patient-portal]
-verify_jwt = false
