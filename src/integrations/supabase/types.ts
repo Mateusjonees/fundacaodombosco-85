@@ -1329,9 +1329,13 @@ export type Database = {
         Row: {
           approved_by: string | null
           break_end: string | null
+          break_end_photo_url: string | null
           break_start: string | null
+          break_start_photo_url: string | null
           clock_in: string | null
+          clock_in_photo_url: string | null
           clock_out: string | null
+          clock_out_photo_url: string | null
           created_at: string
           date: string
           employee_id: string
@@ -1344,9 +1348,13 @@ export type Database = {
         Insert: {
           approved_by?: string | null
           break_end?: string | null
+          break_end_photo_url?: string | null
           break_start?: string | null
+          break_start_photo_url?: string | null
           clock_in?: string | null
+          clock_in_photo_url?: string | null
           clock_out?: string | null
+          clock_out_photo_url?: string | null
           created_at?: string
           date?: string
           employee_id: string
@@ -1359,9 +1367,13 @@ export type Database = {
         Update: {
           approved_by?: string | null
           break_end?: string | null
+          break_end_photo_url?: string | null
           break_start?: string | null
+          break_start_photo_url?: string | null
           clock_in?: string | null
+          clock_in_photo_url?: string | null
           clock_out?: string | null
+          clock_out_photo_url?: string | null
           created_at?: string
           date?: string
           employee_id?: string
