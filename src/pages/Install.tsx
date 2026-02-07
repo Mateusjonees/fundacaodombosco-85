@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, ArrowLeft, CheckCircle2, Smartphone } from 'lucide-react';
+import { Download, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -29,11 +29,11 @@ const Install = () => {
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg space-y-6 text-center">
           {/* Icon */}
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 overflow-hidden">
             {isInstalled ? (
               <CheckCircle2 className="h-10 w-10 text-green-500" />
             ) : (
-              <Smartphone className="h-10 w-10 text-primary" />
+              <img src="/favicon.png" alt="Fundação Dom Bosco" className="h-16 w-16 object-contain" />
             )}
           </div>
 
