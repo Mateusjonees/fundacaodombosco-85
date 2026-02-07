@@ -252,18 +252,18 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     });
   }
 
-  // 👥 EQUIPE
-  if (permissions.canManageEmployees() || customPermissions.hasPermission('view_employees')) {
+  // 👥 EQUIPE - consolidado em 2 itens
+  if (permissions.canManageEmployees() || permissions.canManageUsers?.() || customPermissions.hasPermission('view_employees')) {
     items.push({
-      id: 'employees',
-      title: 'Funcionários',
-      url: '/employees-new',
-      icon: 'UserPlus',
+      id: 'users',
+      title: 'Gestão de Equipe',
+      url: '/users',
+      icon: 'Users',
       category: 'EQUIPE',
       order_index: 12
     });
   }
-  if (permissions.isDirector()) {
+  if (permissions.isDirector() || permissions.isCoordinator()) {
     items.push({
       id: 'employee-control',
       title: 'Controle de Funcionários',
@@ -272,14 +272,10 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       category: 'EQUIPE',
       order_index: 13
     });
-    items.push({
-      id: 'custom-roles',
-      title: 'Cargos Personalizados',
-      url: '/custom-roles',
-      icon: 'Tag',
-      category: 'EQUIPE',
-      order_index: 13.5
-    });
+  }
+
+  // Anamnese Digital - apenas diretores (movido para GESTÃO CLÍNICA)
+  if (permissions.isDirector()) {
     items.push({
       id: 'anamnesis',
       title: 'Anamnese Digital',
@@ -287,16 +283,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       icon: 'ClipboardList',
       category: 'GESTÃO CLÍNICA',
       order_index: 5.6
-    });
-  }
-  if (permissions.canManageUsers?.()) {
-    items.push({
-      id: 'users',
-      title: 'Usuários',
-      url: '/users',
-      icon: 'Shield',
-      category: 'EQUIPE',
-      order_index: 14
     });
   }
 
