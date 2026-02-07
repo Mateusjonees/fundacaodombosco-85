@@ -220,23 +220,11 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   if (permissions.userRole === 'director' || permissions.userRole === 'coordinator_floresta' || customPermissions.hasPermission('view_contracts')) {
     items.push({
       id: 'contracts',
-      title: 'Contratos - Floresta',
+      title: 'Contratos',
       url: '/contracts',
       icon: 'FolderOpen',
       category: 'FINANCEIRO',
       order_index: 10
-    });
-  }
-
-  // Templates de Contrato - apenas diretores
-  if (permissions.isDirector()) {
-    items.push({
-      id: 'contract-templates',
-      title: 'Templates de Contrato',
-      url: '/contract-templates',
-      icon: 'FileText',
-      category: 'FINANCEIRO',
-      order_index: 10.5
     });
   }
 
