@@ -140,60 +140,66 @@ export const MainApp = () => {
                         />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80 bg-background z-50 p-2">
-                      <DropdownMenuLabel className="pb-3">
+                    <DropdownMenuContent align="end" className="w-72 bg-card/95 backdrop-blur-xl z-50 p-0 rounded-2xl border shadow-xl overflow-hidden">
+                      {/* Header com gradiente */}
+                      <div className="relative px-4 pt-5 pb-4 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
                         <div className="flex items-center gap-3">
-                          <UserAvatar 
-                            name={userName}
-                            avatarUrl={avatarUrl}
-                            role={userRole}
-                            size="md"
-                          />
-                          <div className="flex flex-col space-y-1">
-                            <p className="text-sm font-semibold leading-none">
+                          <div className="ring-2 ring-primary/20 rounded-full p-0.5">
+                            <UserAvatar 
+                              name={userName}
+                              avatarUrl={avatarUrl}
+                              role={userRole}
+                              size="md"
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <p className="text-sm font-bold text-foreground leading-tight">
                               {userName}
                             </p>
-                            <p className="text-xs leading-none text-muted-foreground">
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               {userRole ? ROLE_LABELS[userRole] : 'Carregando...'}
                             </p>
                           </div>
                         </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      
-                      <DropdownMenuItem 
-                        onClick={() => setProfileDialogOpen(true)} 
-                        className="cursor-pointer px-2 py-2"
-                      >
-                        <Camera className="mr-3 h-4 w-4" />
-                        <span>Meu Perfil</span>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      <div className="px-2 py-1">
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">Configurações</p>
                       </div>
                       
-                      <div className="px-2" onClick={(e) => e.stopPropagation()}>
-                        <ThemeToggle />
+                      <div className="p-1.5">
+                        <DropdownMenuItem 
+                          onClick={() => setProfileDialogOpen(true)} 
+                          className="cursor-pointer rounded-xl px-3 py-2.5 gap-3 focus:bg-muted/80"
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                            <Camera className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="text-sm font-medium">Meu Perfil</span>
+                        </DropdownMenuItem>
+                        
+                        <div className="px-3 pt-3 pb-1">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Configurações</p>
+                        </div>
+                        
+                        <div className="px-1" onClick={(e) => e.stopPropagation()}>
+                          <ThemeToggle />
+                        </div>
+                        
+                        <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 gap-3 focus:bg-muted/80">
+                          <Link to="/messages" className="flex items-center">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
+                              <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <span className="text-sm font-medium">Mensagens</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuSeparator className="my-1.5" />
+                        
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer rounded-xl px-3 py-2.5 gap-3 text-destructive focus:bg-destructive/10 focus:text-destructive">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
+                            <LogOut className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-medium">Sair</span>
+                        </DropdownMenuItem>
                       </div>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link to="/messages" className="flex items-center px-2 py-2">
-                          <MessageSquare className="mr-3 h-4 w-4" />
-                          <span>Mensagens</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer mt-1 px-2 py-2">
-                        <LogOut className="mr-3 h-4 w-4" />
-                        <span>Sair</span>
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   
