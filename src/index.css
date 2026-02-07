@@ -5,126 +5,128 @@
 @layer base {
   :root {
     /* Modern Blue & Green Theme - Fundação Dom Bosco */
-    --background: 210 40% 98%;
-    --foreground: 215 25% 17%;
+    --background: 210 25% 97%;
+    --foreground: 220 20% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 17%;
+    --card-foreground: 220 20% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 17%;
-    --primary: 203 79% 43%;
+    --popover-foreground: 220 20% 14%;
+    --primary: 210 85% 48%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 203 70% 55%;
-    --secondary: 152 52% 48%;
+    --primary-glow: 210 72% 58%;
+    --secondary: 158 55% 44%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 210 30% 96%;
-    --muted-foreground: 215 15% 45%;
-    --accent: 203 70% 95%;
-    --accent-foreground: 203 79% 38%;
+    --muted: 216 20% 95%;
+    --muted-foreground: 220 12% 50%;
+    --accent: 210 50% 94%;
+    --accent-foreground: 210 85% 42%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 20% 91%;
-    --input: 0 0% 100%;
-    --ring: 203 79% 43%;
+    --border: 220 14% 90%;
+    --input: 220 14% 93%;
+    --ring: 210 85% 48%;
     --radius: 0.75rem;
     
     /* Semantic status */
-    --success: 152 60% 42%;
+    --success: 158 60% 42%;
     --warning: 38 92% 50%;
-    --info: 203 79% 43%;
+    --info: 210 85% 48%;
     
-    /* Login specific colors */
-    --login-bg-start: 210 40% 98%;
-    --login-bg-end: 203 30% 95%;
+    /* Login specific */
+    --login-bg-start: 220 30% 12%;
+    --login-bg-mid: 215 35% 16%;
+    --login-bg-end: 210 40% 20%;
     --login-form-bg: 0 0% 100%;
-    --login-text: 215 25% 17%;
-    --login-input-border: 214 20% 91%;
-    --login-input-focus: 203 79% 43%;
+    --login-text: 220 20% 14%;
+    --login-input-border: 220 14% 90%;
+    --login-input-focus: 210 85% 48%;
     
     /* Modern Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(203 79% 43%), hsl(203 70% 55%));
-    --gradient-secondary: linear-gradient(135deg, hsl(152 52% 48%), hsl(152 50% 58%));
-    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%), hsl(210 35% 96%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 40% 99%));
+    --gradient-primary: linear-gradient(135deg, hsl(210 85% 48%), hsl(210 72% 58%));
+    --gradient-secondary: linear-gradient(135deg, hsl(158 55% 44%), hsl(158 50% 54%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 25% 97%), hsl(216 20% 95%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(216 20% 99%));
     
     /* Modern Shadows */
-    --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.03);
-    --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.06), 0 2px 6px -2px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 32px -4px rgba(0,0,0,0.08), 0 4px 12px -4px rgba(0,0,0,0.04);
-    --shadow-xl: 0 20px 48px -8px rgba(0,0,0,0.1), 0 8px 20px -6px rgba(0,0,0,0.05);
-    --shadow-glow: 0 0 32px rgba(27, 117, 188, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03);
+    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.03);
+    --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.1), 0 4px 16px -4px rgba(0,0,0,0.04);
+    --shadow-xl: 0 24px 56px -12px rgba(0,0,0,0.12), 0 8px 24px -8px rgba(0,0,0,0.06);
+    --shadow-glow: 0 0 40px rgba(37, 99, 235, 0.1);
     
     /* Chart colors */
-    --chart-1: 203 79% 43%;
-    --chart-2: 152 52% 48%;
+    --chart-1: 210 85% 48%;
+    --chart-2: 158 55% 44%;
     --chart-3: 262 52% 55%;
     --chart-4: 38 92% 50%;
     --chart-5: 340 65% 55%;
     
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 25% 17%;
-    --sidebar-primary: 203 79% 43%;
+    --sidebar-foreground: 220 20% 14%;
+    --sidebar-primary: 210 85% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 203 70% 95%;
-    --sidebar-accent-foreground: 203 79% 38%;
-    --sidebar-border: 214 20% 91%;
-    --sidebar-ring: 203 79% 43%;
+    --sidebar-accent: 210 50% 94%;
+    --sidebar-accent-foreground: 210 85% 42%;
+    --sidebar-border: 220 14% 92%;
+    --sidebar-ring: 210 85% 48%;
 
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .dark {
-    --background: 222 30% 8%;
+    --background: 224 28% 7%;
     --foreground: 210 20% 95%;
-    --card: 222 25% 11%;
+    --card: 224 24% 10%;
     --card-foreground: 210 20% 95%;
-    --popover: 222 25% 11%;
+    --popover: 224 24% 10%;
     --popover-foreground: 210 20% 95%;
-    --primary: 203 79% 50%;
+    --primary: 210 85% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 203 70% 60%;
-    --secondary: 152 52% 55%;
+    --primary-glow: 210 72% 62%;
+    --secondary: 158 52% 52%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 222 20% 16%;
-    --muted-foreground: 215 15% 60%;
-    --accent: 203 50% 20%;
-    --accent-foreground: 203 70% 78%;
+    --muted: 224 18% 14%;
+    --muted-foreground: 220 12% 56%;
+    --accent: 210 40% 18%;
+    --accent-foreground: 210 70% 78%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 18% 18%;
-    --input: 222 25% 13%;
-    --ring: 203 79% 50%;
+    --border: 224 16% 16%;
+    --input: 224 20% 12%;
+    --ring: 210 85% 55%;
     
-    --success: 152 55% 50%;
+    --success: 158 55% 48%;
     --warning: 38 88% 55%;
-    --info: 203 79% 50%;
+    --info: 210 85% 55%;
     
-    --login-bg-start: 222 30% 8%;
-    --login-bg-end: 222 28% 12%;
-    --login-form-bg: 222 25% 11%;
+    --login-bg-start: 224 32% 6%;
+    --login-bg-mid: 220 30% 8%;
+    --login-bg-end: 218 28% 10%;
+    --login-form-bg: 224 24% 10%;
     --login-text: 210 20% 95%;
-    --login-input-border: 222 18% 18%;
-    --login-input-focus: 203 79% 50%;
+    --login-input-border: 224 16% 16%;
+    --login-input-focus: 210 85% 55%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(203 79% 50%), hsl(203 70% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(152 52% 55%), hsl(152 50% 65%));
-    --gradient-subtle: linear-gradient(180deg, hsl(222 30% 8%), hsl(222 28% 12%));
-    --gradient-card: linear-gradient(145deg, hsl(222 25% 11%), hsl(222 22% 13%));
+    --gradient-primary: linear-gradient(135deg, hsl(210 85% 55%), hsl(210 72% 62%));
+    --gradient-secondary: linear-gradient(135deg, hsl(158 52% 52%), hsl(158 50% 60%));
+    --gradient-subtle: linear-gradient(180deg, hsl(224 28% 7%), hsl(224 24% 10%));
+    --gradient-card: linear-gradient(145deg, hsl(224 24% 10%), hsl(224 22% 12%));
     
-    --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.2), 0 1px 2px -1px rgba(0,0,0,0.15);
-    --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.3), 0 2px 6px -2px rgba(0,0,0,0.2);
-    --shadow-lg: 0 10px 32px -4px rgba(0,0,0,0.4), 0 4px 12px -4px rgba(0,0,0,0.25);
-    --shadow-xl: 0 20px 48px -8px rgba(0,0,0,0.5), 0 8px 20px -6px rgba(0,0,0,0.3);
-    --shadow-glow: 0 0 32px rgba(27, 117, 188, 0.2);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.25);
+    --shadow-lg: 0 12px 40px -8px rgba(0,0,0,0.5), 0 4px 16px -4px rgba(0,0,0,0.3);
+    --shadow-xl: 0 24px 56px -12px rgba(0,0,0,0.6), 0 8px 24px -8px rgba(0,0,0,0.35);
+    --shadow-glow: 0 0 40px rgba(59, 130, 246, 0.15);
     
-    --sidebar-background: 222 25% 11%;
+    --sidebar-background: 224 24% 10%;
     --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 203 79% 50%;
+    --sidebar-primary: 210 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 203 50% 20%;
-    --sidebar-accent-foreground: 203 70% 78%;
-    --sidebar-border: 222 18% 18%;
-    --sidebar-ring: 203 79% 50%;
+    --sidebar-accent: 210 40% 18%;
+    --sidebar-accent-foreground: 210 70% 78%;
+    --sidebar-border: 224 16% 16%;
+    --sidebar-ring: 210 85% 55%;
   }
 }
 
@@ -141,8 +143,8 @@
 
   /* Smooth scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
 
   ::-webkit-scrollbar-track {
@@ -150,72 +152,82 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.2);
+    background: hsl(var(--muted-foreground) / 0.15);
     border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.35);
+    background: hsl(var(--muted-foreground) / 0.3);
   }
 }
 
 @layer components {
-  /* Login Components */
+  /* ======= Login ======= */
   .login-container {
     @apply flex justify-center items-center min-h-screen w-full fixed top-0 left-0 z-50;
-    background: linear-gradient(135deg, hsl(var(--login-bg-start)), hsl(var(--login-bg-end)));
+    background: linear-gradient(
+      160deg, 
+      hsl(var(--login-bg-start)), 
+      hsl(var(--login-bg-mid)) 40%, 
+      hsl(var(--login-bg-end))
+    );
   }
 
   .login-form {
-    @apply bg-card p-8 rounded-2xl w-full max-w-md text-center border;
-    border-color: hsl(var(--login-input-border));
-    box-shadow: var(--shadow-xl);
-    backdrop-filter: blur(20px);
+    @apply p-8 sm:p-10 rounded-3xl w-full max-w-md text-center border-0;
+    background: hsl(var(--login-form-bg));
+    box-shadow: var(--shadow-xl), 0 0 80px rgba(37, 99, 235, 0.08);
   }
 
   .login-form .form-group {
-    @apply text-left mb-4;
+    @apply text-left mb-5;
   }
 
   .login-form .form-group label {
-    @apply block mb-2 font-medium text-foreground text-sm;
+    @apply block mb-2 font-semibold text-foreground/80 text-xs uppercase tracking-wider;
   }
 
   .login-form .form-group input {
-    @apply w-full px-4 py-3 border rounded-xl text-sm bg-card transition-all;
+    @apply w-full px-4 py-3.5 border rounded-xl text-sm transition-all duration-200;
+    background: hsl(var(--input));
     border-color: hsl(var(--login-input-border));
   }
 
   .login-form .form-group input:focus {
     @apply outline-none;
     border-color: hsl(var(--login-input-focus));
-    box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
+    box-shadow: 0 0 0 4px hsla(var(--primary) / 0.1);
+    background: hsl(var(--card));
   }
 
   .login-bubble {
-    @apply absolute rounded-full opacity-40;
-    background: linear-gradient(135deg, hsla(var(--primary) / 0.08), hsla(var(--primary-glow) / 0.15));
-    filter: blur(1px);
+    @apply absolute rounded-full;
+    background: radial-gradient(circle, hsla(var(--primary) / 0.12), hsla(var(--primary-glow) / 0.04));
+    filter: blur(2px);
   }
 
   .bubble-1 {
-    @apply w-48 h-48 -top-12 -left-20;
-    animation: float 6s ease-in-out infinite;
+    @apply w-64 h-64;
+    top: -5%;
+    left: -8%;
+    animation: float 8s ease-in-out infinite;
   }
 
   .bubble-2 {
-    @apply w-72 h-72 -bottom-24 -right-28;
-    animation: float 8s ease-in-out infinite reverse;
+    @apply w-96 h-96;
+    bottom: -15%;
+    right: -12%;
+    animation: float 10s ease-in-out infinite reverse;
   }
 
   .bubble-3 {
-    @apply w-28 h-28;
-    bottom: 40%;
-    left: 20%;
-    animation: float 7s ease-in-out infinite;
+    @apply w-40 h-40;
+    bottom: 35%;
+    left: 15%;
+    animation: float 9s ease-in-out infinite;
   }
 
-  /* Professional Healthcare UI Components */
+  /* ======= Layout Utilities ======= */
   .gradient-card {
     background: var(--gradient-card);
     box-shadow: var(--shadow-md);
@@ -234,40 +246,30 @@
   }
   
   .medical-border {
-    border: 1px solid hsl(var(--primary) / 0.15);
+    border: 1px solid hsl(var(--primary) / 0.12);
   }
   
   .medical-gradient {
     background: linear-gradient(135deg, 
-      hsl(var(--primary) / 0.06), 
-      hsl(var(--secondary) / 0.03));
+      hsl(var(--primary) / 0.04), 
+      hsl(var(--secondary) / 0.02));
   }
 
   .glass-effect {
     backdrop-filter: blur(20px);
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  /* Animations */
+  /* ======= Animations ======= */
   @keyframes float {
-    0%, 100% {
-      transform: translateY(0px) rotate(0deg);
-    }
-    50% {
-      transform: translateY(-20px) rotate(2deg);
-    }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(2deg); }
   }
 
   @keyframes pulse-gentle {
-    0%, 100% {
-      opacity: 0.8;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.03);
-    }
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); }
   }
 
   @keyframes slide-in {
@@ -297,7 +299,7 @@
     animation: slideUp 0.05s ease-out forwards;
   }
 
-  /* Sidebar specific styles */
+  /* ======= Sidebar ======= */
   .sidebar-container {
     @apply transition-[width] duration-75 ease-out;
   }
