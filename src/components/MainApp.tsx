@@ -142,19 +142,19 @@ export const MainApp = () => {
           
           <div className="flex-1 flex flex-col min-w-0 transition-all duration-150 ease-out">
             {/* Header */}
-            <header className="bg-card/80 backdrop-blur-lg border-b border-border/60 px-4 sm:px-6 py-3 sticky top-0 z-40">
+            <header className="bg-card/80 backdrop-blur-lg border-b border-border/60 px-3 sm:px-6 py-2 sm:py-3 sticky top-0 z-40">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-xl border border-border/60 bg-background/80 hover:bg-accent transition-all duration-200 hover:shadow-sm" />
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-border/60 bg-background/80 hover:bg-accent transition-all duration-200" />
                   <div className="hidden sm:flex items-center gap-2">
                     <div className="h-6 w-0.5 rounded-full bg-primary/30" />
                     <h1 className="text-base font-bold text-foreground tracking-tight">FUNDAÇÃO DOM BOSCO</h1>
                   </div>
-                  <h1 className="text-sm font-bold text-foreground sm:hidden">FDB</h1>
+                  <h1 className="text-xs font-bold text-foreground sm:hidden">Clínica</h1>
                 </div>
                 
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <Suspense fallback={<div className="h-9 w-9" />}>
+                <div className="flex items-center gap-1.5 sm:gap-4">
+                  <Suspense fallback={<div className="h-8 w-8" />}>
                     <QuickHelpCenter />
                   </Suspense>
                   <Suspense fallback={<div className="h-9 w-20 sm:w-24 bg-muted rounded-lg animate-pulse" />}>
@@ -249,7 +249,7 @@ export const MainApp = () => {
               </div>
             </header>
 
-             <main className="flex-1 p-4 lg:p-6">
+             <main className="flex-1 p-3 sm:p-4 lg:p-6">
                <PageBreadcrumb />
                <AppRoutes />
              </main>
