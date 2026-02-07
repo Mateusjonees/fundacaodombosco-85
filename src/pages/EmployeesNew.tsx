@@ -299,11 +299,17 @@ export default function EmployeesNew() {
 
     setDeleting(true);
     try {
-      const { error } = await supabase.functions.invoke('delete-users', {
+      const { data, error } = await supabase.functions.invoke('delete-users', {
         body: { userIds: [employeeToDelete.user_id] }
       });
 
       if (error) throw error;
+
+      // Verificar resultado individual
+      const result = data?.results?.[0];
+      if (result && !result.success) {
+        throw new Error(result.error || 'Falha ao excluir usuário');
+      }
 
       toast({
         title: "Funcionário excluído",
