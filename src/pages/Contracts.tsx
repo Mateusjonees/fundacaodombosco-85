@@ -188,7 +188,7 @@ export default function Contracts() {
   const loadClients = async () => {
     setLoading(true);
     try {
-      let query = supabase.from('clients').select('*').eq('is_active', true);
+      let query = supabase.from('clients').select('id, name, cpf, address, responsible_name, responsible_cpf, responsible_phone, email, phone, birth_date, unit').eq('is_active', true);
 
       // Se não for diretor, filtra apenas pela unidade floresta
       if (userRole !== 'director') {
