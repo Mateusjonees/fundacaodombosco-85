@@ -296,11 +296,11 @@ const MyPatients: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-3 sm:p-6 space-y-4">
+      <div className="w-full p-3 sm:p-6 space-y-4">
         <Skeleton className="h-16 w-full rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-2xl" />
         <Skeleton className="h-12 w-full rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-48 w-full rounded-xl" />
           ))}
@@ -310,7 +310,7 @@ const MyPatients: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="w-full p-3 sm:p-6 space-y-4 sm:space-y-6">
       {selectedClient ? (
         <div>
           <Button 
@@ -541,7 +541,7 @@ const MyPatients: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
               {filteredClients.map((client, index) => {
                 const age = calculateAge(client.birth_date);
                 const daysSince = daysSinceLastSession(client.last_session_date);
