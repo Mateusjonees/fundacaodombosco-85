@@ -980,18 +980,30 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       <div className="space-y-6 animate-fade-in">
         {/* Hero Header */}
         <Card className={`${unitColors.bg} ${unitColors.border} border-2 overflow-hidden`}>
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-              {/* Avatar */}
-              <Avatar className={`h-20 w-20 ${unitColors.avatar} text-2xl font-bold shadow-lg`}>
-                <AvatarFallback className={unitColors.avatar}>
-                  {getInitials(client.name)}
-                </AvatarFallback>
-              </Avatar>
+          <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+              {/* Avatar + Nome juntos no mobile */}
+              <div className="flex items-center gap-3 sm:block">
+                <Avatar className={`h-14 w-14 sm:h-20 sm:w-20 ${unitColors.avatar} text-xl sm:text-2xl font-bold shadow-lg shrink-0`}>
+                  <AvatarFallback className={unitColors.avatar}>
+                    {getInitials(client.name)}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Nome visível apenas no mobile ao lado do avatar */}
+                <div className="sm:hidden min-w-0">
+                  <h1 className="text-lg font-bold uppercase leading-tight truncate">{client.name}</h1>
+                  <Badge 
+                    variant={client.is_active ? 'default' : 'secondary'}
+                    className={`text-xs mt-1 ${client.is_active ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : ''}`}
+                  >
+                    {client.is_active ? 'Ativo' : 'Inativo'}
+                  </Badge>
+                </div>
+              </div>
 
               {/* Info Principal */}
-              <div className="flex-1 space-y-2">
-                <div className="flex flex-wrap items-center gap-3">
+              <div className="flex-1 space-y-2 min-w-0">
+                <div className="hidden sm:flex flex-wrap items-center gap-3">
                   <h1 className="text-2xl md:text-3xl font-bold uppercase">{client.name}</h1>
                   <Badge 
                     variant={client.is_active ? 'default' : 'secondary'}
@@ -1002,26 +1014,26 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
                 </div>
                 
                 {/* Quick Info Badges */}
-                <div className="flex flex-wrap gap-2 text-sm">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 text-xs sm:text-sm">
                   {client.cpf && (
-                    <Badge variant="outline" className="font-normal">
+                    <Badge variant="outline" className="font-normal text-xs">
                       <User className="h-3 w-3 mr-1" />
                       CPF: {client.cpf}
                     </Badge>
                   )}
                   {client.phone && (
-                    <Badge variant="outline" className="font-normal">
+                    <Badge variant="outline" className="font-normal text-xs">
                       <Phone className="h-3 w-3 mr-1" />
                       {client.phone}
                     </Badge>
                   )}
                   {client.unit && (
-                    <Badge className={unitColors.badge}>
+                    <Badge className={`text-xs ${unitColors.badge}`}>
                       {getUnitLabel(client.unit)}
                     </Badge>
                   )}
                   {client.birth_date && (
-                    <Badge variant="outline" className="font-normal">
+                    <Badge variant="outline" className="font-normal text-xs">
                       <Calendar className="h-3 w-3 mr-1" />
                       {calculateAge(client.birth_date)} anos
                     </Badge>
@@ -1030,38 +1042,23 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button onClick={handleScheduleAppointment}>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Agendar
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Agendar novo atendimento</TooltipContent>
-                </Tooltip>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleScheduleAppointment}>
+                  <Calendar className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Agendar</span>
+                </Button>
                 
                 {isCoordinatorOrDirector() && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" onClick={onEdit}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Editar dados do paciente</TooltipContent>
-                  </Tooltip>
+                  <Button variant="outline" size="sm" onClick={onEdit}>
+                    <Edit className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Editar</span>
+                  </Button>
                 )}
                 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" onClick={onBack}>
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Voltar
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Voltar para lista</TooltipContent>
-                </Tooltip>
+                <Button variant="outline" size="sm" onClick={onBack}>
+                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Voltar</span>
+                </Button>
               </div>
             </div>
           </CardContent>

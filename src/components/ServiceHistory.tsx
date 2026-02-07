@@ -468,9 +468,9 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+      <CardHeader className="px-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Clock className="h-5 w-5" />
             Histórico de Serviços
           </CardTitle>
@@ -613,7 +613,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <div className="text-muted-foreground">Carregando histórico...</div>
@@ -627,34 +627,34 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                   <div className="absolute left-6 top-12 w-0.5 h-full bg-border"></div>
                 )}
                 
-                <div className="flex gap-4">
+                <div className="flex gap-3 sm:gap-4">
                   {/* Indicador da timeline */}
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-background border-2 border-primary flex items-center justify-center">
+                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background border-2 border-primary flex items-center justify-center">
                     {getStatusIcon(record.status)}
                   </div>
                   
                   {/* Conteúdo do serviço */}
-                  <div className="flex-1 pb-8">
-                    <div className="bg-card border rounded-lg p-4 shadow-sm">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold">{record.service_type}</h4>
-                            <Badge className={getServiceTypeColor(record.service_type)}>
+                  <div className="flex-1 min-w-0 pb-6 sm:pb-8">
+                    <div className="bg-card border rounded-lg p-3 sm:p-4 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                            <h4 className="font-semibold text-sm sm:text-base">{record.service_type}</h4>
+                            <Badge className={`text-xs ${getServiceTypeColor(record.service_type)}`}>
                               {record.service_type}
                             </Badge>
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="text-xs">
                               {getStatusLabel(record.status)}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               {formatDate(record.date)}
                             </div>
-                            <div className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {record.professional_name} ({record.professional_role})
+                            <div className="flex items-center gap-1 truncate">
+                              <User className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{record.professional_name} ({record.professional_role})</span>
                             </div>
                             {record.duration && (
                               <div className="flex items-center gap-1">
@@ -668,10 +668,10 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                           variant="outline" 
                           size="sm"
                           onClick={() => openDetailsDialog(record)}
-                          className="ml-4"
+                          className="self-start text-xs sm:text-sm shrink-0"
                         >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Detalhes
+                          <Eye className="h-3.5 w-3.5 sm:mr-1" />
+                          <span className="hidden sm:inline">Agendamento</span>
                         </Button>
                       </div>
                       
