@@ -133,10 +133,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    // Get initial session
+    // Get initial session - use cached session first for faster LCP
+    const cachedSession = (supabase.auth as any)._storageKey ? null : null;
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Preload data immediately if we have a session
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('employee_role')
+          .eq('user_id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.employee_role) {
+              preloadCriticalData(session.user.id, data.employee_role);
+            }
+          });
+      }
+      
       setLoading(false);
     }).catch((error) => {
       console.error('AuthProvider: Error getting initial session', error);
