@@ -99,6 +99,7 @@ export const useCustomPermissions = () => {
   });
 
   const hasPermission = (permission: PermissionAction): boolean => {
+    if (!Array.isArray(permissions)) return false;
     const userPermission = permissions.find(p => p.permission === permission);
     return userPermission?.granted === true;
   };
