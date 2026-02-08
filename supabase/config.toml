@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.send-meeting-email]
 verify_jwt = false
+
+[functions.send-appointment-reminders]
+verify_jwt = false
