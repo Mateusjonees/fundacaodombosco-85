@@ -113,69 +113,66 @@ export const ScheduleCard = ({
                 : 'bg-primary'
       }`} />
       
-      <div className="p-3 sm:p-4 pl-4 sm:pl-5">
-        {/* Header: Horário + Unidade + Status */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/5 rounded-md border border-primary/10">
-              <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
-              <span className="text-xs sm:text-sm font-semibold text-foreground">
+      <div className="p-2.5 sm:p-4 pl-3.5 sm:pl-5">
+        {/* Header: Horário + Unidade + Status - tudo em uma linha no mobile */}
+        <div className="flex items-center justify-between gap-1.5 mb-2 sm:mb-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-primary/5 rounded-md border border-primary/10">
+              <Clock className="h-3 w-3 text-primary" />
+              <span className="text-[11px] sm:text-sm font-semibold text-foreground">
                 {format(new Date(schedule.start_time), 'HH:mm')} - {format(new Date(schedule.end_time), 'HH:mm')}
               </span>
             </div>
-            <Badge variant="outline" className={`${unitStyle.bg} ${unitStyle.text} ${unitStyle.border} text-[10px] sm:text-xs font-medium`}>
-              <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+            <Badge variant="outline" className={`${unitStyle.bg} ${unitStyle.text} ${unitStyle.border} text-[10px] font-medium px-1.5 py-0`}>
               {unitStyle.label}
             </Badge>
           </div>
           
-          <div className="flex items-center gap-2 flex-wrap">
-            {schedule.patient_declined && !isCompleted && !isCancelled && !isPendingValidation && (
-              <Badge className="bg-orange-500 text-white text-[10px] sm:text-xs">
-                ⚠️ Não poderá comparecer
-              </Badge>
-            )}
-            {schedule.patient_confirmed && !schedule.patient_declined && !isCompleted && !isCancelled && !isPendingValidation && (
-              <Badge className="bg-blue-500 text-white text-[10px] sm:text-xs">
-                ✓ Confirmou que irá
-              </Badge>
-            )}
-            {schedule.patient_arrived && !isCompleted && !isCancelled && !isPendingValidation && (
-              <Badge className="bg-emerald-500 text-white text-[10px] sm:text-xs animate-pulse">
-                ✓ Presente
-              </Badge>
-            )}
-            <Badge
-              variant={getStatusBadge(schedule.status).variant}
-              className={`text-[10px] sm:text-xs ${getStatusBadge(schedule.status).className || ''}`}
-            >
-              {getStatusBadge(schedule.status).text}
-            </Badge>
-          </div>
+          <Badge
+            variant={getStatusBadge(schedule.status).variant}
+            className={`text-[10px] sm:text-xs shrink-0 ${getStatusBadge(schedule.status).className || ''}`}
+          >
+            {getStatusBadge(schedule.status).text}
+          </Badge>
         </div>
 
-        {/* Conteúdo: Paciente e Profissional */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3">
-          {/* Paciente - Clicável */}
+        {/* Status badges extras (confirmação/presença) */}
+        {(schedule.patient_declined || schedule.patient_confirmed || schedule.patient_arrived) && !isCompleted && !isCancelled && !isPendingValidation && (
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+            {schedule.patient_declined && (
+              <Badge className="bg-orange-500 text-white text-[10px]">⚠️ Não comparecerá</Badge>
+            )}
+            {schedule.patient_confirmed && !schedule.patient_declined && (
+              <Badge className="bg-blue-500 text-white text-[10px]">✓ Confirmado</Badge>
+            )}
+            {schedule.patient_arrived && (
+              <Badge className="bg-emerald-500 text-white text-[10px] animate-pulse">✓ Presente</Badge>
+            )}
+          </div>
+        )}
+
+        {/* Conteúdo: Paciente e Profissional - compacto no mobile */}
+        <div className="flex flex-col sm:grid sm:grid-cols-2 gap-1.5 sm:gap-3 mb-2 sm:mb-3">
+          {/* Paciente */}
           <button
             type="button"
             onClick={() => setPatientModalOpen(true)}
-            className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer text-left group"
+            className="flex items-center gap-2 p-1.5 sm:p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer text-left"
           >
             <UserAvatar name={schedule.clients?.name} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Paciente</p>
-              <p className="font-medium text-xs sm:text-sm truncate group-hover:text-primary transition-colors uppercase">
+              <p className="text-[10px] text-muted-foreground leading-none mb-0.5">Paciente</p>
+              <p className="font-medium text-xs sm:text-sm truncate uppercase leading-tight">
                 {schedule.clients?.name || 'N/A'}
               </p>
             </div>
           </button>
 
-          {/* Profissional - Clicável */}
+          {/* Profissional */}
           <button
             type="button"
             onClick={() => setProfessionalModalOpen(true)}
-            className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer text-left group"
+            className="flex items-center gap-2 p-1.5 sm:p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer text-left"
           >
             <UserAvatar 
               name={professional?.name} 
@@ -183,39 +180,39 @@ export const ScheduleCard = ({
               role={professional?.employee_role}
             />
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Profissional</p>
-              <p className="font-medium text-xs sm:text-sm truncate group-hover:text-primary transition-colors uppercase">
+              <p className="text-[10px] text-muted-foreground leading-none mb-0.5">Profissional</p>
+              <p className="font-medium text-xs sm:text-sm truncate uppercase leading-tight">
                 {professional?.name || 'Não atribuído'}
               </p>
             </div>
           </button>
         </div>
 
-        {/* Tipo de atendimento */}
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <Badge variant="secondary" className="text-[10px] sm:text-xs">
-            <Stethoscope className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+        {/* Tipo de atendimento + observações em linha compacta */}
+        <div className="flex items-center gap-1.5 mb-2 sm:mb-3 flex-wrap">
+          <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5 py-0">
+            <Stethoscope className="h-2.5 w-2.5 mr-0.5" />
             {schedule.title}
           </Badge>
           {schedule.arrived_at && (
-            <span className="text-[10px] sm:text-xs text-muted-foreground">
-              Chegou às {format(new Date(schedule.arrived_at), 'HH:mm')}
+            <span className="text-[10px] text-muted-foreground">
+              Chegou {format(new Date(schedule.arrived_at), 'HH:mm')}
             </span>
           )}
         </div>
 
-        {/* Observações */}
+        {/* Observações - mais compacto */}
         {schedule.notes && (
-          <div className="p-2 sm:p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10 mb-3">
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+          <div className="px-2 py-1.5 sm:p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10 mb-2 sm:mb-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
               <span className="font-medium text-amber-700 dark:text-amber-400">Obs:</span>{' '}
               <span className="text-foreground">{schedule.notes}</span>
             </p>
           </div>
         )}
 
-        {/* Ações */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-border/50">
+        {/* Ações - mais compacto */}
+        <div className="flex items-center justify-between gap-1.5 pt-2 sm:pt-3 border-t border-border/50">
           {/* Botão de presença para recepcionistas */}
           <div>
             {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
