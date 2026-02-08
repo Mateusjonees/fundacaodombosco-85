@@ -397,8 +397,15 @@ export function AppSidebar() {
     }
   }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions]);
 
-  // Auto-expand category containing active route
+  // Auto-expand category containing active route (on mobile, expand all)
   useEffect(() => {
+    if (isMobile) {
+      // No mobile, todas as categorias abertas por padrão
+      const allOpen: Record<string, boolean> = {};
+      categories.forEach(cat => { allOpen[cat] = true; });
+      setOpenCategories(allOpen);
+      return;
+    }
     const activeItem = navigationItems.find(item => {
       if (item.url === '/') return currentPath === '/';
       return currentPath.startsWith(item.url);
@@ -409,7 +416,7 @@ export function AppSidebar() {
         [activeItem.category!]: true
       }));
     }
-  }, [currentPath, navigationItems]);
+  }, [currentPath, navigationItems, isMobile]);
 
   // Close sidebar on mobile after navigation
   useEffect(() => {
