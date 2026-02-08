@@ -998,6 +998,11 @@ export default function Schedule() {
                     <PatientCommandAutocomplete
                       value={newAppointment.client_id}
                       onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
+                      onClientSelect={(client) => {
+                        if (client?.unit) {
+                          setNewAppointment(prev => ({ ...prev, client_id: client.id, unit: client.unit! }));
+                        }
+                      }}
                       placeholder="Buscar paciente por nome, CPF, telefone ou email..."
                       unitFilter={
                         userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
