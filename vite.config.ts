@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'lovable-uploads/*.png'],
       manifest: {
-        name: 'Sistema Fundação Dom Bosco',
-        short_name: 'FDB Sistema',
+        name: 'Clínica',
+        short_name: 'Clínica',
         description: 'Sistema de Gestão Clínica - Fundação Dom Bosco',
         theme_color: '#1b75bc',
         background_color: '#f8fafc',
