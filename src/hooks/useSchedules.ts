@@ -71,8 +71,18 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
               const clientIds = clientsInUnit?.map(c => c.id) || [];
               if (clientIds.length > 0) query = query.in('client_id', clientIds);
             } else if (userProfile.employee_role === 'receptionist') {
-              const userUnit = userProfile.unit || 'madre';
-              const { data: clientsInUnit } = await supabase.from('clients').select('id').eq('unit', userUnit);
+              // Usar array de unidades se disponível, senão fallback para unit singular
+              const userUnits: string[] = Array.isArray(userProfile.units) && userProfile.units.length > 0
+                ? userProfile.units
+                : userProfile.unit ? [userProfile.unit] : ['madre'];
+              
+              let clientsQuery = supabase.from('clients').select('id');
+              if (userUnits.length === 1) {
+                clientsQuery = clientsQuery.eq('unit', userUnits[0]);
+              } else {
+                clientsQuery = clientsQuery.in('unit', userUnits);
+              }
+              const { data: clientsInUnit } = await clientsQuery;
               const clientIds = clientsInUnit?.map(c => c.id) || [];
               if (clientIds.length > 0) query = query.in('client_id', clientIds);
             } else if (userProfile.employee_role !== 'director') {

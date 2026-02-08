@@ -65,7 +65,7 @@ const AppRoutes = memo(() => (
       <Route path="/clients" element={<ProtectedRoute requiredPermission="view_clients"><Clients /></ProtectedRoute>} />
       <Route path="/schedule" element={<ProtectedRoute requiredPermission="view_schedules"><Schedule /></ProtectedRoute>} />
       <Route path="/schedule-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><ScheduleControl /></ProtectedRoute>} />
-      <Route path="/attendance-validation" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><AttendanceValidation /></ProtectedRoute>} />
+      <Route path="/attendance-validation" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><AttendanceValidation /></ProtectedRoute>} />
       <Route path="/feedback-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><FeedbackControl /></ProtectedRoute>} />
       <Route path="/financial" element={<ProtectedRoute requiredPermission="view_financial"><Financial /></ProtectedRoute>} />
       <Route path="/contracts" element={<ProtectedRoute requiredPermission="view_contracts"><Contracts /></ProtectedRoute>} />

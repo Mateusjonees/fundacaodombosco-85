@@ -145,7 +145,7 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       order_index: 3
     });
   }
-  if (permissions.isDirector() || permissions.isCoordinator()) {
+  if (permissions.isDirector() || permissions.isCoordinator() || permissions.hasAnyRole(['receptionist'])) {
     items.push({
       id: 'attendance-validation',
       title: 'Validar Atendimentos',
