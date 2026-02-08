@@ -98,7 +98,7 @@ export const useAppPreload = () => {
         queryFn: async () => {
         let query = supabase
           .from('schedules')
-          .select('id, client_id, employee_id, start_time, end_time, status, unit, service_type')
+          .select('id, client_id, employee_id, start_time, end_time, status, unit')
           .gte('start_time', `${weekStart}T00:00:00`)
           .lte('start_time', `${weekEnd}T23:59:59`)
           .order('start_time');
