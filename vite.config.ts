@@ -72,23 +72,6 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2020',
     cssCodeSplit: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-router': ['react-router-dom'],
-          'vendor-query': ['@tanstack/react-query'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-ui-core': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tooltip'],
-          'vendor-ui-form': ['@radix-ui/react-popover', '@radix-ui/react-select', '@radix-ui/react-tabs', '@radix-ui/react-checkbox', '@radix-ui/react-label'],
-          'vendor-charts': ['recharts'],
-          'vendor-pdf': ['jspdf', 'jspdf-autotable'],
-          'vendor-date': ['date-fns'],
-          'vendor-docx': ['docxtemplater', 'pizzip'],
-          'vendor-xlsx': ['xlsx'],
-        },
-      },
-    },
   },
   preview: {
     port: 8080,
