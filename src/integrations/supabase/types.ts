@@ -2681,6 +2681,7 @@ export type Database = {
           patient_declined: boolean | null
           patient_declined_at: string | null
           payment_method: string | null
+          reminder_sent_at: string | null
           session_amount: number | null
           session_notes: string | null
           start_time: string
@@ -2715,6 +2716,7 @@ export type Database = {
           patient_declined?: boolean | null
           patient_declined_at?: string | null
           payment_method?: string | null
+          reminder_sent_at?: string | null
           session_amount?: number | null
           session_notes?: string | null
           start_time: string
@@ -2749,6 +2751,7 @@ export type Database = {
           patient_declined?: boolean | null
           patient_declined_at?: string | null
           payment_method?: string | null
+          reminder_sent_at?: string | null
           session_amount?: number | null
           session_notes?: string | null
           start_time?: string
