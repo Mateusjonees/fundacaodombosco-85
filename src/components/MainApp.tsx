@@ -23,6 +23,7 @@ import { Link } from 'react-router-dom';
 import { PageSkeleton } from '@/components/ui/page-skeletons';
 import { UserAvatar } from '@/components/UserAvatar';
 import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 // Lazy load header components - melhor LCP
 const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
@@ -249,11 +250,12 @@ export const MainApp = () => {
               </div>
             </header>
 
-             <main className="flex-1 p-3 sm:p-4 lg:p-6">
+             <main className="flex-1 p-3 sm:p-4 lg:p-6 pb-20 md:pb-6">
                <PageBreadcrumb />
                <AppRoutes />
              </main>
           </div>
+          <MobileBottomNav />
         </div>
       </SidebarProvider>
     </Router>
