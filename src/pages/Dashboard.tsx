@@ -57,16 +57,16 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
-      {/* Welcome - compacto no mobile */}
-      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-glow p-4 sm:p-8 text-primary-foreground">
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-          <div className="space-y-0.5 sm:space-y-1">
-            <p className="text-primary-foreground/70 text-xs sm:text-sm font-medium">
+    <div className="space-y-3 sm:space-y-6 animate-fade-in">
+      {/* Welcome - ultra compacto no mobile */}
+      <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-glow p-3 sm:p-8 text-primary-foreground">
+        <div className="relative flex items-center justify-between gap-2 sm:gap-4">
+          <div className="min-w-0">
+            <p className="text-primary-foreground/70 text-[10px] sm:text-sm font-medium">
               Bom {new Date().getHours() < 12 ? 'dia' : new Date().getHours() < 18 ? 'tarde' : 'noite'},
             </p>
-            <h1 className="text-lg sm:text-3xl font-bold tracking-tight uppercase">{userName}</h1>
-            <Badge className="mt-1 sm:mt-2 bg-white/15 hover:bg-white/20 border-0 text-primary-foreground text-[10px] sm:text-xs">
+            <h1 className="text-base sm:text-3xl font-bold tracking-tight uppercase truncate">{userName}</h1>
+            <Badge className="mt-0.5 sm:mt-2 bg-white/15 hover:bg-white/20 border-0 text-primary-foreground text-[9px] sm:text-xs px-1.5 py-0 sm:px-2.5 sm:py-0.5">
               {userRole ? ROLE_LABELS[userRole] : 'Usuário'}
             </Badge>
           </div>
@@ -77,52 +77,56 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-4">
+      {/* Stats - sempre visíveis */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+        <StatCard
+          title={isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
+          value={stats.totalClients}
+          icon={Users}
+          color="text-blue-600 dark:text-blue-400"
+        />
+        <StatCard
+          title="Consultas Hoje"
+          value={stats.todayAppointments}
+          icon={Calendar}
+          color="text-emerald-600 dark:text-emerald-400"
+        />
+        {isDirectorOrCoordinator && (
+          <>
             <StatCard
-              title={isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
-              value={stats.totalClients}
-              icon={Users}
-              color="text-blue-600 dark:text-blue-400"
+              title="Receita Mensal"
+              value={`R$ ${stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`}
+              icon={DollarSign}
+              color="text-amber-600 dark:text-amber-400"
             />
             <StatCard
-              title="Consultas Hoje"
-              value={stats.todayAppointments}
-              icon={Calendar}
-              color="text-emerald-600 dark:text-emerald-400"
+              title="Funcionários"
+              value={stats.totalEmployees}
+              icon={UserPlus}
+              color="text-violet-600 dark:text-violet-400"
             />
-            {isDirectorOrCoordinator && (
-              <>
-                <StatCard
-                  title="Receita Mensal"
-                  value={`R$ ${stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`}
-                  icon={DollarSign}
-                  color="text-amber-600 dark:text-amber-400"
-                />
-                <StatCard
-                  title="Funcionários"
-                  value={stats.totalEmployees}
-                  icon={UserPlus}
-                  color="text-violet-600 dark:text-violet-400"
-                />
-              </>
-            )}
-          </div>
-
-          {/* Charts inline to avoid gap */}
-          {isDirectorOrCoordinator && (
-            <DashboardCharts />
-          )}
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-4">
-          <TimeClock />
-          <BirthdayAlerts />
-        </div>
+          </>
+        )}
       </div>
+
+      {/* Ponto + Aniversários lado a lado no desktop, empilhados no mobile */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <TimeClock />
+        <BirthdayAlerts />
+        {/* Charts ocupa espaço restante no desktop */}
+        {isDirectorOrCoordinator && (
+          <div className="sm:col-span-2 lg:col-span-1">
+            <DashboardCharts />
+          </div>
+        )}
+      </div>
+
+      {/* Charts em linha separada quando há espaço */}
+      {isDirectorOrCoordinator && (
+        <div className="hidden lg:block">
+          {/* Charts já renderizados acima no grid para lg, aqui é fallback */}
+        </div>
+      )}
     </div>
   );
 }
