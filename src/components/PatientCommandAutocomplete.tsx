@@ -17,6 +17,7 @@ interface Client {
 interface PatientCommandAutocompleteProps {
   value: string;
   onValueChange: (value: string) => void;
+  onClientSelect?: (client: Client | null) => void;
   placeholder?: string;
   disabled?: boolean;
   unitFilter?: string;
@@ -24,7 +25,8 @@ interface PatientCommandAutocompleteProps {
 
 export function PatientCommandAutocomplete({ 
   value, 
-  onValueChange, 
+  onValueChange,
+  onClientSelect,
   placeholder = "Buscar paciente por nome, CPF, telefone ou email...",
   disabled = false,
   unitFilter
@@ -133,6 +135,7 @@ export function PatientCommandAutocomplete({
   const handleSelectClient = (client: Client) => {
     isSelectingRef.current = true;
     onValueChange(client.id);
+    onClientSelect?.(client);
     setDisplayValue(client.name);
     setSearchTerm('');
     setOpen(false);
