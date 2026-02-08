@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
+import { getUnitStyle } from '@/utils/unitUtils';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -154,45 +155,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
            userProfile?.employee_role === 'coordinator_atendimento_floresta';
   };
 
-  // Get unit color classes
-  const getUnitColorClasses = () => {
-    switch (client.unit) {
-      case 'madre':
-        return {
-          bg: 'bg-blue-500/10',
-          border: 'border-blue-500/30',
-          text: 'text-blue-600 dark:text-blue-400',
-          badge: 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30',
-          avatar: 'bg-blue-500 text-white'
-        };
-      case 'floresta':
-        return {
-          bg: 'bg-emerald-500/10',
-          border: 'border-emerald-500/30',
-          text: 'text-emerald-600 dark:text-emerald-400',
-          badge: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
-          avatar: 'bg-emerald-500 text-white'
-        };
-      case 'atendimento_floresta':
-        return {
-          bg: 'bg-purple-500/10',
-          border: 'border-purple-500/30',
-          text: 'text-purple-600 dark:text-purple-400',
-          badge: 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30',
-          avatar: 'bg-purple-500 text-white'
-        };
-      default:
-        return {
-          bg: 'bg-muted',
-          border: 'border-border',
-          text: 'text-muted-foreground',
-          badge: 'bg-muted text-muted-foreground border-border',
-          avatar: 'bg-primary text-primary-foreground'
-        };
-    }
-  };
-
-  const unitColors = getUnitColorClasses();
+  // Get unit color classes from centralized config
+  const unitColors = getUnitStyle(client.unit);
 
   // Get initials from name
   const getInitials = (name: string) => {

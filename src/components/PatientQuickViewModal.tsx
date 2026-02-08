@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { getUnitStyle } from '@/utils/unitUtils';
 
 interface PatientQuickViewModalProps {
   clientId: string | null;
@@ -17,11 +18,7 @@ interface PatientQuickViewModalProps {
   onViewFullProfile?: (clientId: string) => void;
 }
 
-const unitColors: Record<string, { bg: string; text: string; label: string }> = {
-  madre: { bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', label: 'MADRE' },
-  floresta: { bg: 'bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', label: 'FLORESTA' },
-  atendimento_floresta: { bg: 'bg-purple-500/10', text: 'text-purple-700 dark:text-purple-400', label: 'ATEND. FLORESTA' },
-};
+// Unit colors imported from centralized config
 
 export const PatientQuickViewModal = ({ clientId, open, onOpenChange, onViewFullProfile }: PatientQuickViewModalProps) => {
   const navigate = useNavigate();
@@ -72,7 +69,7 @@ export const PatientQuickViewModal = ({ clientId, open, onOpenChange, onViewFull
     return differenceInYears(new Date(), new Date(birthDate));
   };
 
-  const unitStyle = unitColors[client?.unit || 'madre'] || unitColors.madre;
+  const unitStyle = getUnitStyle(client?.unit);
 
   const handleViewFullProfile = () => {
     onOpenChange(false);

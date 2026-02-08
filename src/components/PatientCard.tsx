@@ -1,13 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Building2,
-  Brain,
-  Stethoscope as StethoscopeIcon,
-  Clipboard,
-} from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
+import { getUnitStyle } from "@/utils/unitUtils";
 
 interface Client {
   id: string;
@@ -36,44 +31,15 @@ interface PatientCardProps {
 }
 
 const getUnitConfig = (unit?: string) => {
-  switch (unit) {
-    case "madre":
-      return {
-        label: "Clínica Social",
-        Icon: Building2,
-        gradient: "from-blue-500 to-cyan-500",
-        bgLight: "bg-blue-50 dark:bg-blue-950/30",
-        textColor: "text-blue-700 dark:text-blue-300",
-        borderColor: "border-blue-200 dark:border-blue-800"
-      };
-    case "floresta":
-      return {
-        label: "Neuroavaliação",
-        Icon: Brain,
-        gradient: "from-violet-500 to-purple-500",
-        bgLight: "bg-violet-50 dark:bg-violet-950/30",
-        textColor: "text-violet-700 dark:text-violet-300",
-        borderColor: "border-violet-200 dark:border-violet-800"
-      };
-    case "atendimento_floresta":
-      return {
-        label: "Atend. Floresta",
-        Icon: StethoscopeIcon,
-        gradient: "from-emerald-500 to-teal-500",
-        bgLight: "bg-emerald-50 dark:bg-emerald-950/30",
-        textColor: "text-emerald-700 dark:text-emerald-300",
-        borderColor: "border-emerald-200 dark:border-emerald-800"
-      };
-    default:
-      return {
-        label: "N/A",
-        Icon: Clipboard,
-        gradient: "from-gray-400 to-gray-500",
-        bgLight: "bg-muted/50",
-        textColor: "text-muted-foreground",
-        borderColor: "border-border"
-      };
-  }
+  const style = getUnitStyle(unit);
+  return {
+    label: style.label,
+    Icon: style.Icon,
+    gradient: style.gradient,
+    bgLight: style.bgLight,
+    textColor: style.textColor,
+    borderColor: style.borderColor,
+  };
 };
 
 const calculateAge = (birthDate?: string) => {
