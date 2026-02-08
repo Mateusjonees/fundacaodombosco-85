@@ -130,11 +130,8 @@ export function PatientCommandAutocomplete({
     }
   };
 
-  const handleSelectClient = (client: Client, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleSelectClient = (client: Client) => {
+    isSelectingRef.current = true;
     onValueChange(client.id);
     setDisplayValue(client.name);
     setSearchTerm('');
@@ -147,18 +144,16 @@ export function PatientCommandAutocomplete({
     }
   };
 
-  const handleInputBlur = (e: React.FocusEvent) => {
-    // Delay closing to allow for click events and prevent premature closing
+  const isSelectingRef = useRef(false);
+
+  const handleInputBlur = () => {
+    // Delay closing to allow click events on dropdown items to fire first
     setTimeout(() => {
-      const activeElement = document.activeElement;
-      const container = inputRef.current?.closest('.relative');
-      const dropdown = container?.querySelector('[data-dropdown]');
-      
-      // Don't close if focus is still within the container or dropdown
-      if (!container?.contains(activeElement) && !dropdown?.contains(activeElement)) {
+      if (!isSelectingRef.current) {
         setOpen(false);
       }
-    }, 300);
+      isSelectingRef.current = false;
+    }, 200);
   };
 
   return (
@@ -182,8 +177,6 @@ export function PatientCommandAutocomplete({
         <div 
           data-dropdown
           className="absolute top-full left-0 right-0 z-[999] bg-popover border rounded-md shadow-lg max-h-[300px] overflow-y-auto mt-1"
-          onMouseDown={(e) => e.preventDefault()}
-          onMouseEnter={() => setOpen(true)}
         >
           {loading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
@@ -197,12 +190,10 @@ export function PatientCommandAutocomplete({
               {clients.map((client) => (
                 <div
                   key={client.id}
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
                     e.preventDefault();
-                    e.stopPropagation();
-                    handleSelectClient(client, e);
+                    handleSelectClient(client);
                   }}
-                  onMouseDown={(e) => e.preventDefault()}
                   className="flex items-start w-full gap-3 p-3 cursor-pointer hover:bg-muted/50 select-none"
                 >
                   <Check
