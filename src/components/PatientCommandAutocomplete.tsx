@@ -80,15 +80,16 @@ export function PatientCommandAutocomplete({
     loadSelectedClient();
   }, [value]);
 
-  // Update display value when selection changes from list
+  // Update display value only when a selection is made (value changes)
   useEffect(() => {
-    const selectedClient = clients.find(client => client.id === value);
-    if (selectedClient && value) {
-      setDisplayValue(selectedClient.name);
-    } else if (!value) {
-      setDisplayValue('');
+    if (value) {
+      const selectedClient = clients.find(client => client.id === value);
+      if (selectedClient) {
+        setDisplayValue(selectedClient.name);
+      }
     }
-  }, [value, clients]);
+    // Don't clear displayValue when value is empty — user may be typing a search
+  }, [value]);
 
   const loadClients = async (search: string) => {
     setLoading(true);
