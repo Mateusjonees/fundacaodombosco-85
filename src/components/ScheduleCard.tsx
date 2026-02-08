@@ -10,6 +10,7 @@ import PatientPresenceButton from '@/components/PatientPresenceButton';
 import { UserAvatar } from '@/components/UserAvatar';
 import { PatientDetailsModal } from '@/components/PatientDetailsModal';
 import { ProfessionalQuickViewModal } from '@/components/ProfessionalQuickViewModal';
+import { getUnitStyle } from '@/utils/unitUtils';
 
 interface Schedule {
   id: string;
@@ -49,11 +50,7 @@ interface ScheduleCardProps {
   getStatusBadge: (status: string) => { text: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string };
 }
 
-const unitColors: Record<string, { bg: string; text: string; border: string; label: string }> = {
-  madre: { bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-500/20', label: 'MADRE' },
-  floresta: { bg: 'bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-500/20', label: 'FLORESTA' },
-  atendimento_floresta: { bg: 'bg-purple-500/10', text: 'text-purple-700 dark:text-purple-400', border: 'border-purple-500/20', label: 'ATEND. FLORESTA' },
-};
+// Unit colors imported from centralized config
 
 export const ScheduleCard = ({
   schedule,
@@ -74,7 +71,7 @@ export const ScheduleCard = ({
   const [professionalModalOpen, setProfessionalModalOpen] = useState(false);
 
   const professional = employees.find(emp => emp.user_id === schedule.employee_id);
-  const unitStyle = unitColors[schedule.unit || 'madre'] || unitColors.madre;
+  const unitStyle = getUnitStyle(schedule.unit);
   const isCompleted = schedule.status === 'completed';
   const isCancelled = schedule.status === 'cancelled';
   const isPendingValidation = schedule.status === 'pending_validation';

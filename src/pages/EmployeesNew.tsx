@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { Search, Users, Power, UserCheck, UserX, Plus, Edit, Eye, EyeOff, Building2, Trash2 } from 'lucide-react';
-import { UNITS } from '@/utils/unitUtils';
+import { UNITS, getUnitStyle as getUnitStyleFromUtils } from '@/utils/unitUtils';
 
 interface Employee {
   id: string;
@@ -362,17 +362,9 @@ export default function EmployeesNew() {
     return colors[role] || 'bg-slate-500';
   };
 
-  const getUnitStyle = (unit: string) => {
-    switch (unit?.toLowerCase()) {
-      case 'madre':
-        return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400';
-      case 'floresta':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400';
-      case 'atendimento_floresta':
-        return 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900/30 dark:text-teal-400';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-400';
-    }
+  const getUnitStyleLocal = (unit: string) => {
+    const style = getUnitStyleFromUtils(unit);
+    return `${style.bgLight} ${style.textColor} ${style.borderColor}`;
   };
 
   if (!permissions.canManageEmployees()) {
@@ -659,7 +651,7 @@ export default function EmployeesNew() {
                         {(employee.units?.length || employee.unit) ? (
                           <div className="flex flex-wrap gap-1">
                             {(employee.units || (employee.unit ? [employee.unit] : [])).map((u) => (
-                              <Badge key={u} variant="outline" className={getUnitStyle(u)}>
+                              <Badge key={u} variant="outline" className={getUnitStyleLocal(u)}>
                                 {UNITS.find(unit => unit.value === u)?.shortLabel || u}
                               </Badge>
                             ))}

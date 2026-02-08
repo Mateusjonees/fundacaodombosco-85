@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getUnitStyle } from "@/utils/unitUtils";
 
 interface Column<T> {
   key: string;
@@ -198,29 +199,17 @@ interface UnitBadgeProps {
 }
 
 export function UnitBadge({ unit, className }: UnitBadgeProps) {
-  const getUnitStyles = (unit: string) => {
-    const unitLower = unit?.toLowerCase() || "";
-    if (unitLower.includes("madre")) {
-      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
-    }
-    if (unitLower.includes("atendimento") && unitLower.includes("floresta")) {
-      return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
-    }
-    if (unitLower.includes("floresta")) {
-      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-    }
-    return "bg-muted text-muted-foreground border-border";
-  };
+  const style = getUnitStyle(unit);
 
   return (
     <span
       className={cn(
         "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-        getUnitStyles(unit),
+        style.bg, style.text, style.border,
         className
       )}
     >
-      {unit || "Sem unidade"}
+      {style.label !== 'N/A' ? style.shortLabel : (unit || "Sem unidade")}
     </span>
   );
 }
