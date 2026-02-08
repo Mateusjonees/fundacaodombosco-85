@@ -1,44 +1,23 @@
 
-## Correção do erro "forwardRef" no domínio personalizado
+## Alterar nome do app no celular para "Clínica"
 
-### Problema identificado
-O erro `Cannot read properties of undefined (reading 'forwardRef')` acontece porque a configuração de build (`manualChunks`) separa o React em um chunk (`vendor-react`) e as bibliotecas de UI (Radix UI) em outros chunks (`vendor-ui-core`, `vendor-ui-form`). Quando o navegador carrega esses arquivos, o chunk de UI pode executar **antes** do React estar disponível, causando o crash.
+O nome que aparece no celular (ícone na tela inicial e splash screen) é controlado pelo manifesto PWA no arquivo `vite.config.ts`.
 
-Isso funciona no preview do Lovable porque o modo de desenvolvimento não usa essa separação de chunks -- só acontece no build de produção (Vercel).
-
-### Solução
-Remover a configuração `manualChunks` que está causando o conflito. O Vite/Rollup vai gerenciar automaticamente a divisão de código de forma segura, garantindo que as dependências sejam carregadas na ordem correta.
-
-### Detalhes técnicos
+### Alteração
 
 **Arquivo**: `vite.config.ts`
 
-Remover todo o bloco `manualChunks` da configuração de build:
+- `name`: de `'Sistema Fundação Dom Bosco'` para `'Clínica'`
+- `short_name`: de `'FDB Sistema'` para `'Clínica'`
 
-```text
-Antes:
-  build: {
-    target: 'es2020',
-    cssCodeSplit: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-ui-core': [...],
-          'vendor-ui-form': [...],
-          ...
-        },
-      },
-    },
-  },
+O `short_name` é o que aparece embaixo do ícone na tela inicial do celular. O `name` aparece na splash screen ao abrir o app.
 
-Depois:
-  build: {
-    target: 'es2020',
-    cssCodeSplit: true,
-  },
+### Detalhes técnicos
+
+Linhas 23-24 do `vite.config.ts`:
+```
+name: 'Clínica',
+short_name: 'Clínica',
 ```
 
-A opção `dedupe` já adicionada anteriormente continuará ativa para evitar instâncias duplicadas do React. A remoção do `manualChunks` resolve o problema de ordem de carregamento sem impacto negativo no desempenho -- o Vite faz code-splitting automaticamente de forma eficiente.
-
-Após a alteração, será necessário fazer um novo deploy no Vercel para que a correção entre em vigor no domínio `sistemafundacaodombosco.org`.
+Após a alteração, usuários que já instalaram o app podem precisar desinstalar e reinstalar para ver o novo nome.
