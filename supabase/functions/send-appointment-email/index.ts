@@ -127,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <!-- Header -->
             <div style="background: linear-gradient(135deg, ${unitInfo.color}, ${unitInfo.color}dd); padding: 32px; text-align: center;">
-              <img src="https://id-preview--4514981f-2cb6-4044-9c11-67fabff70f7b.lovable.app/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" alt="Fundação Dom Bosco" style="max-width: 180px; height: auto; margin-bottom: 16px;" />
+              <img src="https://fundacaodombosco.org/wp-content/uploads/elementor/thumbs/logo-saude-cor_fundacao_dom_bosco_acolher_capacitar_assistencia_social_educacao_saude_criancas_adolescentes_inclusao_reabilitacao_belo_horizonte-qu213x2bru42zepyl57mrub7z9j2wqtwrnty2vwul8.png" alt="Fundação Dom Bosco" style="max-width: 180px; height: auto; margin-bottom: 16px;" />
               <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">
                 📅 Lembrete de Agendamento
               </h1>
