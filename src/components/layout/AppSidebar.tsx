@@ -521,11 +521,13 @@ export function AppSidebar() {
                     <div className="flex items-center justify-center mb-2">
                       <div className={cn("h-0.5 w-8 rounded-full", config?.iconBg?.replace('text-', 'bg-').replace('/15', '/40'))} />
                     </div>
-                    {groupedItems[category].map(item => <SidebarMenuItem key={item.id}>
-                        <SidebarMenuButton asChild>
-                          <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} categoryConfig={config} />
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>)}
+                    <SidebarMenu>
+                      {groupedItems[category].map(item => <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton asChild>
+                            <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} categoryConfig={config} />
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>)}
+                    </SidebarMenu>
                   </div>;
             }
             return <Collapsible key={category} open={isOpen} onOpenChange={() => toggleCategory(category)} className="group/collapsible">
