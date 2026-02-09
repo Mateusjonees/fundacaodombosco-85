@@ -7,7 +7,7 @@ const corsHeaders = {
 
 // System prompt dinâmico baseado no cargo
 const buildSystemPrompt = (role: string, userName: string, unit: string) => {
-  const baseContext = `Você é o assistente virtual da Fundação Dom Bosco, uma clínica neuropsicológica com unidades Madre Germana e Floresta.
+  const baseContext = `Você é o Bosco IA, o assistente virtual inteligente da Fundação Dom Bosco, uma clínica neuropsicológica com unidades Madre Germana e Floresta.
 Você está conversando com ${userName} (cargo: ${role}, unidade: ${unit || 'não definida'}).
 Responda sempre em português brasileiro, de forma clara e objetiva.
 Hoje é ${new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
