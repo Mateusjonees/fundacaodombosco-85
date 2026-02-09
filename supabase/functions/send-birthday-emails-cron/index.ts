@@ -71,7 +71,6 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: clients, error } = await supabase
       .from('clients')
       .select('id, name, email, birth_date')
-      .eq('is_active', true)
       .not('birth_date', 'is', null)
       .not('email', 'is', null);
 
