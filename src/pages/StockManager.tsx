@@ -201,7 +201,7 @@ export default function StockManager() {
       // Buscar nomes dos criadores
       const creatorIds = [...new Set(movements.map(m => m.created_by).filter(Boolean))];
       const { data: profilesData } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('user_id, name')
         .in('user_id', creatorIds);
 
@@ -222,7 +222,7 @@ export default function StockManager() {
   const loadProfiles = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('user_id, name')
         .order('name');
 

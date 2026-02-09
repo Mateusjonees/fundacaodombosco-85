@@ -3474,6 +3474,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          department: string | null
           email: string | null
           employee_role: Database["public"]["Enums"]["employee_role"] | null
           id: string | null
@@ -3481,12 +3482,12 @@ export type Database = {
           name: string | null
           phone: string | null
           unit: string | null
-          units: string[] | null
           user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
           employee_role?: Database["public"]["Enums"]["employee_role"] | null
           id?: string | null
@@ -3494,12 +3495,12 @@ export type Database = {
           name?: string | null
           phone?: string | null
           unit?: string | null
-          units?: string[] | null
           user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
           employee_role?: Database["public"]["Enums"]["employee_role"] | null
           id?: string | null
@@ -3507,7 +3508,6 @@ export type Database = {
           name?: string | null
           phone?: string | null
           unit?: string | null
-          units?: string[] | null
           user_id?: string | null
         }
         Relationships: []

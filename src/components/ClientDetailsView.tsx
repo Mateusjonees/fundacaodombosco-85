@@ -328,7 +328,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       if (notesData && notesData.length > 0) {
         const creatorIds = [...new Set(notesData.map(n => n.created_by))];
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('user_id, name')
           .in('user_id', creatorIds);
 
@@ -383,7 +383,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
       if (assignments && assignments.length > 0) {
         const employeeIds = assignments.map(a => a.employee_id);
         const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('user_id, name, employee_role')
           .in('user_id', employeeIds);
 
@@ -515,7 +515,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const loadEmployees = async () => {
     try {
       const { data: profiles, error } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('user_id, name, employee_role')
         .eq('is_active', true)
         .order('name');
@@ -740,7 +740,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
   const loadAvailableEmployees = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('id, user_id, name, employee_role')
         .eq('is_active', true)
         .order('name');

@@ -20,7 +20,7 @@ export const useEmployees = (userProfile?: any, filters?: EmployeeFilters) => {
     queryKey: ['employees', userProfile?.user_id, filters],
     queryFn: async () => {
       let query = supabase
-        .from('profiles')
+        .from('profiles_public')
         .select(LIST_COLUMNS)
         .eq('is_active', true)
         .not('employee_role', 'is', null)
@@ -69,7 +69,7 @@ export const useEmployeesCount = () => {
     queryKey: ['employees', 'count'],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('id', { count: 'exact', head: true })
         .eq('is_active', true)
         .not('employee_role', 'is', null);

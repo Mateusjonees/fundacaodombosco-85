@@ -45,7 +45,7 @@ export const ProfessionalQuickViewModal = ({ professionalId, open, onOpenChange 
     queryFn: async () => {
       if (!professionalId) return null;
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('*')
         .eq('user_id', professionalId)
         .maybeSingle();
