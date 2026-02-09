@@ -3873,6 +3873,12 @@ export type Database = {
         | "assign_clients"
         | "generate_reports"
         | "access_all_units"
+        | "view_documents"
+        | "create_documents"
+        | "edit_documents"
+        | "delete_documents"
+        | "system_admin"
+        | "manage_permissions"
       permission_scope: "view" | "create" | "edit" | "delete"
       permission_type:
         | "view_clients"
@@ -4133,6 +4139,12 @@ export const Constants = {
         "assign_clients",
         "generate_reports",
         "access_all_units",
+        "view_documents",
+        "create_documents",
+        "edit_documents",
+        "delete_documents",
+        "system_admin",
+        "manage_permissions",
       ],
       permission_scope: ["view", "create", "edit", "delete"],
       permission_type: [

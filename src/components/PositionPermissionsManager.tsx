@@ -134,7 +134,7 @@ export const PositionPermissionsManager = ({ position, onClose }: PositionPermis
       if (permissionsToInsert.length > 0) {
         const { error: insertError } = await supabase
           .from('position_permissions')
-          .insert(permissionsToInsert);
+          .insert(permissionsToInsert as any);
 
         if (insertError) throw insertError;
       }

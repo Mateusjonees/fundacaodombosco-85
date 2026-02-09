@@ -263,6 +263,11 @@ export const PERMISSION_CATEGORIES = {
     icon: 'FolderOpen',
     permissions: ['view_files', 'create_files', 'edit_files', 'delete_files'] as PermissionAction[]
   },
+  documents: {
+    label: 'Documentos',
+    icon: 'FileText',
+    permissions: ['view_documents', 'create_documents', 'edit_documents', 'delete_documents'] as PermissionAction[]
+  },
   quality: {
     label: 'Controle de Qualidade',
     icon: 'CheckSquare',
@@ -281,6 +286,6 @@ export const PERMISSION_CATEGORIES = {
   system: {
     label: 'Configurações do Sistema',
     icon: 'Settings',
-    permissions: ['manage_system_settings', 'edit_system_settings', 'import_data', 'view_sensitive_data', 'access_all_units'] as PermissionAction[]
+    permissions: ['manage_system_settings', 'edit_system_settings', 'import_data', 'view_sensitive_data', 'access_all_units', 'system_admin', 'manage_permissions'] as PermissionAction[]
   }
 };
