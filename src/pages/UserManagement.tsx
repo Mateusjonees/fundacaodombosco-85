@@ -382,11 +382,11 @@ export default function UserManagement() {
         error
       } = await supabase.from('user_specific_permissions').upsert({
         user_id: userId,
-        permission,
+        permission: permission as any,
         granted,
         reason: reason || null,
         updated_at: new Date().toISOString()
-      }, {
+      } as any, {
         onConflict: 'user_id,permission'
       }).select();
       if (error) {
@@ -936,10 +936,10 @@ export default function UserManagement() {
                         for (const perm of allPermissions) {
                           await supabase.from('user_specific_permissions').upsert({
                             user_id: selectedUser.id,
-                            permission: perm,
+                            permission: perm as any,
                             granted: true,
                             updated_at: new Date().toISOString()
-                          }, { onConflict: 'user_id,permission' });
+                          } as any, { onConflict: 'user_id,permission' });
                         }
                         await loadUserPermissions(selectedUser.id);
                         toast({ title: 'Todas as permissões concedidas!' });
@@ -958,10 +958,10 @@ export default function UserManagement() {
                         for (const perm of allPermissions) {
                           await supabase.from('user_specific_permissions').upsert({
                             user_id: selectedUser.id,
-                            permission: perm,
+                            permission: perm as any,
                             granted: false,
                             updated_at: new Date().toISOString()
-                          }, { onConflict: 'user_id,permission' });
+                          } as any, { onConflict: 'user_id,permission' });
                         }
                         await loadUserPermissions(selectedUser.id);
                         toast({ title: 'Todas as permissões revogadas!' });
@@ -1015,10 +1015,10 @@ export default function UserManagement() {
                           for (const perm of category.permissions) {
                             await supabase.from('user_specific_permissions').upsert({
                               user_id: selectedUser.id,
-                              permission: perm,
+                              permission: perm as any,
                               granted: checked,
                               updated_at: new Date().toISOString()
-                            }, { onConflict: 'user_id,permission' });
+                            } as any, { onConflict: 'user_id,permission' });
                           }
                           await loadUserPermissions(selectedUser.id);
                           toast({ title: `${category.label}: ${checked ? 'todas concedidas' : 'todas revogadas'}` });
@@ -1060,7 +1060,7 @@ export default function UserManagement() {
                               supabase.from('user_specific_permissions')
                                 .delete()
                                 .eq('user_id', selectedUser.id)
-                                .eq('permission', permission)
+                                .eq('permission', permission as any)
                                 .then(() => loadUserPermissions(selectedUser.id));
                               toast({ title: 'Permissão do cargo restaurada' });
                             } else {
