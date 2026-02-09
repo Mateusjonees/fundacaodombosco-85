@@ -1,87 +1,50 @@
 
 
-## Adicionar campos de neuroavaliacao ao perfil de cada cliente
+# Corrigir Exibicao de Permissoes na Pagina de Usuarios
 
-O objetivo e reestruturar a pagina de Neuroavaliacao para incluir todas as colunas da planilha fornecida, adicionando campos que ainda nao existem no banco de dados.
+## Problema Identificado
 
-### Campos que ja existem no banco e serao mantidos
+Ao abrir as permissoes de um funcionario na pagina `/users` (Gerenciar Usuarios), todas as permissoes aparecem como **"Nao configurado"** mesmo quando o funcionario ja tem permissoes pelo cargo (`employee_role`). Isso acontece porque o dialog so carrega as permissoes especificas do usuario (`user_specific_permissions`) e ignora as permissoes do cargo (`role_permissions`).
 
-| Campo da planilha | Coluna no banco |
-|---|---|
-| Codigo | neuro_patient_code |
-| Nome | name |
-| Data de Nascimento | birth_date |
-| Idade | calculado de birth_date |
-| Sexo | gender |
-| Encaminhado por | neuro_diagnosis_by |
-| Hipotese Diagnostica | neuro_diagnosis_suggestion |
-| Diagnostico | neuro_final_diagnosis |
-| Concordancia Diagnostica | neuro_diagnostic_agreement |
-| Tipo de Divergencia | neuro_divergence_type |
-| Condicao Socioeconomica | neuro_socioeconomic |
+A pagina de Funcionarios (`/employees`) funciona corretamente porque usa o componente `EmployeePermissions` que ja faz a fusao dos dois tipos de permissao.
 
-### Campos calculados (sem banco)
+## Solucao
 
-| Campo | Logica |
-|---|---|
-| Faixa Etaria | Calculado da idade: Crianca (0-12), Adolescente (13-17), Adulto (18-59), Idoso (60+) |
+Atualizar o dialog de permissoes na pagina `UserManagement.tsx` para tambem carregar e exibir as permissoes do cargo do funcionario, mostrando o estado efetivo de cada permissao (igual ao componente `EmployeePermissions`).
 
-### Novos campos a criar no banco (tabela clients)
+## Detalhes Tecnicos
 
-| Campo da planilha | Nova coluna | Tipo | Valores possiveis |
-|---|---|---|---|
-| Tipo de Hipotese | neuro_hypothesis_type | text | Unica, Combinada simples, Combinada complexa, Sem hipotese inicial, Nao se aplica |
-| N Hipoteses | neuro_hypothesis_count | text | 1, 2, >= 3, Nao se aplica |
-| Categoria Diagnostica | neuro_diagnostic_category | text | Neurodesenvolvimento, Ansiedade, Humor, etc. (texto livre) |
-| Renda mensal | neuro_monthly_income | text | Nao possuo renda, Ate R$ 1.100, R$ 1.200-2.500, R$ 2.600-4.000, R$ 4.100-7.100, Acima de R$ 7.200, Isento, Nao informado |
-| Status | neuro_evaluation_status | text | Avaliacao em curso, Avaliacao Finalizada, Verificar no Arquivo Morto |
+### Arquivo: `src/pages/UserManagement.tsx`
 
-### Alteracoes na Condicao Socioeconomica
+1. **Carregar o cargo e permissoes do cargo ao abrir o dialog**:
+   - Ao selecionar um usuario, buscar o `employee_role` do perfil
+   - Buscar as `role_permissions` para esse cargo
+   - Mesclar com as `user_specific_permissions` para mostrar o estado efetivo
 
-Atualizar os valores de A/B/C/D/E para: Baixa, Media, Alta, Isento, Nao informado.
+2. **Atualizar a UI do dialog de permissoes**:
+   - Mostrar se a permissao vem do cargo (ex: "Permissao do Cargo") ou e personalizada
+   - Mostrar o estado correto do Switch (ativo se vem do cargo OU se tem override ativo)
+   - Quando a permissao vem do cargo e o usuario desativa, criar um override com `granted: false`
+   - Indicar visualmente a origem da permissao (cargo vs personalizada vs bloqueada)
 
-### Arquivos a modificar
+3. **Adicionar estados para**:
+   - `selectedUserRole` (cargo do funcionario selecionado)
+   - `roleBasedPermissions` (Set com permissoes que vem do cargo)
 
-1. **Migracao SQL** - Criar 5 novas colunas na tabela `clients`
-2. **src/pages/Neuroassessment.tsx** - Adicionar as novas colunas na tabela, no formulario de edicao, na exportacao PDF/Excel, e nos graficos. Reordenar colunas para seguir a ordem da planilha. Remover colunas que nao estao na planilha (Historico Relevante, Inicio Testes, Previsao Laudo, Data Finalizacao, Materiais/Testes, Horas Totais, Status Laudo, Observacoes)
-3. **src/integrations/supabase/types.ts** - Adicionar os novos campos ao tipo da tabela clients
+4. **Atualizar a funcao `loadUserPermissions`**:
+   - Alem de carregar `user_specific_permissions`, tambem buscar o cargo e suas permissoes
+   - Calcular o estado efetivo combinando cargo + overrides
 
-### Nova ordem das colunas na tabela
+5. **Atualizar o contador de permissoes por categoria**:
+   - Considerar permissoes do cargo no calculo do badge (ex: "3/9" em vez de "0/9")
 
-1. Codigo
-2. Nome
-3. Data de Nascimento
-4. Idade
-5. Sexo
-6. Faixa Etaria
-7. Encaminhado por
-8. Hipotese Diagnostica
-9. Tipo de Hipotese
-10. N Hipoteses
-11. Diagnostico
-12. Categoria Diagnostica
-13. Concordancia Diagnostica
-14. Tipo de Divergencia
-15. Renda mensal
-16. Condicao Socioeconomica
-17. Status
+6. **Atualizar as acoes em massa**:
+   - "Conceder Todas" e "Revogar Todas" devem considerar as permissoes do cargo
 
-### Detalhes tecnicos
+### Resultado Esperado
 
-**Migracao SQL:**
-```sql
-ALTER TABLE clients ADD COLUMN neuro_hypothesis_type text;
-ALTER TABLE clients ADD COLUMN neuro_hypothesis_count text;
-ALTER TABLE clients ADD COLUMN neuro_diagnostic_category text;
-ALTER TABLE clients ADD COLUMN neuro_monthly_income text;
-ALTER TABLE clients ADD COLUMN neuro_evaluation_status text DEFAULT 'Avaliação em curso';
-```
-
-**Interface NeuroClient** - Adicionar os 5 novos campos ao tipo.
-
-**Formulario de edicao** - Adicionar campos Select para Tipo de Hipotese, N Hipoteses, Categoria Diagnostica, Renda Mensal e Status. Atualizar opcoes de Condicao Socioeconomica.
-
-**Exportacao PDF/Excel** - Incluir as novas colunas e remover as que nao constam na planilha.
-
-**Graficos** - Atualizar grafico socioeconomico para usar os novos valores (Baixa, Media, Alta). Adicionar grafico de Status e Categoria Diagnostica.
+- Ao abrir as permissoes de um funcionario, os toggles ja aparecem ativados para as permissoes que o cargo concede
+- Cada permissao mostra de onde vem: "Permissao do Cargo", "Personalizado: Permitido", ou "Bloqueado"
+- O contador por categoria mostra o numero correto de permissoes ativas
+- Todas as permissoes do sistema (incluindo `confirm_appointments`, `cancel_appointments`, etc.) estao visiveis e configuraveis
 
