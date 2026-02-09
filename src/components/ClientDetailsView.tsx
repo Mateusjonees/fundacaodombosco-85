@@ -117,9 +117,10 @@ interface ClientDetailsViewProps {
   onEdit: () => void;
   onBack?: () => void;
   onRefresh?: () => void;
+  onDelete?: () => void;
 }
 
-export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }: ClientDetailsViewProps) {
+export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, onDelete }: ClientDetailsViewProps) {
   const { user } = useAuth();
   const [notes, setNotes] = useState<ClientNote[]>([]);
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
@@ -1016,6 +1017,13 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh }:
                   <Button variant="outline" size="sm" onClick={onEdit}>
                     <Edit className="h-4 w-4 sm:mr-2" />
                     <span className="hidden sm:inline">Editar</span>
+                  </Button>
+                )}
+
+                {userProfile?.employee_role === 'director' && onDelete && (
+                  <Button variant="destructive" size="sm" onClick={onDelete}>
+                    <Trash2 className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Excluir</span>
                   </Button>
                 )}
                 
