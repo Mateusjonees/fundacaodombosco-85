@@ -72,6 +72,9 @@ export default function UserManagement() {
   const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userPermissions, setUserPermissions] = useState<UserPermissionOverride[]>([]);
+  const [roleBasedPermissions, setRoleBasedPermissions] = useState<Set<string>>(new Set());
+  const [blockedPermissions, setBlockedPermissions] = useState<Set<string>>(new Set());
+  const [selectedUserRole, setSelectedUserRole] = useState<string>('');
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -230,13 +233,42 @@ export default function UserManagement() {
   const loadUserPermissions = async (userId: string) => {
     try {
       console.log('Carregando permissões para usuário:', userId);
-      const {
-        data,
-        error
-      } = await supabase.from('user_specific_permissions').select('*').eq('user_id', userId);
-      if (error) throw error;
-      console.log('Permissões carregadas:', data);
-      setUserPermissions(data || []);
+
+      // Buscar perfil (cargo), permissões do cargo e overrides do usuário em paralelo
+      const [profileResult, userPermsResult] = await Promise.all([
+        supabase.from('profiles').select('employee_role').eq('user_id', userId).single(),
+        supabase.from('user_specific_permissions').select('*').eq('user_id', userId),
+      ]);
+
+      if (profileResult.error) throw profileResult.error;
+      if (userPermsResult.error) throw userPermsResult.error;
+
+      const role = profileResult.data?.employee_role || '';
+      setSelectedUserRole(role);
+
+      // Buscar permissões do cargo
+      let rolePermSet = new Set<string>();
+      if (role) {
+        const { data: rolePerms, error: rolePermsError } = await supabase
+          .from('role_permissions')
+          .select('permission')
+          .eq('employee_role', role)
+          .eq('granted', true);
+        if (!rolePermsError && rolePerms) {
+          rolePermSet = new Set(rolePerms.map(p => p.permission));
+        }
+      }
+      setRoleBasedPermissions(rolePermSet);
+
+      // Separar overrides em concedidos e bloqueados
+      const blocked = new Set<string>();
+      (userPermsResult.data || []).forEach(p => {
+        if (!p.granted) blocked.add(p.permission);
+      });
+      setBlockedPermissions(blocked);
+      setUserPermissions(userPermsResult.data || []);
+
+      console.log('Cargo:', role, 'Permissões do cargo:', Array.from(rolePermSet), 'Overrides:', userPermsResult.data?.length);
     } catch (error) {
       console.error('Error loading user permissions:', error);
       toast({
@@ -943,25 +975,41 @@ export default function UserManagement() {
               </CardContent>
             </Card>
 
+            {/* Cargo do Funcionário */}
+            {selectedUserRole && (
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Cargo:</span>
+                    <Badge variant="secondary">{selectedUserRole}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Seção: Permissões por Categoria */}
             {Object.entries(PERMISSION_CATEGORIES).map(([categoryKey, category]) => {
               const categoryPermissionStates = category.permissions.map(p => {
                 const override = userPermissions.find(up => up.permission === p);
-                return { permission: p, granted: override?.granted ?? false, hasOverride: !!override };
+                const hasRolePerm = roleBasedPermissions.has(p);
+                const isBlocked = blockedPermissions.has(p);
+                const hasCustomGrant = override?.granted === true;
+                const isActive = (hasRolePerm && !isBlocked) || hasCustomGrant;
+                return { permission: p, isActive, hasRolePerm, isBlocked, hasCustomGrant, hasOverride: !!override };
               });
-              const allGranted = categoryPermissionStates.every(p => p.granted);
-              const someGranted = categoryPermissionStates.some(p => p.granted);
+              const activeCount = categoryPermissionStates.filter(p => p.isActive).length;
 
               return <Card key={categoryKey}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{category.label}</CardTitle>
                     <div className="flex items-center gap-2">
-                      <Badge variant={allGranted ? 'default' : someGranted ? 'secondary' : 'outline'} className="text-xs">
-                        {categoryPermissionStates.filter(p => p.granted).length}/{categoryPermissionStates.length}
+                      <Badge variant={activeCount === categoryPermissionStates.length ? 'default' : activeCount > 0 ? 'secondary' : 'outline'} className="text-xs">
+                        {activeCount}/{categoryPermissionStates.length}
                       </Badge>
                       <Switch
-                        checked={allGranted}
+                        checked={activeCount === categoryPermissionStates.length}
                         onCheckedChange={async (checked) => {
                           if (!selectedUser) return;
                           for (const perm of category.permissions) {
@@ -981,23 +1029,45 @@ export default function UserManagement() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {category.permissions.map(permission => {
-                      const userPermission = userPermissions.find(p => p.permission === permission);
-                      const isGranted = userPermission?.granted ?? false;
-                      const hasOverride = !!userPermission;
-                      return <div key={permission} className="flex items-center justify-between space-x-2">
+                    {categoryPermissionStates.map(({ permission, isActive, hasRolePerm, isBlocked, hasCustomGrant, hasOverride }) => {
+                      return <div key={permission} className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/5 transition-colors">
                         <div className="flex-1">
-                          <Label htmlFor={permission} className="text-sm font-medium">
+                          <Label htmlFor={`perm-${permission}`} className="text-sm font-medium cursor-pointer">
                             {PERMISSION_LABELS[permission]}
                           </Label>
-                          {hasOverride && <p className={`text-xs ${isGranted ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                            {isGranted ? '✓ Permitido' : '✗ Negado'}
-                          </p>}
-                          {!hasOverride && <p className="text-xs text-muted-foreground italic">
-                            Não configurado
-                          </p>}
+                          {hasRolePerm && !isBlocked && (
+                            <p className="text-xs text-primary mt-1 font-medium">✓ Permissão do Cargo</p>
+                          )}
+                          {hasCustomGrant && (
+                            <p className="text-xs text-emerald-600 mt-1 font-medium">✓ Personalizado: Permitido</p>
+                          )}
+                          {isBlocked && (
+                            <p className="text-xs text-destructive mt-1 font-medium">✗ Bloqueado (override do cargo)</p>
+                          )}
+                          {!hasRolePerm && !hasOverride && (
+                            <p className="text-xs text-muted-foreground italic">Não configurado</p>
+                          )}
                         </div>
-                        <Switch id={permission} checked={isGranted} onCheckedChange={granted => updateUserPermission(selectedUser!.id, permission, granted)} />
+                        <Switch
+                          id={`perm-${permission}`}
+                          checked={isActive}
+                          onCheckedChange={(granted) => {
+                            if (!selectedUser) return;
+                            // Se desativando uma permissão que vem do cargo, criar override com granted=false
+                            // Se ativando e já vem do cargo, remover override
+                            if (granted && hasRolePerm) {
+                              // Remove override, volta ao padrão do cargo
+                              supabase.from('user_specific_permissions')
+                                .delete()
+                                .eq('user_id', selectedUser.id)
+                                .eq('permission', permission)
+                                .then(() => loadUserPermissions(selectedUser.id));
+                              toast({ title: 'Permissão do cargo restaurada' });
+                            } else {
+                              updateUserPermission(selectedUser.id, permission, granted);
+                            }
+                          }}
+                        />
                       </div>;
                     })}
                   </div>
