@@ -50,6 +50,11 @@ export type PermissionAction =
   | 'delete_medical_records'
   | 'delete_contracts'
   | 'delete_files'
+  // Permissões de documentos
+  | 'view_documents'
+  | 'create_documents'
+  | 'edit_documents'
+  | 'delete_documents'
   // Permissões administrativas
   | 'manage_users'
   | 'manage_roles'
@@ -59,6 +64,8 @@ export type PermissionAction =
   | 'export_data'
   | 'import_data'
   | 'view_sensitive_data'
+  | 'system_admin'
+  | 'manage_permissions'
   // Permissões especiais
   | 'confirm_appointments'
   | 'cancel_appointments'
@@ -191,7 +198,13 @@ export const PERMISSION_LABELS: Record<PermissionAction, string> = {
   edit_system_settings: 'Editar Configurações do Sistema',
   import_data: 'Importar Dados',
   view_sensitive_data: 'Visualizar Dados Sensíveis',
-  access_all_units: 'Acesso a Todas as Unidades'
+  access_all_units: 'Acesso a Todas as Unidades',
+  system_admin: 'Administrador do Sistema',
+  manage_permissions: 'Gerenciar Permissões',
+  view_documents: 'Visualizar Documentos',
+  create_documents: 'Criar Documentos',
+  edit_documents: 'Editar Documentos',
+  delete_documents: 'Excluir Documentos'
 };
 
 export const PERMISSION_CATEGORIES = {
