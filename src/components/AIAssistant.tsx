@@ -80,9 +80,9 @@ export const AIAssistant = ({ open, onOpenChange }: AIAssistantProps) => {
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2 text-base">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-primary" />
+                <Bot className="h-4 w-4 text-primary" />
               </div>
-              Assistente IA
+              Bosco IA
             </SheetTitle>
             {messages.length > 0 && (
               <Button variant="ghost" size="icon" onClick={clearMessages} className="h-8 w-8">
@@ -97,11 +97,11 @@ export const AIAssistant = ({ open, onOpenChange }: AIAssistantProps) => {
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-3 py-12">
               <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                <Sparkles className="h-8 w-8 text-primary/50" />
+                <Bot className="h-8 w-8 text-primary/50" />
               </div>
-              <p className="text-sm font-medium">Como posso ajudar?</p>
+              <p className="text-sm font-medium">Olá! Sou o Bosco IA 👋</p>
               <p className="text-xs max-w-[280px]">
-                Pergunte sobre agendamentos, pacientes, funcionalidades do sistema e muito mais.
+                Como posso ajudar? Pergunte sobre agendamentos, pacientes, funcionalidades do sistema e mais.
               </p>
             </div>
           ) : (
