@@ -309,8 +309,8 @@ export default function Schedule() {
       } else {
         const sessionCount = newAppointment.sessionCount || 1;
         const appointmentsToCreate = [];
-        let conflictFound = false;
         
+        // Construir todos os agendamentos primeiro
         for (let i = 0; i < sessionCount; i++) {
           const sessionDate = new Date(appointmentData.start_time);
           const sessionEndDate = new Date(appointmentData.end_time);
@@ -318,37 +318,34 @@ export default function Schedule() {
           sessionDate.setDate(sessionDate.getDate() + (i * 7));
           sessionEndDate.setDate(sessionEndDate.getDate() + (i * 7));
           
-          const sessionStartTime = sessionDate.toISOString();
-          const sessionEndTime = sessionEndDate.toISOString();
-          
-          const hasConflict = await checkScheduleConflict(
-            appointmentData.employee_id,
-            sessionStartTime,
-            sessionEndTime
-          );
-          
-          if (hasConflict) {
-            toast({
-              variant: "destructive",
-              title: "Conflito de Horário",
-              description: `Conflito encontrado na sessão ${i + 1} (${format(sessionDate, 'dd/MM/yyyy HH:mm', { locale: ptBR })}). O profissional já possui um agendamento neste horário.`,
-            });
-            conflictFound = true;
-            break;
-          }
-          
           appointmentsToCreate.push({
             ...appointmentData,
-            start_time: sessionStartTime,
-            end_time: sessionEndTime,
+            start_time: sessionDate.toISOString(),
+            end_time: sessionEndDate.toISOString(),
             status: 'scheduled',
             notes: sessionCount > 1 
               ? `${appointmentData.notes} (Sessão ${i + 1} de ${sessionCount})` 
               : appointmentData.notes
           });
         }
-        
-        if (conflictFound) return;
+
+        // Verificar conflitos em paralelo
+        const conflictChecks = await Promise.all(
+          appointmentsToCreate.map((apt, idx) =>
+            checkScheduleConflict(apt.employee_id, apt.start_time, apt.end_time)
+              .then(hasConflict => ({ hasConflict, index: idx, startTime: apt.start_time }))
+          )
+        );
+
+        const conflict = conflictChecks.find(c => c.hasConflict);
+        if (conflict) {
+          toast({
+            variant: "destructive",
+            title: "Conflito de Horário",
+            description: `Conflito encontrado na sessão ${conflict.index + 1} (${format(new Date(conflict.startTime), 'dd/MM/yyyy HH:mm', { locale: ptBR })}). O profissional já possui um agendamento neste horário.`,
+          });
+          return;
+        }
 
         const { data: insertedSchedules, error } = await supabase
           .from('schedules')
@@ -357,73 +354,57 @@ export default function Schedule() {
 
         if (error) throw error;
 
-        // Enviar e-mail de confirmação se habilitado
+        // Fechar diálogo imediatamente e enviar e-mail em background
+        toast({
+          title: "Sucesso",
+          description: sessionCount > 1 
+            ? `${sessionCount} sessões criadas com sucesso!`
+            : "Agendamento criado com sucesso!",
+        });
+
+        // Enviar e-mail de confirmação em background (não bloqueia UI)
         if (newAppointment.sendConfirmationEmail && selectedClientEmail && insertedSchedules) {
-          try {
-            let client = clients.find(c => c.id === newAppointment.client_id);
-            // Fallback: buscar nome do cliente direto do banco se não encontrou na lista
-            if (!client?.name && newAppointment.client_id) {
-              const { data: clientData } = await supabase
-                .from('clients')
-                .select('name, email')
-                .eq('id', newAppointment.client_id)
-                .maybeSingle();
-              if (clientData) client = { ...client, ...clientData } as any;
-            }
-            const professional = employees.find(e => e.user_id === newAppointment.employee_id);
-            
-            const sessions = insertedSchedules.map((s, idx) => ({
-              date: format(new Date(s.start_time), "dd/MM/yyyy", { locale: ptBR }),
-              time: format(new Date(s.start_time), "HH:mm", { locale: ptBR }),
-              sessionNumber: idx + 1
-            }));
-
-            const response = await supabase.functions.invoke('send-appointment-email', {
-              body: {
-                clientEmail: selectedClientEmail,
-                clientName: client?.name || 'Paciente',
-                appointmentDate: sessions[0].date,
-                appointmentTime: sessions[0].time,
-                professionalName: professional?.name || 'Profissional',
-                appointmentType: newAppointment.title,
-                notes: newAppointment.notes,
-                unit: newAppointment.unit,
-                scheduleIds: insertedSchedules.map(s => s.id),
-                sessions: sessions
+          (async () => {
+            try {
+              let client = clients.find(c => c.id === newAppointment.client_id);
+              if (!client?.name && newAppointment.client_id) {
+                const { data: clientData } = await supabase
+                  .from('clients')
+                  .select('name, email')
+                  .eq('id', newAppointment.client_id)
+                  .maybeSingle();
+                if (clientData) client = { ...client, ...clientData } as any;
               }
-            });
+              const professional = employees.find(e => e.user_id === newAppointment.employee_id);
+              
+              const sessions = insertedSchedules.map((s, idx) => ({
+                date: format(new Date(s.start_time), "dd/MM/yyyy", { locale: ptBR }),
+                time: format(new Date(s.start_time), "HH:mm", { locale: ptBR }),
+                sessionNumber: idx + 1
+              }));
 
-            if (response.error) {
-              console.error('Erro ao enviar e-mail:', response.error);
-              toast({
-                variant: "destructive",
-                title: "Aviso",
-                description: "Agendamento criado, mas houve erro ao enviar e-mail de confirmação.",
+              const response = await supabase.functions.invoke('send-appointment-email', {
+                body: {
+                  clientEmail: selectedClientEmail,
+                  clientName: client?.name || 'Paciente',
+                  appointmentDate: sessions[0].date,
+                  appointmentTime: sessions[0].time,
+                  professionalName: professional?.name || 'Profissional',
+                  appointmentType: newAppointment.title,
+                  notes: newAppointment.notes,
+                  unit: newAppointment.unit,
+                  scheduleIds: insertedSchedules.map(s => s.id),
+                  sessions: sessions
+                }
               });
-            } else {
-              toast({
-                title: "Sucesso",
-                description: sessionCount > 1 
-                  ? `${sessionCount} sessões criadas e e-mail de confirmação enviado!`
-                  : "Agendamento criado e e-mail de confirmação enviado!",
-              });
+
+              if (response.error) {
+                console.error('Erro ao enviar e-mail:', response.error);
+              }
+            } catch (emailError) {
+              console.error('Erro ao enviar e-mail em background:', emailError);
             }
-          } catch (emailError) {
-            console.error('Erro ao enviar e-mail:', emailError);
-            toast({
-              title: "Sucesso",
-              description: sessionCount > 1 
-                ? `${sessionCount} sessões criadas! (E-mail não enviado)`
-                : "Agendamento criado! (E-mail não enviado)",
-            });
-          }
-        } else {
-          toast({
-            title: "Sucesso",
-            description: sessionCount > 1 
-              ? `${sessionCount} sessões criadas com sucesso!`
-              : "Agendamento criado com sucesso!",
-          });
+          })();
         }
       }
       
