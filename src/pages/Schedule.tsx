@@ -123,10 +123,25 @@ export default function Schedule() {
   // Buscar e-mail do cliente quando mudar
   useEffect(() => {
     const fetchClientEmail = async () => {
-      if (newAppointment.client_id) {
-        const client = clients.find(c => c.id === newAppointment.client_id);
-        setSelectedClientEmail(client?.email || null);
-      } else {
+      if (!newAppointment.client_id) {
+        setSelectedClientEmail(null);
+        return;
+      }
+      // Primeiro tenta da lista local
+      const client = clients.find(c => c.id === newAppointment.client_id);
+      if (client?.email) {
+        setSelectedClientEmail(client.email);
+        return;
+      }
+      // Fallback: busca direto do banco
+      try {
+        const { data } = await supabase
+          .from('clients')
+          .select('email')
+          .eq('id', newAppointment.client_id)
+          .single();
+        setSelectedClientEmail(data?.email || null);
+      } catch {
         setSelectedClientEmail(null);
       }
     };
