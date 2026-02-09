@@ -38,25 +38,25 @@ const getUnitInfo = (unit: string) => {
       return { 
         name: 'Clínica Social Madre Clélia', 
         color: '#3b82f6',
-        address: 'Rua Jaime Salse, 280 - Madre Gertrudes'
+        address: 'Rua Jaime Salse, 280 - Madre Gertrudes, Belo Horizonte - MG'
       };
     case 'floresta':
       return { 
         name: 'Neuroavaliação Floresta', 
         color: '#10b981',
-        address: 'Rua Urucuia, 18 - Floresta'
+        address: 'R. Urucuia, 18 - Floresta, Belo Horizonte - MG, 30150-060'
       };
     case 'atendimento_floresta':
       return { 
         name: 'Atendimento Floresta', 
         color: '#8b5cf6',
-        address: 'Rua Urucuia, 18 - Floresta'
+        address: 'R. Urucuia, 18 - Floresta, Belo Horizonte - MG, 30150-060'
       };
     default:
       return { 
         name: 'Fundação Dom Bosco', 
         color: '#3b82f6',
-        address: 'Rua Jaime Salse, 280 - Madre Gertrudes'
+        address: 'Rua Jaime Salse, 280 - Madre Gertrudes, Belo Horizonte - MG'
       };
   }
 };
