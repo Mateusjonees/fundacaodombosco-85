@@ -122,86 +122,74 @@ const handler = async (req: Request): Promise<Response> => {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; margin: 0; padding: 32px 16px;">
+          <div style="max-width: 560px; margin: 0 auto;">
             
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, ${unitInfo.color}, ${unitInfo.color}dd); padding: 32px; text-align: center;">
-              <img src="https://fundacaodombosco.org/wp-content/uploads/elementor/thumbs/logo-saude-cor_fundacao_dom_bosco_acolher_capacitar_assistencia_social_educacao_saude_criancas_adolescentes_inclusao_reabilitacao_belo_horizonte-qu213x2bru42zepyl57mrub7z9j2wqtwrnty2vwul8.png" alt="Fundação Dom Bosco" style="max-width: 180px; height: auto; margin-bottom: 16px;" />
-              <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">
-                📅 Lembrete de Agendamento
-              </h1>
-              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">
-                ${unitInfo.name}
-              </p>
+            <!-- Logo Card -->
+            <div style="background: white; border-radius: 16px 16px 0 0; padding: 28px; text-align: center; border-bottom: 3px solid ${unitInfo.color};">
+              <img src="https://fundacaodombosco.org/wp-content/uploads/elementor/thumbs/logo-saude-cor_fundacao_dom_bosco_acolher_capacitar_assistencia_social_educacao_saude_criancas_adolescentes_inclusao_reabilitacao_belo_horizonte-qu213x2bru42zepyl57mrub7z9j2wqtwrnty2vwul8.png" alt="Fundação Dom Bosco" style="max-width: 160px; height: auto;" />
             </div>
-            
-            <!-- Content -->
-            <div style="padding: 32px;">
-              <p style="color: #374151; font-size: 16px; margin: 0 0 24px 0;">
-                Olá, <strong>${clientName}</strong>!
+
+            <!-- Main Content -->
+            <div style="background: white; padding: 32px 28px;">
+              <p style="color: #1a202c; font-size: 18px; font-weight: 600; margin: 0 0 4px 0;">
+                Olá, ${clientName}! 👋
               </p>
-              
-              <p style="color: #6b7280; font-size: 14px; margin: 0 0 24px 0;">
+              <p style="color: #718096; font-size: 14px; margin: 0 0 24px 0;">
                 ${sessions.length > 1 
-                  ? `Você tem ${sessions.length} sessões agendadas. Confira os detalhes abaixo:`
-                  : 'Seu atendimento foi agendado. Confira os detalhes abaixo:'}
+                  ? `Você tem ${sessions.length} sessões agendadas na <strong style="color: ${unitInfo.color};">${unitInfo.name}</strong>.`
+                  : `Seu atendimento está confirmado na <strong style="color: ${unitInfo.color};">${unitInfo.name}</strong>.`}
               </p>
-              
-              <!-- Appointment Details Card -->
-              <div style="background-color: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                <table style="width: 100%; border-collapse: collapse;">
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📅 ${sessions.length > 1 ? 'Primeira sessão:' : 'Data:'}</td>
-                    <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${appointmentDate}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">🕐 Horário:</td>
-                    <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${appointmentTime}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">👨‍⚕️ Profissional:</td>
-                    <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${professionalName}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📋 Tipo:</td>
-                    <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${appointmentType}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">📍 Local:</td>
-                    <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${unitInfo.address}</td>
-                  </tr>
-                </table>
+
+              <!-- Appointment Card -->
+              <div style="background: linear-gradient(135deg, ${unitInfo.color}0A, ${unitInfo.color}15); border: 1px solid ${unitInfo.color}30; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; margin-bottom: 16px;">
+                  <div style="background: ${unitInfo.color}; color: white; border-radius: 10px; padding: 12px 16px; text-align: center; min-width: 64px;">
+                    <div style="font-size: 22px; font-weight: 700; line-height: 1;">${appointmentDate.split('/')[0]}</div>
+                    <div style="font-size: 11px; text-transform: uppercase; opacity: 0.9; margin-top: 2px;">${['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][parseInt(appointmentDate.split('/')[1])] || ''}</div>
+                  </div>
+                  <div style="margin-left: 16px; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="color: #1a202c; font-size: 16px; font-weight: 600;">🕐 ${appointmentTime}h</div>
+                    <div style="color: #718096; font-size: 13px; margin-top: 2px;">${appointmentType}</div>
+                  </div>
+                </div>
+
+                <div style="border-top: 1px solid ${unitInfo.color}25; padding-top: 14px;">
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top; width: 32px;">👨‍⚕️</td>
+                      <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">${professionalName}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top;">📍</td>
+                      <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">${unitInfo.address}</td>
+                    </tr>
+                  </table>
+                </div>
               </div>
-              
+
               ${sessionsHtml}
-              
+
               ${notes ? `
-              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+              <div style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
                 <p style="color: #92400e; font-size: 13px; margin: 0;">
-                  <strong>📝 Observações:</strong><br>
-                  ${notes}
+                  <strong>Observações:</strong> ${notes}
                 </p>
               </div>
               ` : ''}
-              
-              
-              
+
               <!-- Reminder -->
-              <div style="background-color: #eff6ff; border-radius: 8px; padding: 16px; text-align: center;">
-                <p style="color: #1e40af; font-size: 13px; margin: 0;">
-                  💡 <strong>Lembrete:</strong> Por favor, chegue com 10 minutos de antecedência.
+              <div style="background: #f0f4f8; border-radius: 10px; padding: 14px 16px; text-align: center;">
+                <p style="color: #4a5568; font-size: 13px; margin: 0;">
+                  ⏰ Chegue com <strong>10 minutos de antecedência</strong>
                 </p>
               </div>
             </div>
-            
+
             <!-- Footer -->
-            <div style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="color: #6b7280; font-size: 12px; margin: 0 0 8px 0;">
-                Fundação Dom Bosco
-              </p>
-              <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-                Este é um email automático. Por favor, não responda.
+            <div style="background: #f7fafc; border-radius: 0 0 16px 16px; padding: 20px 28px; text-align: center; border-top: 1px solid #e2e8f0;">
+              <p style="color: #a0aec0; font-size: 11px; margin: 0;">
+                Fundação Dom Bosco · Este é um e-mail automático
               </p>
             </div>
           </div>
