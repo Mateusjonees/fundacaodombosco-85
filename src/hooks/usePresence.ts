@@ -65,7 +65,7 @@ export const usePresence = () => {
           // Get profile info for online users
           const userIds = presenceData.map(p => p.user_id);
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('user_id, name, employee_role')
             .in('user_id', userIds);
 

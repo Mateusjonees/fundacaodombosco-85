@@ -49,7 +49,7 @@ export const useMedicalRecords = (clientId: string | null) => {
 
           const employeeIds = [...new Set(records.map(r => r.employee_id))];
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('user_id, name, employee_role')
             .in('user_id', employeeIds);
 
