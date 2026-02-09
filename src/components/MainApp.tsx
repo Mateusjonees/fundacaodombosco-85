@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, memo, useMemo, useCallback } from 'react';
+import { AIAssistant } from '@/components/AIAssistant';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -8,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { LogOut, Camera, MessageSquare } from 'lucide-react';
+import { LogOut, Camera, MessageSquare, Sparkles } from 'lucide-react';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import {
@@ -96,6 +97,7 @@ export const MainApp = () => {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   
   const { profile, userName, userRole, avatarUrl } = useCurrentUser();
 
@@ -164,7 +166,16 @@ export const MainApp = () => {
                   <Suspense fallback={<div className="h-9 w-9 bg-muted rounded-lg animate-pulse" />}>
                     <NotificationBell />
                   </Suspense>
-                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setAiOpen(true)}
+                    className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 hover:from-primary/25 hover:to-primary/10"
+                    title="Assistente IA"
+                  >
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </Button>
+                  <AIAssistant open={aiOpen} onOpenChange={setAiOpen} />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 sm:h-10 sm:w-10 p-0 overflow-hidden">

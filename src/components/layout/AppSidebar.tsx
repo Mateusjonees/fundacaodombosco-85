@@ -1,5 +1,4 @@
 import { useState, useEffect, memo, useCallback, useMemo, lazy, Suspense } from 'react';
-import { AIAssistant } from '@/components/AIAssistant';
 import { NavLink, useLocation } from 'react-router-dom';
 import logo from '@/assets/fundacao-dom-bosco-logo-optimized.png';
 import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronDown, ChevronRight, Stethoscope, CalendarDays, Wallet, UsersRound, TrendingUp, MessageCircle, User, Tag, Sparkles } from 'lucide-react';
@@ -389,7 +388,6 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
-  const [aiOpen, setAiOpen] = useState(false);
 
   // Load navigation items based on permissions
   useEffect(() => {
@@ -478,42 +476,18 @@ export function AppSidebar() {
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-xl blur-sm" />
                 <img alt="Fundação Dom Bosco" src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png" className="relative h-11 w-auto object-contain rounded-lg" loading="lazy" decoding="async" fetchPriority="low" />
               </div>
-              <div className="flex-1 flex flex-col">
+              <div className="flex flex-col">
                 <span className="text-xs font-semibold text-foreground/80 tracking-wide">Clínica</span>
                 <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                   <Sparkles className="h-3 w-3 text-primary" />
                   Fundação Dom Bosco
                 </span>
               </div>
-              <button
-                onClick={() => setAiOpen(true)}
-                className="relative h-9 w-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 hover:from-primary/25 hover:to-primary/10 flex items-center justify-center transition-all duration-200 group"
-                title="Assistente IA"
-              >
-                <Sparkles className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
-              </button>
-            </div> : <div className="relative flex flex-col items-center gap-2">
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-xl blur-sm" />
-                <img alt="FDB" className="relative h-9 w-9 object-contain rounded-lg" loading="lazy" src="/lovable-uploads/12d10c14-c39b-4936-8278-6b4465ada7b2.jpg" />
-              </div>
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setAiOpen(true)}
-                      className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 hover:from-primary/25 hover:to-primary/10 flex items-center justify-center transition-all"
-                    >
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">Assistente IA</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            </div> : <div className="relative flex justify-center">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-xl blur-sm" />
+              <img alt="FDB" className="relative h-9 w-9 object-contain rounded-lg" loading="lazy" src="/lovable-uploads/12d10c14-c39b-4936-8278-6b4465ada7b2.jpg" />
             </div>}
         </div>
-
-        <AIAssistant open={aiOpen} onOpenChange={setAiOpen} />
 
         <ScrollArea className="flex-1 px-2 py-3">
           {/* Dashboard - Main item with special styling */}
