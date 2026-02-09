@@ -5,7 +5,7 @@ import { Send, Square, Trash2, User } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
-import boscoIcon from '@/assets/bosco-ia-icon.png';
+import biaIcon from '@/assets/bosco-ia-icon.png';
 
 interface AIAssistantProps {
   open: boolean;
@@ -16,7 +16,7 @@ const MessageBubble = memo(({ role, content }: { role: 'user' | 'assistant'; con
   <div className={cn('flex gap-2.5 mb-4', role === 'user' ? 'justify-end' : 'justify-start')}>
     {role === 'assistant' && (
       <div className="flex-shrink-0 h-7 w-7 rounded-lg overflow-hidden mt-0.5">
-        <img src={boscoIcon} alt="Bosco IA" className="h-7 w-7 object-cover" />
+        <img src={biaIcon} alt="Bia IA" className="h-7 w-7 object-cover" />
       </div>
     )}
     <div className={cn(
@@ -81,9 +81,9 @@ export const AIAssistant = ({ open, onOpenChange }: AIAssistantProps) => {
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2 text-base">
               <div className="h-8 w-8 rounded-lg overflow-hidden">
-                <img src={boscoIcon} alt="Bosco IA" className="h-8 w-8 object-cover" />
+                <img src={biaIcon} alt="Bia IA" className="h-8 w-8 object-cover" />
               </div>
-              Bosco IA
+              Bia IA
             </SheetTitle>
             {messages.length > 0 && (
               <Button variant="ghost" size="icon" onClick={clearMessages} className="h-8 w-8">
@@ -98,9 +98,9 @@ export const AIAssistant = ({ open, onOpenChange }: AIAssistantProps) => {
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-3 py-12">
               <div className="h-16 w-16 rounded-2xl overflow-hidden">
-                <img src={boscoIcon} alt="Bosco IA" className="h-16 w-16 object-cover" />
+                <img src={biaIcon} alt="Bia IA" className="h-16 w-16 object-cover" />
               </div>
-              <p className="text-sm font-medium">Olá! Sou o Bosco IA 👋</p>
+              <p className="text-sm font-medium">Olá! Sou a Bia IA 👋</p>
               <p className="text-xs max-w-[280px]">
                 Como posso ajudar? Pergunte sobre agendamentos, pacientes, funcionalidades do sistema e mais.
               </p>
@@ -111,7 +111,7 @@ export const AIAssistant = ({ open, onOpenChange }: AIAssistantProps) => {
           {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
             <div className="flex gap-2.5 mb-4">
               <div className="flex-shrink-0 h-7 w-7 rounded-lg overflow-hidden">
-                <img src={boscoIcon} alt="Bosco IA" className="h-7 w-7 object-cover animate-pulse" />
+                <img src={biaIcon} alt="Bia IA" className="h-7 w-7 object-cover animate-pulse" />
               </div>
               <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex gap-1">

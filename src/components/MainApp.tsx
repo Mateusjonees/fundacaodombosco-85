@@ -172,9 +172,9 @@ export const MainApp = () => {
                     size="icon"
                     onClick={() => setAiOpen(true)}
                     className="h-9 w-9 rounded-xl hover:bg-primary/10 p-0 overflow-hidden"
-                    title="Bosco IA"
+                    title="Bia IA"
                   >
-                    <img src={boscoIcon} alt="Bosco IA" className="h-7 w-7 object-cover rounded-lg" />
+                    <img src={boscoIcon} alt="Bia IA" className="h-7 w-7 object-cover rounded-lg" />
                   </Button>
                   <AIAssistant open={aiOpen} onOpenChange={setAiOpen} />
                   <DropdownMenu>
