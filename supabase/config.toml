@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.send-birthday-email]
 verify_jwt = false
+
+[functions.send-birthday-emails-cron]
+verify_jwt = false
