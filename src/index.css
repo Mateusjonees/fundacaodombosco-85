@@ -356,6 +356,57 @@
   }
 }
 
+/* ======= Landscape Mobile Optimizations ======= */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Compact header in landscape */
+  header.sticky {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+
+  /* Compact main content padding */
+  main {
+    padding: 0.5rem !important;
+    padding-bottom: 3.5rem !important;
+  }
+
+  /* Show bottom nav in landscape mobile too */
+  .landscape-show {
+    display: flex !important;
+  }
+
+  /* Compact bottom nav */
+  .landscape-nav-height {
+    height: 2.75rem;
+  }
+
+  .landscape-nav-icon {
+    height: 1rem;
+    width: 1rem;
+  }
+
+  .landscape-nav-label {
+    font-size: 8px;
+    line-height: 1;
+  }
+
+  .landscape-nav-item {
+    gap: 1px;
+  }
+
+  /* Reduce card padding */
+  .landscape-compact {
+    padding: 0.5rem;
+  }
+}
+
+/* Default nav height for portrait */
+@media (orientation: portrait), (min-height: 501px) {
+  .landscape-nav-height {
+    height: 4rem;
+  }
+}
+
 /* Hide browser credential/autofill icons inside inputs */
 input::-webkit-credentials-auto-fill-button,
 input::-webkit-textfield-decoration-container {
