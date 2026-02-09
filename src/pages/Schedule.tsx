@@ -360,7 +360,16 @@ export default function Schedule() {
         // Enviar e-mail de confirmação se habilitado
         if (newAppointment.sendConfirmationEmail && selectedClientEmail && insertedSchedules) {
           try {
-            const client = clients.find(c => c.id === newAppointment.client_id);
+            let client = clients.find(c => c.id === newAppointment.client_id);
+            // Fallback: buscar nome do cliente direto do banco se não encontrou na lista
+            if (!client?.name && newAppointment.client_id) {
+              const { data: clientData } = await supabase
+                .from('clients')
+                .select('name, email')
+                .eq('id', newAppointment.client_id)
+                .maybeSingle();
+              if (clientData) client = { ...client, ...clientData } as any;
+            }
             const professional = employees.find(e => e.user_id === newAppointment.employee_id);
             
             const sessions = insertedSchedules.map((s, idx) => ({
