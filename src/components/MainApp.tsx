@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { LogOut, Camera, MessageSquare, Sparkles } from 'lucide-react';
+import { LogOut, Camera, MessageSquare } from 'lucide-react';
+import boscoIcon from '@/assets/bosco-ia-icon.png';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import {
@@ -170,10 +171,10 @@ export const MainApp = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setAiOpen(true)}
-                    className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 hover:from-primary/25 hover:to-primary/10"
-                    title="Assistente IA"
+                    className="h-9 w-9 rounded-xl hover:bg-primary/10 p-0 overflow-hidden"
+                    title="Bosco IA"
                   >
-                    <Sparkles className="h-4 w-4 text-primary" />
+                    <img src={boscoIcon} alt="Bosco IA" className="h-7 w-7 object-cover rounded-lg" />
                   </Button>
                   <AIAssistant open={aiOpen} onOpenChange={setAiOpen} />
                   <DropdownMenu>
