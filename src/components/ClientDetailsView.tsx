@@ -506,6 +506,78 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
+  const generateAnamnesisPdf = async () => {
+    if (notes.length === 0) {
+      toast({ variant: "destructive", title: "Sem registros", description: "Nenhuma anamnese para exportar." });
+      return;
+    }
+    const { default: jsPDF } = await import('jspdf');
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageW = doc.internal.pageSize.getWidth();
+    const marginL = 20;
+    const marginR = 20;
+    const maxW = pageW - marginL - marginR;
+    let y = 20;
+
+    const checkPage = (needed: number) => {
+      if (y + needed > 275) { doc.addPage(); y = 20; }
+    };
+
+    // Header
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RELATÓRIO DE ANAMNESE', pageW / 2, y, { align: 'center' });
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Paciente: ${client.name}`, marginL, y);
+    y += 5;
+    if (client.cpf) { doc.text(`CPF: ${client.cpf}`, marginL, y); y += 5; }
+    if (client.unit) { doc.text(`Unidade: ${client.unit}`, marginL, y); y += 5; }
+    doc.text(`Data de emissão: ${new Date().toLocaleString('pt-BR')}`, marginL, y);
+    y += 3;
+    doc.setDrawColor(100);
+    doc.line(marginL, y, pageW - marginR, y);
+    y += 8;
+
+    notes.forEach((noteItem, idx) => {
+      checkPage(30);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Registro ${idx + 1}`, marginL, y);
+      y += 5;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Profissional: ${noteItem.profiles?.name || 'N/A'}  |  Tipo: ${noteItem.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}  |  Data: ${formatDateTime(noteItem.created_at)}`, marginL, y);
+      y += 6;
+
+      // Parse note_text sections
+      const text = noteItem.note_text || '';
+      const lines = doc.splitTextToSize(text.replace(/\*\*/g, ''), maxW);
+      lines.forEach((line: string) => {
+        checkPage(5);
+        doc.text(line, marginL, y);
+        y += 4.5;
+      });
+      y += 4;
+      doc.setDrawColor(200);
+      doc.line(marginL, y, pageW - marginR, y);
+      y += 6;
+    });
+
+    // Footer
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Fundação Dom Bosco - Página ${i}/${totalPages}`, pageW / 2, 290, { align: 'center' });
+    }
+
+    doc.save(`anamnese_${client.name.replace(/\s+/g, '_')}.pdf`);
+    toast({ title: "PDF gerado", description: "O relatório de anamnese foi baixado com sucesso." });
+  };
+
   const handleScheduleAppointment = () => {
     const searchParams = new URLSearchParams();
     searchParams.set('client_id', client.id);
@@ -1406,10 +1478,18 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                           <FileText className="h-4 w-4" />
                           Evolução do Atendimento
                         </h4>
-                        <Button size="sm" onClick={() => setAddAnamnesisDialogOpen(true)}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Anamnese
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {notes.length > 0 && (
+                            <Button size="sm" variant="outline" onClick={generateAnamnesisPdf}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Gerar PDF
+                            </Button>
+                          )}
+                          <Button size="sm" onClick={() => setAddAnamnesisDialogOpen(true)}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Anamnese
+                          </Button>
+                        </div>
                       </div>
 
                       <AddAnamnesisDialog
