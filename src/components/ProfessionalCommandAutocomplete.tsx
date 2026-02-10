@@ -61,7 +61,7 @@ export function ProfessionalCommandAutocomplete({
       if (value && !displayValue) {
         try {
           const { data } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('id, user_id, name, email, phone, employee_role, unit, department')
             .eq('user_id', value)
             .single();
@@ -96,7 +96,7 @@ export function ProfessionalCommandAutocomplete({
     setLoading(true);
     try {
       let query = supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('id, user_id, name, email, phone, employee_role, unit, department')
         .eq('is_active', true)
         .not('employee_role', 'is', null)
