@@ -1,5 +1,4 @@
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateBR } from '@/lib/utils';
 import { Clock, User, FileText, Calendar, Activity, Pill, HeartPulse, ClipboardList, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -109,7 +108,7 @@ export const MedicalRecordTimeline = ({ records }: MedicalRecordTimelineProps) =
                         {record.session_type}
                       </Badge>
                       <span className="text-sm font-medium text-muted-foreground">
-                        {format(new Date(record.session_date), "dd/MM/yyyy", { locale: ptBR })}
+                        {formatDateBR(record.session_date)}
                       </span>
                       {record.session_duration && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">

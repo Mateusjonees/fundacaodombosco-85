@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getTodayLocalISODate } from '@/lib/utils';
 import { Plus, Stethoscope, HeartPulse, Thermometer, Droplets, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,7 +32,7 @@ export const AddMedicalRecordDialog = ({ clientId, employeeId }: AddMedicalRecor
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     session_type: 'Consulta',
-    session_date: new Date().toISOString().split('T')[0],
+    session_date: getTodayLocalISODate(),
     session_duration: '',
     symptoms: '',
     progress_notes: '',
@@ -85,7 +86,7 @@ export const AddMedicalRecordDialog = ({ clientId, employeeId }: AddMedicalRecor
     setOpen(false);
     setFormData({
       session_type: 'Consulta',
-      session_date: new Date().toISOString().split('T')[0],
+      session_date: getTodayLocalISODate(),
       session_duration: '',
       symptoms: '',
       progress_notes: '',
