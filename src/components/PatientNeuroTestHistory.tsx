@@ -82,6 +82,152 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'inibicao'
       };
+    case 'TIN':
+      return {
+        subtests: ['nomeacao', 'conscienciaFonologica', 'velocidadeLeitura', 'escrita'],
+        names: {
+          nomeacao: 'Nomeação',
+          conscienciaFonologica: 'Consciência Fonológica',
+          velocidadeLeitura: 'Velocidade de Leitura',
+          escrita: 'Escrita'
+        },
+        mainSubtest: 'nomeacao'
+      };
+    case 'PCFO':
+      return {
+        subtests: ['sintese', 'segmentacao', 'manipulacao', 'transposicao', 'rima', 'aliteracao', 'total'],
+        names: {
+          sintese: 'Síntese Silábica',
+          segmentacao: 'Segmentação Silábica',
+          manipulacao: 'Manipulação Silábica',
+          transposicao: 'Transposição Silábica',
+          rima: 'Rima',
+          aliteracao: 'Aliteração',
+          total: 'Total'
+        },
+        mainSubtest: 'total'
+      };
+    case 'TSBC':
+      return {
+        subtests: ['sequencias', 'analogias', 'total'],
+        names: {
+          sequencias: 'Sequências',
+          analogias: 'Analogias',
+          total: 'Total'
+        },
+        mainSubtest: 'total'
+      };
+    case 'FVA':
+      return {
+        subtests: ['total'],
+        names: { total: 'Total de Animais' },
+        mainSubtest: 'total'
+      };
+    case 'BNTBR':
+      return {
+        subtests: ['total'],
+        names: { total: 'Nomeação Total' },
+        mainSubtest: 'total'
+      };
+    case 'TRILHAS':
+      return {
+        subtests: ['trilhaA', 'trilhaB'],
+        names: {
+          trilhaA: 'Trilha A (Tempo)',
+          trilhaB: 'Trilha B (Tempo)'
+        },
+        mainSubtest: 'trilhaA'
+      };
+    case 'TRILHAS_PRE':
+      return {
+        subtests: ['trilhaA', 'trilhaB'],
+        names: {
+          trilhaA: 'Trilha A',
+          trilhaB: 'Trilha B'
+        },
+        mainSubtest: 'trilhaA'
+      };
+    case 'TMT_ADULTO':
+      return {
+        subtests: ['tempoA', 'tempoB', 'tempoBA'],
+        names: {
+          tempoA: 'TMT-A (Tempo)',
+          tempoB: 'TMT-B (Tempo)',
+          tempoBA: 'TMT B-A (Diferença)'
+        },
+        mainSubtest: 'tempoA'
+      };
+    case 'FAS':
+      return {
+        subtests: ['total'],
+        names: { total: 'Total (F+A+S)' },
+        mainSubtest: 'total'
+      };
+    case 'HAYLING_ADULTO':
+      return {
+        subtests: ['parteA', 'parteB', 'total'],
+        names: {
+          parteA: 'Parte A (Iniciação)',
+          parteB: 'Parte B (Inibição)',
+          total: 'Total'
+        },
+        mainSubtest: 'total'
+      };
+    case 'HAYLING_INFANTIL':
+      return {
+        subtests: ['parteA', 'parteB', 'total'],
+        names: {
+          parteA: 'Parte A',
+          parteB: 'Parte B',
+          total: 'Total'
+        },
+        mainSubtest: 'total'
+      };
+    case 'TFV':
+      return {
+        subtests: ['total'],
+        names: { total: 'Total' },
+        mainSubtest: 'total'
+      };
+    case 'TOM':
+      return {
+        subtests: ['total'],
+        names: { total: 'Total' },
+        mainSubtest: 'total'
+      };
+    case 'TAYLOR':
+      return {
+        subtests: ['copia', 'memoria'],
+        names: {
+          copia: 'Cópia',
+          memoria: 'Memória'
+        },
+        mainSubtest: 'copia'
+      };
+    case 'TRPP':
+      return {
+        subtests: ['total'],
+        names: { total: 'Total' },
+        mainSubtest: 'total'
+      };
+    case 'FPT_INFANTIL':
+      return {
+        subtests: ['desenhosUnicos', 'percentil'],
+        names: {
+          desenhosUnicos: 'Desenhos Únicos',
+          percentil: 'Percentil'
+        },
+        mainSubtest: 'desenhosUnicos'
+      };
+    case 'FPT_ADULTO':
+      return {
+        subtests: ['desenhosUnicos', 'percentil'],
+        names: {
+          desenhosUnicos: 'Desenhos Únicos',
+          percentil: 'Percentil'
+        },
+        mainSubtest: 'desenhosUnicos'
+      };
     default:
       return null;
   }
@@ -323,19 +469,15 @@ export default function PatientNeuroTestHistory({
 
   const copyToClipboard = (test: NeuroTestResult) => {
     const config = getTestConfig(test.test_code);
-    if (!config) {
-      toast({
-        title: "Erro",
-        description: "Tipo de teste não reconhecido.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const rawScores = test.raw_scores as Record<string, number>;
-    const calculatedScores = test.calculated_scores as Record<string, number>;
-    const percentiles = test.percentiles as Record<string, number>;
+    const percentiles = test.percentiles as Record<string, number | string>;
     const classifications = test.classifications as Record<string, string>;
+    const calculatedScores = test.calculated_scores as Record<string, number>;
+    const rawScores = test.raw_scores as Record<string, number>;
+
+    // Gera subtests dinamicamente se não tem config
+    const subtestKeys = config ? config.subtests : Object.keys(percentiles);
+    const subtestNames = config ? config.names : Object.fromEntries(Object.keys(percentiles).map(k => [k, k]));
+
 
     const lines = [
       '================================================================================',
@@ -379,6 +521,13 @@ export default function PatientNeuroTestHistory({
       lines.push('CÁLCULOS:');
       lines.push('- Fórmula: Score = Acertos - Erros - Omissões');
       lines.push(`- AG = ${calculatedScores.AC} + ${calculatedScores.AD} + ${calculatedScores.AA} = ${calculatedScores.AG}`);
+    } else {
+      // Genérico: lista todos os raw_scores
+      Object.entries(rawScores).forEach(([key, val]) => {
+        if (val !== null && val !== undefined) {
+          lines.push(`- ${key}: ${val}`);
+        }
+      });
     }
 
     lines.push('');
@@ -387,9 +536,11 @@ export default function PatientNeuroTestHistory({
     lines.push('Variável                | Bruto | Percentil | Classificação');
     lines.push('-------------------------------------------');
 
-    config.subtests.forEach(code => {
-      const name = config.names[code] || code;
-      const score = getScoreValue(test, code, config);
+    subtestKeys.forEach(code => {
+      const name = subtestNames[code] || code;
+      const score = config 
+        ? getScoreValue(test, code, config)
+        : (calculatedScores[code] ?? rawScores[code] ?? '-');
       const percentile = percentiles[code] ?? '-';
       const classification = classifications[code] ?? '-';
       
@@ -418,21 +569,33 @@ export default function PatientNeuroTestHistory({
 
   const getMainSubtestBadge = (test: NeuroTestResult) => {
     const config = getTestConfig(test.test_code);
-    if (!config) return null;
-
-    const calculatedScores = test.calculated_scores as Record<string, number>;
+    const percentiles = test.percentiles as Record<string, number | string>;
     const classifications = test.classifications as Record<string, string>;
-    const mainCode = config.mainSubtest;
-    const mainScore = calculatedScores[mainCode] ?? '-';
-    const mainClassification = classifications[mainCode] || 'Médio';
+    const calculatedScores = test.calculated_scores as Record<string, number>;
 
-    const shortName = test.test_code === 'RAVLT' ? 'Total' : 
-                      test.test_code === 'FDT' ? 'Inib.' : 
-                      mainCode;
+    if (config) {
+      const mainCode = config.mainSubtest;
+      const mainScore = calculatedScores[mainCode] ?? '-';
+      const mainClassification = classifications[mainCode] || 'Médio';
+      const shortName = config.names[mainCode] || mainCode;
+
+      return (
+        <Badge variant={getClassificationVariant(mainClassification)}>
+          {shortName}: {mainScore}
+        </Badge>
+      );
+    }
+
+    // Fallback genérico: pega o primeiro percentil/classificação disponível
+    const firstKey = Object.keys(classifications)[0] || Object.keys(percentiles)[0];
+    if (!firstKey) return null;
+
+    const classification = classifications[firstKey] || 'Médio';
+    const score = calculatedScores[firstKey] ?? percentiles[firstKey] ?? '-';
 
     return (
-      <Badge variant={getClassificationVariant(mainClassification)}>
-        {shortName}: {mainScore}
+      <Badge variant={getClassificationVariant(classification)}>
+        {firstKey}: {score}
       </Badge>
     );
   };
@@ -458,6 +621,22 @@ export default function PatientNeuroTestHistory({
         inputSection = renderBPA2Inputs(rawScores, calculatedScores);
         calculationsSection = renderBPA2Calculations(calculatedScores);
         break;
+      default: {
+        // Renderização genérica dos dados de entrada
+        const rawEntries = Object.entries(rawScores).filter(([_, v]) => v !== null && v !== undefined);
+        if (rawEntries.length > 0) {
+          inputSection = (
+            <div className="flex flex-wrap gap-2">
+              {rawEntries.map(([key, val]) => (
+                <Badge key={key} variant="outline" className="font-mono">
+                  {key}: {typeof val === 'number' ? val : String(val)}
+                </Badge>
+              ))}
+            </div>
+          );
+        }
+        break;
+      }
     }
 
     return (
