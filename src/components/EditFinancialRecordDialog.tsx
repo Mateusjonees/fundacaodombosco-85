@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Edit2 } from 'lucide-react';
+import { Edit2, AlertTriangle } from 'lucide-react';
 
 interface FinancialRecord {
   id: string;
@@ -30,6 +31,39 @@ interface EditFinancialRecordDialogProps {
   onSave: () => void;
 }
 
+// Mapa de nomes legíveis para formas de pagamento
+const paymentMethodLabels: Record<string, string> = {
+  cash: 'Dinheiro',
+  credit_card: 'Cartão de Crédito',
+  debit_card: 'Cartão de Débito',
+  pix: 'PIX',
+  bank_transfer: 'Transferência',
+  bank_slip: 'Boleto',
+  check: 'Cheque',
+  contract: 'Contrato',
+  combined: 'Combinado',
+  prazo: 'A Prazo',
+  convenio: 'Convênio',
+  internal: 'Interno',
+};
+
+// Gera texto automático de notas baseado na forma de pagamento
+const generatePaymentNotes = (method: string, installments: number, amount: number): string => {
+  const label = paymentMethodLabels[method] || method;
+  const total = parseFloat(amount.toString());
+
+  if ((method === 'credit_card' || method === 'debit_card') && installments > 1) {
+    const perInstallment = (total / installments).toFixed(2).replace('.', ',');
+    return `${label} - ${installments}x de R$ ${perInstallment}`;
+  }
+
+  if (['pix', 'cash', 'bank_transfer', 'bank_slip', 'check'].includes(method)) {
+    return `${label} - Pagamento à vista`;
+  }
+
+  return label;
+};
+
 export function EditFinancialRecordDialog({ record, open, onClose, onSave }: EditFinancialRecordDialogProps) {
   const [formData, setFormData] = useState({
     type: '',
@@ -40,8 +74,12 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
     payment_method: '',
     notes: ''
   });
+  const [installments, setInstallments] = useState(1);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const isLegacyContract = record?.payment_method === 'contract';
+  const showInstallments = formData.payment_method === 'credit_card' || formData.payment_method === 'debit_card';
 
   // Atualizar formData quando o record mudar
   useEffect(() => {
@@ -52,17 +90,41 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
         amount: record.amount.toString(),
         description: record.description || '',
         date: record.date,
-        payment_method: record.payment_method || '',
+        payment_method: isLegacyContract ? '' : (record.payment_method || ''),
         notes: record.notes || ''
       });
+      setInstallments(1);
     }
   }, [record]);
+
+  // Auto-gerar notas quando forma de pagamento ou parcelas mudam
+  useEffect(() => {
+    if (formData.payment_method && formData.amount && isLegacyContract) {
+      const autoNotes = generatePaymentNotes(formData.payment_method, installments, parseFloat(formData.amount));
+      setFormData(prev => ({ ...prev, notes: autoNotes }));
+    }
+  }, [formData.payment_method, installments]);
 
   const handleSave = async () => {
     if (!record) return;
 
+    if (isLegacyContract && !formData.payment_method) {
+      toast({
+        variant: "destructive",
+        title: "Forma de pagamento obrigatória",
+        description: "Selecione a forma de pagamento real para este registro."
+      });
+      return;
+    }
+
     setLoading(true);
     try {
+      // Se notas estiverem vazias, gerar automaticamente
+      let finalNotes = formData.notes;
+      if (!finalNotes && formData.payment_method) {
+        finalNotes = generatePaymentNotes(formData.payment_method, installments, parseFloat(formData.amount));
+      }
+
       const { error } = await supabase
         .from('financial_records')
         .update({
@@ -72,7 +134,7 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
           description: formData.description,
           date: formData.date,
           payment_method: formData.payment_method,
-          notes: formData.notes || null
+          notes: finalNotes || null
         })
         .eq('id', record.id);
 
@@ -107,6 +169,7 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
       payment_method: '',
       notes: ''
     });
+    setInstallments(1);
     onClose();
   };
 
@@ -123,6 +186,17 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Banner de alerta para registros de contrato antigos */}
+          {isLegacyContract && (
+            <Alert className="border-orange-500/50 bg-orange-500/10">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-600 dark:text-orange-300 text-sm">
+                <strong>⚠️ Revisão necessária:</strong> Este registro foi salvo como "Contrato" sem a forma de pagamento real.
+                Selecione abaixo como o paciente pagou (Cartão, PIX, Dinheiro, etc.) e o número de parcelas se aplicável.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="type">Tipo</Label>
             <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
@@ -189,10 +263,12 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="payment_method">Forma de Pagamento</Label>
+            <Label htmlFor="payment_method">
+              Forma de Pagamento {isLegacyContract && <span className="text-orange-600 font-bold">*</span>}
+            </Label>
             <Select value={formData.payment_method} onValueChange={(value) => setFormData({ ...formData, payment_method: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a forma de pagamento" />
+              <SelectTrigger className={isLegacyContract && !formData.payment_method ? 'border-orange-500 ring-1 ring-orange-500' : ''}>
+                <SelectValue placeholder={isLegacyContract ? '⚠️ Selecione a forma real de pagamento' : 'Selecione a forma de pagamento'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="cash">Dinheiro</SelectItem>
@@ -202,7 +278,6 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
                 <SelectItem value="bank_transfer">Transferência</SelectItem>
                 <SelectItem value="bank_slip">Boleto</SelectItem>
                 <SelectItem value="check">Cheque</SelectItem>
-                <SelectItem value="contract">Contrato</SelectItem>
                 <SelectItem value="combined">Combinado</SelectItem>
                 <SelectItem value="prazo">A Prazo</SelectItem>
                 <SelectItem value="convenio">Convênio</SelectItem>
@@ -210,6 +285,27 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
               </SelectContent>
             </Select>
           </div>
+
+          {/* Campo de parcelas - visível quando cartão */}
+          {showInstallments && (
+            <div className="space-y-2">
+              <Label htmlFor="installments">Número de Parcelas</Label>
+              <Input
+                id="installments"
+                type="number"
+                min="1"
+                max="48"
+                value={installments}
+                onChange={(e) => setInstallments(Math.max(1, parseInt(e.target.value) || 1))}
+                placeholder="1"
+              />
+              {installments > 1 && formData.amount && (
+                <p className="text-xs text-muted-foreground">
+                  {installments}x de R$ {(parseFloat(formData.amount) / installments).toFixed(2).replace('.', ',')}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
@@ -232,7 +328,9 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
               rows={2}
             />
             <p className="text-xs text-muted-foreground">
-              Informe detalhes como parcelas, forma de entrada, valores combinados, etc.
+              {isLegacyContract
+                ? 'Gerado automaticamente com base na forma de pagamento. Edite se necessário.'
+                : 'Informe detalhes como parcelas, forma de entrada, valores combinados, etc.'}
             </p>
           </div>
         </div>

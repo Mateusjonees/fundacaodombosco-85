@@ -844,19 +844,21 @@ export default function Financial() {
         <Alert className="border-orange-500/50 bg-orange-500/10">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
           <AlertTitle className="text-orange-700 dark:text-orange-400">
-            {records.filter(r => r.payment_method === 'contract').length} registros de contrato precisam de revisão
+            ⚠️ {records.filter(r => r.payment_method === 'contract').length} registros precisam da forma de pagamento real
           </AlertTitle>
-          <AlertDescription className="text-orange-600 dark:text-orange-300">
-            Esses registros foram criados antes da correção e não salvaram a forma de pagamento real (Cartão, PIX, etc.). 
-            Use o botão Editar em cada registro para atualizar.
+          <AlertDescription className="text-orange-600 dark:text-orange-300 space-y-2">
+            <p>
+              Esses registros foram gerados por contratos antigos e estão marcados como "Contrato" em vez da forma real 
+              (Cartão de Crédito 3x, PIX, Dinheiro, etc.). Clique em <strong>Editar</strong> (ícone de lápis) em cada registro 
+              para selecionar a forma de pagamento correta e o número de parcelas.
+            </p>
             <Button 
               variant={showContractPending ? "default" : "outline"} 
-              size="sm" 
-              className="ml-3"
+              size="sm"
               onClick={() => setShowContractPending(!showContractPending)}
             >
               <Filter className="h-3 w-3 mr-1" />
-              {showContractPending ? 'Mostrar Todos' : 'Filtrar Contratos Pendentes'}
+              {showContractPending ? 'Mostrar Todos' : `Filtrar ${records.filter(r => r.payment_method === 'contract').length} Pendentes`}
             </Button>
           </AlertDescription>
         </Alert>
