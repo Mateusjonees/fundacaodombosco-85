@@ -100,15 +100,47 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
     return `${year}-${month}-${day}`;
   };
 
+  // Mapeia método de pagamento para formato do financeiro
+  const mapPaymentMethod = (forma: string): string => {
+    const map: Record<string, string> = {
+      'Cartão de Crédito': 'credit_card',
+      'Cartão': 'credit_card',
+      'PIX': 'pix',
+      'Boleto': 'bank_slip',
+      'Dinheiro': 'cash',
+      'Combinado': 'combined',
+    };
+    return map[forma] || forma || 'other';
+  };
+
+  const buildPaymentNotes = (): string => {
+    const forma = contractData.formaPagamento;
+    const value = parseContractValue(contractData.valorTotal);
+    if ((forma === 'Cartão de Crédito' || forma === 'Cartão') && contractData.cartaoCredito?.parcelas) {
+      const parcelas = parseInt(contractData.cartaoCredito.parcelas) || 1;
+      const perInstallment = (value / parcelas).toFixed(2).replace('.', ',');
+      return `Contrato - Cartão de Crédito - ${parcelas}x de R$ ${perInstallment}`;
+    }
+    if (forma === 'PIX') return 'Contrato - PIX - à vista';
+    if (forma === 'Boleto') return 'Contrato - Boleto';
+    if (forma === 'Dinheiro') return 'Contrato - Dinheiro - à vista';
+    if (contractData.numeroParcelas && parseInt(contractData.numeroParcelas) > 1) {
+      return `Contrato - ${forma} - ${contractData.numeroParcelas}x`;
+    }
+    return `Contrato - ${forma || 'Não informado'}`;
+  };
+
   const createFinancialRecord = async () => {
     const contractValueNumber = parseContractValue(contractData.valorTotal);
     const contractDate = getContractDate();
+    const paymentNotes = buildPaymentNotes();
     
     console.log('📊 Criando registro financeiro do contrato:', {
       amount: contractValueNumber,
       beneficiario: contractData.beneficiario,
       clientId: client.id,
-      date: contractDate
+      date: contractDate,
+      formaPagamento: contractData.formaPagamento
     });
     
     const { error } = await supabase
@@ -119,10 +151,10 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
         description: `Avaliação Neuropsicológica - ${contractData.beneficiario}`,
         amount: contractValueNumber,
         date: contractDate,
-        payment_method: 'contract',
+        payment_method: mapPaymentMethod(contractData.formaPagamento),
         client_id: client.id,
         created_by: user?.id,
-        notes: `Contrato gerado - Pagamento registrado`
+        notes: paymentNotes
       }]);
 
     if (error) {
