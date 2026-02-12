@@ -398,13 +398,53 @@ Contratante
     const cleaned = value.replace(/\./g, '').replace(',', '.');
     return parseFloat(cleaned) || 0;
   };
+  // Mapeia o método de pagamento do contrato para o formato do financeiro
+  const mapPaymentMethod = (method: string): string => {
+    const map: Record<string, string> = {
+      'Cartão': 'credit_card',
+      'PIX': 'pix',
+      'Boleto': 'bank_slip',
+      'Dinheiro': 'cash',
+      'Combinado': 'combined',
+    };
+    return map[method] || method;
+  };
+
+  // Gera notas detalhadas com informações reais de pagamento
+  const buildPaymentNotes = (): string => {
+    const method = contractData.paymentMethod;
+    const value = parseContractValue(contractData.value);
+    if (method === 'Cartão' && contractData.creditCardInstallments) {
+      const perInstallment = (value / contractData.creditCardInstallments).toFixed(2).replace('.', ',');
+      return `Contrato - Cartão de Crédito - ${contractData.creditCardInstallments}x de R$ ${perInstallment}`;
+    }
+    if (method === 'PIX') return 'Contrato - PIX - à vista';
+    if (method === 'Boleto') return 'Contrato - Boleto';
+    if (method === 'Dinheiro') return 'Contrato - Dinheiro - à vista';
+    if (method === 'Manual') {
+      const downPayment = contractData.downPaymentAmount ? parseFloat(contractData.downPaymentAmount.replace(',', '.')) : 0;
+      const remaining = value - downPayment;
+      if (downPayment > 0) {
+        return `Contrato - Entrada R$ ${downPayment.toFixed(2).replace('.', ',')} (${contractData.downPaymentMethod || 'N/A'}) + Saldo R$ ${remaining.toFixed(2).replace('.', ',')}`;
+      }
+      return `Contrato - Pagamento Manual`;
+    }
+    if (method === 'Combinado') {
+      const details = contractData.paymentCombination?.map((p: any) => `${p.method}: R$ ${Number(p.amount).toFixed(2).replace('.', ',')}`).join(' + ') || '';
+      return `Contrato - Pagamento Combinado: ${details}`;
+    }
+    return `Contrato - ${method}`;
+  };
+
   const createFinancialRecord = async () => {
     const contractValueNumber = parseContractValue(contractData.value);
     console.log('📊 Criando registro financeiro:', {
       amount: contractValueNumber,
       clientName: contractData.clientName,
-      clientId: contractData.clientId
+      clientId: contractData.clientId,
+      paymentMethod: contractData.paymentMethod
     });
+    const paymentNotes = buildPaymentNotes();
     const recordData: any = {
       type: 'income',
       category: 'evaluation',
@@ -413,15 +453,15 @@ Contratante
       date: contractData.contractDate,
       client_id: contractData.clientId,
       created_by: user?.id,
-      notes: `Contrato gerado - Pagamento registrado`
+      notes: paymentNotes
     };
 
-    // Se for pagamento combinado
+    // Definir payment_method real
     if (contractData.useCombinedPayment && contractData.paymentCombination.length > 0) {
       recordData.payment_method = 'combined';
       recordData.payment_combination = contractData.paymentCombination;
     } else {
-      recordData.payment_method = 'contract';
+      recordData.payment_method = mapPaymentMethod(contractData.paymentMethod);
     }
     const {
       error
@@ -549,8 +589,8 @@ Contratante
         professional_name: userName,
         amount: contractValueNumber,
         transaction_type: 'income',
-        payment_method: 'Contrato',
-        description: `Avaliação Neuropsicológica - Contrato gerado por ${userName}`,
+        payment_method: contractData.useCombinedPayment ? 'combined' : mapPaymentMethod(contractData.paymentMethod),
+        description: `Avaliação Neuropsicológica - Contrato gerado por ${userName} - ${buildPaymentNotes()}`,
         origin_type: 'contract',
         origin_id: attendanceReport?.id,
         attendance_report_id: attendanceReport?.id,
@@ -738,8 +778,8 @@ Contratante
         professional_name: userName,
         amount: contractValueNumber,
         transaction_type: 'income',
-        payment_method: 'Contrato',
-        description: `Avaliação Neuropsicológica - Contrato impresso por ${userName}`,
+        payment_method: contractData.useCombinedPayment ? 'combined' : mapPaymentMethod(contractData.paymentMethod),
+        description: `Avaliação Neuropsicológica - Contrato impresso por ${userName} - ${buildPaymentNotes()}`,
         origin_type: 'contract',
         origin_id: attendanceReport?.id,
         attendance_report_id: attendanceReport?.id,
