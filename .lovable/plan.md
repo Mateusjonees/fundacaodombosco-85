@@ -1,61 +1,52 @@
 
 
-## Correcao dos Registros Financeiros de Contratos
+## Correcao da Exibicao de Formas de Pagamento no Financeiro
 
 ### Problema
 
-Quando um contrato e gerado, os registros financeiros sao salvos com `payment_method: 'contract'` ou `payment_method: 'Contrato'` de forma generica, **ignorando completamente** a forma real de pagamento escolhida pelo usuario (PIX, Cartao, Dinheiro, Boleto, etc.). Isso impede o controle financeiro real, pois nao se sabe como o paciente pagou, quantas parcelas tem no cartao, valor de entrada, etc.
+A coluna "Pagamento" na tela financeira mostra valores inconsistentes como "cartao" (minusculo, sem acento) porque:
 
-### O que sera corrigido
+1. A funcao de validacao de atendimento no banco de dados salva o `payment_method` exatamente como vem do formulario (`cartao`, `dinheiro`, `pix`, `prazo`, `dividido`) - valores em portugues minusculo
+2. A funcao `translatePaymentMethod` no Financial.tsx so mapeia valores em ingles (`credit_card`, `cash`) e alguns em portugues com inicial maiuscula (`Cartao`, `Dinheiro`), mas nao os valores minusculos do banco
+3. Contratos antigos ainda mostram "Contrato" generico sem detalhes
 
-Os registros financeiros gerados a partir de contratos passarao a incluir:
+### Solucao
 
-- **Forma de pagamento real** (PIX, Cartao, Dinheiro, Boleto, Combinado, Manual)
-- **Numero de parcelas** (quando for cartao de credito)
-- **Valor de entrada e metodo** (quando for pagamento manual)
-- **Detalhes do pagamento combinado** (quando for combinado)
-- **Data correta do contrato** (usando a data local, sem problema de fuso horario)
-- **Descricao detalhada** com as informacoes de pagamento nas notas do registro
+**Arquivo: `src/pages/Financial.tsx`** - Funcao `translatePaymentMethod` (linhas 395-415)
 
-### Arquivos Alterados
+Expandir o dicionario de traducoes para cobrir **todos** os valores possiveis salvos no banco:
 
-**1. `src/pages/Contracts.tsx`** - Funcao `createFinancialRecord` (linhas 401-434)
-
-Alterar para usar `contractData.paymentMethod` real em vez de `'contract'`. Incluir detalhes de parcelas, entrada e notas com informacoes completas de pagamento.
-
-Antes:
 ```
-payment_method: 'contract'
-notes: 'Contrato gerado - Pagamento registrado'
-```
-
-Depois:
-```
-payment_method: contractData.paymentMethod (ex: 'PIX', 'Cartao', etc.)
-notes: detalhes completos (parcelas, entrada, metodo, etc.)
-installments: numero de parcelas quando cartao
+Adicionar mapeamentos:
+- 'cartao' -> 'Cartao'
+- 'cartao_credito' -> 'Cartao de Credito'
+- 'cartao_debito' -> 'Cartao de Debito'
+- 'dinheiro' -> 'Dinheiro'
+- 'prazo' -> 'A Prazo'
+- 'dividido' -> 'Dividido'
+- 'transferencia' -> 'Transferencia'
+- 'convenio' -> 'Convenio'
+- 'combined' -> 'Combinado'
+- 'bank_slip' -> 'Boleto'
+- 'bank_transfer' -> 'Transferencia'
 ```
 
-Tambem corrigir os inserts em `automatic_financial_records` (linhas 543-565 e 731-754) para usar o `payment_method` real em vez de `'Contrato'`.
-
-**2. `src/components/ContractGenerator.tsx`** - Funcao `createFinancialRecord` (linhas 103-134)
-
-Mesma correcao: usar a forma de pagamento real do `contractData` em vez de `'contract'` fixo, e incluir detalhes nas notas.
+Alem disso, exibir as **notas** (campo `notes`) como tooltip ou texto secundario na coluna de pagamento, para que informacoes como "Cartao de Credito - 3x de R$ 533,33" fiquem visiveis.
 
 ### Detalhes Tecnicos
 
-A logica sera:
-- Se `paymentMethod === 'Cartao'`: salvar `payment_method: 'credit_card'`, adicionar `notes` com numero de parcelas e valor por parcela
-- Se `paymentMethod === 'PIX'`: salvar `payment_method: 'pix'`
-- Se `paymentMethod === 'Boleto'`: salvar `payment_method: 'bank_slip'`
-- Se `paymentMethod === 'Dinheiro'`: salvar `payment_method: 'cash'`
-- Se `paymentMethod === 'Combinado'`: salvar `payment_method: 'combined'` com `payment_combination` JSONB
-- Se `paymentMethod === 'Manual'`: salvar `payment_method` da entrada, com notas sobre valor de entrada e saldo restante
+**1. Expandir `translatePaymentMethod`** em `src/pages/Financial.tsx`:
+- Adicionar todos os valores em portugues minusculo que vem do formulario de validacao de atendimento
+- Adicionar valores em ingles que vem dos contratos atualizados
 
-As notas (`notes`) serao enriquecidas com informacoes como:
-- "Cartao de Credito - 3x de R$ 533,33"
-- "PIX - a vista"
-- "Entrada R$ 500,00 (Dinheiro) + Saldo R$ 1.100,00"
+**2. Mostrar detalhes do pagamento na tabela** (linhas 886-890):
+- Quando o registro tem `notes` com informacoes de pagamento (parcelas, entrada, etc.), exibir como texto menor abaixo do badge
+- Usar um Tooltip no badge de pagamento para mostrar as notas completas ao passar o mouse
 
-Isso permitira controle financeiro real, sabendo exatamente como cada paciente pagou.
+**3. Atualizar `EditFinancialRecordDialog`**:
+- Adicionar as opcoes de pagamento que faltam no select de edicao (prazo, dividido, convenio)
+- Garantir que ao editar, o valor salvo seja consistente
+
+**4. Fetch do campo `notes`**:
+- Verificar se o SELECT na funcao `fetchRecords` ja inclui o campo `notes` - se nao, adicionar ao select para que os detalhes fiquem disponiveis para exibicao
 
