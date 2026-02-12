@@ -1,26 +1,30 @@
 
 
-# Renomear Assistente de "Bosco IA" para "Bia IA"
+## Problema Identificado
 
-## Resumo
+O botao "Excluir" na tela de detalhes do paciente nao funciona porque o dialog de confirmacao nunca aparece.
 
-Alterar o nome do assistente virtual de "Bosco IA" para "Bia IA" em todos os pontos do sistema: interface do chat, system prompt da Edge Function e tooltips.
+### Causa Raiz
 
-## Alteracoes
+No arquivo `src/pages/Clients.tsx`, quando um paciente esta aberto na visualizacao de detalhes, o componente faz um **return antecipado** na linha 650-664 (renderizando apenas o `ClientDetailsView`). O dialog de confirmacao de exclusao esta definido **depois** desse return, na linha 1372, portanto nunca e renderizado quando o usuario esta na tela de detalhes.
 
-### 1. Edge Function (`supabase/functions/ai-assistant/index.ts`)
-- Alterar o system prompt de "Voce e o Bosco IA" para "Voce e a Bia IA"
-- Ajustar pronomes relacionados (de "o assistente" para "a assistente")
+```text
+Fluxo atual:
+  activeClient existe? 
+    SIM --> return <ClientDetailsView /> (sai aqui)
+    NAO --> renderiza lista + dialog de exclusao (linha 1372)
+                                    ^^ nunca alcancado
+```
 
-### 2. Componente do Chat (`src/components/AIAssistant.tsx`)
-- Alterar todos os `alt="Bosco IA"` para `alt="Bia IA"`
-- Alterar o titulo do Sheet de "Bosco IA" para "Bia IA"
-- Alterar a mensagem de boas-vindas de "Sou o Bosco IA" para "Sou a Bia IA"
+### Solucao
 
-### 3. Header (`src/components/MainApp.tsx`)
-- Alterar `title="Bosco IA"` para `title="Bia IA"`
-- Alterar `alt="Bosco IA"` para `alt="Bia IA"`
+Mover o dialog de confirmacao de exclusao para **dentro** do bloco de return antecipado (linhas 650-664), de forma que ele seja renderizado mesmo quando o usuario esta visualizando os detalhes do paciente.
 
-### Observacao
-O icone visual (`bosco-ia-icon.png`) sera mantido, apenas o nome textual muda. Se desejar trocar o icone tambem, basta enviar uma nova imagem.
+### Detalhes Tecnicos
+
+**Arquivo:** `src/pages/Clients.tsx`
+
+**Alteracao:** No bloco de return antecipado (linha 650-664), adicionar o dialog de confirmacao de exclusao como elemento irmao do `ClientDetailsView`, dentro de um fragment (`<>...</>`). Isso garantira que o dialog esteja presente no DOM quando `deleteConfirmClient` for definido.
+
+O dialog existente na linha 1372 permanecera para cobrir o cenario de exclusao a partir da lista de pacientes.
 
