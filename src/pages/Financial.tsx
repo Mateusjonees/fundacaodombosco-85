@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, Shield, Edit2, Trash2, Info } from 'lucide-react';
+import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, Shield, Edit2, Trash2, Info, AlertTriangle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
@@ -60,6 +61,7 @@ export default function Financial() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
   const [unitFilter, setUnitFilter] = useState('all');
+  const [showContractPending, setShowContractPending] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { userRole, loading: roleLoading } = useRolePermissions();
@@ -364,7 +366,9 @@ export default function Financial() {
     const matchesUnit = unitFilter === 'all' || 
       (record.clients && 'unit' in record.clients && record.clients.unit === unitFilter);
     
-    return matchesSearch && matchesDateRange && matchesType && matchesCategory && matchesAmount && matchesUnit;
+    const matchesContractPending = !showContractPending || record.payment_method === 'contract';
+    
+    return matchesSearch && matchesDateRange && matchesType && matchesCategory && matchesAmount && matchesUnit && matchesContractPending;
   });
 
   const incomeRecords = filteredRecords.filter(r => r.type === 'income');
@@ -834,6 +838,29 @@ export default function Financial() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Banner de contratos pendentes de revisão */}
+      {records.filter(r => r.payment_method === 'contract').length > 0 && (
+        <Alert className="border-orange-500/50 bg-orange-500/10">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="text-orange-700 dark:text-orange-400">
+            {records.filter(r => r.payment_method === 'contract').length} registros de contrato precisam de revisão
+          </AlertTitle>
+          <AlertDescription className="text-orange-600 dark:text-orange-300">
+            Esses registros foram criados antes da correção e não salvaram a forma de pagamento real (Cartão, PIX, etc.). 
+            Use o botão Editar em cada registro para atualizar.
+            <Button 
+              variant={showContractPending ? "default" : "outline"} 
+              size="sm" 
+              className="ml-3"
+              onClick={() => setShowContractPending(!showContractPending)}
+            >
+              <Filter className="h-3 w-3 mr-1" />
+              {showContractPending ? 'Mostrar Todos' : 'Filtrar Contratos Pendentes'}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
