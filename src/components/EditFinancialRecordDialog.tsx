@@ -19,6 +19,7 @@ interface FinancialRecord {
   payment_method?: string;
   client_id?: string;
   created_at: string;
+  notes?: string;
   clients?: { name: string };
 }
 
@@ -36,7 +37,8 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
     amount: '',
     description: '',
     date: '',
-    payment_method: ''
+    payment_method: '',
+    notes: ''
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -50,7 +52,8 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
         amount: record.amount.toString(),
         description: record.description || '',
         date: record.date,
-        payment_method: record.payment_method || ''
+        payment_method: record.payment_method || '',
+        notes: record.notes || ''
       });
     }
   }, [record]);
@@ -68,7 +71,8 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
           amount: parseFloat(formData.amount),
           description: formData.description,
           date: formData.date,
-          payment_method: formData.payment_method
+          payment_method: formData.payment_method,
+          notes: formData.notes || null
         })
         .eq('id', record.id);
 
@@ -100,7 +104,8 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
       amount: '',
       description: '',
       date: '',
-      payment_method: ''
+      payment_method: '',
+      notes: ''
     });
     onClose();
   };
@@ -213,8 +218,22 @@ export function EditFinancialRecordDialog({ record, open, onClose, onSave }: Edi
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Digite uma descrição para a transação..."
-              rows={3}
+              rows={2}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Detalhes do Pagamento</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Ex: Cartão de Crédito - 3x de R$ 533,33 | Entrada: R$ 200,00 em Dinheiro"
+              rows={2}
+            />
+            <p className="text-xs text-muted-foreground">
+              Informe detalhes como parcelas, forma de entrada, valores combinados, etc.
+            </p>
           </div>
         </div>
 
