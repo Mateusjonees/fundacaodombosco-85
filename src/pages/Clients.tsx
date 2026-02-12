@@ -649,18 +649,59 @@ export default function Patients() {
 
   if (activeTabId && activeClient) {
     return (
-      <div className="space-y-0 animate-fade-in">
-        {renderTabBar()}
-        <ClientDetailsView
-          client={activeClient}
-          onEdit={() => {
-            openEditDialog(activeClient);
-          }}
-          onBack={handleBackToList}
-          onRefresh={refreshClients}
-          onDelete={isGodMode() ? () => setDeleteConfirmClient(activeClient) : undefined}
-        />
-      </div>
+      <>
+        <div className="space-y-0 animate-fade-in">
+          {renderTabBar()}
+          <ClientDetailsView
+            client={activeClient}
+            onEdit={() => {
+              openEditDialog(activeClient);
+            }}
+            onBack={handleBackToList}
+            onRefresh={refreshClients}
+            onDelete={isGodMode() ? () => setDeleteConfirmClient(activeClient) : undefined}
+          />
+        </div>
+
+        {/* Dialog de confirmação de exclusão (dentro do early return) */}
+        <Dialog open={!!deleteConfirmClient} onOpenChange={(open) => !open && setDeleteConfirmClient(null)}>
+          <DialogContent className="w-[95vw] max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2.5 text-destructive">
+                <div className="p-2 bg-destructive/10 rounded-xl">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                Excluir Paciente Permanentemente
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">
+                Tem certeza que deseja excluir <strong className="text-foreground">{deleteConfirmClient?.name}</strong>?
+              </p>
+              <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-xl text-sm space-y-1">
+                <p className="font-medium text-destructive">⚠️ Esta ação é irreversível!</p>
+                <p className="text-muted-foreground text-xs">
+                  Todos os dados serão removidos: prontuários, agendamentos, laudos, receitas, notas, pagamentos e vinculações.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteConfirmClient(null)} className="rounded-xl">
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteClient} 
+                disabled={isDeleting}
+                className="rounded-xl gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                {isDeleting ? 'Excluindo...' : 'Excluir Permanentemente'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
   // Counts for stats
