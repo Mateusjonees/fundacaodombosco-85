@@ -1,52 +1,47 @@
 
 
-## Correcao da Exibicao de Formas de Pagamento no Financeiro
+## Correcao dos Registros Financeiros Existentes + Validacao
 
-### Problema
+### Problema Identificado
 
-A coluna "Pagamento" na tela financeira mostra valores inconsistentes como "cartao" (minusculo, sem acento) porque:
+O codigo ja foi corrigido na sessao anterior para salvar a forma de pagamento real (PIX, Cartao, Dinheiro, etc.) nos novos contratos. Porem, **todos os registros existentes** no banco ainda tem `payment_method: 'contract'` e `notes: 'Contrato gerado - Pagamento registrado'` -- foram criados antes da correcao.
 
-1. A funcao de validacao de atendimento no banco de dados salva o `payment_method` exatamente como vem do formulario (`cartao`, `dinheiro`, `pix`, `prazo`, `dividido`) - valores em portugues minusculo
-2. A funcao `translatePaymentMethod` no Financial.tsx so mapeia valores em ingles (`credit_card`, `cash`) e alguns em portugues com inicial maiuscula (`Cartao`, `Dinheiro`), mas nao os valores minusculos do banco
-3. Contratos antigos ainda mostram "Contrato" generico sem detalhes
+Alem disso, o registro da Gabriela (09/02/2026) na screenshot mostra exatamente esse problema: a informacao real de pagamento (cartao, parcelas, etc.) nao foi salva.
 
-### Solucao
+### Solucao em 2 Partes
 
-**Arquivo: `src/pages/Financial.tsx`** - Funcao `translatePaymentMethod` (linhas 395-415)
+**Parte 1 - Correcao dos registros existentes no banco**
 
-Expandir o dicionario de traducoes para cobrir **todos** os valores possiveis salvos no banco:
+Executar um UPDATE no banco para os registros antigos que ainda tem `payment_method = 'contract'`. Como nao temos como recuperar a forma de pagamento original desses registros, vamos alterar o `notes` para indicar que precisam ser revisados manualmente, e manter a edicao disponivel para o usuario corrigir cada um.
 
-```
-Adicionar mapeamentos:
-- 'cartao' -> 'Cartao'
-- 'cartao_credito' -> 'Cartao de Credito'
-- 'cartao_debito' -> 'Cartao de Debito'
-- 'dinheiro' -> 'Dinheiro'
-- 'prazo' -> 'A Prazo'
-- 'dividido' -> 'Dividido'
-- 'transferencia' -> 'Transferencia'
-- 'convenio' -> 'Convenio'
-- 'combined' -> 'Combinado'
-- 'bank_slip' -> 'Boleto'
-- 'bank_transfer' -> 'Transferencia'
-```
+**Parte 2 - Melhorar o dialog de edicao para incluir detalhes de parcelas**
 
-Alem disso, exibir as **notas** (campo `notes`) como tooltip ou texto secundario na coluna de pagamento, para que informacoes como "Cartao de Credito - 3x de R$ 533,33" fiquem visiveis.
+Atualizar `EditFinancialRecordDialog.tsx` para incluir:
+- Campo de **numero de parcelas** (quando forma de pagamento for cartao)
+- Campo de **notas/observacoes** editavel (para o usuario detalhar como foi o pagamento)
+- O campo `notes` deve ser salvo junto com o registro ao editar
 
 ### Detalhes Tecnicos
 
-**1. Expandir `translatePaymentMethod`** em `src/pages/Financial.tsx`:
-- Adicionar todos os valores em portugues minusculo que vem do formulario de validacao de atendimento
-- Adicionar valores em ingles que vem dos contratos atualizados
+**Arquivo: `src/components/EditFinancialRecordDialog.tsx`**
 
-**2. Mostrar detalhes do pagamento na tabela** (linhas 886-890):
-- Quando o registro tem `notes` com informacoes de pagamento (parcelas, entrada, etc.), exibir como texto menor abaixo do badge
-- Usar um Tooltip no badge de pagamento para mostrar as notas completas ao passar o mouse
+1. Adicionar `notes` ao formData (ja existe o campo description, mas notes e separado)
+2. Adicionar campo condicional de parcelas quando `payment_method === 'credit_card'`
+3. Incluir `notes` no update do Supabase ao salvar
+4. Mostrar campo de notas para o usuario descrever detalhes do pagamento
 
-**3. Atualizar `EditFinancialRecordDialog`**:
-- Adicionar as opcoes de pagamento que faltam no select de edicao (prazo, dividido, convenio)
-- Garantir que ao editar, o valor salvo seja consistente
+**Arquivo: `src/pages/Financial.tsx`**
 
-**4. Fetch do campo `notes`**:
-- Verificar se o SELECT na funcao `fetchRecords` ja inclui o campo `notes` - se nao, adicionar ao select para que os detalhes fiquem disponiveis para exibicao
+1. Passar o campo `notes` para o `EditFinancialRecordDialog` para que possa ser editado
+2. Garantir que o record passado inclua notes
+
+**SQL para corrigir registros existentes** (informativo):
+
+Os registros antigos com `payment_method = 'contract'` precisarao ser editados manualmente pelo usuario na interface, ja que nao ha como saber retroativamente qual foi a forma de pagamento real. O botao de editar ja esta disponivel na tabela.
+
+### Resultado
+
+- Novos contratos: ja salvam corretamente (correcao anterior)
+- Registros antigos: usuario pode editar via interface com os novos campos de parcelas e notas
+- Todos os registros: exibem forma de pagamento e detalhes de parcelas na tabela financeira
 
