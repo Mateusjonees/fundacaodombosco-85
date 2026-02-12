@@ -1,47 +1,56 @@
 
+## Correção dos 160 Registros Financeiros de Contratos
 
-## Correcao dos Registros Financeiros Existentes + Validacao
+### Problema
 
-### Problema Identificado
+Existem **160 registros financeiros** no banco com `payment_method: 'contract'` e notas genéricas "Contrato gerado - Pagamento registrado". A informação real de pagamento (Cartão, PIX, parcelas, etc.) **nunca foi salva** nesses registros porque o código antigo usava valores fixos.
 
-O codigo ja foi corrigido na sessao anterior para salvar a forma de pagamento real (PIX, Cartao, Dinheiro, etc.) nos novos contratos. Porem, **todos os registros existentes** no banco ainda tem `payment_method: 'contract'` e `notes: 'Contrato gerado - Pagamento registrado'` -- foram criados antes da correcao.
+Além disso, a tabela `client_payments` (que deveria guardar detalhes como parcelas de cartão) tem **0 registros** porque a política de RLS só permite acesso a diretores — outros cargos que geram contratos não conseguem inserir.
 
-Alem disso, o registro da Gabriela (09/02/2026) na screenshot mostra exatamente esse problema: a informacao real de pagamento (cartao, parcelas, etc.) nao foi salva.
+### O que será feito
 
-### Solucao em 2 Partes
+**1. Corrigir RLS da tabela `client_payments`** (migração SQL)
 
-**Parte 1 - Correcao dos registros existentes no banco**
+Adicionar política para que qualquer usuário autenticado possa inserir registros de pagamento (não apenas diretores). Isso garante que contratos futuros salvem os detalhes corretamente.
 
-Executar um UPDATE no banco para os registros antigos que ainda tem `payment_method = 'contract'`. Como nao temos como recuperar a forma de pagamento original desses registros, vamos alterar o `notes` para indicar que precisam ser revisados manualmente, e manter a edicao disponivel para o usuario corrigir cada um.
+**2. Criar uma Edge Function para atualizar registros existentes**
 
-**Parte 2 - Melhorar o dialog de edicao para incluir detalhes de parcelas**
+Como não temos como recuperar automaticamente a forma de pagamento dos 160 contratos antigos (a informação simplesmente não foi salva), a solução é:
 
-Atualizar `EditFinancialRecordDialog.tsx` para incluir:
-- Campo de **numero de parcelas** (quando forma de pagamento for cartao)
-- Campo de **notas/observacoes** editavel (para o usuario detalhar como foi o pagamento)
-- O campo `notes` deve ser salvo junto com o registro ao editar
+- Atualizar os `notes` dos registros com `payment_method: 'contract'` para indicar claramente "⚠️ Revisar forma de pagamento"
+- Manter o `payment_method` como `'contract'` para que sejam facilmente filtráveis
+- O usuário poderá usar o botão de edição (já corrigido com campo de "Detalhes do Pagamento") para corrigir cada registro manualmente
 
-### Detalhes Tecnicos
+**3. Adicionar botão "Revisar Contratos Antigos" na tela Financeira**
 
-**Arquivo: `src/components/EditFinancialRecordDialog.tsx`**
+Na página Financial.tsx, adicionar um alerta/banner visível quando existirem registros com `payment_method: 'contract'`, informando que esses registros precisam ter a forma de pagamento atualizada. Incluir um filtro rápido para mostrar apenas esses registros pendentes de revisão.
 
-1. Adicionar `notes` ao formData (ja existe o campo description, mas notes e separado)
-2. Adicionar campo condicional de parcelas quando `payment_method === 'credit_card'`
-3. Incluir `notes` no update do Supabase ao salvar
-4. Mostrar campo de notas para o usuario descrever detalhes do pagamento
+### Detalhes Técnicos
 
-**Arquivo: `src/pages/Financial.tsx`**
+**Migração SQL - RLS `client_payments`:**
+```sql
+CREATE POLICY "Authenticated users can insert payments"
+  ON client_payments FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
 
-1. Passar o campo `notes` para o `EditFinancialRecordDialog` para que possa ser editado
-2. Garantir que o record passado inclua notes
+CREATE POLICY "Authenticated users can read own payments"
+  ON client_payments FOR SELECT
+  TO authenticated
+  USING (true);
+```
 
-**SQL para corrigir registros existentes** (informativo):
+**`src/pages/Financial.tsx`:**
+- Adicionar banner de alerta no topo da tabela quando houver registros com `payment_method = 'contract'`
+- Adicionar botão de filtro "Contratos pendentes" para listar apenas registros que precisam de revisão
+- Contar quantos registros precisam ser atualizados e mostrar no banner
 
-Os registros antigos com `payment_method = 'contract'` precisarao ser editados manualmente pelo usuario na interface, ja que nao ha como saber retroativamente qual foi a forma de pagamento real. O botao de editar ja esta disponivel na tabela.
+**`src/pages/Contracts.tsx`:**
+- Verificar que o código atual já salva corretamente (confirmado - a correção anterior está OK)
+- Garantir que `client_payments` seja inserido com sucesso agora que a RLS será corrigida
 
-### Resultado
+### Resultado Esperado
 
-- Novos contratos: ja salvam corretamente (correcao anterior)
-- Registros antigos: usuario pode editar via interface com os novos campos de parcelas e notas
-- Todos os registros: exibem forma de pagamento e detalhes de parcelas na tabela financeira
-
+- Contratos **novos**: salvam forma de pagamento real (PIX, Cartão 3x, Dinheiro, etc.) corretamente em `financial_records` E `client_payments`
+- Contratos **antigos** (160): aparecem com banner de alerta para o usuário revisar e atualizar manualmente via o dialog de edição
+- A tela financeira mostra claramente quais registros precisam de revisão
