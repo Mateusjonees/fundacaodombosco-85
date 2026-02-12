@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, Shield, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, Download, Filter, FileText, StickyNote, Shield, Edit2, Trash2, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { EditFinancialRecordDialog } from '@/components/EditFinancialRecordDialog';
@@ -31,6 +32,7 @@ interface FinancialRecord {
   payment_method?: string;
   client_id?: string;
   created_at: string;
+  notes?: string;
   clients?: { name: string };
 }
 
@@ -402,13 +404,28 @@ export default function Financial() {
       'credit_card': 'Cartão de Crédito',
       'debit_card': 'Cartão de Débito',
       'transfer': 'Transferência',
+      'bank_transfer': 'Transferência',
       'check': 'Cheque',
       'boleto': 'Boleto',
+      'bank_slip': 'Boleto',
       'internal': 'Interno',
+      'combined': 'Combinado',
       'Manual': 'Manual',
+      'manual': 'Manual',
       'Cartão': 'Cartão de Crédito',
+      'cartao': 'Cartão',
+      'cartao_credito': 'Cartão de Crédito',
+      'cartao_debito': 'Cartão de Débito',
       'Contrato': 'Contrato',
-      'Dinheiro': 'Dinheiro'
+      'Dinheiro': 'Dinheiro',
+      'dinheiro': 'Dinheiro',
+      'prazo': 'A Prazo',
+      'dividido': 'Dividido',
+      'transferencia': 'Transferência',
+      'convenio': 'Convênio',
+      'PIX': 'PIX',
+      'Boleto': 'Boleto',
+      'Transferência': 'Transferência'
     };
     
     return translations[method] || method;
@@ -884,9 +901,27 @@ export default function Financial() {
                            {record.type === 'income' ? '+' : '-'} R$ {record.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                          </TableCell>
                         <TableCell>
-                          <Badge variant="outline">
-                            {translatePaymentMethod(record.payment_method)}
-                          </Badge>
+                          <div className="flex flex-col gap-0.5">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="cursor-default w-fit">
+                                    {translatePaymentMethod(record.payment_method)}
+                                  </Badge>
+                                </TooltipTrigger>
+                                {record.notes && (
+                                  <TooltipContent>
+                                    <p className="max-w-xs">{record.notes}</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
+                            {record.notes && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                                {record.notes}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                          <TableCell>
                            <div className="flex items-center gap-2">
