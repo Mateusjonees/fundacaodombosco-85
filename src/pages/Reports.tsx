@@ -635,7 +635,7 @@ export default function Reports() {
     window.URL.revokeObjectURL(url);
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -647,7 +647,6 @@ export default function Reports() {
     const addNewPage = () => {
       doc.addPage();
       yPos = margin;
-      addFooter();
     };
 
     const checkPageBreak = (requiredSpace: number) => {
@@ -689,6 +688,29 @@ export default function Reports() {
       });
       if (currentLine) lines.push(currentLine);
       return lines;
+    };
+
+    const addSectionTitle = (title: string, color: [number, number, number] = [33, 33, 33]) => {
+      checkPageBreak(12);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...color);
+      doc.text(title, margin, yPos);
+      yPos += lineHeight;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(66, 66, 66);
+    };
+
+    const addWrappedContent = (text: string) => {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      const lines = wrapText(text, pageWidth - margin * 2 - 4);
+      lines.forEach(line => {
+        checkPageBreak(lineHeight);
+        doc.text(line, margin + 2, yPos);
+        yPos += lineHeight - 1;
+      });
+      yPos += 2;
     };
 
     // Título do Relatório
@@ -743,6 +765,32 @@ export default function Reports() {
     doc.setDrawColor(200, 200, 200);
     doc.line(margin, yPos, pageWidth - margin, yPos);
     yPos += sectionSpacing;
+
+    // Buscar dados clínicos de todos os pacientes únicos do relatório
+    const uniqueClientIds = [...new Set(attendanceReports.map(r => r.client_id).filter(Boolean))];
+    
+    // Fetch all clinical data in parallel
+    const [notesRes, laudosRes, prescriptionsRes, documentsRes, anamnesisRes] = await Promise.all([
+      supabase.from('client_notes').select('*').in('client_id', uniqueClientIds).order('created_at', { ascending: false }),
+      supabase.from('client_laudos').select('*').in('client_id', uniqueClientIds).order('laudo_date', { ascending: false }),
+      supabase.from('prescriptions').select('*').in('client_id', uniqueClientIds).order('prescription_date', { ascending: false }),
+      supabase.from('client_documents').select('*').in('client_id', uniqueClientIds).eq('is_active', true),
+      supabase.from('anamnesis_records').select('*, anamnesis_types(name)').in('client_id', uniqueClientIds).order('created_at', { ascending: false }),
+    ]);
+
+    // Group by client_id
+    const clinicalDataByClient: Record<string, { notes: any[], laudos: any[], prescriptions: any[], documents: any[], anamnesis: any[] }> = {};
+    uniqueClientIds.forEach(id => {
+      clinicalDataByClient[id] = { notes: [], laudos: [], prescriptions: [], documents: [], anamnesis: [] };
+    });
+    (notesRes.data || []).forEach(n => { if (clinicalDataByClient[n.client_id]) clinicalDataByClient[n.client_id].notes.push(n); });
+    (laudosRes.data || []).forEach(l => { if (clinicalDataByClient[l.client_id]) clinicalDataByClient[l.client_id].laudos.push(l); });
+    (prescriptionsRes.data || []).forEach(p => { if (clinicalDataByClient[p.client_id]) clinicalDataByClient[p.client_id].prescriptions.push(p); });
+    (documentsRes.data || []).forEach(d => { if (d.client_id && clinicalDataByClient[d.client_id]) clinicalDataByClient[d.client_id].documents.push(d); });
+    (anamnesisRes.data || []).forEach(a => { if (clinicalDataByClient[a.client_id]) clinicalDataByClient[a.client_id].anamnesis.push(a); });
+
+    // Track which clients already had their clinical data printed
+    const clientsClinicalPrinted = new Set<string>();
 
     // Iterar sobre cada atendimento
     attendanceReports.forEach((report, index) => {
@@ -897,6 +945,148 @@ export default function Reports() {
         if (report.validated_by_name) validationText.push(`Validado por: ${report.validated_by_name}`);
         doc.text(validationText.join(' | '), margin, yPos);
         yPos += lineHeight;
+      }
+
+      // === DADOS CLÍNICOS DO PACIENTE (uma vez por paciente) ===
+      const clientId = report.client_id;
+      if (clientId && !clientsClinicalPrinted.has(clientId)) {
+        clientsClinicalPrinted.add(clientId);
+        const clinical = clinicalDataByClient[clientId];
+
+        if (clinical) {
+          // Anamneses / Evoluções
+          if (clinical.notes.length > 0 || clinical.anamnesis.length > 0) {
+            checkPageBreak(15);
+            yPos += 3;
+            doc.setFillColor(230, 240, 255);
+            doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
+            addSectionTitle('📋 ANAMNESES / EVOLUÇÕES', [0, 70, 150]);
+
+            clinical.anamnesis.forEach((a: any) => {
+              checkPageBreak(15);
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(66, 66, 66);
+              const typeName = a.anamnesis_types?.name || 'Anamnese';
+              doc.text(`• ${typeName} - ${format(new Date(a.created_at), 'dd/MM/yyyy')} - Status: ${a.status || 'N/A'}`, margin + 2, yPos);
+              yPos += lineHeight - 1;
+              if (a.notes) {
+                doc.setFont('helvetica', 'normal');
+                addWrappedContent(a.notes);
+              }
+              // Mostrar respostas resumidas
+              if (a.answers && typeof a.answers === 'object') {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                const answersObj = a.answers as Record<string, any>;
+                const answerEntries = Object.entries(answersObj).slice(0, 10);
+                answerEntries.forEach(([key, val]) => {
+                  checkPageBreak(lineHeight);
+                  const answerText = `  ${key}: ${typeof val === 'string' ? val : JSON.stringify(val)}`;
+                  const lines = wrapText(answerText, pageWidth - margin * 2 - 8);
+                  lines.forEach(line => {
+                    checkPageBreak(lineHeight);
+                    doc.text(line, margin + 4, yPos);
+                    yPos += lineHeight - 1;
+                  });
+                });
+                if (Object.keys(answersObj).length > 10) {
+                  doc.text(`  ... e mais ${Object.keys(answersObj).length - 10} respostas`, margin + 4, yPos);
+                  yPos += lineHeight - 1;
+                }
+                doc.setFontSize(9);
+              }
+            });
+
+            clinical.notes.forEach((n: any) => {
+              checkPageBreak(12);
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(66, 66, 66);
+              const noteType = n.note_type === 'evolution' ? 'Evolução' : n.note_type === 'observation' ? 'Observação' : n.note_type || 'Nota';
+              doc.text(`• ${noteType} - ${format(new Date(n.created_at), 'dd/MM/yyyy')}`, margin + 2, yPos);
+              yPos += lineHeight - 1;
+              doc.setFont('helvetica', 'normal');
+              addWrappedContent(n.note_text);
+            });
+            yPos += 3;
+          }
+
+          // Laudos
+          if (clinical.laudos.length > 0) {
+            checkPageBreak(15);
+            doc.setFillColor(255, 245, 230);
+            doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
+            addSectionTitle('📄 LAUDOS', [180, 100, 0]);
+
+            clinical.laudos.forEach((l: any) => {
+              checkPageBreak(12);
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(66, 66, 66);
+              doc.text(`• ${l.title} - ${format(new Date(l.laudo_date), 'dd/MM/yyyy')} - ${l.status || 'N/A'}`, margin + 2, yPos);
+              yPos += lineHeight - 1;
+              if (l.description) {
+                doc.setFont('helvetica', 'normal');
+                addWrappedContent(l.description);
+              }
+              if (l.file_path) {
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(100, 100, 100);
+                doc.text('  [Arquivo anexado]', margin + 4, yPos);
+                yPos += lineHeight - 1;
+              }
+            });
+            yPos += 3;
+          }
+
+          // Receitas
+          if (clinical.prescriptions.length > 0) {
+            checkPageBreak(15);
+            doc.setFillColor(230, 255, 230);
+            doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
+            addSectionTitle('💊 RECEITAS', [0, 120, 0]);
+
+            clinical.prescriptions.forEach((p: any) => {
+              checkPageBreak(12);
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(66, 66, 66);
+              doc.text(`• ${p.title || 'Receita'} - ${format(new Date(p.prescription_date), 'dd/MM/yyyy')}`, margin + 2, yPos);
+              yPos += lineHeight - 1;
+              if (p.content) {
+                doc.setFont('helvetica', 'normal');
+                addWrappedContent(p.content);
+              }
+              if (p.file_path) {
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(100, 100, 100);
+                doc.text('  [Arquivo anexado]', margin + 4, yPos);
+                yPos += lineHeight - 1;
+              }
+            });
+            yPos += 3;
+          }
+
+          // Documentos
+          if (clinical.documents.length > 0) {
+            checkPageBreak(15);
+            doc.setFillColor(240, 230, 255);
+            doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
+            addSectionTitle('📎 DOCUMENTOS ANEXADOS', [100, 0, 150]);
+
+            clinical.documents.forEach((d: any) => {
+              checkPageBreak(8);
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(66, 66, 66);
+              const size = d.file_size ? ` (${(d.file_size / 1024).toFixed(0)} KB)` : '';
+              doc.text(`• ${d.document_name}${size} - ${d.document_type || 'N/A'}`, margin + 2, yPos);
+              yPos += lineHeight - 1;
+            });
+            yPos += 3;
+          }
+        }
       }
 
       // Linha separadora entre atendimentos
