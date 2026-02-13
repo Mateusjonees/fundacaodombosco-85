@@ -69,6 +69,11 @@ export default function Reports() {
   const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [detailAnamnesis, setDetailAnamnesis] = useState<any[]>([]);
+  const [detailLaudos, setDetailLaudos] = useState<any[]>([]);
+  const [detailPrescriptions, setDetailPrescriptions] = useState<any[]>([]);
+  const [detailDocuments, setDetailDocuments] = useState<any[]>([]);
+  const [detailLoading, setDetailLoading] = useState(false);
   const { user } = useAuth();
   const { 
     canViewReports, 
@@ -138,6 +143,123 @@ export default function Reports() {
 
     loadData();
   }, [selectedEmployee, selectedClient, selectedUnit, dateFrom, dateTo, selectedMonth, sessionType, roleLoading, userRole, customPermissions.loading]);
+
+  // Carregar dados complementares do paciente quando um relatório é selecionado
+  useEffect(() => {
+    if (!selectedReport || !isDetailDialogOpen) return;
+    
+    const loadPatientDetails = async () => {
+      setDetailLoading(true);
+      const clientId = selectedReport.client_id;
+      
+      try {
+        const [anamnesisRes, laudosRes, prescriptionsRes, documentsRes, formalAnamnesisRes] = await Promise.all([
+          // Anamneses (client_notes - evoluções)
+          supabase
+            .from('client_notes')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('created_at', { ascending: false })
+            .limit(50),
+          // Laudos
+          supabase
+            .from('client_laudos')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('laudo_date', { ascending: false })
+            .limit(50),
+          // Receitas
+          supabase
+            .from('prescriptions')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('prescription_date', { ascending: false })
+            .limit(50),
+          // Documentos
+          supabase
+            .from('client_documents')
+            .select('*')
+            .eq('client_id', clientId)
+            .eq('is_active', true)
+            .order('uploaded_at', { ascending: false })
+            .limit(50),
+          // Anamneses formais (anamnesis_records)
+          supabase
+            .from('anamnesis_records')
+            .select('*, anamnesis_types(name)')
+            .eq('client_id', clientId)
+            .order('created_at', { ascending: false })
+            .limit(50),
+        ]);
+
+        // Enrich anamnesis with creator names
+        const allNotes: any[] = [];
+        if (anamnesisRes.data && anamnesisRes.data.length > 0) {
+          const creatorIds = [...new Set(anamnesisRes.data.map(a => a.created_by).filter(Boolean))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', creatorIds);
+          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          allNotes.push(...anamnesisRes.data.map(a => ({ ...a, creator_name: profileMap.get(a.created_by) || 'N/A', source: 'notes' })));
+        }
+        // Add formal anamnesis records
+        if (formalAnamnesisRes.data && formalAnamnesisRes.data.length > 0) {
+          const fillerIds = [...new Set(formalAnamnesisRes.data.map(a => a.filled_by).filter(Boolean))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', fillerIds);
+          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          allNotes.push(...formalAnamnesisRes.data.map(a => ({
+            id: a.id,
+            note_type: 'anamnesis_formal',
+            note_text: a.notes || JSON.stringify(a.answers, null, 2),
+            created_at: a.created_at,
+            creator_name: profileMap.get(a.filled_by) || 'N/A',
+            service_type: (a as any).anamnesis_types?.name || 'Anamnese',
+            status: a.status,
+            source: 'anamnesis_records',
+          })));
+        }
+        setDetailAnamnesis(allNotes);
+
+        // Enrich laudos with employee names
+        if (laudosRes.data && laudosRes.data.length > 0) {
+          const empIds = [...new Set(laudosRes.data.map(l => l.employee_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', empIds);
+          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          setDetailLaudos(laudosRes.data.map(l => ({ ...l, employee_name: profileMap.get(l.employee_id) || 'N/A' })));
+        } else {
+          setDetailLaudos([]);
+        }
+
+        // Enrich prescriptions with employee names
+        if (prescriptionsRes.data && prescriptionsRes.data.length > 0) {
+          const empIds = [...new Set(prescriptionsRes.data.map(p => p.employee_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', empIds);
+          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          setDetailPrescriptions(prescriptionsRes.data.map(p => ({ ...p, employee_name: profileMap.get(p.employee_id) || 'N/A' })));
+        } else {
+          setDetailPrescriptions([]);
+        }
+
+        setDetailDocuments(documentsRes.data || []);
+      } catch (error) {
+        console.error('Error loading patient details:', error);
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+
+    loadPatientDetails();
+  }, [selectedReport?.id, isDetailDialogOpen]);
 
   const loadClients = async () => {
     try {
@@ -2450,6 +2572,135 @@ export default function Reports() {
                   <div className="space-y-2 bg-destructive/10 p-3 rounded-md">
                     <Label className="text-xs text-destructive">Motivo da Rejeição</Label>
                     <p className="text-sm">{selectedReport.rejection_reason}</p>
+                  </div>
+                )}
+
+                {/* Dados Complementares do Paciente */}
+                <Separator />
+                
+                {detailLoading ? (
+                  <div className="text-center py-4 text-muted-foreground text-sm">
+                    Carregando dados complementares...
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Anamneses */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <ClipboardList className="h-3 w-3" />
+                        Anamneses / Evoluções ({detailAnamnesis.length})
+                      </Label>
+                      {detailAnamnesis.length > 0 ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {detailAnamnesis.map((note) => (
+                            <div key={note.id} className="bg-muted p-3 rounded-md text-sm">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-xs">
+                                  {note.note_type === 'evolution' ? 'Evolução' : 
+                                   note.note_type === 'anamnesis' ? 'Anamnese' : 
+                                   note.note_type || 'Nota'}
+                                  {note.service_type ? ` - ${note.service_type}` : ''}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(note.created_at), 'dd/MM/yyyy', { locale: ptBR })} - {note.creator_name}
+                                </span>
+                              </div>
+                              <p className="whitespace-pre-wrap text-xs line-clamp-4">{note.note_text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhuma anamnese encontrada</p>
+                      )}
+                    </div>
+
+                    {/* Laudos */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <FileCheck2 className="h-3 w-3" />
+                        Laudos ({detailLaudos.length})
+                      </Label>
+                      {detailLaudos.length > 0 ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {detailLaudos.map((laudo) => (
+                            <div key={laudo.id} className="bg-muted p-3 rounded-md text-sm">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-xs">{laudo.title}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(laudo.laudo_date), 'dd/MM/yyyy', { locale: ptBR })} - {laudo.employee_name}
+                                </span>
+                              </div>
+                              {laudo.laudo_type && (
+                                <Badge variant="outline" className="text-xs mb-1">{laudo.laudo_type}</Badge>
+                              )}
+                              {laudo.description && (
+                                <p className="whitespace-pre-wrap text-xs line-clamp-3 mt-1">{laudo.description}</p>
+                              )}
+                              {laudo.file_path && (
+                                <p className="text-xs text-primary mt-1">📎 Arquivo anexado</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhum laudo encontrado</p>
+                      )}
+                    </div>
+
+                    {/* Receitas */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Pill className="h-3 w-3" />
+                        Receitas ({detailPrescriptions.length})
+                      </Label>
+                      {detailPrescriptions.length > 0 ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {detailPrescriptions.map((rx) => (
+                            <div key={rx.id} className="bg-muted p-3 rounded-md text-sm">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-xs">{rx.title || 'Receita'}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(rx.prescription_date), 'dd/MM/yyyy', { locale: ptBR })} - {rx.employee_name}
+                                </span>
+                              </div>
+                              {rx.content && (
+                                <p className="whitespace-pre-wrap text-xs line-clamp-3">{rx.content}</p>
+                              )}
+                              {rx.file_path && (
+                                <p className="text-xs text-primary mt-1">📎 Arquivo anexado</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhuma receita encontrada</p>
+                      )}
+                    </div>
+
+                    {/* Documentos */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <FileDown className="h-3 w-3" />
+                        Documentos Anexados ({detailDocuments.length})
+                      </Label>
+                      {detailDocuments.length > 0 ? (
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {detailDocuments.map((doc) => (
+                            <div key={doc.id} className="bg-muted p-2 rounded-md text-sm flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-xs">{doc.document_name}</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(doc.uploaded_at), 'dd/MM/yyyy', { locale: ptBR })}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhum documento anexado</p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
