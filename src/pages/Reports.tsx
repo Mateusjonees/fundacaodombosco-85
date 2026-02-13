@@ -1001,42 +1001,39 @@ export default function Reports() {
                 addWrappedContent(a.notes);
               }
 
-              // Render answers as structured key-value pairs
+              // Render answers as structured content
               if (a.answers && typeof a.answers === 'object') {
                 const answersObj = a.answers as Record<string, any>;
                 const entries = Object.entries(answersObj);
                 
                 if (entries.length > 0) {
-                  doc.setFontSize(8);
+                  const maxContentWidth = pageWidth - margin * 2 - 6;
+                  
                   entries.forEach(([key, val]) => {
-                    checkPageBreak(lineHeight + 2);
                     const formattedVal = formatAnswerValue(val);
+                    if (!formattedVal || formattedVal === '-') return;
                     
-                    // Key in bold
+                    // Clean markdown-style bold markers
+                    const cleanVal = formattedVal.replace(/\*\*/g, '');
+                    
+                    // Render key as label
+                    checkPageBreak(lineHeight + 4);
+                    doc.setFontSize(8);
                     doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(60, 60, 60);
-                    const keyText = `${key}:`;
-                    doc.text(keyText, margin + 4, yPos);
+                    doc.setTextColor(50, 50, 50);
+                    doc.text(`${key}:`, margin + 4, yPos);
+                    yPos += lineHeight - 1;
                     
-                    // Value in normal, on next line if long
-                    const keyWidth = doc.getTextWidth(keyText) + 2;
+                    // Render value using splitTextToSize for proper wrapping
                     doc.setFont('helvetica', 'normal');
                     doc.setTextColor(30, 30, 30);
-                    
-                    const availableWidth = pageWidth - margin * 2 - 8;
-                    if (doc.getTextWidth(`${keyText} ${formattedVal}`) < availableWidth) {
-                      doc.text(formattedVal, margin + 4 + keyWidth, yPos);
-                      yPos += lineHeight;
-                    } else {
+                    const splitLines = doc.splitTextToSize(cleanVal, maxContentWidth);
+                    splitLines.forEach((line: string) => {
+                      checkPageBreak(lineHeight);
+                      doc.text(line, margin + 6, yPos);
                       yPos += lineHeight - 1;
-                      const valLines = wrapText(formattedVal, availableWidth - 4);
-                      valLines.forEach(line => {
-                        checkPageBreak(lineHeight);
-                        doc.text(line, margin + 6, yPos);
-                        yPos += lineHeight - 1;
-                      });
-                      yPos += 1;
-                    }
+                    });
+                    yPos += 2;
                   });
                   doc.setFontSize(9);
                 }
