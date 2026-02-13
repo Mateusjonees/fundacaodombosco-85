@@ -1048,21 +1048,36 @@ export default function Reports() {
             addSectionTitle('💊 RECEITAS', [0, 120, 0]);
 
             clinical.prescriptions.forEach((p: any) => {
-              checkPageBreak(12);
+              checkPageBreak(15);
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
               doc.setTextColor(66, 66, 66);
-              doc.text(`• ${p.title || 'Receita'} - ${format(new Date(p.prescription_date), 'dd/MM/yyyy')}`, margin + 2, yPos);
+              const prescLabel = p.service_type || 'Receita';
+              doc.text(`• ${prescLabel} - ${format(new Date(p.prescription_date), 'dd/MM/yyyy')} - ${p.status || 'N/A'}`, margin + 2, yPos);
               yPos += lineHeight - 1;
-              if (p.content) {
+              if (p.diagnosis) {
                 doc.setFont('helvetica', 'normal');
-                addWrappedContent(p.content);
+                addWrappedContent(`Diagnóstico: ${p.diagnosis}`);
               }
-              if (p.file_path) {
-                doc.setFont('helvetica', 'italic');
-                doc.setTextColor(100, 100, 100);
-                doc.text('  [Arquivo anexado]', margin + 4, yPos);
+              if (p.general_instructions) {
+                doc.setFont('helvetica', 'normal');
+                addWrappedContent(`Instruções: ${p.general_instructions}`);
+              }
+              if (p.follow_up_notes) {
+                doc.setFont('helvetica', 'normal');
+                addWrappedContent(`Acompanhamento: ${p.follow_up_notes}`);
+              }
+              if (Array.isArray(p.medications) && p.medications.length > 0) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('  Medicamentos:', margin + 4, yPos);
                 yPos += lineHeight - 1;
+                doc.setFont('helvetica', 'normal');
+                p.medications.forEach((med: any) => {
+                  checkPageBreak(lineHeight);
+                  const medText = typeof med === 'string' ? med : (med.name || med.medication || JSON.stringify(med));
+                  doc.text(`    - ${medText}`, margin + 6, yPos);
+                  yPos += lineHeight - 1;
+                });
               }
             });
             yPos += 3;
