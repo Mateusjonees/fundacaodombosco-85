@@ -954,114 +954,161 @@ export default function Reports() {
         const clinical = clinicalDataByClient[clientId];
 
         if (clinical) {
-          // Anamneses / Evoluções
-          if (clinical.notes.length > 0 || clinical.anamnesis.length > 0) {
-            checkPageBreak(15);
-            yPos += 3;
-            doc.setFillColor(230, 240, 255);
-            doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
-            addSectionTitle('📋 ANAMNESES / EVOLUÇÕES', [0, 70, 150]);
+          // Helper to draw section header bar
+          const addClinicalSectionHeader = (title: string, bgColor: [number, number, number], textColor: [number, number, number]) => {
+            checkPageBreak(20);
+            yPos += 4;
+            doc.setFillColor(...bgColor);
+            doc.rect(margin, yPos - 3, pageWidth - margin * 2, 8, 'F');
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...textColor);
+            doc.text(title, margin + 3, yPos + 2);
+            yPos += 10;
+          };
 
-            clinical.anamnesis.forEach((a: any) => {
-              checkPageBreak(15);
+          // Helper to format anamnesis answer values
+          const formatAnswerValue = (val: any): string => {
+            if (val === null || val === undefined) return '-';
+            if (typeof val === 'string') return val;
+            if (typeof val === 'boolean') return val ? 'Sim' : 'Nao';
+            if (typeof val === 'number') return String(val);
+            if (Array.isArray(val)) return val.join(', ');
+            return JSON.stringify(val);
+          };
+
+          // ---- ANAMNESES / EVOLUCOES ----
+          if (clinical.notes.length > 0 || clinical.anamnesis.length > 0) {
+            addClinicalSectionHeader('ANAMNESES / EVOLUCOES', [220, 235, 255], [0, 60, 140]);
+
+            clinical.anamnesis.forEach((a: any, idx: number) => {
+              checkPageBreak(20);
+              const typeName = a.anamnesis_types?.name || 'Anamnese';
+              
+              // Sub-header with background
+              doc.setFillColor(245, 245, 250);
+              doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
-              doc.setTextColor(66, 66, 66);
-              const typeName = a.anamnesis_types?.name || 'Anamnese';
-              doc.text(`• ${typeName} - ${format(new Date(a.created_at), 'dd/MM/yyyy')} - Status: ${a.status || 'N/A'}`, margin + 2, yPos);
-              yPos += lineHeight - 1;
+              doc.setTextColor(40, 40, 40);
+              doc.text(`${idx + 1}. ${typeName} - ${format(new Date(a.created_at), 'dd/MM/yyyy')} - Status: ${a.status || 'N/A'}`, margin + 2, yPos + 2);
+              yPos += 9;
+
               if (a.notes) {
                 doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(50, 50, 50);
                 addWrappedContent(a.notes);
               }
-              // Mostrar respostas resumidas
+
+              // Render answers as structured key-value pairs
               if (a.answers && typeof a.answers === 'object') {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
                 const answersObj = a.answers as Record<string, any>;
-                const answerEntries = Object.entries(answersObj).slice(0, 10);
-                answerEntries.forEach(([key, val]) => {
-                  checkPageBreak(lineHeight);
-                  const answerText = `  ${key}: ${typeof val === 'string' ? val : JSON.stringify(val)}`;
-                  const lines = wrapText(answerText, pageWidth - margin * 2 - 8);
-                  lines.forEach(line => {
-                    checkPageBreak(lineHeight);
-                    doc.text(line, margin + 4, yPos);
-                    yPos += lineHeight - 1;
+                const entries = Object.entries(answersObj);
+                
+                if (entries.length > 0) {
+                  doc.setFontSize(8);
+                  entries.forEach(([key, val]) => {
+                    checkPageBreak(lineHeight + 2);
+                    const formattedVal = formatAnswerValue(val);
+                    
+                    // Key in bold
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(60, 60, 60);
+                    const keyText = `${key}:`;
+                    doc.text(keyText, margin + 4, yPos);
+                    
+                    // Value in normal, on next line if long
+                    const keyWidth = doc.getTextWidth(keyText) + 2;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(30, 30, 30);
+                    
+                    const availableWidth = pageWidth - margin * 2 - 8;
+                    if (doc.getTextWidth(`${keyText} ${formattedVal}`) < availableWidth) {
+                      doc.text(formattedVal, margin + 4 + keyWidth, yPos);
+                      yPos += lineHeight;
+                    } else {
+                      yPos += lineHeight - 1;
+                      const valLines = wrapText(formattedVal, availableWidth - 4);
+                      valLines.forEach(line => {
+                        checkPageBreak(lineHeight);
+                        doc.text(line, margin + 6, yPos);
+                        yPos += lineHeight - 1;
+                      });
+                      yPos += 1;
+                    }
                   });
-                });
-                if (Object.keys(answersObj).length > 10) {
-                  doc.text(`  ... e mais ${Object.keys(answersObj).length - 10} respostas`, margin + 4, yPos);
-                  yPos += lineHeight - 1;
+                  doc.setFontSize(9);
                 }
-                doc.setFontSize(9);
               }
+              yPos += 3;
             });
 
-            clinical.notes.forEach((n: any) => {
-              checkPageBreak(12);
+            // Evolucoes (notes)
+            clinical.notes.forEach((n: any, idx: number) => {
+              checkPageBreak(15);
+              doc.setFillColor(245, 245, 250);
+              doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
-              doc.setTextColor(66, 66, 66);
-              const noteType = n.note_type === 'evolution' ? 'Evolução' : n.note_type === 'observation' ? 'Observação' : n.note_type || 'Nota';
-              doc.text(`• ${noteType} - ${format(new Date(n.created_at), 'dd/MM/yyyy')}`, margin + 2, yPos);
-              yPos += lineHeight - 1;
+              doc.setTextColor(40, 40, 40);
+              const noteType = n.note_type === 'evolution' ? 'Evolucao' : n.note_type === 'observation' ? 'Observacao' : n.note_type || 'Nota';
+              doc.text(`${noteType} - ${format(new Date(n.created_at), 'dd/MM/yyyy')}`, margin + 2, yPos + 2);
+              yPos += 9;
               doc.setFont('helvetica', 'normal');
+              doc.setTextColor(50, 50, 50);
               addWrappedContent(n.note_text);
+              yPos += 2;
             });
             yPos += 3;
           }
 
-          // Laudos
+          // ---- LAUDOS ----
           if (clinical.laudos.length > 0) {
-            checkPageBreak(15);
-            doc.setFillColor(255, 245, 230);
-            doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
-            addSectionTitle('📄 LAUDOS', [180, 100, 0]);
+            addClinicalSectionHeader('LAUDOS', [255, 242, 220], [160, 80, 0]);
 
             clinical.laudos.forEach((l: any) => {
-              checkPageBreak(12);
+              checkPageBreak(15);
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
-              doc.setTextColor(66, 66, 66);
-              doc.text(`• ${l.title} - ${format(new Date(l.laudo_date), 'dd/MM/yyyy')} - ${l.status || 'N/A'}`, margin + 2, yPos);
-              yPos += lineHeight - 1;
+              doc.setTextColor(40, 40, 40);
+              doc.text(`- ${l.title} - ${format(new Date(l.laudo_date), 'dd/MM/yyyy')} - ${l.status || 'N/A'}`, margin + 2, yPos);
+              yPos += lineHeight;
               if (l.description) {
                 doc.setFont('helvetica', 'normal');
+                doc.setTextColor(50, 50, 50);
                 addWrappedContent(l.description);
               }
               if (l.file_path) {
                 doc.setFont('helvetica', 'italic');
                 doc.setTextColor(100, 100, 100);
                 doc.text('  [Arquivo anexado]', margin + 4, yPos);
-                yPos += lineHeight - 1;
+                yPos += lineHeight;
               }
             });
             yPos += 3;
           }
 
-          // Receitas
+          // ---- RECEITAS ----
           if (clinical.prescriptions.length > 0) {
-            checkPageBreak(15);
-            doc.setFillColor(230, 255, 230);
-            doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
-            addSectionTitle('💊 RECEITAS', [0, 120, 0]);
+            addClinicalSectionHeader('RECEITAS', [220, 245, 220], [0, 100, 0]);
 
             clinical.prescriptions.forEach((p: any) => {
               checkPageBreak(15);
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
-              doc.setTextColor(66, 66, 66);
+              doc.setTextColor(40, 40, 40);
               const prescLabel = p.service_type || 'Receita';
-              doc.text(`• ${prescLabel} - ${format(new Date(p.prescription_date), 'dd/MM/yyyy')} - ${p.status || 'N/A'}`, margin + 2, yPos);
-              yPos += lineHeight - 1;
+              doc.text(`- ${prescLabel} - ${format(new Date(p.prescription_date), 'dd/MM/yyyy')} - ${p.status || 'N/A'}`, margin + 2, yPos);
+              yPos += lineHeight;
               if (p.diagnosis) {
                 doc.setFont('helvetica', 'normal');
-                addWrappedContent(`Diagnóstico: ${p.diagnosis}`);
+                doc.setTextColor(50, 50, 50);
+                addWrappedContent(`Diagnostico: ${p.diagnosis}`);
               }
               if (p.general_instructions) {
                 doc.setFont('helvetica', 'normal');
-                addWrappedContent(`Instruções: ${p.general_instructions}`);
+                addWrappedContent(`Instrucoes: ${p.general_instructions}`);
               }
               if (p.follow_up_notes) {
                 doc.setFont('helvetica', 'normal');
@@ -1069,35 +1116,34 @@ export default function Reports() {
               }
               if (Array.isArray(p.medications) && p.medications.length > 0) {
                 doc.setFont('helvetica', 'bold');
+                doc.setTextColor(40, 40, 40);
                 doc.text('  Medicamentos:', margin + 4, yPos);
-                yPos += lineHeight - 1;
+                yPos += lineHeight;
                 doc.setFont('helvetica', 'normal');
                 p.medications.forEach((med: any) => {
                   checkPageBreak(lineHeight);
                   const medText = typeof med === 'string' ? med : (med.name || med.medication || JSON.stringify(med));
                   doc.text(`    - ${medText}`, margin + 6, yPos);
-                  yPos += lineHeight - 1;
+                  yPos += lineHeight;
                 });
               }
+              yPos += 2;
             });
             yPos += 3;
           }
 
-          // Documentos
+          // ---- DOCUMENTOS ANEXADOS ----
           if (clinical.documents.length > 0) {
-            checkPageBreak(15);
-            doc.setFillColor(240, 230, 255);
-            doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
-            addSectionTitle('📎 DOCUMENTOS ANEXADOS', [100, 0, 150]);
+            addClinicalSectionHeader('DOCUMENTOS ANEXADOS', [235, 225, 250], [80, 0, 130]);
 
             clinical.documents.forEach((d: any) => {
-              checkPageBreak(8);
+              checkPageBreak(lineHeight + 2);
               doc.setFontSize(9);
               doc.setFont('helvetica', 'normal');
-              doc.setTextColor(66, 66, 66);
+              doc.setTextColor(50, 50, 50);
               const size = d.file_size ? ` (${(d.file_size / 1024).toFixed(0)} KB)` : '';
-              doc.text(`• ${d.document_name}${size} - ${d.document_type || 'N/A'}`, margin + 2, yPos);
-              yPos += lineHeight - 1;
+              doc.text(`- ${d.document_name}${size} - Tipo: ${d.document_type || 'N/A'}`, margin + 2, yPos);
+              yPos += lineHeight;
             });
             yPos += 3;
           }
