@@ -986,19 +986,27 @@ export default function Reports() {
               const typeName = a.anamnesis_types?.name || 'Anamnese';
               
               // Sub-header with background
-              doc.setFillColor(245, 245, 250);
-              doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
+              doc.setFillColor(235, 240, 250);
+              doc.rect(margin, yPos - 3, pageWidth - margin * 2, 8, 'F');
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
-              doc.setTextColor(40, 40, 40);
-              doc.text(`${idx + 1}. ${typeName} - ${format(new Date(a.created_at), 'dd/MM/yyyy')} - Status: ${a.status || 'N/A'}`, margin + 2, yPos + 2);
-              yPos += 9;
+              doc.setTextColor(30, 30, 30);
+              doc.text(`${typeName} - ${format(new Date(a.created_at), 'dd/MM/yyyy')}`, margin + 2, yPos + 2);
+              yPos += 10;
 
+              // Render notes (evolution text) with proper cleanup
               if (a.notes) {
+                const cleanNotes = String(a.notes).replace(/\*\*/g, '').replace(/[^\x20-\x7E\xC0-\xFF\u00C0-\u024F]/g, '');
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
                 doc.setTextColor(50, 50, 50);
-                addWrappedContent(a.notes);
+                const noteLines = doc.splitTextToSize(cleanNotes, pageWidth - margin * 2 - 4);
+                noteLines.forEach((line: string) => {
+                  checkPageBreak(lineHeight);
+                  doc.text(line, margin + 2, yPos);
+                  yPos += lineHeight;
+                });
+                yPos += 3;
               }
 
               // Render answers as structured content
@@ -1007,55 +1015,78 @@ export default function Reports() {
                 const entries = Object.entries(answersObj);
                 
                 if (entries.length > 0) {
-                  const maxContentWidth = pageWidth - margin * 2 - 6;
+                  const maxContentWidth = pageWidth - margin * 2 - 8;
                   
                   entries.forEach(([key, val]) => {
                     const formattedVal = formatAnswerValue(val);
                     if (!formattedVal || formattedVal === '-') return;
                     
-                    // Clean markdown-style bold markers
-                    const cleanVal = formattedVal.replace(/\*\*/g, '');
+                    const cleanVal = formattedVal.replace(/\*\*/g, '').replace(/[^\x20-\x7E\xC0-\xFF\u00C0-\u024F]/g, '');
                     
-                    // Render key as label
-                    checkPageBreak(lineHeight + 4);
+                    // Key + value on same line if short enough
+                    const keyLabel = `${key}: `;
+                    const fullText = `${keyLabel}${cleanVal}`;
+                    
+                    checkPageBreak(lineHeight + 2);
                     doc.setFontSize(8);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(50, 50, 50);
-                    doc.text(`${key}:`, margin + 4, yPos);
-                    yPos += lineHeight - 1;
                     
-                    // Render value using splitTextToSize for proper wrapping
-                    doc.setFont('helvetica', 'normal');
-                    doc.setTextColor(30, 30, 30);
-                    const splitLines = doc.splitTextToSize(cleanVal, maxContentWidth);
-                    splitLines.forEach((line: string) => {
+                    const splitLines = doc.splitTextToSize(fullText, maxContentWidth);
+                    
+                    splitLines.forEach((line: string, lineIdx: number) => {
                       checkPageBreak(lineHeight);
-                      doc.text(line, margin + 6, yPos);
-                      yPos += lineHeight - 1;
+                      if (lineIdx === 0) {
+                        // First line: render key part bold, value normal
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(50, 50, 50);
+                        doc.text(keyLabel, margin + 4, yPos);
+                        const keyW = doc.getTextWidth(keyLabel);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(30, 30, 30);
+                        const valPart = line.substring(keyLabel.length);
+                        if (valPart) {
+                          doc.text(valPart, margin + 4 + keyW, yPos);
+                        }
+                      } else {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(30, 30, 30);
+                        doc.text(line, margin + 6, yPos);
+                      }
+                      yPos += lineHeight;
                     });
-                    yPos += 2;
+                    yPos += 1;
                   });
                   doc.setFontSize(9);
                 }
               }
-              yPos += 3;
+              
+              // Separator line between anamnesis entries
+              doc.setDrawColor(200, 200, 200);
+              doc.line(margin, yPos, pageWidth - margin, yPos);
+              yPos += 4;
             });
 
             // Evolucoes (notes)
-            clinical.notes.forEach((n: any, idx: number) => {
-              checkPageBreak(15);
-              doc.setFillColor(245, 245, 250);
-              doc.rect(margin, yPos - 2, pageWidth - margin * 2, 7, 'F');
+            clinical.notes.forEach((n: any) => {
+              checkPageBreak(18);
+              doc.setFillColor(235, 240, 250);
+              doc.rect(margin, yPos - 3, pageWidth - margin * 2, 8, 'F');
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
-              doc.setTextColor(40, 40, 40);
+              doc.setTextColor(30, 30, 30);
               const noteType = n.note_type === 'evolution' ? 'Evolucao' : n.note_type === 'observation' ? 'Observacao' : n.note_type || 'Nota';
               doc.text(`${noteType} - ${format(new Date(n.created_at), 'dd/MM/yyyy')}`, margin + 2, yPos + 2);
-              yPos += 9;
+              yPos += 10;
+              
+              const cleanNote = String(n.note_text || '').replace(/\*\*/g, '').replace(/[^\x20-\x7E\xC0-\xFF\u00C0-\u024F]/g, '');
               doc.setFont('helvetica', 'normal');
               doc.setTextColor(50, 50, 50);
-              addWrappedContent(n.note_text);
-              yPos += 2;
+              const noteLines = doc.splitTextToSize(cleanNote, pageWidth - margin * 2 - 4);
+              noteLines.forEach((line: string) => {
+                checkPageBreak(lineHeight);
+                doc.text(line, margin + 2, yPos);
+                yPos += lineHeight;
+              });
+              yPos += 4;
             });
             yPos += 3;
           }
