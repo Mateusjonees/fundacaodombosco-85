@@ -1,57 +1,31 @@
 
 
-## Realidade dos 160 Registros de Contrato
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-### O que foi encontrado
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
-Apos investigacao detalhada no banco de dados:
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-- **160 registros financeiros** tem `payment_method: 'contract'` -- a forma de pagamento real (Cartao, PIX, Dinheiro, parcelas) **nunca foi salva** no banco de dados
-- A tabela `client_payments` tem **0 registros** (a RLS bloqueava insercao, ja corrigido na migracao anterior)
-- A tabela `automatic_financial_records` tem apenas **2 registros** com metadados de contrato, e nenhum deles tem correspondencia com os 160 registros
-- A tabela `attendance_reports` nao armazena informacao de pagamento
-- **Conclusao: a informacao de pagamento dos contratos antigos nao existe em nenhuma tabela do banco**
+## Detalhes Tecnicos
 
-O codigo antigo de geracao de contrato salvava `payment_method: 'contract'` fixo e `notes: 'Contrato gerado - Pagamento registrado'` -- descartando a escolha real do usuario.
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
-### O que ja esta corrigido (sessoes anteriores)
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-1. O codigo novo em `Contracts.tsx` (linhas 459-464) ja salva o `payment_method` real (PIX, credit_card, cash, etc.) usando a funcao `mapPaymentMethod`
-2. A RLS da tabela `client_payments` ja foi corrigida para permitir insercao por qualquer usuario autenticado
-3. O dialog de edicao ja tem campo "Detalhes do Pagamento"
-
-### O que precisa ser feito agora
-
-Como os dados nao podem ser recuperados automaticamente, a solucao e **facilitar a correcao manual** na interface:
-
-**1. Melhorar o banner de alerta na tela Financeira** (`src/pages/Financial.tsx`)
-- Texto mais claro explicando que os registros antigos precisam ser editados manualmente
-- Botao para filtrar apenas registros pendentes (ja existe)
-- Adicionar contagem visivel
-
-**2. Melhorar o dialog de edicao para contratos** (`src/components/EditFinancialRecordDialog.tsx`)
-- Quando o registro tem `payment_method === 'contract'`, destacar visualmente que precisa de revisao
-- Adicionar campo de **numero de parcelas** visivel quando metodo for cartao de credito
-- Ao salvar, gerar automaticamente o texto de `notes` baseado na forma de pagamento e parcelas selecionadas
-- Exemplo: se usuario selecionar "Cartao de Credito" e "3 parcelas" com valor R$ 1.600, o notes sera gerado como "Cartao de Credito - 3x de R$ 533,33"
-
-**3. Garantir que novos contratos continuem salvando corretamente**
-- Verificar e ajustar o fluxo em `Contracts.tsx` para que `client_payments` tambem seja inserido com sucesso (RLS ja corrigida)
-
-### Detalhes Tecnicos
-
-**`src/components/EditFinancialRecordDialog.tsx`:**
-- Adicionar estado `installments` (numero de parcelas)
-- Campo condicional: quando `payment_method` for `credit_card` ou `debit_card`, mostrar input de parcelas
-- Funcao `generatePaymentNotes()` que cria texto automatico:
-  - "Cartao de Credito - 3x de R$ 533,33" (para cartao com parcelas)
-  - "PIX - Pagamento a vista" (para PIX)
-  - "Dinheiro - Pagamento a vista" (para dinheiro)
-  - "Boleto - Pagamento a vista" (para boleto)
-- Banner de alerta no topo do dialog quando `record.payment_method === 'contract'`
-- Ao salvar, o campo `notes` e preenchido automaticamente se estiver vazio, com base na forma de pagamento
-
-**`src/pages/Financial.tsx`:**
-- Melhorar texto do banner existente
-- Sem mudancas estruturais grandes, apenas ajuste de texto
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 
