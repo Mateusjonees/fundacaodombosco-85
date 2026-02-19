@@ -38,13 +38,18 @@ export const ScreenOrientationToggle = () => {
 
   const toggleOrientation = useCallback(async () => {
     try {
+      // Most browsers require fullscreen to lock orientation
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      }
       if (isLandscape) {
         await screen.orientation.lock('portrait');
       } else {
         await screen.orientation.lock('landscape');
       }
     } catch {
-      toast.error('Não foi possível rotacionar a tela. Tente desbloquear a rotação automática do dispositivo.');
+      // If fullscreen+lock fails, try just CSS-based approach via meta viewport
+      toast.info('Rotação automática não suportada neste navegador. Gire o dispositivo manualmente e desative o bloqueio de rotação.');
     }
   }, [isLandscape]);
 
