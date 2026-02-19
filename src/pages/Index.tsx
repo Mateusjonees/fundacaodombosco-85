@@ -6,6 +6,7 @@ import { MainApp } from '@/components/MainApp';
 import { ChangeOwnPasswordDialog } from '@/components/ChangeOwnPasswordDialog';
 import { PWAInstallBanner } from '@/components/PWAInstallBanner';
 import { OfflineStatusBar } from '@/components/OfflineStatusBar';
+import { ScreenOrientationToggle } from '@/components/ScreenOrientationToggle';
 import { Loader2 } from 'lucide-react';
 
 const AppContent = () => {
@@ -58,6 +59,7 @@ const AppContent = () => {
           onSwitchToSignUp={() => setShowSignUp(true)}
         />
         <PWAInstallBanner />
+        <ScreenOrientationToggle />
       </>
     );
   }
