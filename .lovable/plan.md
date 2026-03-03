@@ -1,31 +1,65 @@
 
+# Plan: Fix All Neuro Test Percentile + Classification Display
 
-# Botao de Rotacao de Tela para Mobile/Tablet
+## Problem Summary
+The user wants ALL neuro tests to display results consistently like the RAVLT example: `P<5 • Inferior`, `P25 • Médio Inferior`, etc. Currently:
 
-## O que sera feito
-Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
+1. **Key mismatches in save logic** — Some tests save percentiles/classifications with keys that don't match the display config (e.g., PCFO saves `geral` but display expects `escorePadrao`; FVA saves `classificacaoAnimais` but display expects `percentilAnimais`)
+2. **Empty percentiles** — Some tests (FDT, PCFO) save empty `percentiles` objects despite the form producing valid data
+3. **Missing percentile ranges** — Tests like TIN, PCFO, TSBC, TRILHAS use Standard Scores (EP) instead of percentile ranges, but should display the EP value with classification
 
-## Como vai funcionar
-- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
-- Ao clicar, a tela alternara entre orientacao retrato e paisagem
-- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
-- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
-- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
+## What Needs to Change
 
-## Detalhes Tecnicos
+### 1. Fix CompleteAttendanceDialog.tsx — Save Logic Key Alignment
 
-### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
-- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
-- Verificara suporte do navegador antes de exibir o botao
-- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
-- Icone do lucide-react: `RotateCcw` ou `Smartphone`
-- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
+For each test, ensure `percentiles` and `classifications` JSON objects use the **exact same keys** as `getTestConfig()` expects:
 
-### 2. Integracao no `MainApp.tsx`
-- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
+| Test | Display Keys | Current Save Keys (broken) | Fix |
+|------|-------------|---------------------------|-----|
+| FDT | `inibicao`, `flexibilidade` | Empty `{}` | Save `fdtResults.percentiles` and `fdtResults.classifications` directly (already correct in code, but verify `|| {}` isn't swallowing data) |
+| PCFO | `escorePadrao` | `geral` (classification) | Map `classifications: { escorePadrao: pcfoResults.classifications.geral }` |
+| FVA | `percentilAnimais`, `percentilFrutas`, `percentilPares` | `classificacaoAnimais` etc. | Already fixed in previous iteration — verify |
+| TIN | `escorePadrao` | correct percentiles but classifications may use wrong key | Verify `tinResults.classifications` key matches `escorePadrao` |
+| TSBC | `escorePadraoOD`, `escorePadraoOI` | `classificacaoOD`, `classificacaoOI` | Already mapped — verify |
+| TRILHAS | `trilhaA`, `trilhaB` | `sequenciasA`, `sequenciasB` | Already mapped — verify |
+| TRPP | `total` | correct | Verify |
+| BNTBR | `percentil` | correct | Verify |
+| FAS | `percentil` | correct | Verify |
+| TOM | `percentil` | correct | Verify |
+| TAYLOR | `copia`, `reproducaoMemoria` | correct | Verify |
+| FPT_INFANTIL | `desenhosUnicos` | correct | Verify |
+| FPT_ADULTO | `desenhosUnicos` | correct | Verify |
+| TMT_ADULTO | `tempoA`, `tempoB`, `tempoBA` | passthrough | Verify keys match |
+| HAYLING_ADULTO | `parteA`, `parteB`, `total` | passthrough | Verify |
+| HAYLING_INFANTIL | `parteATempo`, `parteBTempo`, `parteBErros`, `inibicaoBA` | correct | Already working |
+| TFV | `fluenciaLivre`, `fluenciaFonemica`, `fluenciaSemantica` | correct | Already working |
 
-### 3. Tratamento de erros
-- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
-- Caso o navegador nao suporte, o botao nao sera renderizado
-- Em caso de falha ao rotacionar, exibira um toast informando o usuario
+### 2. Fix Display for Standard Score Tests (TIN, PCFO, TSBC, TRILHAS, TRPP)
 
+These tests use **Escore Padrão** (EP) instead of percentile. The badge should show `EP{value} • {classification}` instead of `P{value} • ...`. Update the rendering in both `PatientNeuroTestHistory.tsx` and `NeuroTestResults.tsx` to detect when a test uses EP and display accordingly.
+
+### 3. Fix Calculated Scores Display for RAVLT
+
+The RAVLT "Escores Calculados" section (ALT, Vel. Esquecimento, Int. Proativa, Int. Retroativa) should show their qualitative interpretation badges in the results table. Currently the RAVLT save logic injects these classifications but the display may show them as `-` if the `percentiles` field doesn't have entries for these keys.
+
+For calculated indices without normative percentiles (ALT, VE, IP, IR):
+- Don't show a percentile prefix, just the classification badge (e.g., `Curva +`, `Prejuízo`, `Interferência`)
+
+### Files to Edit
+
+1. **`src/components/CompleteAttendanceDialog.tsx`** — Fix key mappings for PCFO, and ensure all tests save with correct aligned keys
+2. **`src/components/PatientNeuroTestHistory.tsx`** — Update badge rendering to handle EP-based tests (prefix `EP` instead of `P` for standard score tests)
+3. **`src/components/NeuroTestResults.tsx`** — Same badge rendering updates for consistency
+
+### Technical Approach
+
+Add a helper set of EP-based test codes: `['TIN', 'PCFO', 'TSBC', 'TRILHAS', 'TRILHAS_PRE_ESCOLAR', 'TRPP']`
+
+In the badge rendering logic:
+```
+const isEPTest = EP_TESTS.includes(testCode);
+const prefix = isEPTest ? 'EP' : 'P';
+// Display: "{prefix}{value} • {classification}"
+```
+
+For RAVLT calculated indices (alt, velocidadeEsquecimento, etc.), show only the classification without a P prefix since they don't have normative percentiles.
