@@ -29,7 +29,7 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'RAVLT':
       return {
-        subtests: ['a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'a6', 'a7', 'escoreTotal', 'reconhecimento'],
+        subtests: ['a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'a6', 'a7', 'escoreTotal', 'reconhecimento', 'alt', 'velocidadeEsquecimento', 'interferenciaProativa', 'interferenciaRetroativa'],
         names: {
           a1: 'A1 (1ª tentativa)',
           a2: 'A2 (2ª tentativa)',
@@ -40,7 +40,11 @@ const getTestConfig = (testCode: string): TestConfig | null => {
           a6: 'A6 (Evocação imediata)',
           a7: 'A7 (Evocação tardia)',
           escoreTotal: 'Escore Total (A1-A5)',
-          reconhecimento: 'Reconhecimento'
+          reconhecimento: 'Reconhecimento',
+          alt: 'ALT (Aprendizagem)',
+          velocidadeEsquecimento: 'Vel. Esquecimento',
+          interferenciaProativa: 'Int. Proativa',
+          interferenciaRetroativa: 'Int. Retroativa'
         },
         mainSubtest: 'escoreTotal',
         useRawScores: ['a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'a6', 'a7']
