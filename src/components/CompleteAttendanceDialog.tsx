@@ -449,13 +449,7 @@ export default function CompleteAttendanceDialog({
             raw_scores: JSON.parse(JSON.stringify(ravltResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(ravltResults.calculatedScores)),
             percentiles: ravltPercentiles,
-            classifications: JSON.parse(JSON.stringify({
-              ...ravltResults.classifications,
-              alt: ravltResults.calculatedScores.alt > 0 ? 'Curva +' : ravltResults.calculatedScores.alt === 0 ? 'Plana' : 'Declínio',
-              velocidadeEsquecimento: ravltResults.calculatedScores.velocidadeEsquecimento >= 0.8 ? 'Adequado' : 'Prejuízo',
-              interferenciaProativa: ravltResults.calculatedScores.interferenciaProativa >= 1.0 ? 'Sem interferência' : 'Interferência',
-              interferenciaRetroativa: ravltResults.calculatedScores.interferenciaRetroativa >= 0.8 ? 'Sem interferência' : 'Interferência'
-            })),
+            classifications: JSON.parse(JSON.stringify(ravltResults.classifications)),
             applied_by: user.id,
             applied_at: now,
             notes: ravltResults.notes || null
