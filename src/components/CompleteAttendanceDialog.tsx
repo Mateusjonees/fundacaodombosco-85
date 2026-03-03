@@ -473,7 +473,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(tinResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(tinResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify(tinResults.percentiles || {})),
+            percentiles: JSON.parse(JSON.stringify({ escorePadrao: tinResults.calculatedScores?.escorePadrao ?? null })),
             classifications: JSON.parse(JSON.stringify(tinResults.classifications)),
             applied_by: user.id,
             applied_at: now,
@@ -492,7 +492,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(pcfoResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(pcfoResults.calculatedScores)),
-            percentiles: {},
+            percentiles: JSON.parse(JSON.stringify({ escorePadrao: pcfoResults.calculatedScores?.escorePadrao ?? null })),
             classifications: JSON.parse(JSON.stringify(pcfoResults.classifications)),
             applied_by: user.id,
             applied_at: now,
@@ -511,8 +511,8 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(tsbcResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(tsbcResults.calculatedScores)),
-            percentiles: {},
-            classifications: JSON.parse(JSON.stringify(tsbcResults.classifications)),
+            percentiles: JSON.parse(JSON.stringify({ escorePadraoOD: tsbcResults.calculatedScores?.escorePadraoOD ?? null, escorePadraoOI: tsbcResults.calculatedScores?.escorePadraoOI ?? null })),
+            classifications: JSON.parse(JSON.stringify({ escorePadraoOD: tsbcResults.classifications?.classificacaoOD ?? 'Não classificado', escorePadraoOI: tsbcResults.classifications?.classificacaoOI ?? 'Não classificado' })),
             applied_by: user.id,
             applied_at: now,
             notes: tsbcResults.notes || null
@@ -530,8 +530,8 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(fvaResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(fvaResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify(fvaResults.calculatedScores || {})),
-            classifications: JSON.parse(JSON.stringify(fvaResults.classifications)),
+            percentiles: JSON.parse(JSON.stringify({ percentilAnimais: fvaResults.calculatedScores?.percentilAnimais, percentilFrutas: fvaResults.calculatedScores?.percentilFrutas, percentilPares: fvaResults.calculatedScores?.percentilPares })),
+            classifications: JSON.parse(JSON.stringify({ percentilAnimais: fvaResults.classifications?.classificacaoAnimais ?? '-', percentilFrutas: fvaResults.classifications?.classificacaoFrutas ?? '-', percentilPares: fvaResults.classifications?.classificacaoPares ?? '-' })),
             applied_by: user.id,
             applied_at: now,
             notes: fvaResults.notes || null
@@ -568,8 +568,8 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(trilhasResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(trilhasResults.calculatedScores)),
-            percentiles: {},
-            classifications: JSON.parse(JSON.stringify(trilhasResults.classifications)),
+            percentiles: JSON.parse(JSON.stringify({ trilhaA: trilhasResults.calculatedScores?.escorePadraoA ?? null, trilhaB: trilhasResults.calculatedScores?.escorePadraoB ?? null })),
+            classifications: JSON.parse(JSON.stringify({ trilhaA: trilhasResults.classifications?.sequenciasA ?? '-', trilhaB: trilhasResults.classifications?.sequenciasB ?? '-' })),
             applied_by: user.id,
             applied_at: now,
             notes: trilhasResults.notes || null
@@ -609,13 +609,16 @@ export default function CompleteAttendanceDialog({
               sequenciasB: trilhasPreEscolarResults.sequenciasB
             })),
             calculated_scores: JSON.parse(JSON.stringify({
-              standardScoreA: trilhasPreEscolarResults.standardScoreA,
-              standardScoreB: trilhasPreEscolarResults.standardScoreB
+              trilhaA: trilhasPreEscolarResults.standardScoreA,
+              trilhaB: trilhasPreEscolarResults.standardScoreB
             })),
-            percentiles: {},
+            percentiles: JSON.parse(JSON.stringify({
+              trilhaA: trilhasPreEscolarResults.standardScoreA,
+              trilhaB: trilhasPreEscolarResults.standardScoreB
+            })),
             classifications: JSON.parse(JSON.stringify({
-              classificationA: trilhasPreEscolarResults.classificationA,
-              classificationB: trilhasPreEscolarResults.classificationB
+              trilhaA: trilhasPreEscolarResults.classificationA,
+              trilhaB: trilhasPreEscolarResults.classificationB
             })),
             applied_by: user.id,
             applied_at: now,
@@ -642,7 +645,7 @@ export default function CompleteAttendanceDialog({
               zScore: fasResults.zScore
             })),
             percentiles: { percentil: fasResults.percentile },
-            classifications: { classification: fasResults.classification },
+            classifications: { percentil: fasResults.classification },
             applied_by: user.id,
             applied_at: now,
             notes: null
@@ -755,7 +758,7 @@ export default function CompleteAttendanceDialog({
               zScore: tomResults.zScore
             })),
             percentiles: { percentil: tomResults.percentile },
-            classifications: { classification: tomResults.classification },
+            classifications: { percentil: tomResults.classification },
             applied_by: user.id,
             applied_at: now,
             notes: null
@@ -810,7 +813,7 @@ export default function CompleteAttendanceDialog({
               total: trppResults.calculatedScores.total,
               escorePadrao: trppResults.calculatedScores.escorePadrao
             })),
-            percentiles: {},
+            percentiles: JSON.parse(JSON.stringify({ total: trppResults.calculatedScores?.escorePadrao ?? null })),
             classifications: JSON.parse(JSON.stringify({
               total: trppResults.classifications.total
             })),
@@ -834,7 +837,7 @@ export default function CompleteAttendanceDialog({
               schoolYear: fptInfantilResults.schoolYear
             })),
             calculated_scores: JSON.parse(JSON.stringify({})),
-            percentiles: { percentil: fptInfantilResults.percentile },
+            percentiles: { desenhosUnicos: fptInfantilResults.percentile },
             classifications: JSON.parse(JSON.stringify({
               desenhosUnicos: fptInfantilResults.classification
             })),
@@ -858,7 +861,7 @@ export default function CompleteAttendanceDialog({
               ageGroup: fptAdultoResults.ageGroup
             })),
             calculated_scores: JSON.parse(JSON.stringify({})),
-            percentiles: { percentil: fptAdultoResults.percentile },
+            percentiles: { desenhosUnicos: fptAdultoResults.percentile },
             classifications: JSON.parse(JSON.stringify({
               desenhosUnicos: fptAdultoResults.classification
             })),
