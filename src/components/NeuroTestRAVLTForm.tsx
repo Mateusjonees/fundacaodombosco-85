@@ -257,27 +257,60 @@ export default function NeuroTestRAVLTForm({
             </div>
           </div>
 
-          {/* Outros cálculos */}
+          {/* Reconhecimento calculado */}
+          <div className="p-2 bg-muted/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-[10px] sm:text-xs text-muted-foreground">Reconhecimento (REC - 35)</Label>
+                <p className="text-sm font-bold">{reconhecimento}</p>
+              </div>
+              <Badge variant={getClassificationVariant(getClassificationFromRange(reconhecimentoRange))} className="text-[9px]">
+                P{reconhecimentoRange} • {getClassificationFromRange(reconhecimentoRange)}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Outros cálculos com interpretação qualitativa */}
           <div className="grid grid-cols-2 gap-2">
             <div className="p-2 bg-muted/30 rounded-lg">
-              <Label className="text-[10px] sm:text-xs text-muted-foreground">ALT (Aprendizagem)</Label>
+              <div className="flex items-center justify-between mb-0.5">
+                <Label className="text-[10px] sm:text-xs text-muted-foreground">ALT (Aprendizagem)</Label>
+                <Badge variant={alt > 0 ? 'secondary' : 'destructive'} className="text-[9px]">
+                  {alt > 0 ? 'Curva +' : alt === 0 ? 'Plana' : 'Declínio'}
+                </Badge>
+              </div>
               <p className="text-sm font-bold">{alt}</p>
               <p className="text-[9px] text-muted-foreground">Σ - (5 × A1)</p>
             </div>
             <div className="p-2 bg-muted/30 rounded-lg">
-              <Label className="text-[10px] sm:text-xs text-muted-foreground">Vel. Esquecimento</Label>
+              <div className="flex items-center justify-between mb-0.5">
+                <Label className="text-[10px] sm:text-xs text-muted-foreground">Vel. Esquecimento</Label>
+                <Badge variant={velocidadeEsquecimento >= 0.8 ? 'secondary' : 'destructive'} className="text-[9px]">
+                  {velocidadeEsquecimento >= 0.8 ? 'Adequado' : 'Prejuízo'}
+                </Badge>
+              </div>
               <p className="text-sm font-bold">{velocidadeEsquecimento}</p>
-              <p className="text-[9px] text-muted-foreground">A7 / A6</p>
+              <p className="text-[9px] text-muted-foreground">A7 / A6 (≥0.80 = adequado)</p>
             </div>
             <div className="p-2 bg-muted/30 rounded-lg">
-              <Label className="text-[10px] sm:text-xs text-muted-foreground">Int. Proativa</Label>
+              <div className="flex items-center justify-between mb-0.5">
+                <Label className="text-[10px] sm:text-xs text-muted-foreground">Int. Proativa</Label>
+                <Badge variant={interferenciaProativa >= 1.0 ? 'secondary' : 'destructive'} className="text-[9px]">
+                  {interferenciaProativa >= 1.0 ? 'Sem interf.' : 'Interferência'}
+                </Badge>
+              </div>
               <p className="text-sm font-bold">{interferenciaProativa}</p>
-              <p className="text-[9px] text-muted-foreground">B1 / A1</p>
+              <p className="text-[9px] text-muted-foreground">B1 / A1 (≥1.0 = sem interf.)</p>
             </div>
             <div className="p-2 bg-muted/30 rounded-lg">
-              <Label className="text-[10px] sm:text-xs text-muted-foreground">Int. Retroativa</Label>
+              <div className="flex items-center justify-between mb-0.5">
+                <Label className="text-[10px] sm:text-xs text-muted-foreground">Int. Retroativa</Label>
+                <Badge variant={interferenciaRetroativa >= 0.8 ? 'secondary' : 'destructive'} className="text-[9px]">
+                  {interferenciaRetroativa >= 0.8 ? 'Sem interf.' : 'Interferência'}
+                </Badge>
+              </div>
               <p className="text-sm font-bold">{interferenciaRetroativa}</p>
-              <p className="text-[9px] text-muted-foreground">A6 / A5</p>
+              <p className="text-[9px] text-muted-foreground">A6 / A5 (≥0.80 = sem interf.)</p>
             </div>
           </div>
         </div>
