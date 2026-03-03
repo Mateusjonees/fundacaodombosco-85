@@ -424,8 +424,8 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(fdtResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(fdtResults.calculatedScores)),
-            percentiles: {},
-            classifications: {},
+            percentiles: JSON.parse(JSON.stringify(fdtResults.percentiles || {})),
+            classifications: JSON.parse(JSON.stringify(fdtResults.classifications || {})),
             applied_by: user.id,
             applied_at: now,
             notes: fdtResults.notes || null
@@ -434,6 +434,11 @@ export default function CompleteAttendanceDialog({
 
         // RAVLT
         if (ravltResults && selectedTests.includes('RAVLT')) {
+          // Salvar percentile ranges como strings no campo percentiles para exibição correta
+          const ravltPercentiles = ravltResults.percentileRanges 
+            ? JSON.parse(JSON.stringify(ravltResults.percentileRanges))
+            : JSON.parse(JSON.stringify(ravltResults.percentiles));
+          
           testsToSave.push({
             client_id: schedule.client_id,
             schedule_id: schedule.id,
@@ -443,8 +448,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(ravltResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(ravltResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify(ravltResults.percentiles)),
-            percentile_ranges: ravltResults.percentileRanges ? JSON.parse(JSON.stringify(ravltResults.percentileRanges)) : null,
+            percentiles: ravltPercentiles,
             classifications: JSON.parse(JSON.stringify({
               ...ravltResults.classifications,
               alt: ravltResults.calculatedScores.alt > 0 ? 'Curva +' : ravltResults.calculatedScores.alt === 0 ? 'Plana' : 'Declínio',
