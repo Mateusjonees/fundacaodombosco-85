@@ -897,8 +897,11 @@ export default function PatientNeuroTestHistory({
   );
 }
 
-function getClassificationVariant(classification: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (classification.includes('Inferior')) return 'destructive';
-  if (classification.includes('Superior')) return 'default';
+function getClassificationVariant(classification: string): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' {
+  if (classification.includes('Inferior') || classification === 'Prejuízo' || classification === 'Interferência' || classification === 'Declínio') return 'destructive';
+  if (classification.includes('Superior') || classification === 'Curva +' || classification === 'Adequado' || classification === 'Sem interferência') return 'default';
+  if (classification.includes('Muito Alta') || classification.includes('Alta')) return 'default';
+  if (classification.includes('Muito Baixa') || classification.includes('Baixa')) return 'destructive';
+  if (classification === 'Plana') return 'warning';
   return 'secondary';
 }
