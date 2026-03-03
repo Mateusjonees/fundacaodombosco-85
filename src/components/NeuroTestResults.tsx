@@ -105,7 +105,8 @@ const getTestConfig = (testCode: string): TestConfig | null => {
 interface GenericTestResults {
   rawScores?: Record<string, number>;
   calculatedScores: Record<string, number>;
-  percentiles: Record<string, number>;
+  percentiles: Record<string, number | string>;
+  percentileRanges?: Record<string, string>;
   classifications: Record<string, string>;
   notes?: string;
 }
@@ -810,15 +811,14 @@ export default function NeuroTestResults({
             <TableRow>
               <TableHead>Variável</TableHead>
               <TableHead className="text-center">Bruto</TableHead>
-              <TableHead className="text-center">Percentil</TableHead>
-              <TableHead className="text-center">Classificação</TableHead>
+              <TableHead className="text-center">Percentil • Classificação</TableHead>
               <TableHead className="w-10"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {config.subtests.map(code => {
               const score = getScoreValue(code);
-              const percentile = results.percentiles[code] ?? '-';
+              const percentile = results.percentileRanges?.[code] ?? results.percentiles[code] ?? '-';
               const classification = results.classifications[code] ?? '-';
               const isMain = code === config.mainSubtest;
 
@@ -840,11 +840,14 @@ export default function NeuroTestResults({
                     </div>
                   </TableCell>
                   <TableCell className="text-center font-mono">{score}</TableCell>
-                  <TableCell className="text-center font-mono">{percentile}</TableCell>
                   <TableCell className="text-center">
-                    <Badge variant={getClassificationVariant(String(classification))}>
-                      {classification}
-                    </Badge>
+                    {(String(percentile) !== '-' || classification !== '-') ? (
+                      <Badge variant={getClassificationVariant(String(classification))} className="text-[10px]">
+                        {String(percentile) !== '-' ? `P${percentile}` : ''}{String(percentile) !== '-' && classification !== '-' ? ' • ' : ''}{classification !== '-' ? classification : ''}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     <Button
