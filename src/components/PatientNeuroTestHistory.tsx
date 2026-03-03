@@ -795,8 +795,7 @@ export default function PatientNeuroTestHistory({
                             <TableRow>
                               <TableHead>Variável</TableHead>
                               <TableHead className="text-center">Bruto</TableHead>
-                              <TableHead className="text-center">Percentil</TableHead>
-                              <TableHead className="text-center">Classificação</TableHead>
+                              <TableHead className="text-center">Percentil • Classificação</TableHead>
                               <TableHead className="w-10"></TableHead>
                             </TableRow>
                           </TableHeader>

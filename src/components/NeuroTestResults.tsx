@@ -105,7 +105,8 @@ const getTestConfig = (testCode: string): TestConfig | null => {
 interface GenericTestResults {
   rawScores?: Record<string, number>;
   calculatedScores: Record<string, number>;
-  percentiles: Record<string, number>;
+  percentiles: Record<string, number | string>;
+  percentileRanges?: Record<string, string>;
   classifications: Record<string, string>;
   notes?: string;
 }
