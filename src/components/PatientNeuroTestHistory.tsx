@@ -41,7 +41,7 @@ interface TestConfig {
   useRawScores?: string[];
 }
 
-// Configuração de subtestes por tipo de teste
+// Configuração de subtestes por tipo de teste (deve corresponder às chaves salvas no banco)
 const getTestConfig = (testCode: string): TestConfig | null => {
   switch (testCode) {
     case 'BPA2':
@@ -84,68 +84,64 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'TIN':
       return {
-        subtests: ['nomeacao', 'conscienciaFonologica', 'velocidadeLeitura', 'escrita'],
+        subtests: ['escorePadrao'],
         names: {
-          nomeacao: 'Nomeação',
-          conscienciaFonologica: 'Consciência Fonológica',
-          velocidadeLeitura: 'Velocidade de Leitura',
-          escrita: 'Escrita'
+          escorePadrao: 'Escore Padrão'
         },
-        mainSubtest: 'nomeacao'
+        mainSubtest: 'escorePadrao'
       };
     case 'PCFO':
       return {
-        subtests: ['sintese', 'segmentacao', 'manipulacao', 'transposicao', 'rima', 'aliteracao', 'total'],
+        subtests: ['escorePadrao'],
         names: {
-          sintese: 'Síntese Silábica',
-          segmentacao: 'Segmentação Silábica',
-          manipulacao: 'Manipulação Silábica',
-          transposicao: 'Transposição Silábica',
-          rima: 'Rima',
-          aliteracao: 'Aliteração',
-          total: 'Total'
+          escorePadrao: 'Escore Padrão'
         },
-        mainSubtest: 'total'
+        mainSubtest: 'escorePadrao'
       };
     case 'TSBC':
       return {
-        subtests: ['sequencias', 'analogias', 'total'],
+        subtests: ['escorePadraoOD', 'escorePadraoOI'],
         names: {
-          sequencias: 'Sequências',
-          analogias: 'Analogias',
-          total: 'Total'
+          escorePadraoOD: 'Ordem Direta (EP)',
+          escorePadraoOI: 'Ordem Inversa (EP)'
         },
-        mainSubtest: 'total'
+        mainSubtest: 'escorePadraoOD'
       };
     case 'FVA':
       return {
-        subtests: ['total'],
-        names: { total: 'Total de Animais' },
-        mainSubtest: 'total'
+        subtests: ['percentilAnimais', 'percentilFrutas', 'percentilPares'],
+        names: {
+          percentilAnimais: 'Animais',
+          percentilFrutas: 'Frutas',
+          percentilPares: 'Pares (Alternada)'
+        },
+        mainSubtest: 'percentilAnimais'
       };
     case 'BNTBR':
       return {
-        subtests: ['total'],
-        names: { total: 'Nomeação Total' },
-        mainSubtest: 'total'
+        subtests: ['percentil'],
+        names: {
+          percentil: 'Nomeação'
+        },
+        mainSubtest: 'percentil'
       };
     case 'TRILHAS':
       return {
         subtests: ['trilhaA', 'trilhaB'],
         names: {
-          trilhaA: 'Trilha A (Tempo)',
-          trilhaB: 'Trilha B (Tempo)'
+          trilhaA: 'Trilha A (EP)',
+          trilhaB: 'Trilha B (EP)'
         },
         mainSubtest: 'trilhaA'
       };
-    case 'TRILHAS_PRE':
+    case 'TRILHAS_PRE_ESCOLAR':
       return {
-        subtests: ['trilhaA', 'trilhaB'],
+        subtests: ['classificationA', 'classificationB'],
         names: {
-          trilhaA: 'Trilha A',
-          trilhaB: 'Trilha B'
+          classificationA: 'Trilha A (EP)',
+          classificationB: 'Trilha B (EP)'
         },
-        mainSubtest: 'trilhaA'
+        mainSubtest: 'classificationA'
       };
     case 'TMT_ADULTO':
       return {
@@ -159,9 +155,9 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'FAS':
       return {
-        subtests: ['total'],
-        names: { total: 'Total (F+A+S)' },
-        mainSubtest: 'total'
+        subtests: ['percentil'],
+        names: { percentil: 'Total (F+A+S)' },
+        mainSubtest: 'percentil'
       };
     case 'HAYLING_ADULTO':
       return {
@@ -175,56 +171,59 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'HAYLING_INFANTIL':
       return {
-        subtests: ['parteA', 'parteB', 'total'],
+        subtests: ['parteATempo', 'parteBTempo', 'parteBErros', 'inibicaoBA'],
         names: {
-          parteA: 'Parte A',
-          parteB: 'Parte B',
-          total: 'Total'
+          parteATempo: 'Parte A (Tempo)',
+          parteBTempo: 'Parte B (Tempo)',
+          parteBErros: 'Parte B (Erros)',
+          inibicaoBA: 'Inibição (B-A)'
         },
-        mainSubtest: 'total'
+        mainSubtest: 'inibicaoBA'
       };
     case 'TFV':
       return {
-        subtests: ['total'],
-        names: { total: 'Total' },
-        mainSubtest: 'total'
+        subtests: ['fluenciaLivre', 'fluenciaFonemica', 'fluenciaSemantica'],
+        names: {
+          fluenciaLivre: 'Fluência Livre',
+          fluenciaFonemica: 'Fluência Fonêmica',
+          fluenciaSemantica: 'Fluência Semântica'
+        },
+        mainSubtest: 'fluenciaLivre'
       };
     case 'TOM':
       return {
-        subtests: ['total'],
-        names: { total: 'Total' },
-        mainSubtest: 'total'
+        subtests: ['percentil'],
+        names: { percentil: 'Total' },
+        mainSubtest: 'percentil'
       };
     case 'TAYLOR':
       return {
-        subtests: ['copia', 'memoria'],
+        subtests: ['copia', 'reproducaoMemoria'],
         names: {
           copia: 'Cópia',
-          memoria: 'Memória'
+          reproducaoMemoria: 'Memória'
         },
         mainSubtest: 'copia'
       };
     case 'TRPP':
       return {
         subtests: ['total'],
-        names: { total: 'Total' },
+        names: { total: 'Total (EP)' },
         mainSubtest: 'total'
       };
     case 'FPT_INFANTIL':
       return {
-        subtests: ['desenhosUnicos', 'percentil'],
+        subtests: ['desenhosUnicos'],
         names: {
-          desenhosUnicos: 'Desenhos Únicos',
-          percentil: 'Percentil'
+          desenhosUnicos: 'Desenhos Únicos'
         },
         mainSubtest: 'desenhosUnicos'
       };
     case 'FPT_ADULTO':
       return {
-        subtests: ['desenhosUnicos', 'percentil'],
+        subtests: ['desenhosUnicos'],
         names: {
-          desenhosUnicos: 'Desenhos Únicos',
-          percentil: 'Percentil'
+          desenhosUnicos: 'Desenhos Únicos'
         },
         mainSubtest: 'desenhosUnicos'
       };
@@ -567,6 +566,14 @@ export default function PatientNeuroTestHistory({
     });
   };
 
+  // Helper to get display percentile (range string if available, otherwise numeric)
+  const getDisplayPercentile = (test: NeuroTestResult, code: string): string => {
+    const percentiles = test.percentiles as Record<string, number | string>;
+    const val = percentiles[code];
+    if (val === undefined || val === null) return '-';
+    return String(val);
+  };
+
   const getMainSubtestBadge = (test: NeuroTestResult) => {
     const config = getTestConfig(test.test_code);
     const percentiles = test.percentiles as Record<string, number | string>;
@@ -575,27 +582,41 @@ export default function PatientNeuroTestHistory({
 
     if (config) {
       const mainCode = config.mainSubtest;
-      const mainScore = calculatedScores[mainCode] ?? '-';
-      const mainClassification = classifications[mainCode] || 'Médio';
-      const shortName = config.names[mainCode] || mainCode;
+      const mainPercentile = getDisplayPercentile(test, mainCode);
+      const mainClassification = classifications[mainCode] || '-';
 
+      if (mainPercentile !== '-' && mainClassification !== '-') {
+        return (
+          <Badge variant={getClassificationVariant(mainClassification)}>
+            P{mainPercentile} • {mainClassification}
+          </Badge>
+        );
+      }
+      if (mainClassification !== '-') {
+        return (
+          <Badge variant={getClassificationVariant(mainClassification)}>
+            {mainClassification}
+          </Badge>
+        );
+      }
+      const mainScore = calculatedScores[mainCode] ?? '-';
       return (
-        <Badge variant={getClassificationVariant(mainClassification)}>
-          {shortName}: {mainScore}
+        <Badge variant="secondary">
+          {config.names[mainCode]}: {mainScore}
         </Badge>
       );
     }
 
-    // Fallback genérico: pega o primeiro percentil/classificação disponível
+    // Fallback genérico
     const firstKey = Object.keys(classifications)[0] || Object.keys(percentiles)[0];
     if (!firstKey) return null;
 
     const classification = classifications[firstKey] || 'Médio';
-    const score = calculatedScores[firstKey] ?? percentiles[firstKey] ?? '-';
+    const percentile = percentiles[firstKey];
 
     return (
       <Badge variant={getClassificationVariant(classification)}>
-        {firstKey}: {score}
+        {percentile !== undefined ? `P${percentile} • ` : ''}{classification}
       </Badge>
     );
   };
