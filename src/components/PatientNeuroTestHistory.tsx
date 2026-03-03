@@ -570,12 +570,25 @@ export default function PatientNeuroTestHistory({
     });
   };
 
+  // Testes que usam Escore Padrão (EP) ao invés de Percentil (P)
+  const EP_TESTS = ['TIN', 'PCFO', 'TSBC', 'TRILHAS', 'TRILHAS_PRE_ESCOLAR', 'TRPP'];
+  
+  // Escores calculados do RAVLT que não têm percentil normativo
+  const RAVLT_CALCULATED_KEYS = ['alt', 'velocidadeEsquecimento', 'interferenciaProativa', 'interferenciaRetroativa'];
+
   // Helper to get display percentile (range string if available, otherwise numeric)
   const getDisplayPercentile = (test: NeuroTestResult, code: string): string => {
     const percentiles = test.percentiles as Record<string, number | string>;
     const val = percentiles[code];
     if (val === undefined || val === null) return '-';
     return String(val);
+  };
+  
+  // Helper to get the correct prefix for display
+  const getPercentilePrefix = (testCode: string, subtestCode: string): string => {
+    if (RAVLT_CALCULATED_KEYS.includes(subtestCode)) return '';
+    if (EP_TESTS.includes(testCode)) return 'EP ';
+    return 'P';
   };
 
   const getMainSubtestBadge = (test: NeuroTestResult) => {
@@ -589,10 +602,11 @@ export default function PatientNeuroTestHistory({
       const mainPercentile = getDisplayPercentile(test, mainCode);
       const mainClassification = classifications[mainCode] || '-';
 
+      const prefix = getPercentilePrefix(test.test_code, mainCode);
       if (mainPercentile !== '-' && mainClassification !== '-') {
         return (
           <Badge variant={getClassificationVariant(mainClassification)}>
-            P{mainPercentile} • {mainClassification}
+            {prefix}{mainPercentile} • {mainClassification}
           </Badge>
         );
       }
@@ -622,7 +636,7 @@ export default function PatientNeuroTestHistory({
       <Badge variant={getClassificationVariant(classification)}>
         {percentile !== undefined ? `P${percentile} • ` : ''}{classification}
       </Badge>
-    );
+    );  
   };
 
   // Renderiza seções de entrada e cálculos com base no tipo de teste
@@ -833,9 +847,14 @@ export default function PatientNeuroTestHistory({
                                   <TableCell className="text-center font-mono">{score}</TableCell>
                                   <TableCell className="text-center">
                                     {(percentile !== '-' || classification !== '-') ? (
-                                      <Badge variant={getClassificationVariant(String(classification))} className="text-[10px]">
-                                        {percentile !== '-' ? `P${percentile}` : ''}{percentile !== '-' && classification !== '-' ? ' • ' : ''}{classification !== '-' ? classification : ''}
-                                      </Badge>
+                                      (() => {
+                                        const prefix = getPercentilePrefix(test.test_code, code);
+                                        return (
+                                          <Badge variant={getClassificationVariant(String(classification))} className="text-[10px]">
+                                            {percentile !== '-' ? `${prefix}${percentile}` : ''}{percentile !== '-' && classification !== '-' ? ' • ' : ''}{classification !== '-' ? classification : ''}
+                                          </Badge>
+                                        );
+                                      })()
                                     ) : (
                                       <span className="text-muted-foreground">-</span>
                                     )}
