@@ -493,7 +493,7 @@ export default function CompleteAttendanceDialog({
             raw_scores: JSON.parse(JSON.stringify(pcfoResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(pcfoResults.calculatedScores)),
             percentiles: JSON.parse(JSON.stringify({ escorePadrao: pcfoResults.calculatedScores?.escorePadrao ?? null })),
-            classifications: JSON.parse(JSON.stringify(pcfoResults.classifications)),
+            classifications: JSON.parse(JSON.stringify({ escorePadrao: pcfoResults.classifications?.geral ?? 'Não classificado' })),
             applied_by: user.id,
             applied_at: now,
             notes: pcfoResults.notes || null

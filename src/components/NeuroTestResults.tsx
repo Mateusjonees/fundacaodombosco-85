@@ -948,9 +948,16 @@ export default function NeuroTestResults({
                   <TableCell className="text-center font-mono">{score}</TableCell>
                   <TableCell className="text-center">
                     {(String(percentile) !== '-' || classification !== '-') ? (
-                      <Badge variant={getClassificationVariant(String(classification))} className="text-[10px]">
-                        {String(percentile) !== '-' ? `P${percentile}` : ''}{String(percentile) !== '-' && classification !== '-' ? ' • ' : ''}{classification !== '-' ? classification : ''}
-                      </Badge>
+                      (() => {
+                        const EP_TESTS = ['TIN', 'PCFO', 'TSBC', 'TRILHAS', 'TRILHAS_PRE_ESCOLAR', 'TRPP'];
+                        const RAVLT_CALC_KEYS = ['alt', 'velocidadeEsquecimento', 'interferenciaProativa', 'interferenciaRetroativa'];
+                        const prefix = RAVLT_CALC_KEYS.includes(code) ? '' : EP_TESTS.includes(testCode) ? 'EP ' : 'P';
+                        return (
+                          <Badge variant={getClassificationVariant(String(classification))} className="text-[10px]">
+                            {String(percentile) !== '-' ? `${prefix}${percentile}` : ''}{String(percentile) !== '-' && classification !== '-' ? ' • ' : ''}{classification !== '-' ? classification : ''}
+                          </Badge>
+                        );
+                      })()
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
