@@ -63,7 +63,11 @@ export default function NeuroTestRAVLTForm({
       a6: lookupRAVLTPercentile(patientAge, 'A6', scores.a6),
       a7: lookupRAVLTPercentile(patientAge, 'A7', scores.a7),
       escoreTotal: lookupRAVLTPercentile(patientAge, 'EscoreTotal', escoreTotal),
-      reconhecimento: lookupRAVLTPercentile(patientAge, 'Reconhecimento', reconhecimento)
+      reconhecimento: lookupRAVLTPercentile(patientAge, 'Reconhecimento', reconhecimento),
+      alt: lookupRAVLTPercentile(patientAge, 'ALT', alt),
+      velocidadeEsquecimento: lookupRAVLTPercentile(patientAge, 'VelocidadeEsquecimento', velocidadeEsquecimento),
+      interferenciaProativa: lookupRAVLTPercentile(patientAge, 'InterferenciaProativa', interferenciaProativa),
+      interferenciaRetroativa: lookupRAVLTPercentile(patientAge, 'InterferenciaRetroativa', interferenciaRetroativa)
     };
 
     // Buscar faixas percentílicas (strings para exibição)
@@ -77,7 +81,11 @@ export default function NeuroTestRAVLTForm({
       a6: lookupRAVLTPercentileRange(patientAge, 'A6', scores.a6),
       a7: lookupRAVLTPercentileRange(patientAge, 'A7', scores.a7),
       escoreTotal: lookupRAVLTPercentileRange(patientAge, 'EscoreTotal', escoreTotal),
-      reconhecimento: lookupRAVLTPercentileRange(patientAge, 'Reconhecimento', reconhecimento)
+      reconhecimento: lookupRAVLTPercentileRange(patientAge, 'Reconhecimento', reconhecimento),
+      alt: lookupRAVLTPercentileRange(patientAge, 'ALT', alt),
+      velocidadeEsquecimento: lookupRAVLTPercentileRange(patientAge, 'VelocidadeEsquecimento', velocidadeEsquecimento),
+      interferenciaProativa: lookupRAVLTPercentileRange(patientAge, 'InterferenciaProativa', interferenciaProativa),
+      interferenciaRetroativa: lookupRAVLTPercentileRange(patientAge, 'InterferenciaRetroativa', interferenciaRetroativa)
     };
 
     // Classificações usando faixas percentílicas
@@ -91,7 +99,11 @@ export default function NeuroTestRAVLTForm({
       a6: getClassificationFromRange(percentileRanges.a6),
       a7: getClassificationFromRange(percentileRanges.a7),
       escoreTotal: getClassificationFromRange(percentileRanges.escoreTotal),
-      reconhecimento: getClassificationFromRange(percentileRanges.reconhecimento)
+      reconhecimento: getClassificationFromRange(percentileRanges.reconhecimento),
+      alt: getClassificationFromRange(percentileRanges.alt),
+      velocidadeEsquecimento: getClassificationFromRange(percentileRanges.velocidadeEsquecimento),
+      interferenciaProativa: getClassificationFromRange(percentileRanges.interferenciaProativa),
+      interferenciaRetroativa: getClassificationFromRange(percentileRanges.interferenciaRetroativa)
     };
 
     const results: RAVLTResults = {
@@ -105,7 +117,7 @@ export default function NeuroTestRAVLTForm({
         interferenciaRetroativa
       },
       percentiles,
-      percentileRanges, // Adicionar faixas percentílicas ao resultado
+      percentileRanges,
       classifications,
       notes
     };
@@ -132,6 +144,10 @@ export default function NeuroTestRAVLTForm({
   // Faixas percentílicas para exibição
   const escoreTotalRange = lookupRAVLTPercentileRange(patientAge, 'EscoreTotal', escoreTotal);
   const reconhecimentoRange = lookupRAVLTPercentileRange(patientAge, 'Reconhecimento', reconhecimento);
+  const altRange = lookupRAVLTPercentileRange(patientAge, 'ALT', alt);
+  const veRange = lookupRAVLTPercentileRange(patientAge, 'VelocidadeEsquecimento', velocidadeEsquecimento);
+  const ipRange = lookupRAVLTPercentileRange(patientAge, 'InterferenciaProativa', interferenciaProativa);
+  const irRange = lookupRAVLTPercentileRange(patientAge, 'InterferenciaRetroativa', interferenciaRetroativa);
 
   const renderScoreInput = (
     field: keyof RAVLTScores, 
@@ -158,6 +174,30 @@ export default function NeuroTestRAVLTForm({
           className="h-8 text-sm"
           placeholder="0"
         />
+      </div>
+    );
+  };
+
+  const renderCalcCard = (
+    label: string,
+    value: number | string,
+    formula: string,
+    variableName: 'ALT' | 'VelocidadeEsquecimento' | 'InterferenciaProativa' | 'InterferenciaRetroativa',
+    rawValue: number
+  ) => {
+    const range = lookupRAVLTPercentileRange(patientAge, variableName, rawValue);
+    const classification = getClassificationFromRange(range);
+
+    return (
+      <div className="p-2 bg-muted/30 rounded-lg">
+        <div className="flex items-center justify-between mb-0.5">
+          <Label className="text-[10px] sm:text-xs text-muted-foreground">{label}</Label>
+        </div>
+        <p className="text-sm font-bold">{value}</p>
+        <p className="text-[9px] text-muted-foreground">{formula}</p>
+        <Badge variant={getClassificationVariant(classification)} className="text-[9px] mt-1">
+          P{range} • {classification}
+        </Badge>
       </div>
     );
   };
@@ -270,48 +310,12 @@ export default function NeuroTestRAVLTForm({
             </div>
           </div>
 
-          {/* Outros cálculos com interpretação qualitativa */}
+          {/* Outros cálculos com percentil individual */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2 bg-muted/30 rounded-lg">
-              <div className="flex items-center justify-between mb-0.5">
-                <Label className="text-[10px] sm:text-xs text-muted-foreground">ALT (Aprendizagem)</Label>
-                <Badge variant={alt > 0 ? 'secondary' : 'destructive'} className="text-[9px]">
-                  {alt > 0 ? 'Curva +' : alt === 0 ? 'Plana' : 'Declínio'}
-                </Badge>
-              </div>
-              <p className="text-sm font-bold">{alt}</p>
-              <p className="text-[9px] text-muted-foreground">Σ - (5 × A1)</p>
-            </div>
-            <div className="p-2 bg-muted/30 rounded-lg">
-              <div className="flex items-center justify-between mb-0.5">
-                <Label className="text-[10px] sm:text-xs text-muted-foreground">Vel. Esquecimento</Label>
-                <Badge variant={velocidadeEsquecimento >= 0.8 ? 'secondary' : 'destructive'} className="text-[9px]">
-                  {velocidadeEsquecimento >= 0.8 ? 'Adequado' : 'Prejuízo'}
-                </Badge>
-              </div>
-              <p className="text-sm font-bold">{velocidadeEsquecimento}</p>
-              <p className="text-[9px] text-muted-foreground">A7 / A6 (≥0.80 = adequado)</p>
-            </div>
-            <div className="p-2 bg-muted/30 rounded-lg">
-              <div className="flex items-center justify-between mb-0.5">
-                <Label className="text-[10px] sm:text-xs text-muted-foreground">Int. Proativa</Label>
-                <Badge variant={interferenciaProativa >= 1.0 ? 'secondary' : 'destructive'} className="text-[9px]">
-                  {interferenciaProativa >= 1.0 ? 'Sem interf.' : 'Interferência'}
-                </Badge>
-              </div>
-              <p className="text-sm font-bold">{interferenciaProativa}</p>
-              <p className="text-[9px] text-muted-foreground">B1 / A1 (≥1.0 = sem interf.)</p>
-            </div>
-            <div className="p-2 bg-muted/30 rounded-lg">
-              <div className="flex items-center justify-between mb-0.5">
-                <Label className="text-[10px] sm:text-xs text-muted-foreground">Int. Retroativa</Label>
-                <Badge variant={interferenciaRetroativa >= 0.8 ? 'secondary' : 'destructive'} className="text-[9px]">
-                  {interferenciaRetroativa >= 0.8 ? 'Sem interf.' : 'Interferência'}
-                </Badge>
-              </div>
-              <p className="text-sm font-bold">{interferenciaRetroativa}</p>
-              <p className="text-[9px] text-muted-foreground">A6 / A5 (≥0.80 = sem interf.)</p>
-            </div>
+            {renderCalcCard('ALT (Aprendizagem)', alt, 'Σ - (5 × A1)', 'ALT', alt)}
+            {renderCalcCard('Vel. Esquecimento', velocidadeEsquecimento, 'A7 / A6', 'VelocidadeEsquecimento', velocidadeEsquecimento)}
+            {renderCalcCard('Int. Proativa', interferenciaProativa, 'B1 / A1', 'InterferenciaProativa', interferenciaProativa)}
+            {renderCalcCard('Int. Retroativa', interferenciaRetroativa, 'A6 / A5', 'InterferenciaRetroativa', interferenciaRetroativa)}
           </div>
         </div>
 

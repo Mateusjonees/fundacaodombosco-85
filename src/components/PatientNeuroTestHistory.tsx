@@ -573,8 +573,7 @@ export default function PatientNeuroTestHistory({
   // Testes que usam Escore Padrão (EP) ao invés de Percentil (P)
   const EP_TESTS = ['TIN', 'PCFO', 'TSBC', 'TRILHAS', 'TRILHAS_PRE_ESCOLAR', 'TRPP'];
   
-  // Escores calculados do RAVLT que não têm percentil normativo
-  const RAVLT_CALCULATED_KEYS = ['alt', 'velocidadeEsquecimento', 'interferenciaProativa', 'interferenciaRetroativa'];
+  // Nota: Os escores calculados do RAVLT (ALT, VE, IP, IR) agora possuem tabelas normativas com percentis
 
   // Helper to get display percentile (range string if available, otherwise numeric)
   const getDisplayPercentile = (test: NeuroTestResult, code: string): string => {
@@ -586,7 +585,6 @@ export default function PatientNeuroTestHistory({
   
   // Helper to get the correct prefix for display
   const getPercentilePrefix = (testCode: string, subtestCode: string): string => {
-    if (RAVLT_CALCULATED_KEYS.includes(subtestCode)) return '';
     if (EP_TESTS.includes(testCode)) return 'EP ';
     return 'P';
   };
