@@ -29,7 +29,7 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'RAVLT':
       return {
-        subtests: ['a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'a6', 'a7', 'escoreTotal', 'reconhecimento'],
+        subtests: ['a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'a6', 'a7', 'escoreTotal', 'reconhecimento', 'alt', 'velocidadeEsquecimento', 'interferenciaProativa', 'interferenciaRetroativa'],
         names: {
           a1: 'A1 (1ª tentativa)',
           a2: 'A2 (2ª tentativa)',
@@ -40,7 +40,11 @@ const getTestConfig = (testCode: string): TestConfig | null => {
           a6: 'A6 (Evocação imediata)',
           a7: 'A7 (Evocação tardia)',
           escoreTotal: 'Escore Total (A1-A5)',
-          reconhecimento: 'Reconhecimento'
+          reconhecimento: 'Reconhecimento',
+          alt: 'ALT (Aprendizagem)',
+          velocidadeEsquecimento: 'Vel. Esquecimento',
+          interferenciaProativa: 'Int. Proativa',
+          interferenciaRetroativa: 'Int. Retroativa'
         },
         mainSubtest: 'escoreTotal',
         useRawScores: ['a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'a6', 'a7']
@@ -96,6 +100,108 @@ const getTestConfig = (testCode: string): TestConfig | null => {
           percentil: 'Nomeação'
         },
         mainSubtest: 'percentil'
+      };
+    case 'TRILHAS':
+      return {
+        subtests: ['trilhaA', 'trilhaB'],
+        names: {
+          trilhaA: 'Trilha A (EP)',
+          trilhaB: 'Trilha B (EP)'
+        },
+        mainSubtest: 'trilhaA'
+      };
+    case 'TRILHAS_PRE_ESCOLAR':
+      return {
+        subtests: ['trilhaA', 'trilhaB'],
+        names: {
+          trilhaA: 'Trilha A (EP)',
+          trilhaB: 'Trilha B (EP)'
+        },
+        mainSubtest: 'trilhaA'
+      };
+    case 'TMT_ADULTO':
+      return {
+        subtests: ['tempoA', 'tempoB', 'tempoBA'],
+        names: {
+          tempoA: 'TMT-A (Tempo)',
+          tempoB: 'TMT-B (Tempo)',
+          tempoBA: 'TMT B-A (Diferença)'
+        },
+        mainSubtest: 'tempoA'
+      };
+    case 'FAS':
+      return {
+        subtests: ['percentil'],
+        names: { percentil: 'Total (F+A+S)' },
+        mainSubtest: 'percentil'
+      };
+    case 'HAYLING_ADULTO':
+      return {
+        subtests: ['parteA', 'parteB', 'total'],
+        names: {
+          parteA: 'Parte A (Iniciação)',
+          parteB: 'Parte B (Inibição)',
+          total: 'Total'
+        },
+        mainSubtest: 'total'
+      };
+    case 'HAYLING_INFANTIL':
+      return {
+        subtests: ['parteATempo', 'parteBTempo', 'parteBErros', 'inibicaoBA'],
+        names: {
+          parteATempo: 'Parte A (Tempo)',
+          parteBTempo: 'Parte B (Tempo)',
+          parteBErros: 'Parte B (Erros)',
+          inibicaoBA: 'Inibição (B-A)'
+        },
+        mainSubtest: 'inibicaoBA'
+      };
+    case 'TFV':
+      return {
+        subtests: ['fluenciaLivre', 'fluenciaFonemica', 'fluenciaSemantica'],
+        names: {
+          fluenciaLivre: 'Fluência Livre',
+          fluenciaFonemica: 'Fluência Fonêmica',
+          fluenciaSemantica: 'Fluência Semântica'
+        },
+        mainSubtest: 'fluenciaLivre'
+      };
+    case 'TOM':
+      return {
+        subtests: ['percentil'],
+        names: { percentil: 'Total' },
+        mainSubtest: 'percentil'
+      };
+    case 'TAYLOR':
+      return {
+        subtests: ['copia', 'reproducaoMemoria'],
+        names: {
+          copia: 'Cópia',
+          reproducaoMemoria: 'Memória'
+        },
+        mainSubtest: 'copia'
+      };
+    case 'TRPP':
+      return {
+        subtests: ['total'],
+        names: { total: 'Total (EP)' },
+        mainSubtest: 'total'
+      };
+    case 'FPT_INFANTIL':
+      return {
+        subtests: ['desenhosUnicos'],
+        names: {
+          desenhosUnicos: 'Desenhos Únicos'
+        },
+        mainSubtest: 'desenhosUnicos'
+      };
+    case 'FPT_ADULTO':
+      return {
+        subtests: ['desenhosUnicos'],
+        names: {
+          desenhosUnicos: 'Desenhos Únicos'
+        },
+        mainSubtest: 'desenhosUnicos'
       };
     default:
       return null;
@@ -877,8 +983,11 @@ export default function NeuroTestResults({
   );
 }
 
-function getClassificationVariant(classification: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (classification.includes('Inferior')) return 'destructive';
-  if (classification.includes('Superior')) return 'default';
+function getClassificationVariant(classification: string): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' {
+  if (classification.includes('Inferior') || classification === 'Prejuízo' || classification === 'Interferência' || classification === 'Declínio') return 'destructive';
+  if (classification.includes('Superior') || classification === 'Curva +' || classification === 'Adequado' || classification === 'Sem interferência') return 'default';
+  if (classification.includes('Muito Alta') || classification.includes('Alta')) return 'default';
+  if (classification.includes('Muito Baixa') || classification.includes('Baixa')) return 'destructive';
+  if (classification === 'Plana') return 'warning';
   return 'secondary';
 }
