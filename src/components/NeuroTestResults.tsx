@@ -101,6 +101,108 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'percentil'
       };
+    case 'TRILHAS':
+      return {
+        subtests: ['trilhaA', 'trilhaB'],
+        names: {
+          trilhaA: 'Trilha A (EP)',
+          trilhaB: 'Trilha B (EP)'
+        },
+        mainSubtest: 'trilhaA'
+      };
+    case 'TRILHAS_PRE_ESCOLAR':
+      return {
+        subtests: ['trilhaA', 'trilhaB'],
+        names: {
+          trilhaA: 'Trilha A (EP)',
+          trilhaB: 'Trilha B (EP)'
+        },
+        mainSubtest: 'trilhaA'
+      };
+    case 'TMT_ADULTO':
+      return {
+        subtests: ['tempoA', 'tempoB', 'tempoBA'],
+        names: {
+          tempoA: 'TMT-A (Tempo)',
+          tempoB: 'TMT-B (Tempo)',
+          tempoBA: 'TMT B-A (Diferença)'
+        },
+        mainSubtest: 'tempoA'
+      };
+    case 'FAS':
+      return {
+        subtests: ['percentil'],
+        names: { percentil: 'Total (F+A+S)' },
+        mainSubtest: 'percentil'
+      };
+    case 'HAYLING_ADULTO':
+      return {
+        subtests: ['parteA', 'parteB', 'total'],
+        names: {
+          parteA: 'Parte A (Iniciação)',
+          parteB: 'Parte B (Inibição)',
+          total: 'Total'
+        },
+        mainSubtest: 'total'
+      };
+    case 'HAYLING_INFANTIL':
+      return {
+        subtests: ['parteATempo', 'parteBTempo', 'parteBErros', 'inibicaoBA'],
+        names: {
+          parteATempo: 'Parte A (Tempo)',
+          parteBTempo: 'Parte B (Tempo)',
+          parteBErros: 'Parte B (Erros)',
+          inibicaoBA: 'Inibição (B-A)'
+        },
+        mainSubtest: 'inibicaoBA'
+      };
+    case 'TFV':
+      return {
+        subtests: ['fluenciaLivre', 'fluenciaFonemica', 'fluenciaSemantica'],
+        names: {
+          fluenciaLivre: 'Fluência Livre',
+          fluenciaFonemica: 'Fluência Fonêmica',
+          fluenciaSemantica: 'Fluência Semântica'
+        },
+        mainSubtest: 'fluenciaLivre'
+      };
+    case 'TOM':
+      return {
+        subtests: ['percentil'],
+        names: { percentil: 'Total' },
+        mainSubtest: 'percentil'
+      };
+    case 'TAYLOR':
+      return {
+        subtests: ['copia', 'reproducaoMemoria'],
+        names: {
+          copia: 'Cópia',
+          reproducaoMemoria: 'Memória'
+        },
+        mainSubtest: 'copia'
+      };
+    case 'TRPP':
+      return {
+        subtests: ['total'],
+        names: { total: 'Total (EP)' },
+        mainSubtest: 'total'
+      };
+    case 'FPT_INFANTIL':
+      return {
+        subtests: ['desenhosUnicos'],
+        names: {
+          desenhosUnicos: 'Desenhos Únicos'
+        },
+        mainSubtest: 'desenhosUnicos'
+      };
+    case 'FPT_ADULTO':
+      return {
+        subtests: ['desenhosUnicos'],
+        names: {
+          desenhosUnicos: 'Desenhos Únicos'
+        },
+        mainSubtest: 'desenhosUnicos'
+      };
     default:
       return null;
   }
