@@ -805,7 +805,7 @@ export default function PatientNeuroTestHistory({
                               const score = config 
                                 ? getScoreValue(test, code, config)
                                 : (calculatedScores[code] ?? rawScores[code] ?? '-');
-                              const percentile = percentiles[code] ?? '-';
+                              const percentile = getDisplayPercentile(test, code);
                               const classification = classifications[code] ?? '-';
                               const isMain = config ? code === config.mainSubtest : false;
 
@@ -828,11 +828,14 @@ export default function PatientNeuroTestHistory({
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-center font-mono">{score}</TableCell>
-                                  <TableCell className="text-center font-mono">{percentile}</TableCell>
                                   <TableCell className="text-center">
-                                    <Badge variant={getClassificationVariant(String(classification))}>
-                                      {classification}
-                                    </Badge>
+                                    {(percentile !== '-' || classification !== '-') ? (
+                                      <Badge variant={getClassificationVariant(String(classification))} className="text-[10px]">
+                                        {percentile !== '-' ? `P${percentile}` : ''}{percentile !== '-' && classification !== '-' ? ' • ' : ''}{classification !== '-' ? classification : ''}
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <Button
