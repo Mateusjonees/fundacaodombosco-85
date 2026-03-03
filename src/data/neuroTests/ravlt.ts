@@ -41,6 +41,10 @@ export interface RAVLTResults {
     a7: number;
     escoreTotal: number;
     reconhecimento: number;
+    alt: number;
+    velocidadeEsquecimento: number;
+    interferenciaProativa: number;
+    interferenciaRetroativa: number;
   };
   percentileRanges?: {
     a1: string;
@@ -53,6 +57,10 @@ export interface RAVLTResults {
     a7: string;
     escoreTotal: string;
     reconhecimento: string;
+    alt: string;
+    velocidadeEsquecimento: string;
+    interferenciaProativa: string;
+    interferenciaRetroativa: string;
   };
   classifications: {
     a1: string;
@@ -65,6 +73,10 @@ export interface RAVLTResults {
     a7: string;
     escoreTotal: string;
     reconhecimento: string;
+    alt: string;
+    velocidadeEsquecimento: string;
+    interferenciaProativa: string;
+    interferenciaRetroativa: string;
   };
   notes: string;
 }
