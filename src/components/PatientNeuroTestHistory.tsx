@@ -79,8 +79,20 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'FDT':
       return {
-        subtests: ['inibicao', 'flexibilidade'],
+        subtests: [
+          'leitura', 'contagem', 'escolha', 'alternancia',
+          'errosLeitura', 'errosContagem', 'errosEscolha', 'errosAlternancia',
+          'inibicao', 'flexibilidade'
+        ],
         names: {
+          leitura: 'Tempo - Leitura',
+          contagem: 'Tempo - Contagem',
+          escolha: 'Tempo - Escolha',
+          alternancia: 'Tempo - Alternância',
+          errosLeitura: 'Erros - Leitura',
+          errosContagem: 'Erros - Contagem',
+          errosEscolha: 'Erros - Escolha',
+          errosAlternancia: 'Erros - Alternância',
           inibicao: 'Inibição',
           flexibilidade: 'Flexibilidade'
         },
@@ -330,22 +342,34 @@ const renderRAVLTCalculations = (raw: Record<string, number>, calc: Record<strin
 
 // Renderiza dados de entrada do FDT
 const renderFDTInputs = (rawScores: Record<string, number>) => (
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <div className="p-3 bg-muted/30 rounded-lg border text-center">
-      <p className="text-xs font-medium text-muted-foreground mb-1">Leitura</p>
-      <Badge variant="outline" className="font-mono text-lg">{rawScores.leitura ?? '-'}s</Badge>
+  <div className="space-y-3">
+    <div>
+      <p className="text-xs font-semibold text-primary mb-2 uppercase tracking-wide">Tempos (segundos)</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {['leitura', 'contagem', 'escolha', 'alternancia'].map(key => {
+          const labels: Record<string, string> = { leitura: 'Leitura', contagem: 'Contagem', escolha: 'Escolha', alternancia: 'Alternância' };
+          return (
+            <div key={key} className="p-3 bg-muted/30 rounded-lg border text-center">
+              <p className="text-xs font-medium text-muted-foreground mb-1">{labels[key]}</p>
+              <Badge variant="outline" className="font-mono text-lg">{rawScores[key] ?? '-'}s</Badge>
+            </div>
+          );
+        })}
+      </div>
     </div>
-    <div className="p-3 bg-muted/30 rounded-lg border text-center">
-      <p className="text-xs font-medium text-muted-foreground mb-1">Contagem</p>
-      <Badge variant="outline" className="font-mono text-lg">{rawScores.contagem ?? '-'}s</Badge>
-    </div>
-    <div className="p-3 bg-muted/30 rounded-lg border text-center">
-      <p className="text-xs font-medium text-muted-foreground mb-1">Escolha</p>
-      <Badge variant="outline" className="font-mono text-lg">{rawScores.escolha ?? '-'}s</Badge>
-    </div>
-    <div className="p-3 bg-muted/30 rounded-lg border text-center">
-      <p className="text-xs font-medium text-muted-foreground mb-1">Alternância</p>
-      <Badge variant="outline" className="font-mono text-lg">{rawScores.alternancia ?? '-'}s</Badge>
+    <div>
+      <p className="text-xs font-semibold text-destructive mb-2 uppercase tracking-wide">Erros</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {['errosLeitura', 'errosContagem', 'errosEscolha', 'errosAlternancia'].map(key => {
+          const labels: Record<string, string> = { errosLeitura: 'Leitura', errosContagem: 'Contagem', errosEscolha: 'Escolha', errosAlternancia: 'Alternância' };
+          return (
+            <div key={key} className="p-3 bg-muted/30 rounded-lg border text-center">
+              <p className="text-xs font-medium text-muted-foreground mb-1">{labels[key]}</p>
+              <Badge variant="outline" className="font-mono text-lg">{rawScores[key] ?? '-'}</Badge>
+            </div>
+          );
+        })}
+      </div>
     </div>
   </div>
 );
@@ -508,14 +532,21 @@ export default function PatientNeuroTestHistory({
       lines.push(`- Interferência Proativa: ${rawScores.b1}/${rawScores.a1} = ${(calculatedScores.interferenciaProativa ?? 0).toFixed(2)}`);
       lines.push(`- Interferência Retroativa: ${rawScores.a6}/${rawScores.a5} = ${(calculatedScores.interferenciaRetroativa ?? 0).toFixed(2)}`);
     } else if (test.test_code === 'FDT') {
-      lines.push(`- Leitura: ${rawScores.leitura}s`);
-      lines.push(`- Contagem: ${rawScores.contagem}s`);
-      lines.push(`- Escolha: ${rawScores.escolha}s`);
-      lines.push(`- Alternância: ${rawScores.alternancia}s`);
+      lines.push('TEMPOS:');
+      lines.push(`- Leitura: ${rawScores.leitura}s | P${percentiles.leitura ?? '-'} • ${classifications.leitura ?? '-'}`);
+      lines.push(`- Contagem: ${rawScores.contagem}s | P${percentiles.contagem ?? '-'} • ${classifications.contagem ?? '-'}`);
+      lines.push(`- Escolha: ${rawScores.escolha}s | P${percentiles.escolha ?? '-'} • ${classifications.escolha ?? '-'}`);
+      lines.push(`- Alternância: ${rawScores.alternancia}s | P${percentiles.alternancia ?? '-'} • ${classifications.alternancia ?? '-'}`);
+      lines.push('');
+      lines.push('ERROS:');
+      lines.push(`- Leitura: ${rawScores.errosLeitura ?? 0} | P${percentiles.errosLeitura ?? '-'} • ${classifications.errosLeitura ?? '-'}`);
+      lines.push(`- Contagem: ${rawScores.errosContagem ?? 0} | P${percentiles.errosContagem ?? '-'} • ${classifications.errosContagem ?? '-'}`);
+      lines.push(`- Escolha: ${rawScores.errosEscolha ?? 0} | P${percentiles.errosEscolha ?? '-'} • ${classifications.errosEscolha ?? '-'}`);
+      lines.push(`- Alternância: ${rawScores.errosAlternancia ?? 0} | P${percentiles.errosAlternancia ?? '-'} • ${classifications.errosAlternancia ?? '-'}`);
       lines.push('');
       lines.push('CÁLCULOS:');
-      lines.push(`- Inibição: ${rawScores.escolha} - ${rawScores.leitura} = ${(calculatedScores.inibicao ?? 0).toFixed(1)}`);
-      lines.push(`- Flexibilidade: ${rawScores.alternancia} - ${rawScores.leitura} = ${(calculatedScores.flexibilidade ?? 0).toFixed(1)}`);
+      lines.push(`- Inibição: ${rawScores.escolha} - ${rawScores.leitura} = ${(calculatedScores.inibicao ?? 0).toFixed(1)} | P${percentiles.inibicao ?? '-'} • ${classifications.inibicao ?? '-'}`);
+      lines.push(`- Flexibilidade: ${rawScores.alternancia} - ${rawScores.leitura} = ${(calculatedScores.flexibilidade ?? 0).toFixed(1)} | P${percentiles.flexibilidade ?? '-'} • ${classifications.flexibilidade ?? '-'}`);
     } else if (test.test_code === 'BPA2') {
       ['AC', 'AD', 'AA'].forEach(sub => {
         lines.push(`- ${sub}: Acertos=${rawScores[`${sub}_acertos`]}, Erros=${rawScores[`${sub}_erros`]}, Omissões=${rawScores[`${sub}_omissoes`]} → Score: ${calculatedScores[sub]}`);

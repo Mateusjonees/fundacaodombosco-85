@@ -19,9 +19,13 @@ interface FDTAgeGroupTable {
   alternancia: PercentileEntry[];
   inibicao: PercentileEntry[];
   flexibilidade: PercentileEntry[];
+  errosLeitura: PercentileEntry[];
+  errosContagem: PercentileEntry[];
+  errosEscolha: PercentileEntry[];
+  errosAlternancia: PercentileEntry[];
 }
 
-export type FDTVariable = 'leitura' | 'contagem' | 'escolha' | 'alternancia' | 'inibicao' | 'flexibilidade';
+export type FDTVariable = 'leitura' | 'contagem' | 'escolha' | 'alternancia' | 'inibicao' | 'flexibilidade' | 'errosLeitura' | 'errosContagem' | 'errosEscolha' | 'errosAlternancia';
 
 // Helper para criar entrada de percentil
 const p = (percentile: number, score: number): PercentileEntry => ({ percentile, score });
@@ -33,7 +37,11 @@ const TABLE_6_8: FDTAgeGroupTable = {
   escolha: [p(95, 41), p(75, 66), p(50, 79), p(25, 94), p(5, 109)],
   alternancia: [p(95, 58), p(75, 75), p(50, 91), p(25, 113), p(5, 133)],
   inibicao: [p(95, 17), p(75, 31), p(50, 43), p(25, 55), p(5, 76)],
-  flexibilidade: [p(95, 26), p(75, 41), p(50, 55), p(25, 75), p(5, 92)]
+  flexibilidade: [p(95, 26), p(75, 41), p(50, 55), p(25, 75), p(5, 92)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 4)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 2), p(25, 4), p(5, 9)],
+  errosAlternancia: [p(95, 0), p(75, 1), p(50, 2), p(25, 5), p(5, 10)]
 };
 
 // Tabela 6.4: 9-10 anos (N=129)
@@ -43,7 +51,11 @@ const TABLE_9_10: FDTAgeGroupTable = {
   escolha: [p(95, 46), p(75, 56), p(50, 63), p(25, 73), p(5, 88)],
   alternancia: [p(95, 54), p(75, 67), p(50, 75), p(25, 87), p(5, 101)],
   inibicao: [p(95, 19), p(75, 28), p(50, 35), p(25, 42), p(5, 57)],
-  flexibilidade: [p(95, 28), p(75, 39), p(50, 46), p(25, 57), p(5, 73)]
+  flexibilidade: [p(95, 28), p(75, 39), p(50, 46), p(25, 57), p(5, 73)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 2)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 1), p(25, 3), p(5, 6)],
+  errosAlternancia: [p(95, 0), p(75, 1), p(50, 2), p(25, 4), p(5, 8)]
 };
 
 // Tabela 6.5: 11-12 anos (N=59)
@@ -53,7 +65,11 @@ const TABLE_11_12: FDTAgeGroupTable = {
   escolha: [p(95, 38), p(75, 48), p(50, 56), p(25, 62), p(5, 93)],
   alternancia: [p(95, 46), p(75, 55), p(50, 66), p(25, 73), p(5, 96)],
   inibicao: [p(95, 12), p(75, 20), p(50, 28), p(25, 35), p(5, 51)],
-  flexibilidade: [p(95, 16), p(75, 30), p(50, 39), p(25, 44), p(5, 68)]
+  flexibilidade: [p(95, 16), p(75, 30), p(50, 39), p(25, 44), p(5, 68)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 1)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 3)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 1), p(25, 2), p(5, 10)],
+  errosAlternancia: [p(95, 0), p(75, 0), p(50, 2), p(25, 3), p(5, 10)]
 };
 
 // Tabela 6.6: 13-15 anos (N=46)
@@ -63,7 +79,11 @@ const TABLE_13_15: FDTAgeGroupTable = {
   escolha: [p(95, 33), p(75, 40), p(50, 45), p(25, 53), p(5, 68)],
   alternancia: [p(95, 36), p(75, 46), p(50, 53), p(25, 67), p(5, 81)],
   inibicao: [p(95, 8), p(75, 19), p(50, 23.5), p(25, 29), p(5, 42)],
-  flexibilidade: [p(95, 14), p(75, 25), p(50, 32), p(25, 41), p(5, 53)]
+  flexibilidade: [p(95, 14), p(75, 25), p(50, 32), p(25, 41), p(5, 53)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 1)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 1), p(25, 2), p(5, 7)],
+  errosAlternancia: [p(95, 0), p(75, 0), p(50, 1), p(25, 5), p(5, 7)]
 };
 
 // Tabela 6.7: 16-18 anos (N=44)
@@ -73,7 +93,11 @@ const TABLE_16_18: FDTAgeGroupTable = {
   escolha: [p(95, 25), p(75, 29), p(50, 33), p(25, 39), p(5, 44)],
   alternancia: [p(95, 34), p(75, 38), p(50, 42), p(25, 51), p(5, 63)],
   inibicao: [p(95, 6), p(75, 10.5), p(50, 13), p(25, 16.5), p(5, 22)],
-  flexibilidade: [p(95, 16), p(75, 19), p(50, 22), p(25, 27), p(5, 44)]
+  flexibilidade: [p(95, 16), p(75, 19), p(50, 22), p(25, 27), p(5, 44)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 3)],
+  errosAlternancia: [p(95, 0), p(75, 0), p(50, 1), p(25, 2), p(5, 4)]
 };
 
 // Tabela 6.8: 19-34 anos (N=349)
@@ -83,7 +107,11 @@ const TABLE_19_34: FDTAgeGroupTable = {
   escolha: [p(95, 27), p(75, 31), p(50, 35), p(25, 40), p(5, 52)],
   alternancia: [p(95, 33), p(75, 38), p(50, 44), p(25, 50), p(5, 64)],
   inibicao: [p(95, 5), p(75, 11), p(50, 14), p(25, 18), p(5, 28)],
-  flexibilidade: [p(95, 10), p(75, 17), p(50, 22), p(25, 29), p(5, 42)]
+  flexibilidade: [p(95, 10), p(75, 17), p(50, 22), p(25, 29), p(5, 42)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 1)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 0), p(25, 1), p(5, 2)],
+  errosAlternancia: [p(95, 0), p(75, 0), p(50, 0), p(25, 1), p(5, 3)]
 };
 
 // Tabela 6.9: 35-59 anos (N=261)
@@ -93,7 +121,11 @@ const TABLE_35_59: FDTAgeGroupTable = {
   escolha: [p(95, 28), p(75, 32), p(50, 39), p(25, 46), p(5, 65)],
   alternancia: [p(95, 34), p(75, 43), p(50, 48), p(25, 60), p(5, 89)],
   inibicao: [p(95, 5), p(75, 11), p(50, 15), p(25, 21), p(5, 38)],
-  flexibilidade: [p(95, 14), p(75, 20), p(50, 26), p(25, 34), p(5, 55)]
+  flexibilidade: [p(95, 14), p(75, 20), p(50, 26), p(25, 34), p(5, 55)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 0), p(25, 1), p(5, 3)],
+  errosAlternancia: [p(95, 0), p(75, 0), p(50, 1), p(25, 2), p(5, 6)]
 };
 
 // Tabela 6.10: 60-75 anos (N=146)
@@ -103,7 +135,11 @@ const TABLE_60_75: FDTAgeGroupTable = {
   escolha: [p(95, 30), p(75, 39), p(50, 46), p(25, 53), p(5, 68)],
   alternancia: [p(95, 41), p(75, 52), p(50, 62), p(25, 78), p(5, 93)],
   inibicao: [p(95, 9), p(75, 15), p(50, 19.5), p(25, 26), p(5, 39)],
-  flexibilidade: [p(95, 18), p(75, 28), p(50, 35), p(25, 49), p(5, 63)]
+  flexibilidade: [p(95, 18), p(75, 28), p(50, 35), p(25, 49), p(5, 63)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 1)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 0), p(25, 1), p(5, 3)],
+  errosAlternancia: [p(95, 0), p(75, 0), p(50, 1), p(25, 3), p(5, 6)]
 };
 
 // Tabela 6.11: 76+ anos (N=55)
@@ -113,7 +149,11 @@ const TABLE_76_PLUS: FDTAgeGroupTable = {
   escolha: [p(95, 33), p(75, 44), p(50, 49), p(25, 62), p(5, 96)],
   alternancia: [p(95, 48), p(75, 61), p(50, 74), p(25, 89), p(5, 108)],
   inibicao: [p(95, 7), p(75, 16), p(50, 21), p(25, 29), p(5, 63)],
-  flexibilidade: [p(95, 22), p(75, 35), p(50, 43), p(25, 56), p(5, 71)]
+  flexibilidade: [p(95, 22), p(75, 35), p(50, 43), p(25, 56), p(5, 71)],
+  errosLeitura: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosContagem: [p(95, 0), p(75, 0), p(50, 0), p(25, 0), p(5, 0)],
+  errosEscolha: [p(95, 0), p(75, 0), p(50, 1), p(25, 3), p(5, 8)],
+  errosAlternancia: [p(95, 0), p(75, 0), p(50, 1), p(25, 5), p(5, 14)]
 };
 
 /**
@@ -129,8 +169,6 @@ export const getFDTTableForAge = (age: number): FDTAgeGroupTable => {
   if (age >= 35 && age <= 59) return TABLE_35_59;
   if (age >= 60 && age <= 75) return TABLE_60_75;
   if (age >= 76) return TABLE_76_PLUS;
-  
-  // Default para idades fora do range (usa tabela adulta)
   return TABLE_19_34;
 };
 
@@ -161,29 +199,53 @@ export const lookupFDTPercentile = (
 ): number => {
   const table = getFDTTableForAge(age);
   const data = table[variable];
-  
+
   // Ordenar do maior percentil (menor score) para menor percentil (maior score)
   const sorted = [...data].sort((a, b) => b.percentile - a.percentile);
-  
+
   // Se score for menor ou igual ao benchmark do Pc.95, retorna 99
   if (score <= sorted[0].score) return 99;
-  
+
   // Se score for maior que o benchmark do Pc.5, retorna 1
   if (score > sorted[sorted.length - 1].score) return 1;
-  
+
   // Encontra o percentil onde o score se encaixa
   for (let i = 0; i < sorted.length; i++) {
     if (score <= sorted[i].score) {
       return sorted[i].percentile;
     }
   }
-  
+
   return 1;
 };
 
 /**
+ * Retorna a faixa de percentil como string (ex: "P>95", "P75-95", "P25-50")
+ */
+export const lookupFDTPercentileRange = (
+  age: number,
+  variable: FDTVariable,
+  score: number
+): string => {
+  const table = getFDTTableForAge(age);
+  const data = table[variable];
+  const sorted = [...data].sort((a, b) => b.percentile - a.percentile);
+
+  if (score <= sorted[0].score) return '>95';
+  if (score > sorted[sorted.length - 1].score) return '<5';
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    if (score <= sorted[i].score) return `${sorted[i].percentile}`;
+    if (score > sorted[i].score && score <= sorted[i + 1].score) {
+      return `${sorted[i + 1].percentile}-${sorted[i].percentile}`;
+    }
+  }
+
+  return `${sorted[sorted.length - 1].percentile}`;
+};
+
+/**
  * Retorna a classificação clínica baseada no percentil
- * Mesma escala do RAVLT
  */
 export const getFDTClassification = (percentile: number): string => {
   if (percentile < 5) return 'Inferior';
