@@ -1,51 +1,31 @@
 
 
-## Modernizacao do Menu Lateral (Sidebar)
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-O menu atual usa categorias colapsaveis com linhas conectoras verticais, chevrons e muitos gradientes sobrepostos -- visualmente carregado e com aparencia de sistema antigo. A proposta e um design **flat, limpo e moderno**, inspirado em apps como Linear, Notion e Vercel.
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
----
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-### Mudancas Visuais Principais
+## Detalhes Tecnicos
 
-**1. Remover elementos visuais pesados:**
-- Eliminar linhas conectoras verticais/horizontais entre itens
-- Remover gradientes de fundo nas categorias
-- Remover blur/glow ao redor do logo e avatar
-- Simplificar o badge de item ativo (sem bolinha branca)
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
-**2. Novo estilo de categorias:**
-- Labels de categoria como texto simples (`text-[11px] uppercase tracking-widest text-muted-foreground`) sem icone de categoria
-- Sem animacao de chevron -- categorias sempre abertas (flat list com separadores visuais)
-- Espacamento maior entre grupos para clareza visual
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-**3. Novo estilo de itens de menu:**
-- Icones monocromaticos (sem fundo colorido por categoria)
-- Item ativo: `bg-accent text-accent-foreground font-medium` com borda lateral esquerda (`border-l-2 border-primary`)
-- Hover sutil: `hover:bg-muted/60`
-- Padding reduzido, `rounded-lg` em vez de `rounded-xl`
-- Texto `text-[13px]` uniforme
-
-**4. Header simplificado:**
-- Logo menor, sem glow/blur
-- Texto "Fundacao Dom Bosco" limpo, sem Sparkles icon
-
-**5. Footer do usuario:**
-- Card simples sem gradiente de fundo
-- Remover glow no avatar
-- Manter dropdown funcional
-
----
-
-### Arquivos Modificados
-
-- `src/components/layout/AppSidebar.tsx` -- reescrever estilos dos itens, categorias e header
-- `src/index.css` -- remover/simplificar variaveis de sidebar desnecessarias (opcional, menor impacto)
-
-### O que NAO muda
-
-- Toda a logica de permissoes e rotas permanece identica
-- Collapsible behavior no desktop permanece (mas com visual mais limpo)
-- Mobile bottom nav permanece igual
-- Tooltips no modo colapsado permanecem
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 
