@@ -402,6 +402,15 @@ export default function CompleteAttendanceDialog({
     setWechslerResults(results);
   }, []);
 
+  const handleTolResultsChange = useCallback((results: ToLResults | null) => { setTolResults(results); }, []);
+  const handleD2ResultsChange = useCallback((results: D2Results | null) => { setD2Results(results); }, []);
+  const handleBdiResultsChange = useCallback((results: BDIResults | null) => { setBdiResults(results); }, []);
+  const handleBaiResultsChange = useCallback((results: BAIResults | null) => { setBaiResults(results); }, []);
+  const handleSnapivResultsChange = useCallback((results: SNAPIVResults | null) => { setSnapivResults(results); }, []);
+  const handleMchatResultsChange = useCallback((results: MCHATResults | null) => { setMchatResults(results); }, []);
+  const handleRavenResultsChange = useCallback((results: RavenResults | null) => { setRavenResults(results); }, []);
+  const handleWmsResultsChange = useCallback((results: WMSResults | null) => { setWmsResults(results); }, []);
+
   const handleComplete = async () => {
     if (!schedule || !user) {
       toast({
