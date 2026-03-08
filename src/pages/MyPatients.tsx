@@ -10,6 +10,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PatientDetailsModal } from '@/components/PatientDetailsModal';
 import { 
   Heart, 
   Search, 
@@ -21,7 +22,8 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  CheckCircle
+  CheckCircle,
+  Eye
 } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isSameMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
