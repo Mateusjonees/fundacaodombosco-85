@@ -28,6 +28,7 @@ import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ScreenOrientationToggle } from '@/components/ScreenOrientationToggle';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
+import { PageTransition } from '@/components/ui/page-transition';
 
 // Lazy load header components - melhor LCP
 const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));

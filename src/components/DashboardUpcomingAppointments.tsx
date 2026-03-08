@@ -77,10 +77,11 @@ export const DashboardUpcomingAppointments = ({ userId, isAdmin }: Props) => {
             <p className="text-xs text-muted-foreground">Nenhum atendimento restante hoje</p>
           </div>
         ) : (
-          appointments.map((apt: any) => (
+          appointments.map((apt: any, index: number) => (
             <div
               key={apt.id}
-              className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors opacity-0 animate-stagger-in"
+              style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'forwards' }}
             >
               <div className="text-center min-w-[48px]">
                 <p className="text-sm font-bold text-primary">

@@ -352,13 +352,15 @@ export default function SchedulePage() {
           {loading ? (
             <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>
           ) : filteredSchedules.length === 0 ? (
-            <div className="text-center py-16">
-              <CalendarIcon className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm font-medium text-muted-foreground">Nenhum agendamento {viewMode === 'day' ? 'para esta data' : 'nesta semana'}</p>
-              <p className="text-xs text-muted-foreground/70 mt-1">Clique em "Novo Agendamento" para adicionar</p>
+            <div className="text-center py-20 animate-fade-in">
+              <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-muted/80 mb-4">
+                <CalendarIcon className="h-8 w-8 text-muted-foreground/40" />
+              </div>
+              <p className="text-sm font-medium text-foreground/80">Nenhum agendamento {viewMode === 'day' ? 'para esta data' : 'nesta semana'}</p>
+              <p className="text-xs text-muted-foreground mt-1">Clique em "Novo Agendamento" para adicionar</p>
               {!isTodaySelected && (
-                <Button variant="link" size="sm" className="mt-3 gap-1" onClick={() => setSelectedDate(new Date())}>
-                  <RotateCcw className="h-3 w-3" />
+                <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={() => setSelectedDate(new Date())}>
+                  <RotateCcw className="h-3.5 w-3.5" />
                   Voltar para hoje
                 </Button>
               )}
