@@ -321,4 +321,6 @@ export const ScheduleCard = memo(({
     </div>
     </>
   );
-};
+});
+
+ScheduleCard.displayName = 'ScheduleCard';
