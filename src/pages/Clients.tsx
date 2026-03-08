@@ -252,6 +252,7 @@ export default function Patients() {
     loadEmployees();
     loadClientAssignments();
     loadClientLaudos();
+    loadLastAppointments();
   }, [user]);
 
   // Restaurar tabs via URL (já inicializadas no useState, apenas garantir activeTab)
