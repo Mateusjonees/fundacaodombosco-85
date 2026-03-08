@@ -395,14 +395,19 @@ export default function Financial() {
     : currentMonthRecords.filter(r => r.type === 'expense').length;
   const ticketMedio = displayIncomeCount > 0 ? displayIncome / displayIncomeCount : 0;
 
-  // Calcular totais de contas a receber
-  const totalPendingAmount = pendingPayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
-  const overduePayments = pendingPayments.filter(payment => {
+  // Calcular totais de contas a receber (apenas pendentes/parciais)
+  const pendingOnly = pendingPayments.filter((p: any) => ['pending', 'partial', 'overdue'].includes(p.status));
+  const totalPendingAmount = pendingOnly.reduce((sum: number, payment: any) => sum + (payment.amount_remaining || 0), 0);
+  const overduePayments = pendingOnly.filter((payment: any) => {
+    if (!payment.due_date) return false;
     const dueDate = new Date(payment.due_date);
     const today = new Date();
     return dueDate < today;
   });
-  const totalOverdueAmount = overduePayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
+  const totalOverdueAmount = overduePayments.reduce((sum: number, payment: any) => sum + (payment.amount_remaining || 0), 0);
+  const completedPayments = pendingPayments.filter((p: any) => p.status === 'completed');
+  const totalContractedAmount = pendingPayments.reduce((sum: number, p: any) => sum + (p.total_amount || 0), 0);
+  const totalReceivedAmount = pendingPayments.reduce((sum: number, p: any) => sum + (p.amount_paid || 0), 0);
 
   // Payment method breakdown from filteredRecords
   const paymentMethodBreakdown = filteredRecords.reduce((acc, record) => {
