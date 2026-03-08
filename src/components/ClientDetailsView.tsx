@@ -419,7 +419,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
           client_id: client.id,
           note_text: newNote.trim(),
           created_by: user?.id,
-          note_type: 'general'
+          note_type: 'general',
+          service_type: noteServiceType
         });
 
       if (error) throw error;
