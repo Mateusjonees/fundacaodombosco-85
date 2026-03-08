@@ -106,7 +106,9 @@ export default function Patients() {
   const [sortBy, setSortBy] = useState("name_asc");
   const [laudoFilter, setLaudoFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
   const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
+  const [lastAppointments, setLastAppointments] = useState<Map<string, string>>(new Map());
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
   // Debounce da busca para evitar queries excessivas durante digitação
