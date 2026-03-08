@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Brain, Calendar, ChevronDown, ClipboardCopy, Calculator, FileInput, User } from 'lucide-react';
+import { Brain, Calendar, ChevronDown, ClipboardCopy, Calculator, FileInput, User, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 import NeuroScoreCalculator from './NeuroScoreCalculator';
+import LaudoFromTestsGenerator from './LaudoFromTestsGenerator';
+import type { TestDataForLaudo } from '@/utils/laudoTextGenerator';
 
 interface NeuroTestResult {
   id: string;
