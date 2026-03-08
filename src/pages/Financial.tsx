@@ -381,15 +381,39 @@ export default function Financial() {
   const totalExpenses = expenseRecords.reduce((sum, r) => sum + r.amount, 0);
   const balance = totalIncome - totalExpenses;
 
-  // Current month calculations
+  // Check if filters are active (not default month)
+  const hasActiveFilters = dateFilter.start || dateFilter.end || typeFilter !== 'all' || 
+    categoryFilter !== 'all' || amountFilter.min || amountFilter.max || 
+    unitFilter !== 'all' || paymentMethodFilter !== 'all' || searchTerm;
+
+  // Period label
+  const periodLabel = hasActiveFilters 
+    ? (dateFilter.start && dateFilter.end 
+        ? `${new Date(dateFilter.start + 'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(dateFilter.end + 'T12:00:00').toLocaleDateString('pt-BR')}`
+        : 'Filtros ativos')
+    : `Mês atual (${new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })})`;
+
+  // Current month calculations - only used when no filters active
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
-  const currentMonthRecords = filteredRecords.filter(r => {
+  const currentMonthRecords = records.filter(r => {
     const recordDate = new Date(r.date);
     return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
   });
   const currentMonthIncome = currentMonthRecords.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
   const currentMonthExpenses = currentMonthRecords.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
+
+  // Display values: use filteredRecords when filters are active, otherwise current month
+  const displayIncome = hasActiveFilters ? totalIncome : currentMonthIncome;
+  const displayExpenses = hasActiveFilters ? totalExpenses : currentMonthExpenses;
+  const displayBalance = displayIncome - displayExpenses;
+  const displayIncomeCount = hasActiveFilters 
+    ? incomeRecords.length 
+    : currentMonthRecords.filter(r => r.type === 'income').length;
+  const displayExpenseCount = hasActiveFilters
+    ? expenseRecords.length
+    : currentMonthRecords.filter(r => r.type === 'expense').length;
+  const ticketMedio = displayIncomeCount > 0 ? displayIncome / displayIncomeCount : 0;
 
   // Calcular totais de contas a receber
   const totalPendingAmount = pendingPayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
@@ -399,6 +423,31 @@ export default function Financial() {
     return dueDate < today;
   });
   const totalOverdueAmount = overduePayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
+
+  // Payment method breakdown from filteredRecords
+  const paymentMethodBreakdown = filteredRecords.reduce((acc, record) => {
+    const method = record.payment_method || 'unknown';
+    if (!acc[method]) acc[method] = { income: 0, expense: 0, count: 0 };
+    if (record.type === 'income') acc[method].income += record.amount;
+    else acc[method].expense += record.amount;
+    acc[method].count++;
+    return acc;
+  }, {} as Record<string, { income: number; expense: number; count: number }>);
+
+  const maxPaymentTotal = Math.max(
+    ...Object.values(paymentMethodBreakdown).map(v => v.income + v.expense),
+    1
+  );
+
+  // Category breakdown
+  const categoryBreakdown = filteredRecords.reduce((acc, record) => {
+    const cat = record.category;
+    if (!acc[cat]) acc[cat] = { income: 0, expense: 0, count: 0 };
+    if (record.type === 'income') acc[cat].income += record.amount;
+    else acc[cat].expense += record.amount;
+    acc[cat].count++;
+    return acc;
+  }, {} as Record<string, { income: number; expense: number; count: number }>);
 
   // Traduzir métodos de pagamento
   const translatePaymentMethod = (method: string | undefined): string => {
