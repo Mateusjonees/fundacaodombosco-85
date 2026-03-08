@@ -169,6 +169,14 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   STROOP_TEST,
   WCST_TEST,
   WECHSLER_TEST,
+  TOL_TEST,
+  D2_TEST,
+  BDI_TEST as unknown as NeuroTestDefinition,
+  BAI_TEST as unknown as NeuroTestDefinition,
+  SNAPIV_TEST as unknown as NeuroTestDefinition,
+  MCHAT_TEST as unknown as NeuroTestDefinition,
+  RAVEN_TEST,
+  WMS_TEST as unknown as NeuroTestDefinition,
 ];
 /**
  * Busca um teste pelo código
