@@ -1,38 +1,30 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Calendar as CalendarIcon, Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Filter, Users, Stethoscope, Search, X, Trash2, CalendarDays, LayoutList, UserCheck, ClipboardList, AlertCircle, Mail, MailCheck } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
+import { Plus, Calendar as CalendarIcon, Clock, Search, X, CalendarDays, LayoutList, CheckCircle, XCircle } from 'lucide-react';
+import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import { DeleteAppointmentDialog } from '@/components/DeleteAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
-import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocomplete';
-import { ProfessionalCommandAutocomplete } from '@/components/ProfessionalCommandAutocomplete';
-import PatientPresenceButton from '@/components/PatientPresenceButton';
 import PatientArrivedNotification from '@/components/PatientArrivedNotification';
 import { ScheduleCard } from '@/components/ScheduleCard';
+import { CreateScheduleDialog } from '@/components/schedule/CreateScheduleDialog';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useClients } from '@/hooks/useClients';
-import { useSchedules, useCreateSchedule, useUpdateSchedule } from '@/hooks/useSchedules';
-import { PageHeader } from '@/components/ui/page-header';
-import { StatsCard } from '@/components/ui/stats-card';
+import { useSchedules } from '@/hooks/useSchedules';
 
 interface Schedule {
   id: string;
@@ -51,8 +43,9 @@ interface Schedule {
   profiles?: { name: string };
 }
 
-export default function Schedule() {
+export default function SchedulePage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
@@ -60,7 +53,6 @@ export default function Schedule() {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedScheduleForAction, setSelectedScheduleForAction] = useState<Schedule | null>(null);
-  const { toast } = useToast();
 
   // Filtros
   const [filterEmployee, setFilterEmployee] = useState('all');
@@ -75,687 +67,153 @@ export default function Schedule() {
   const { data: employees = [], isLoading: loadingEmployees } = useEmployees(userProfile);
   const { data: clients = [], isLoading: loadingClients } = useClients({ isActive: true });
   const { data: schedules = [], isLoading: loadingSchedules, refetch: refetchSchedules } = useSchedules(
-    selectedDate, 
-    userProfile,
-    {
-      employeeId: filterEmployee !== 'all' ? filterEmployee : undefined,
-      viewMode: viewMode,
-    }
+    selectedDate, userProfile, { employeeId: filterEmployee !== 'all' ? filterEmployee : undefined, viewMode }
   );
-  const createSchedule = useCreateSchedule();
-  const updateSchedule = useUpdateSchedule();
 
   const userRole = userProfile?.employee_role;
-  const isAdmin = userRole === 'director' || 
-                  userRole === 'coordinator_madre' || 
-                  userRole === 'coordinator_floresta' ||
-                  userRole === 'coordinator_atendimento_floresta' ||
-                  userRole === 'receptionist';
-  
-  // Verificar se pode cancelar agendamentos
-  const canCancelSchedules = userRole === 'director' || 
-                             userRole === 'coordinator_madre' || 
-                             userRole === 'coordinator_floresta' ||
-                             userRole === 'coordinator_atendimento_floresta' ||
-                             userRole === 'receptionist';
+  const isAdmin = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist'].includes(userRole || '');
+  const canCancelSchedules = isAdmin;
+  const canDeleteSchedules = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
 
-  // Verificar se pode excluir agendamentos (apenas coordenadores e diretor, não recepcionista)
-  const canDeleteSchedules = userRole === 'director' || 
-                             userRole === 'coordinator_madre' || 
-                             userRole === 'coordinator_floresta' ||
-                             userRole === 'coordinator_atendimento_floresta';
+  const loading = loadingProfile || loadingEmployees || loadingClients || loadingSchedules;
 
-  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
-  const [newAppointment, setNewAppointment] = useState({
-    client_id: '',
-    employee_id: '',
-    title: 'Consulta',
-    start_time: '',
-    end_time: '',
-    notes: '',
-    unit: 'madre',
-    sessionCount: 1,
-    sendConfirmationEmail: false
-  });
-
-  // Estado para armazenar e-mail do paciente selecionado
-  const [selectedClientEmail, setSelectedClientEmail] = useState<string | null>(null);
-
-  // Buscar e-mail do cliente quando mudar
+  // URL params for pre-filling
   useEffect(() => {
-    const fetchClientEmail = async () => {
-      if (!newAppointment.client_id) {
-        setSelectedClientEmail(null);
-        return;
-      }
-      // Primeiro tenta da lista local
-      const client = clients.find(c => c.id === newAppointment.client_id);
-      if (client?.email) {
-        setSelectedClientEmail(client.email);
-        return;
-      }
-      // Fallback: busca direto do banco
-      try {
-        const { data } = await supabase
-          .from('clients')
-          .select('email')
-          .eq('id', newAppointment.client_id)
-          .single();
-        setSelectedClientEmail(data?.email || null);
-      } catch {
-        setSelectedClientEmail(null);
-      }
-    };
-    fetchClientEmail();
-  }, [newAppointment.client_id, clients]);
-
-  // Auto-definir a unidade baseada no funcionário logado
-  useEffect(() => {
-    if (userProfile) {
-      // Priorizar a unidade definida no perfil do usuário
-      let defaultUnit = userProfile.unit || 'madre';
-      
-      // Fallback baseado no cargo se não houver unidade definida
-      if (!userProfile.unit) {
-        if (userProfile.employee_role === 'coordinator_floresta') {
-          defaultUnit = 'floresta';
-        } else if (userProfile.employee_role === 'coordinator_madre') {
-          defaultUnit = 'madre';
-        } else if (userProfile.employee_role === 'coordinator_atendimento_floresta') {
-          defaultUnit = 'atendimento_floresta';
-        }
-      }
-      
-      setNewAppointment(prev => ({
-        ...prev,
-        unit: defaultUnit
-      }));
-    }
-  }, [userProfile]);
-
-  useEffect(() => {
-    // Verificar se há parâmetros na URL para pré-preencher o formulário
-    // Aguardar userProfile carregar para preencher profissional e unidade corretamente
     if (!userProfile) return;
-    
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = urlParams.get('client_id') || urlParams.get('client');
-    
     if (clientId) {
-      // Preencher com o profissional logado e sua unidade
-      setNewAppointment(prev => ({
-        ...prev,
-        client_id: clientId,
-        employee_id: userProfile.user_id, // Usar user_id do profissional logado
-        unit: userProfile.unit || 'madre' // Usar unidade do profissional
-      }));
+      setEditingSchedule(null);
       setIsDialogOpen(true);
-      
-      // Limpar URL params após usar
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [userProfile]);
 
-  // Auto-selecionar o profissional para usuários não-administrativos
-  useEffect(() => {
-    if (userProfile && !isAdmin) {
-      setNewAppointment(prev => ({
-        ...prev,
-        employee_id: userProfile.user_id // Usar user_id ao invés de id
-      }));
-    }
-  }, [userProfile, isAdmin]);
-
-  // Loading state
-  const loading = loadingProfile || loadingEmployees || loadingClients || loadingSchedules;
-
-  // Função para verificar sobreposição de horários
-  const checkScheduleConflict = async (employeeId: string, startTime: string, endTime: string, excludeId?: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('id, start_time, end_time')
-        .eq('employee_id', employeeId)
-        .in('status', ['scheduled', 'confirmed'])
-        .gte('start_time', startTime.split('T')[0]) // Same day
-        .lt('start_time', new Date(new Date(startTime).getTime() + 24*60*60*1000).toISOString().split('T')[0] + 'T23:59:59');
-      
-      if (error) throw error;
-      
-      return data?.some(schedule => {
-        if (excludeId && schedule.id === excludeId) return false;
-        
-        const existingStart = new Date(schedule.start_time).getTime();
-        const existingEnd = new Date(schedule.end_time).getTime();
-        const newStart = new Date(startTime).getTime();
-        const newEnd = new Date(endTime).getTime();
-        
-        // Verificar sobreposição
-        return (newStart < existingEnd && newEnd > existingStart);
-      }) || false;
-    } catch (error) {
-      console.error('Error checking schedule conflict:', error);
-      return false;
-    }
-  };
-
-  const handleCreateAppointment = async () => {
-    if (isSavingSchedule) return;
-    setIsSavingSchedule(true);
-    try {
-      const convertToISOString = (dateTimeLocal: string) => {
-        if (!dateTimeLocal) return '';
-        const date = new Date(dateTimeLocal);
-        return date.toISOString();
-      };
-
-      // Validar se as datas foram preenchidas
-      if (!newAppointment.start_time || !newAppointment.end_time) {
-        toast({
-          variant: "destructive",
-          title: "Erro de Validação",
-          description: "Por favor, preencha a data e hora de início e fim.",
-        });
-        return;
-      }
-
-      // Validar se a data de fim é posterior à data de início
-      const startDate = new Date(newAppointment.start_time);
-      const endDate = new Date(newAppointment.end_time);
-      
-      if (endDate <= startDate) {
-        toast({
-          variant: "destructive",
-          title: "Erro de Data",
-          description: "A data e hora de fim deve ser posterior à data e hora de início.",
-        });
-        return;
-      }
-
-      const appointmentData = {
-        client_id: newAppointment.client_id,
-        employee_id: newAppointment.employee_id,
-        title: newAppointment.title,
-        start_time: convertToISOString(newAppointment.start_time),
-        end_time: convertToISOString(newAppointment.end_time),
-        notes: newAppointment.notes,
-        unit: newAppointment.unit,
-        created_by: user?.id
-      };
-
-      if (editingSchedule) {
-        const hasConflict = await checkScheduleConflict(
-          appointmentData.employee_id,
-          appointmentData.start_time,
-          appointmentData.end_time,
-          editingSchedule.id
-        );
-        
-        if (hasConflict) {
-          toast({
-            variant: "destructive",
-            title: "Conflito de Horário",
-            description: "O profissional já possui um agendamento neste horário.",
-          });
-          return;
-        }
-
-        await updateSchedule.mutateAsync({
-          id: editingSchedule.id,
-          data: appointmentData
-        });
-        
-        toast({
-          title: "Sucesso",
-          description: "Agendamento atualizado com sucesso!",
-        });
-      } else {
-        const sessionCount = newAppointment.sessionCount || 1;
-        const appointmentsToCreate = [];
-        
-        // Construir todos os agendamentos primeiro
-        for (let i = 0; i < sessionCount; i++) {
-          const sessionDate = new Date(appointmentData.start_time);
-          const sessionEndDate = new Date(appointmentData.end_time);
-          
-          sessionDate.setDate(sessionDate.getDate() + (i * 7));
-          sessionEndDate.setDate(sessionEndDate.getDate() + (i * 7));
-          
-          appointmentsToCreate.push({
-            ...appointmentData,
-            start_time: sessionDate.toISOString(),
-            end_time: sessionEndDate.toISOString(),
-            status: 'scheduled',
-            notes: sessionCount > 1 
-              ? `${appointmentData.notes} (Sessão ${i + 1} de ${sessionCount})` 
-              : appointmentData.notes
-          });
-        }
-
-        // Verificar conflitos em paralelo
-        const conflictChecks = await Promise.all(
-          appointmentsToCreate.map((apt, idx) =>
-            checkScheduleConflict(apt.employee_id, apt.start_time, apt.end_time)
-              .then(hasConflict => ({ hasConflict, index: idx, startTime: apt.start_time }))
-          )
-        );
-
-        const conflict = conflictChecks.find(c => c.hasConflict);
-        if (conflict) {
-          toast({
-            variant: "destructive",
-            title: "Conflito de Horário",
-            description: `Conflito encontrado na sessão ${conflict.index + 1} (${format(new Date(conflict.startTime), 'dd/MM/yyyy HH:mm', { locale: ptBR })}). O profissional já possui um agendamento neste horário.`,
-          });
-          return;
-        }
-
-        const { data: insertedSchedules, error } = await supabase
-          .from('schedules')
-          .insert(appointmentsToCreate)
-          .select('id, start_time');
-
-        if (error) throw error;
-
-        // Fechar diálogo imediatamente e enviar e-mail em background
-        toast({
-          title: "Sucesso",
-          description: sessionCount > 1 
-            ? `${sessionCount} sessões criadas com sucesso!`
-            : "Agendamento criado com sucesso!",
-        });
-
-        // Enviar e-mail de confirmação em background (não bloqueia UI)
-        if (newAppointment.sendConfirmationEmail && selectedClientEmail && insertedSchedules) {
-          (async () => {
-            try {
-              let client = clients.find(c => c.id === newAppointment.client_id);
-              if (!client?.name && newAppointment.client_id) {
-                const { data: clientData } = await supabase
-                  .from('clients')
-                  .select('name, email')
-                  .eq('id', newAppointment.client_id)
-                  .maybeSingle();
-                if (clientData) client = { ...client, ...clientData } as any;
-              }
-              const professional = employees.find(e => e.user_id === newAppointment.employee_id);
-              
-              const sessions = insertedSchedules.map((s, idx) => ({
-                date: format(new Date(s.start_time), "dd/MM/yyyy", { locale: ptBR }),
-                time: format(new Date(s.start_time), "HH:mm", { locale: ptBR }),
-                sessionNumber: idx + 1
-              }));
-
-              // Buscar email do profissional
-              let professionalEmail: string | undefined;
-              if (newAppointment.employee_id) {
-                const { data: profProfile } = await supabase
-                  .from('profiles')
-                  .select('email')
-                  .eq('user_id', newAppointment.employee_id)
-                  .maybeSingle();
-                professionalEmail = profProfile?.email || undefined;
-              }
-
-              const response = await supabase.functions.invoke('send-appointment-email', {
-                body: {
-                  clientEmail: selectedClientEmail,
-                  clientName: client?.name || 'Paciente',
-                  appointmentDate: sessions[0].date,
-                  appointmentTime: sessions[0].time,
-                  professionalName: professional?.name || 'Profissional',
-                  appointmentType: newAppointment.title,
-                  notes: newAppointment.notes,
-                  unit: newAppointment.unit,
-                  scheduleIds: insertedSchedules.map(s => s.id),
-                  sessions: sessions,
-                  professionalEmail,
-                  scheduledByName: userProfile?.name || undefined
-                }
-              });
-
-              if (response.error) {
-                console.error('Erro ao enviar e-mail:', response.error);
-              }
-            } catch (emailError) {
-              console.error('Erro ao enviar e-mail em background:', emailError);
-            }
-          })();
-        }
-      }
-      
-      setIsDialogOpen(false);
-      setEditingSchedule(null);
-      setNewAppointment({
-        client_id: '',
-        employee_id: '',
-        title: 'Consulta',
-        start_time: '',
-        end_time: '',
-        notes: '',
-        unit: 'madre',
-        sessionCount: 1,
-        sendConfirmationEmail: false
-      });
-      setSelectedClientEmail(null);
-      refetchSchedules();
-    } catch (error) {
-      console.error('Error saving appointment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao salvar agendamento. Tente novamente.",
-      });
-    } finally {
-      setIsSavingSchedule(false);
-    }
-  };
-
-  const formatDateTimeLocal = (isoString: string) => {
-    const date = new Date(isoString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
+  // Handlers
   const handleEditSchedule = (schedule: Schedule) => {
     setEditingSchedule(schedule);
-    setNewAppointment({
-      client_id: schedule.client_id,
-      employee_id: schedule.employee_id,
-      title: schedule.title,
-      start_time: formatDateTimeLocal(schedule.start_time),
-      end_time: formatDateTimeLocal(schedule.end_time),
-      notes: schedule.notes || '',
-      unit: schedule.unit || 'madre',
-      sessionCount: 1,
-      sendConfirmationEmail: false
-    });
     setIsDialogOpen(true);
   };
 
   const handleRedirect = async (scheduleId: string, newEmployeeId: string) => {
     try {
-      const { error } = await supabase
-        .from('schedules')
-        .update({ employee_id: newEmployeeId })
-        .eq('id', scheduleId);
-
+      const { error } = await supabase.from('schedules').update({ employee_id: newEmployeeId }).eq('id', scheduleId);
       if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Agendamento redirecionado com sucesso!",
-      });
-      
+      toast({ title: 'Sucesso', description: 'Agendamento redirecionado!' });
       refetchSchedules();
-    } catch (error) {
-      console.error('Error redirecting appointment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao redirecionar agendamento.",
-      });
-    }
+    } catch { toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao redirecionar.' }); }
   };
 
   const handleCancelAppointment = async (scheduleId: string, reason?: string, category?: string) => {
     try {
-      const cancelNote = category 
-        ? `[${category}] ${reason || 'Cancelado'}` 
-        : (reason ? `Cancelado: ${reason}` : 'Cancelado');
-        
-      const { error } = await supabase
-        .from('schedules')
-        .update({ 
-          status: 'cancelled',
-          notes: cancelNote
-        })
-        .eq('id', scheduleId);
-
+      const note = category ? `[${category}] ${reason || 'Cancelado'}` : (reason ? `Cancelado: ${reason}` : 'Cancelado');
+      const { error } = await supabase.from('schedules').update({ status: 'cancelled', notes: note }).eq('id', scheduleId);
       if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Agendamento cancelado!",
-      });
-      
+      toast({ title: 'Sucesso', description: 'Agendamento cancelado!' });
       refetchSchedules();
-    } catch (error) {
-      console.error('Error cancelling appointment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao cancelar agendamento.",
-      });
-    }
+    } catch { toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao cancelar.' }); }
   };
 
-  // Cancelar múltiplos agendamentos
-  const handleCancelMultipleAppointments = async (scheduleIds: string[], reason: string, category: string) => {
+  const handleCancelMultiple = async (ids: string[], reason: string, category: string) => {
     try {
-      const cancelNote = `[${category}] ${reason}`;
-      
-      const { error } = await supabase
-        .from('schedules')
-        .update({ 
-          status: 'cancelled',
-          notes: cancelNote
-        })
-        .in('id', scheduleIds);
-
+      const { error } = await supabase.from('schedules').update({ status: 'cancelled', notes: `[${category}] ${reason}` }).in('id', ids);
       if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: `${scheduleIds.length} agendamento(s) cancelado(s)!`,
-      });
-      
+      toast({ title: 'Sucesso', description: `${ids.length} cancelado(s)!` });
       refetchSchedules();
-    } catch (error) {
-      console.error('Error cancelling multiple appointments:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao cancelar agendamentos.",
-      });
-    }
+    } catch { toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao cancelar.' }); }
   };
 
-  // Excluir um agendamento
-  const handleDeleteAppointment = async (scheduleId: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('schedules')
-        .delete()
-        .eq('id', scheduleId);
-
+      const { error } = await supabase.from('schedules').delete().eq('id', id);
       if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Atendimento excluído!",
-      });
-      
+      toast({ title: 'Sucesso', description: 'Excluído!' });
       refetchSchedules();
-    } catch (error) {
-      console.error('Error deleting appointment:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao excluir atendimento.",
-      });
-    }
+    } catch { toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao excluir.' }); }
   };
 
-  // Excluir múltiplos agendamentos
-  const handleDeleteMultipleAppointments = async (scheduleIds: string[]) => {
+  const handleDeleteMultiple = async (ids: string[]) => {
     try {
-      const { error } = await supabase
-        .from('schedules')
-        .delete()
-        .in('id', scheduleIds);
-
+      const { error } = await supabase.from('schedules').delete().in('id', ids);
       if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: `${scheduleIds.length} atendimento(s) excluído(s)!`,
-      });
-      
+      toast({ title: 'Sucesso', description: `${ids.length} excluído(s)!` });
       refetchSchedules();
-    } catch (error) {
-      console.error('Error deleting multiple appointments:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao excluir atendimentos.",
-      });
-    }
+    } catch { toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao excluir.' }); }
   };
 
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { text: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; icon?: any; className?: string }> = {
+    const map: Record<string, any> = {
       'scheduled': { text: 'Agendado', variant: 'default', icon: CalendarIcon },
       'confirmed': { text: 'Confirmado', variant: 'secondary', icon: CheckCircle },
       'completed': { text: '✓ Concluído', variant: 'outline', icon: CheckCircle, className: 'border-green-500 text-green-700 bg-green-50 font-semibold' },
       'pending_validation': { text: '⏳ Aguardando Validação', variant: 'outline', icon: Clock, className: 'border-amber-500 text-amber-700 bg-amber-50 font-semibold' },
-      'cancelled': { text: 'Cancelado', variant: 'destructive', icon: XCircle }
+      'cancelled': { text: 'Cancelado', variant: 'destructive', icon: XCircle },
     };
-    
-    return statusMap[status] || { text: 'Desconhecido', variant: 'outline' as const };
+    return map[status] || { text: 'Desconhecido', variant: 'outline' as const };
   };
 
-  // Calcular datas para visualização semanal
-  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 }); // Segunda-feira
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
-  // Filtrar agendamentos
-  const filteredSchedules = schedules.filter(schedule => {
-    // Filtro de funcionário
-    if (filterEmployee !== 'all' && schedule.employee_id !== filterEmployee) {
-      return false;
-    }
-
-    // Filtro de unidade
-    if (filterUnit !== 'all' && schedule.unit !== filterUnit) {
-      return false;
-    }
-
-    // Filtro de pesquisa universal (busca em todos os campos)
+  // Filtering
+  const filteredSchedules = schedules.filter((s: any) => {
+    if (filterEmployee !== 'all' && s.employee_id !== filterEmployee) return false;
+    if (filterUnit !== 'all' && s.unit !== filterUnit) return false;
     if (searchText.trim()) {
-      const searchLower = searchText.toLowerCase().trim();
-      const patientName = schedule.clients?.name?.toLowerCase() || '';
-      const professionalName = employees.find(emp => emp.user_id === schedule.employee_id)?.name?.toLowerCase() || '';
-      const title = schedule.title?.toLowerCase() || '';
-      const notes = schedule.notes?.toLowerCase() || '';
-      const unit = schedule.unit?.toLowerCase() || '';
-      const startTime = format(new Date(schedule.start_time), 'HH:mm');
-      const endTime = format(new Date(schedule.end_time), 'HH:mm');
-      const dateFormatted = format(new Date(schedule.start_time), 'dd/MM/yyyy');
-      const dayName = format(new Date(schedule.start_time), 'EEEE', { locale: ptBR }).toLowerCase();
-      const status = schedule.status?.toLowerCase() || '';
-      
-      // Buscar em todos os campos
-      const allFields = [
-        patientName,
-        professionalName,
-        title,
-        notes,
-        unit,
-        startTime,
-        endTime,
-        dateFormatted,
-        dayName,
-        status
-      ].join(' ');
-      
-      if (!allFields.includes(searchLower)) {
-        return false;
-      }
+      const q = searchText.toLowerCase();
+      const fields = [s.clients?.name, employees.find((e: any) => e.user_id === s.employee_id)?.name, s.title, s.notes, s.unit, format(new Date(s.start_time), 'HH:mm'), format(new Date(s.start_time), 'dd/MM/yyyy')].join(' ').toLowerCase();
+      if (!fields.includes(q)) return false;
     }
-
-    // Filtro de horário
     if (filterTimeStart || filterTimeEnd) {
-      const scheduleTime = format(new Date(schedule.start_time), 'HH:mm');
-      
-      if (filterTimeStart && scheduleTime < filterTimeStart) {
-        return false;
-      }
-      
-      if (filterTimeEnd && scheduleTime > filterTimeEnd) {
-        return false;
-      }
+      const t = format(new Date(s.start_time), 'HH:mm');
+      if (filterTimeStart && t < filterTimeStart) return false;
+      if (filterTimeEnd && t > filterTimeEnd) return false;
     }
-
     return true;
   });
 
-  // Separar agendamentos por modo de visualização
-  const todaySchedules = viewMode === 'day' 
-    ? filteredSchedules 
-    : filteredSchedules;
+  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const schedulesByDay = weekDays.map(d => ({ date: d, schedules: filteredSchedules.filter((s: any) => isSameDay(new Date(s.start_time), d)) }));
 
-  // Agrupar agendamentos por dia para visualização semanal
-  const schedulesByDay = weekDays.map(day => ({
-    date: day,
-    schedules: filteredSchedules.filter(schedule => 
-      isSameDay(new Date(schedule.start_time), day)
-    )
-  }));
-
-  // Debug removido para performance
-
-  // Estatísticas do dia
   const dayStats = {
     total: filteredSchedules.length,
-    confirmed: filteredSchedules.filter(s => s.status === 'confirmed' || s.patient_arrived).length,
-    pending: filteredSchedules.filter(s => s.status === 'scheduled' && !s.patient_arrived).length,
-    completed: filteredSchedules.filter(s => s.status === 'completed').length,
+    confirmed: filteredSchedules.filter((s: any) => s.status === 'confirmed' || s.patient_arrived).length,
+    completed: filteredSchedules.filter((s: any) => s.status === 'completed').length,
   };
+
+  const scheduleCardProps = (schedule: any) => ({
+    schedule,
+    employees,
+    userProfile,
+    isAdmin,
+    canCancelSchedules,
+    canDeleteSchedules,
+    onEdit: handleEditSchedule,
+    onRedirect: handleRedirect,
+    onCancelClick: () => { setSelectedScheduleForAction(schedule); setCancelDialogOpen(true); },
+    onDeleteClick: () => { setSelectedScheduleForAction(schedule); setDeleteDialogOpen(true); },
+    onCompleteClick: () => { setSelectedScheduleForAction(schedule); setCompleteDialogOpen(true); },
+    onPresenceUpdate: refetchSchedules,
+    getStatusBadge,
+  });
 
   return (
     <div className="w-full p-2 sm:p-4 space-y-4 animate-fade-in">
       <PatientArrivedNotification />
       <ScheduleAlerts />
-      
-      {/* Header compacto */}
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Agenda</h1>
-          <p className="text-sm text-muted-foreground">
-            {format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-          </p>
+          <p className="text-sm text-muted-foreground">{format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}</p>
         </div>
-        <Button 
-          className="gap-2" 
-          onClick={() => {
-            setEditingSchedule(null);
-            const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
-            setNewAppointment({
-              client_id: '',
-              employee_id: defaultEmployeeId,
-              title: 'Consulta',
-              start_time: '',
-              end_time: '',
-              notes: '',
-              unit: userProfile?.unit || 'madre',
-              sessionCount: 1,
-              sendConfirmationEmail: false
-            });
-            setIsDialogOpen(true);
-          }}
-        >
+        <Button className="gap-2" onClick={() => { setEditingSchedule(null); setIsDialogOpen(true); }}>
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Novo Agendamento</span>
         </Button>
       </div>
-      
+
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Sidebar: Calendário + Filtros compactos */}
+        {/* Sidebar */}
         <div className="w-full lg:w-72 shrink-0 space-y-3">
           <Card className="border shadow-sm">
             <CardContent className="p-3 flex justify-center">
@@ -781,27 +239,18 @@ export default function Schedule() {
                 <div>
                   <Label className="text-xs text-muted-foreground">Profissional</Label>
                   <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                    <SelectTrigger className="h-8 mt-1 text-sm">
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-8 mt-1 text-sm"><SelectValue placeholder="Todos" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
-                      {employees.map((emp) => (
-                        <SelectItem key={emp.user_id} value={emp.user_id}>
-                          {emp.name}
-                        </SelectItem>
-                      ))}
+                      {employees.map((emp: any) => <SelectItem key={emp.user_id} value={emp.user_id}>{emp.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-
                 {userRole === 'director' && (
                   <div>
                     <Label className="text-xs text-muted-foreground">Unidade</Label>
                     <Select value={filterUnit} onValueChange={setFilterUnit}>
-                      <SelectTrigger className="h-8 mt-1 text-sm">
-                        <SelectValue placeholder="Todas" />
-                      </SelectTrigger>
+                      <SelectTrigger className="h-8 mt-1 text-sm"><SelectValue placeholder="Todas" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todas</SelectItem>
                         <SelectItem value="madre">MADRE</SelectItem>
@@ -816,133 +265,62 @@ export default function Schedule() {
           )}
         </div>
 
-        {/* Conteúdo principal */}
+        {/* Main content */}
         <div className="flex-1 space-y-3">
-          {/* Barra: pesquisa + toggle dia/semana */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar paciente, profissional..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="pl-8 h-9 text-sm"
-              />
+              <Input placeholder="Buscar paciente, profissional..." value={searchText} onChange={(e) => setSearchText(e.target.value)} className="pl-8 h-9 text-sm" />
               {searchText && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
-                  onClick={() => setSearchText('')}
-                >
+                <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0" onClick={() => setSearchText('')}>
                   <X className="h-3 w-3" />
                 </Button>
               )}
             </div>
-            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'day' | 'week')}>
-              <ToggleGroupItem value="day" aria-label="Dia" className="gap-1 h-9 px-3 text-sm">
-                <LayoutList className="h-4 w-4" />
-                Dia
-              </ToggleGroupItem>
-              <ToggleGroupItem value="week" aria-label="Semana" className="gap-1 h-9 px-3 text-sm">
-                <CalendarDays className="h-4 w-4" />
-                Semana
-              </ToggleGroupItem>
+            <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'day' | 'week')}>
+              <ToggleGroupItem value="day" aria-label="Dia" className="gap-1 h-9 px-3 text-sm"><LayoutList className="h-4 w-4" />Dia</ToggleGroupItem>
+              <ToggleGroupItem value="week" aria-label="Semana" className="gap-1 h-9 px-3 text-sm"><CalendarDays className="h-4 w-4" />Semana</ToggleGroupItem>
             </ToggleGroup>
           </div>
 
-          {/* Filtros ativos */}
+          {/* Active filters */}
           {(searchText || filterEmployee !== 'all' || filterUnit !== 'all') && (
             <div className="flex flex-wrap items-center gap-1.5">
-              {searchText && (
-                <Badge variant="secondary" className="gap-1 text-xs">
-                  "{searchText}"
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchText('')} />
-                </Badge>
-              )}
-              {filterEmployee !== 'all' && (
-                <Badge variant="secondary" className="gap-1 text-xs">
-                  {employees.find(e => e.user_id === filterEmployee)?.name}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterEmployee('all')} />
-                </Badge>
-              )}
-              {filterUnit !== 'all' && (
-                <Badge variant="secondary" className="gap-1 text-xs">
-                  {filterUnit === 'madre' ? 'MADRE' : filterUnit === 'floresta' ? 'Floresta' : 'Atend. Floresta'}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterUnit('all')} />
-                </Badge>
-              )}
+              {searchText && <Badge variant="secondary" className="gap-1 text-xs">"{searchText}" <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchText('')} /></Badge>}
+              {filterEmployee !== 'all' && <Badge variant="secondary" className="gap-1 text-xs">{employees.find((e: any) => e.user_id === filterEmployee)?.name} <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterEmployee('all')} /></Badge>}
+              {filterUnit !== 'all' && <Badge variant="secondary" className="gap-1 text-xs">{filterUnit === 'madre' ? 'MADRE' : filterUnit === 'floresta' ? 'Floresta' : 'Atend. Floresta'} <X className="h-3 w-3 cursor-pointer" onClick={() => setFilterUnit('all')} /></Badge>}
             </div>
           )}
 
-          {/* Resumo do dia inline */}
+          {/* Day summary */}
           <div className="flex items-center gap-4 text-sm text-muted-foreground px-1">
             <span>{filteredSchedules.length} agendamento(s)</span>
             {dayStats.confirmed > 0 && <span className="text-green-600">{dayStats.confirmed} presente(s)</span>}
             {dayStats.completed > 0 && <span className="text-primary">{dayStats.completed} concluído(s)</span>}
           </div>
 
-          {/* Lista de Agendamentos */}
+          {/* Schedule list */}
           {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-lg" />
-              ))}
-            </div>
+            <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>
           ) : filteredSchedules.length === 0 ? (
             <div className="text-center py-16">
               <CalendarIcon className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm font-medium text-muted-foreground">
-                Nenhum agendamento {viewMode === 'day' ? 'para esta data' : 'nesta semana'}
-              </p>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                Clique em "Novo Agendamento" para adicionar
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Nenhum agendamento {viewMode === 'day' ? 'para esta data' : 'nesta semana'}</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Clique em "Novo Agendamento" para adicionar</p>
             </div>
           ) : viewMode === 'week' ? (
             <div className="space-y-4">
               {schedulesByDay.map(({ date, schedules: daySchedules }) => (
                 <div key={date.toISOString()} className="space-y-2">
-                  <div className={`flex items-center justify-between py-1.5 px-2 rounded-md text-sm ${
-                    isSameDay(date, new Date()) 
-                      ? 'bg-primary/10 text-primary font-semibold' 
-                      : 'text-muted-foreground'
-                  }`}>
+                  <div className={`flex items-center justify-between py-1.5 px-2 rounded-md text-sm ${isSameDay(date, new Date()) ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground'}`}>
                     <span>{format(date, "EEE, dd/MM", { locale: ptBR })}</span>
                     <span className="text-xs">{daySchedules.length}</span>
                   </div>
-                  
                   {daySchedules.length === 0 ? (
                     <p className="text-xs text-muted-foreground/50 pl-2">—</p>
                   ) : (
                     <div className="space-y-2 pl-1">
-                      {daySchedules.map((schedule) => (
-                        <ScheduleCard 
-                          key={schedule.id}
-                          schedule={schedule}
-                          employees={employees}
-                          userProfile={userProfile}
-                          isAdmin={isAdmin}
-                          canCancelSchedules={canCancelSchedules}
-                          canDeleteSchedules={canDeleteSchedules}
-                          onEdit={handleEditSchedule}
-                          onRedirect={handleRedirect}
-                          onCancelClick={() => {
-                            setSelectedScheduleForAction(schedule);
-                            setCancelDialogOpen(true);
-                          }}
-                          onDeleteClick={() => {
-                            setSelectedScheduleForAction(schedule);
-                            setDeleteDialogOpen(true);
-                          }}
-                          onCompleteClick={() => {
-                            setSelectedScheduleForAction(schedule);
-                            setCompleteDialogOpen(true);
-                          }}
-                          onPresenceUpdate={refetchSchedules}
-                          getStatusBadge={getStatusBadge}
-                        />
-                      ))}
+                      {daySchedules.map((schedule: any) => <ScheduleCard key={schedule.id} {...scheduleCardProps(schedule)} />)}
                     </div>
                   )}
                 </div>
@@ -950,257 +328,23 @@ export default function Schedule() {
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredSchedules.map((schedule) => (
-                <ScheduleCard 
-                  key={schedule.id}
-                  schedule={schedule}
-                  employees={employees}
-                  userProfile={userProfile}
-                  isAdmin={isAdmin}
-                  canCancelSchedules={canCancelSchedules}
-                  canDeleteSchedules={canDeleteSchedules}
-                  onEdit={handleEditSchedule}
-                  onRedirect={handleRedirect}
-                  onCancelClick={() => {
-                    setSelectedScheduleForAction(schedule);
-                    setCancelDialogOpen(true);
-                  }}
-                  onDeleteClick={() => {
-                    setSelectedScheduleForAction(schedule);
-                    setDeleteDialogOpen(true);
-                  }}
-                  onCompleteClick={() => {
-                    setSelectedScheduleForAction(schedule);
-                    setCompleteDialogOpen(true);
-                  }}
-                  onPresenceUpdate={refetchSchedules}
-                  getStatusBadge={getStatusBadge}
-                />
-              ))}
+              {filteredSchedules.map((schedule: any) => <ScheduleCard key={schedule.id} {...scheduleCardProps(schedule)} />)}
             </div>
           )}
         </div>
 
-        {/* Create/Edit Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-50 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 hover:scale-110 transition-all duration-300"
-              onClick={() => {
-                setEditingSchedule(null);
-                const defaultEmployeeId = !isAdmin && employees.length === 1 ? employees[0].user_id : '';
-                setNewAppointment({
-                  client_id: '',
-                  employee_id: defaultEmployeeId,
-                  title: 'Consulta',
-                  start_time: '',
-                  end_time: '',
-                  notes: '',
-                  unit: 'madre',
-                  sessionCount: 1,
-                  sendConfirmationEmail: false
-                });
-              }}
-            >
-              <Plus className="h-7 w-7" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle>
-                {editingSchedule ? 'Editar Agendamento' : 'Novo Agendamento'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto px-1">
-              <div className="space-y-6 py-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="client_id">Paciente</Label>
-                    <PatientCommandAutocomplete
-                      value={newAppointment.client_id}
-                      onValueChange={(value) => setNewAppointment({ ...newAppointment, client_id: value })}
-                      onClientSelect={(client) => {
-                        if (client?.unit) {
-                          setNewAppointment(prev => ({ ...prev, client_id: client.id, unit: client.unit! }));
-                        }
-                      }}
-                      placeholder="Buscar paciente por nome, CPF, telefone ou email..."
-                      unitFilter={
-                        userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
-                        userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
-                        userProfile?.employee_role === 'coordinator_atendimento_floresta' ? 'atendimento_floresta' :
-                        'all'
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="employee_id">Profissional</Label>
-                    <ProfessionalCommandAutocomplete
-                      value={newAppointment.employee_id}
-                      onValueChange={(value) => setNewAppointment({ ...newAppointment, employee_id: value })}
-                      placeholder="Buscar profissional por nome, email ou telefone..."
-                      unitFilter={
-                        // Para coordenadores, usar sua unidade específica
-                        userProfile?.employee_role === 'coordinator_madre' ? 'madre' :
-                        userProfile?.employee_role === 'coordinator_floresta' ? 'floresta' :
-                        userProfile?.employee_role === 'coordinator_atendimento_floresta' ? 'atendimento_floresta' :
-                        // Para recepcionistas, usar a unidade do agendamento sendo criado
-                        userProfile?.employee_role === 'receptionist' ? newAppointment.unit :
-                        // Para diretores, mostrar todos
-                        'all'
-                      }
-                      disabled={!isAdmin}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start_time">Data e Hora Início</Label>
-                    <Input
-                      id="start_time"
-                      type="datetime-local"
-                      value={newAppointment.start_time}
-                      onChange={(e) => setNewAppointment({...newAppointment, start_time: e.target.value})}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="end_time">Data e Hora Fim</Label>
-                    <Input
-                      id="end_time"
-                      type="datetime-local"
-                      value={newAppointment.end_time}
-                      onChange={(e) => setNewAppointment({...newAppointment, end_time: e.target.value})}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Tipo de Consulta</Label>
-                    <Select value={newAppointment.title} onValueChange={(value) => setNewAppointment({...newAppointment, title: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-md z-50">
-                        <SelectItem value="Consulta">Consulta</SelectItem>
-                        <SelectItem value="Primeira Consulta">Primeira Consulta</SelectItem>
-                        <SelectItem value="Avaliação">Avaliação</SelectItem>
-                        <SelectItem value="Retorno">Retorno</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="unit">Unidade</Label>
-                    <Select 
-                      value={newAppointment.unit} 
-                      onValueChange={(value) => setNewAppointment({...newAppointment, unit: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a unidade" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-md z-50">
-                        <SelectItem value="madre">Clínica Social (MADRE)</SelectItem>
-                        <SelectItem value="floresta">Neuroavaliação (Floresta)</SelectItem>
-                        <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                {!editingSchedule && (
-                  <div className="space-y-2">
-                    <Label htmlFor="sessionCount">Quantidade de Sessões</Label>
-                    <Input
-                      id="sessionCount"
-                      type="number"
-                      min="1"
-                      max="52"
-                      value={newAppointment.sessionCount}
-                      onChange={(e) => setNewAppointment({...newAppointment, sessionCount: Math.max(1, parseInt(e.target.value) || 1)})}
-                      placeholder="1"
-                      className="w-full"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Defina quantas sessões sequenciais semanais deseja criar. O sistema verificará automaticamente conflitos de horário.
-                    </p>
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Observações</Label>
-                  <Textarea
-                    id="notes"
-                    value={newAppointment.notes}
-                    onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
-                    placeholder="Observações opcionais..."
-                    rows={4}
-                    className="resize-none w-full"
-                  />
-                </div>
-
-                {/* Seção de E-mail de Confirmação */}
-                {!editingSchedule && (
-                  <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <Label className="text-sm font-medium">Notificação por E-mail</Label>
-                    </div>
-                    
-                    {selectedClientEmail ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <p className="text-sm text-muted-foreground">
-                              Enviar e-mail de confirmação ao paciente
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              <MailCheck className="h-3 w-3 inline mr-1" />
-                              {selectedClientEmail}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={newAppointment.sendConfirmationEmail}
-                            onCheckedChange={(checked) => setNewAppointment({...newAppointment, sendConfirmationEmail: checked})}
-                          />
-                        </div>
-                        {newAppointment.sendConfirmationEmail && (
-                          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
-                            <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                              ✅ O paciente receberá um e-mail com os dados do agendamento e poderá confirmar sua presença clicando em um botão.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
-                        <p className="text-xs text-amber-700 dark:text-amber-400">
-                          ⚠️ Paciente não possui e-mail cadastrado. Não será possível enviar confirmação por e-mail.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Fixed footer with action buttons */}
-            <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t bg-background">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateAppointment} disabled={isSavingSchedule}>
-                {isSavingSchedule ? 'Salvando...' : editingSchedule ? 'Salvar' : 'Criar'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Dialogs */}
+        <CreateScheduleDialog
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          editingSchedule={editingSchedule}
+          userProfile={userProfile}
+          isAdmin={isAdmin}
+          employees={employees}
+          clients={clients}
+          onSuccess={refetchSchedules}
+          onReset={() => setEditingSchedule(null)}
+        />
 
         <CompleteAttendanceDialog
           schedule={selectedScheduleForAction}
@@ -1214,17 +358,26 @@ export default function Schedule() {
           isOpen={cancelDialogOpen}
           onClose={() => setCancelDialogOpen(false)}
           onCancel={handleCancelAppointment}
-          onCancelMultiple={handleCancelMultipleAppointments}
+          onCancelMultiple={handleCancelMultiple}
         />
 
         <DeleteAppointmentDialog
           schedule={selectedScheduleForAction}
           isOpen={deleteDialogOpen}
           onClose={() => setDeleteDialogOpen(false)}
-          onDelete={handleDeleteAppointment}
-          onDeleteMultiple={handleDeleteMultipleAppointments}
+          onDelete={handleDelete}
+          onDeleteMultiple={handleDeleteMultiple}
         />
       </div>
+
+      {/* FAB */}
+      <Button
+        className="fixed bottom-20 md:bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl z-40 bg-gradient-to-r from-primary to-primary-glow hover:scale-110 transition-all duration-300 border-0"
+        onClick={() => { setEditingSchedule(null); setIsDialogOpen(true); }}
+        aria-label="Novo agendamento"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
     </div>
   );
 }

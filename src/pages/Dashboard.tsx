@@ -1,23 +1,30 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TimeClock } from '@/components/TimeClock';
 import { BirthdayAlerts } from '@/components/BirthdayAlerts';
 import { DashboardCharts } from '@/components/DashboardCharts';
-import { Users, Calendar, DollarSign, UserPlus, TrendingUp, Activity } from 'lucide-react';
+import { DashboardUpcomingAppointments } from '@/components/DashboardUpcomingAppointments';
+import { DashboardActionCards } from '@/components/DashboardActionCards';
+import { Users, Calendar, DollarSign, UserPlus, Activity } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
+import { useNavigate } from 'react-router-dom';
 
 const StatCard = ({ 
-  title, value, icon: Icon, color 
+  title, value, icon: Icon, color, onClick 
 }: { 
   title: string; 
   value: string | number; 
   icon: any; 
   color: string;
+  onClick?: () => void;
 }) => (
-  <Card className="group relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-md">
+  <Card 
+    className={`group relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-md ${onClick ? 'cursor-pointer' : ''}`}
+    onClick={onClick}
+  >
     <CardContent className="p-3 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <div className="space-y-1 sm:space-y-2 min-w-0">
@@ -39,6 +46,7 @@ const StatCard = ({
 export default function Dashboard() {
   const { profile, userName, userRole, loading: profileLoading } = useCurrentUser();
   const { data: stats, isLoading: statsLoading } = useDashboardStats(profile);
+  const navigate = useNavigate();
 
   const isLoading = profileLoading || statsLoading;
   const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
@@ -58,7 +66,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-3 sm:space-y-6 animate-fade-in">
-      {/* Welcome - ultra compacto no mobile */}
+      {/* Welcome */}
       <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-glow p-3 sm:p-8 text-primary-foreground">
         <div className="relative flex items-center justify-between gap-2 sm:gap-4">
           <div className="min-w-0">
@@ -77,19 +85,21 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats - sempre visíveis */}
+      {/* Stats principais */}
       <div className="grid grid-cols-2 gap-2 sm:gap-4">
         <StatCard
           title={isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
           value={stats.totalClients}
           icon={Users}
           color="text-blue-600 dark:text-blue-400"
+          onClick={() => navigate('/clients')}
         />
         <StatCard
           title="Consultas Hoje"
           value={stats.todayAppointments}
           icon={Calendar}
           color="text-emerald-600 dark:text-emerald-400"
+          onClick={() => navigate('/schedule')}
         />
         {isDirectorOrCoordinator && (
           <>
@@ -98,34 +108,35 @@ export default function Dashboard() {
               value={`R$ ${stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`}
               icon={DollarSign}
               color="text-amber-600 dark:text-amber-400"
+              onClick={() => navigate('/financial')}
             />
             <StatCard
               title="Funcionários"
               value={stats.totalEmployees}
               icon={UserPlus}
               color="text-violet-600 dark:text-violet-400"
+              onClick={() => navigate('/employees-new')}
             />
           </>
         )}
       </div>
 
-      {/* Ponto + Aniversários lado a lado no desktop, empilhados no mobile */}
+      {/* Cards de ação rápida - apenas para admin */}
+      {isDirectorOrCoordinator && <DashboardActionCards />}
+
+      {/* Grid: Próximos atendimentos + Ponto + Aniversários */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <DashboardUpcomingAppointments 
+          userId={profile?.user_id} 
+          isAdmin={isDirectorOrCoordinator} 
+        />
         <TimeClock />
         <BirthdayAlerts />
-        {/* Charts ocupa espaço restante no desktop */}
-        {isDirectorOrCoordinator && (
-          <div className="sm:col-span-2 lg:col-span-1">
-            <DashboardCharts />
-          </div>
-        )}
       </div>
 
-      {/* Charts em linha separada quando há espaço */}
+      {/* Charts para admins */}
       {isDirectorOrCoordinator && (
-        <div className="hidden lg:block">
-          {/* Charts já renderizados acima no grid para lg, aqui é fallback */}
-        </div>
+        <DashboardCharts />
       )}
     </div>
   );
