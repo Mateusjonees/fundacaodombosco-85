@@ -335,6 +335,7 @@ export default function CompleteAttendanceDialog({
 
     setLoading(true);
     try {
+      const isNutritionist = professionalRole === 'nutritionist';
       const isAtendimentoFloresta = clientUnit === 'atendimento_floresta';
       const isNeuroUnit = clientUnit === 'floresta';
 
