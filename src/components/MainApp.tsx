@@ -27,6 +27,7 @@ import { UserAvatar } from '@/components/UserAvatar';
 import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ScreenOrientationToggle } from '@/components/ScreenOrientationToggle';
+import { ScrollToTop } from '@/components/ui/scroll-to-top';
 
 // Lazy load header components - melhor LCP
 const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
@@ -272,6 +273,7 @@ export const MainApp = () => {
           </div>
           <MobileBottomNav />
           <ScreenOrientationToggle />
+          <ScrollToTop />
         </div>
       </SidebarProvider>
     </Router>

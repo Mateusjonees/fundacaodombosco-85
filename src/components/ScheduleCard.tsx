@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -52,7 +52,7 @@ interface ScheduleCardProps {
 
 // Unit colors imported from centralized config
 
-export const ScheduleCard = ({
+export const ScheduleCard = memo(({
   schedule,
   employees,
   userProfile,
@@ -321,4 +321,6 @@ export const ScheduleCard = ({
     </div>
     </>
   );
-};
+});
+
+ScheduleCard.displayName = 'ScheduleCard';
