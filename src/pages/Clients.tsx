@@ -46,7 +46,9 @@ import {
   CalendarDays,
   FileCheck,
   FileX,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { PatientCard } from "@/components/PatientCard";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
