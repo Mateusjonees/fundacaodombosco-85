@@ -102,6 +102,7 @@ export default function Patients() {
   const [professionalFilter, setProfessionalFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name_asc");
   const [laudoFilter, setLaudoFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
@@ -605,6 +606,10 @@ export default function Patients() {
   // Filtros aplicados no frontend (unit, age, professional, laudo)
   const filteredClients = useMemo(() => {
     const filtered = clients.filter((client) => {
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && client.is_active) ||
+        (statusFilter === "inactive" && !client.is_active);
       const matchesUnit = unitFilter === "all" || client.unit === unitFilter;
       const matchesAge =
         ageFilter === "all" ||
@@ -638,7 +643,7 @@ export default function Patients() {
         (laudoFilter === "with_laudo" && clientLaudoIds.has(client.id)) ||
         (laudoFilter === "without_laudo" && !clientLaudoIds.has(client.id));
 
-      return matchesUnit && matchesAge && matchesProfessional && matchesLaudo;
+      return matchesStatus && matchesUnit && matchesAge && matchesProfessional && matchesLaudo;
     });
 
     // Ordenação
@@ -674,7 +679,7 @@ export default function Patients() {
     });
 
     return filtered;
-  }, [clients, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, userProfile?.employee_role]);
+  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, userProfile?.employee_role]);
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
 
   // Renderizar tab bar de navegação (lista + pacientes abertos)
@@ -796,7 +801,7 @@ export default function Patients() {
   }).length;
   const laudoCount = filteredClients.filter(c => clientLaudoIds.has(c.id)).length;
   const withoutLaudoCount = filteredClients.length - laudoCount;
-  const activeFiltersCount = (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0) + (laudoFilter !== "all" ? 1 : 0) + (sortBy !== "name_asc" ? 1 : 0);
+  const activeFiltersCount = (statusFilter !== "all" ? 1 : 0) + (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0) + (laudoFilter !== "all" ? 1 : 0) + (sortBy !== "name_asc" ? 1 : 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -1168,6 +1173,7 @@ export default function Patients() {
         searchPlaceholder="Buscar por nome, CPF, telefone..."
         activeFiltersCount={activeFiltersCount}
         onClearFilters={() => {
+          setStatusFilter("all");
           setUnitFilter("all");
           setAgeFilter("all");
           setProfessionalFilter("all");
@@ -1190,6 +1196,20 @@ export default function Patients() {
                 <SelectItem value="oldest">Mais Antigos</SelectItem>
                 <SelectItem value="age_asc">Idade (Menor → Maior)</SelectItem>
                 <SelectItem value="age_desc">Idade (Maior → Menor)</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px] h-10">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="active">
+                  <span className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-green-600" /> Ativos</span>
+                </SelectItem>
+                <SelectItem value="inactive">
+                  <span className="flex items-center gap-1.5"><UserX className="h-3.5 w-3.5 text-orange-500" /> Inativos</span>
+                </SelectItem>
               </SelectContent>
             </Select>
             <Select value={unitFilter} onValueChange={setUnitFilter}>
