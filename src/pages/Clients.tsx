@@ -331,9 +331,46 @@ export default function Patients() {
   // loadClients removido - agora usamos React Query com useClients hook
 
   const handleCreateClient = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
+      // Verificar duplicidade por nome (case-insensitive) ou CPF
+      const normalizedName = newClient.name.trim().toLowerCase();
+      let duplicateQuery = supabase
+        .from("clients")
+        .select("id, name, cpf")
+        .ilike("name", normalizedName);
+      
+      const { data: duplicatesByName } = await duplicateQuery;
+
+      // Verificar também por CPF se informado
+      let duplicatesByCpf: any[] = [];
+      if (newClient.cpf && newClient.cpf.trim().length >= 11) {
+        const { data } = await supabase
+          .from("clients")
+          .select("id, name, cpf")
+          .eq("cpf", newClient.cpf.trim());
+        duplicatesByCpf = data || [];
+      }
+
+      const allDuplicates = [...(duplicatesByName || []), ...duplicatesByCpf];
+      const uniqueDuplicates = Array.from(new Map(allDuplicates.map(d => [d.id, d])).values());
+
+      if (uniqueDuplicates.length > 0) {
+        const names = uniqueDuplicates.map(d => d.name).join(", ");
+        const confirmed = window.confirm(
+          `⚠️ Possível paciente duplicado encontrado!\n\nPacientes similares: ${names}\n\nDeseja cadastrar mesmo assim?`
+        );
+        if (!confirmed) {
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const { error } = await supabase.from("clients").insert({
         ...newClient,
+        name: newClient.name.trim(),
+        cpf: newClient.cpf?.trim() || null,
         created_by: user?.id,
       });
       if (error) throw error;
@@ -352,6 +389,8 @@ export default function Patients() {
         title: "Erro",
         description: "Não foi possível cadastrar o paciente.",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
   const handleUpdateClient = async () => {
