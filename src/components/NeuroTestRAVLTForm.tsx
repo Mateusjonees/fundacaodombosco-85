@@ -43,6 +43,7 @@ export default function NeuroTestRAVLTForm({
     b1: 0, a6: 0, a7: 0, rec: 0
   });
   const [notes, setNotes] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Calcular resultados quando os scores mudam
   useEffect(() => {
