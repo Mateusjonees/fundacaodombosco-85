@@ -1,21 +1,20 @@
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronDown } from 'lucide-react';
+import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronRight, Moon, Sun, MoreHorizontal } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useTheme } from 'next-themes';
 
-// Map icon names to actual icon components
 const iconMapping: Record<string, LucideIcon> = {
   Home, UserPlus, Users, Calendar, ClipboardList, UserCheck, FolderOpen,
   DollarSign, BarChart3, Package, Settings, Archive, CheckSquare, Shield,
@@ -26,7 +25,6 @@ const iconMapping: Record<string, LucideIcon> = {
 const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   const items = [];
 
-  // Painel - sempre visível
   items.push({ id: 'dashboard', title: 'Painel', url: '/', icon: 'Home', category: null, order_index: 0 });
 
   // GESTÃO CLÍNICA
@@ -109,7 +107,7 @@ interface MenuItem {
   order_index: number;
 }
 
-// Memoized menu item — clean flat design
+// Premium nav item with refined active indicator
 const SidebarNavItem = memo(({
   item,
   isActive,
@@ -125,18 +123,22 @@ const SidebarNavItem = memo(({
     <NavLink
       to={item.url}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-colors duration-150",
+        "group relative flex items-center gap-3 px-3 py-[7px] rounded-md text-[13px] font-normal transition-all duration-200",
         isActive
-          ? "bg-accent text-accent-foreground font-medium border-l-2 border-primary"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-        collapsed && "justify-center px-2"
+          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+          : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+        collapsed && "justify-center px-0 py-2"
       )}
     >
+      {/* Active indicator bar */}
+      {isActive && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-sidebar-primary" />
+      )}
       {IconComponent && (
         <IconComponent className={cn(
-          "h-4 w-4 shrink-0",
-          isActive ? "text-primary" : "text-muted-foreground"
-        )} />
+          "h-[16px] w-[16px] shrink-0 transition-colors duration-200",
+          isActive ? "text-sidebar-primary" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
+        )} strokeWidth={isActive ? 2.2 : 1.8} />
       )}
       {!collapsed && <span className="truncate">{item.title}</span>}
     </NavLink>
@@ -149,7 +151,7 @@ const SidebarNavItem = memo(({
           <TooltipTrigger asChild>
             <div>{content}</div>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-medium bg-popover border shadow-lg">
+          <TooltipContent side="right" className="text-xs font-medium">
             {item.title}
           </TooltipContent>
         </Tooltip>
@@ -179,11 +181,8 @@ export function AppSidebar() {
     }
   }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions]);
 
-  // Close sidebar on mobile after navigation
   useEffect(() => {
-    if (isMobile) {
-      setOpenMobile(false);
-    }
+    if (isMobile) setOpenMobile(false);
   }, [currentPath, isMobile, setOpenMobile]);
 
   const isActive = useCallback((path: string) => {
@@ -191,7 +190,6 @@ export function AppSidebar() {
     return currentPath.startsWith(path);
   }, [currentPath]);
 
-  // Group items by category
   const groupedItems = useMemo(() => {
     return navigationItems.reduce((acc, item) => {
       const category = item.category || 'main';
@@ -215,62 +213,96 @@ export function AppSidebar() {
   const categories = ['GESTÃO CLÍNICA', 'AGENDA', 'FINANCEIRO', 'ESTOQUE', 'EQUIPE', 'RELATÓRIOS', 'COMUNICAÇÃO', 'PESSOAL'];
 
   return (
-    <Sidebar collapsible="icon" className={cn("border-r border-border", collapsed ? "w-[72px]" : "w-64")}>
+    <Sidebar collapsible="icon" className={cn(
+      "border-r border-sidebar-border/60",
+      collapsed ? "w-[60px]" : "w-[252px]"
+    )}>
       <SidebarContent className="flex flex-col h-full bg-sidebar">
-        {/* Clean header */}
-        <div className={cn("border-b border-border", collapsed ? "p-3" : "px-4 py-3")}>
+        {/* Header — minimal branding */}
+        <div className={cn(
+          "shrink-0 border-b border-sidebar-border/40",
+          collapsed ? "px-2 py-3" : "px-4 py-3.5"
+        )}>
           {!collapsed ? (
-            <div className="flex items-center gap-3">
-              <img
-                alt="Fundação Dom Bosco"
-                src="/lovable-uploads/1e0ba652-7476-47a6-b6a0-0f2c90e306bd.png"
-                className="h-9 w-auto object-contain"
-                loading="lazy"
-              />
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg overflow-hidden shrink-0 bg-sidebar-accent flex items-center justify-center">
+                <img
+                  alt="FDB"
+                  src="/lovable-uploads/12d10c14-c39b-4936-8278-6b4465ada7b2.jpg"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-foreground truncate">Clínica</span>
-                <span className="text-[11px] text-muted-foreground truncate">Fundação Dom Bosco</span>
+                <span className="text-[13px] font-semibold text-sidebar-foreground leading-tight truncate">
+                  Dom Bosco
+                </span>
+                <span className="text-[11px] text-sidebar-foreground/50 leading-tight truncate">
+                  Clínica Multidisciplinar
+                </span>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <img
-                alt="FDB"
-                className="h-8 w-8 object-contain rounded-md"
-                loading="lazy"
-                src="/lovable-uploads/12d10c14-c39b-4936-8278-6b4465ada7b2.jpg"
-              />
+              <div className="h-7 w-7 rounded-lg overflow-hidden bg-sidebar-accent">
+                <img
+                  alt="FDB"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  src="/lovable-uploads/12d10c14-c39b-4936-8278-6b4465ada7b2.jpg"
+                />
+              </div>
             </div>
           )}
         </div>
 
-        <ScrollArea className="flex-1 px-2 py-2">
-          {/* Dashboard */}
-          {groupedItems.main && (
-            <div className="mb-1">
-              <SidebarMenu>
-                {groupedItems.main.map(item => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton asChild>
-                      <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} />
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </div>
-          )}
+        {/* Navigation */}
+        <ScrollArea className="flex-1">
+          <div className={cn("py-2", collapsed ? "px-1.5" : "px-2")}>
+            {/* Dashboard — standalone */}
+            {groupedItems.main && (
+              <div className="mb-1">
+                <SidebarMenu>
+                  {groupedItems.main.map(item => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton asChild>
+                        <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} />
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </div>
+            )}
 
-          {/* Category groups — flat list with simple labels */}
-          <div className="space-y-4 mt-2">
-            {categories.map(category => {
-              if (!groupedItems[category] || groupedItems[category].length === 0) return null;
+            {/* Categories */}
+            <div className={cn("space-y-3", collapsed && "space-y-2")}>
+              {categories.map(category => {
+                if (!groupedItems[category] || groupedItems[category].length === 0) return null;
 
-              if (collapsed) {
-                return (
-                  <div key={category} className="py-1">
-                    <div className="flex items-center justify-center mb-1">
-                      <div className="h-px w-6 bg-border" />
+                if (collapsed) {
+                  return (
+                    <div key={category}>
+                      <div className="flex justify-center py-1">
+                        <div className="h-px w-4 bg-sidebar-border/60" />
+                      </div>
+                      <SidebarMenu>
+                        {groupedItems[category].map(item => (
+                          <SidebarMenuItem key={item.id}>
+                            <SidebarMenuButton asChild>
+                              <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} />
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
                     </div>
+                  );
+                }
+
+                return (
+                  <div key={category}>
+                    <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/35 select-none">
+                      {category}
+                    </p>
                     <SidebarMenu>
                       {groupedItems[category].map(item => (
                         <SidebarMenuItem key={item.id}>
@@ -282,31 +314,13 @@ export function AppSidebar() {
                     </SidebarMenu>
                   </div>
                 );
-              }
-
-              return (
-                <div key={category}>
-                  {/* Simple category label */}
-                  <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    {category}
-                  </p>
-                  <SidebarMenu>
-                    {groupedItems[category].map(item => (
-                      <SidebarMenuItem key={item.id}>
-                        <SidebarMenuButton asChild>
-                          <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} />
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </div>
-              );
-            })}
+              })}
+            </div>
           </div>
         </ScrollArea>
 
-        {/* Clean footer */}
-        <div className="p-2 border-t border-border">
+        {/* Footer — user account */}
+        <div className="shrink-0 border-t border-sidebar-border/40 p-2">
           <UserAvatarFooter collapsed={collapsed} onLogout={handleLogout} />
         </div>
       </SidebarContent>
@@ -314,32 +328,32 @@ export function AppSidebar() {
   );
 }
 
-// Clean user footer
+// Clean user footer with theme toggle
 const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; onLogout: () => void }) => {
   const { userName, userRole, avatarUrl } = useCurrentUser();
+  const { theme, setTheme } = useTheme();
 
   if (collapsed) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex justify-center py-1 w-full">
+          <button className="flex justify-center w-full py-1 rounded-md hover:bg-sidebar-accent/50 transition-colors">
             <UserAvatar name={userName} avatarUrl={avatarUrl} role={userRole} size="sm" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="right" align="end" className="min-w-[180px]">
-          <div className="px-2 py-1.5 mb-1">
-            <p className="font-medium text-sm">{userName || 'Usuário'}</p>
-            <p className="text-xs text-muted-foreground">{userRole}</p>
+        <DropdownMenuContent side="right" align="end" className="min-w-[200px]">
+          <div className="px-3 py-2">
+            <p className="font-medium text-sm truncate">{userName || 'Usuário'}</p>
+            <p className="text-[11px] text-muted-foreground truncate">{userRole}</p>
           </div>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <div className="px-2 py-1.5">
-              <ThemeToggle collapsed={false} />
-            </div>
+          <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="cursor-pointer gap-2">
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive cursor-pointer">
-            <LogOut className="h-4 w-4 mr-2" />
+          <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive cursor-pointer gap-2">
+            <LogOut className="h-4 w-4" />
             Sair
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -350,24 +364,23 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left cursor-pointer hover:bg-muted/60 transition-colors">
+        <button className="flex items-center gap-2.5 px-2.5 py-2 rounded-md w-full text-left cursor-pointer hover:bg-sidebar-accent/50 transition-colors duration-150">
           <UserAvatar name={userName} avatarUrl={avatarUrl} role={userRole} size="sm" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-foreground">{userName || 'Usuário'}</p>
-            <p className="text-[11px] text-muted-foreground truncate">{userRole || 'Carregando...'}</p>
+            <p className="text-[13px] font-medium truncate text-sidebar-foreground">{userName || 'Usuário'}</p>
+            <p className="text-[10px] text-sidebar-foreground/45 truncate">{userRole || 'Carregando...'}</p>
           </div>
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <MoreHorizontal className="h-4 w-4 text-sidebar-foreground/30 shrink-0" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-[200px]">
-        <DropdownMenuItem asChild>
-          <div className="px-2 py-1.5">
-            <ThemeToggle collapsed={false} />
-          </div>
+        <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="cursor-pointer gap-2">
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive cursor-pointer">
-          <LogOut className="h-4 w-4 mr-2" />
+        <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive cursor-pointer gap-2">
+          <LogOut className="h-4 w-4" />
           Sair
         </DropdownMenuItem>
       </DropdownMenuContent>
