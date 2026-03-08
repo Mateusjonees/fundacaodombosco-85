@@ -610,7 +610,7 @@ export default function Patients() {
         ageFilter === "all" ||
         (() => {
           const age = getAge(client.birth_date);
-          if (age === null) return true;
+          if (age === null) return false; // Sem data de nascimento = excluído do filtro de idade
           if (ageFilter === "minor") return age < 18;
           if (ageFilter === "adult") return age >= 18;
           return true;
@@ -674,7 +674,7 @@ export default function Patients() {
     });
 
     return filtered;
-  }, [clients, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, isCoordinatorOrDirector]);
+  }, [clients, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, userProfile?.employee_role]);
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
 
   // Renderizar tab bar de navegação (lista + pacientes abertos)
