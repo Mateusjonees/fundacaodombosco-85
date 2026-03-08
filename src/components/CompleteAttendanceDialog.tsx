@@ -965,6 +965,7 @@ export default function CompleteAttendanceDialog({
   if (!schedule) return null;
 
   const isNeuroUnit = clientUnit === 'floresta';
+  const isNutritionistProfessional = professionalRole === 'nutritionist';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
