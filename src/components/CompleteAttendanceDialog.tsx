@@ -371,6 +371,14 @@ export default function CompleteAttendanceDialog({
         ? JSON.parse(JSON.stringify(selectedMaterials)) 
         : null;
 
+      // Preparar dados de nutrição como attachments
+      const hasNutritionData = isNutritionist && Object.values(nutritionData).some(v => v && v.toString().trim() !== '');
+      const attachmentsData = hasNutritionData 
+        ? JSON.parse(JSON.stringify({ nutrition_assessment: nutritionData }))
+        : null;
+
+      const attendanceType = isNutritionist ? 'Consulta Nutricional' : 'Consulta';
+
       // Atualizar schedule
       const { error: scheduleError } = await supabase.from('schedules').update({
         status: scheduleStatus,
