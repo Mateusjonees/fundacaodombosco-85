@@ -244,6 +244,48 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'desenhosUnicos'
       };
+    case 'REY':
+      return {
+        subtests: ['copia', 'memoria'],
+        names: { copia: 'Cópia', memoria: 'Memória' },
+        mainSubtest: 'copia'
+      };
+    case 'STROOP':
+      return {
+        subtests: ['cartao1Tempo', 'cartao2Tempo', 'cartao3Tempo', 'interferencia'],
+        names: {
+          cartao1Tempo: 'Cartão 1 (Cores)',
+          cartao2Tempo: 'Cartão 2 (Palavras)',
+          cartao3Tempo: 'Cartão 3 (Interferência)',
+          interferencia: 'Efeito Interferência'
+        },
+        mainSubtest: 'interferencia'
+      };
+    case 'WCST':
+      return {
+        subtests: ['totalErrors', 'perseverativeResponses', 'perseverativeErrors', 'nonPerseverativeErrors', 'categoriesCompleted'],
+        names: {
+          totalErrors: 'Total de Erros',
+          perseverativeResponses: 'Resp. Perseverativas',
+          perseverativeErrors: 'Erros Perseverativos',
+          nonPerseverativeErrors: 'Erros Não-Persev.',
+          categoriesCompleted: 'Categorias'
+        },
+        mainSubtest: 'perseverativeErrors'
+      };
+    case 'WECHSLER':
+      return {
+        subtests: ['qiTotal', 'icv', 'iop', 'imo', 'ivp', 'irf'],
+        names: {
+          qiTotal: 'QI Total',
+          icv: 'Compreensão Verbal',
+          iop: 'Org. Perceptual',
+          imo: 'Memória Operacional',
+          ivp: 'Vel. Processamento',
+          irf: 'Raciocínio Fluido'
+        },
+        mainSubtest: 'qiTotal'
+      };
     default:
       return null;
   }
