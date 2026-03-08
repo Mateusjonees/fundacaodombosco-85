@@ -105,6 +105,7 @@ export default function Schedule() {
                              userRole === 'coordinator_floresta' ||
                              userRole === 'coordinator_atendimento_floresta';
 
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
     employee_id: '',
@@ -239,6 +240,8 @@ export default function Schedule() {
   };
 
   const handleCreateAppointment = async () => {
+    if (isSavingSchedule) return;
+    setIsSavingSchedule(true);
     try {
       const convertToISOString = (dateTimeLocal: string) => {
         if (!dateTimeLocal) return '';
@@ -430,6 +433,8 @@ export default function Schedule() {
         title: "Erro",
         description: "Erro ao salvar agendamento. Tente novamente.",
       });
+    } finally {
+      setIsSavingSchedule(false);
     }
   };
 
@@ -1177,8 +1182,8 @@ export default function Schedule() {
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateAppointment}>
-                {editingSchedule ? 'Salvar' : 'Criar'}
+              <Button onClick={handleCreateAppointment} disabled={isSavingSchedule}>
+                {isSavingSchedule ? 'Salvando...' : editingSchedule ? 'Salvar' : 'Criar'}
               </Button>
             </div>
           </DialogContent>
