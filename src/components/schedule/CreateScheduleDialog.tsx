@@ -112,7 +112,7 @@ export const CreateScheduleDialog = ({
     if (client?.email) { setSelectedClientEmail(client.email); return; }
     supabase.from('clients').select('email').eq('id', form.client_id).single()
       .then(({ data }) => setSelectedClientEmail(data?.email || null))
-      .catch(() => setSelectedClientEmail(null));
+      .then(undefined, () => setSelectedClientEmail(null));
   }, [form.client_id, clients]);
 
   const checkConflict = async (employeeId: string, startTime: string, endTime: string, excludeId?: string) => {
