@@ -702,6 +702,13 @@ const MyPatients: React.FC = () => {
           loadMySchedules();
         }}
       />
+
+      {/* Modal de detalhes do paciente */}
+      <PatientDetailsModal
+        clientId={patientModalClientId}
+        open={patientModalOpen}
+        onOpenChange={setPatientModalOpen}
+      />
     </div>
   );
 };
