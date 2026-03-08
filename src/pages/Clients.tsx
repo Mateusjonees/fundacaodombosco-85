@@ -1275,6 +1275,7 @@ export default function Patients() {
           setAgeFilter("all");
           setProfessionalFilter("all");
           setLaudoFilter("all");
+          setGenderFilter("all");
           setSortBy("name_asc");
         }}
         filters={
