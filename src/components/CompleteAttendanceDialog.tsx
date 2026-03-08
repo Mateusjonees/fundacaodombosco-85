@@ -119,6 +119,10 @@ export default function CompleteAttendanceDialog({
   const [trppResults, setTrppResults] = useState<TRPPResults | null>(null);
   const [fptInfantilResults, setFptInfantilResults] = useState<FPTInfantilResults | null>(null);
   const [fptAdultoResults, setFptAdultoResults] = useState<FPTAdultoResults | null>(null);
+  const [reyResults, setReyResults] = useState<ReyResults | null>(null);
+  const [stroopResults, setStroopResults] = useState<StroopResults | null>(null);
+  const [wcstResults, setWcstResults] = useState<WCSTResults | null>(null);
+  const [wechslerResults, setWechslerResults] = useState<WechslerResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
