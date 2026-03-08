@@ -1031,7 +1031,7 @@ Contratante
                   <img src="${logoBase64}" alt="Fundação Dom Bosco" />
                   <h1>Contrato de Prestação de Serviços</h1>
                   <h2>Avaliação Neuropsicológica</h2>
-                  <p class="client-name">${contractData.clientName}</p>
+                  <p class="client-name">${DOMPurify.sanitize(contractData.clientName)}</p>
                 </div>
                 
                 <div class="contract-content">${contractContent}</div>
