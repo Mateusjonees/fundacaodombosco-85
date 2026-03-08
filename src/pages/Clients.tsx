@@ -311,6 +311,21 @@ export default function Patients() {
     }
   };
 
+  // Carregar IDs de clientes que possuem laudos
+  const loadClientLaudos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('client_laudos')
+        .select('client_id')
+        .eq('status', 'active');
+      if (error) throw error;
+      const ids = new Set((data || []).map(l => l.client_id));
+      setClientLaudoIds(ids);
+    } catch (error) {
+      console.error("Error loading client laudos:", error);
+    }
+  };
+
   // loadClients removido - agora usamos React Query com useClients hook
 
   const handleCreateClient = async () => {
