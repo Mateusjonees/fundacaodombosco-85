@@ -1019,7 +1019,7 @@ Contratante
             <body>
               <div class="content-wrapper">
                 <div class="print-info no-print">
-                  Impresso por: ${userName} em ${new Date().toLocaleString('pt-BR')}
+                  Impresso por: ${DOMPurify.sanitize(userName)} em ${new Date().toLocaleString('pt-BR')}
                 </div>
                 <div class="no-print" style="padding: 15mm 15mm 0 15mm; margin-bottom: 20px;">
                   <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir / Salvar PDF</button>
