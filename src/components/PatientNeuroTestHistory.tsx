@@ -1511,9 +1511,8 @@ export default function PatientNeuroTestHistory({
     return age;
   };
 
-  const clientAge = calculateAge(clientBirthDate);
 
-  const [laudoGeneratorOpen, setLaudoGeneratorOpen] = useState(false);
+
 
   // Converter testes para formato do gerador de laudo
   const testsForLaudo: TestDataForLaudo[] = tests.map(t => ({
