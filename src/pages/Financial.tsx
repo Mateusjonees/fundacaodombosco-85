@@ -367,9 +367,11 @@ export default function Financial() {
     const matchesUnit = unitFilter === 'all' || 
       (record.clients && 'unit' in record.clients && record.clients.unit === unitFilter);
     
+    const matchesPaymentMethod = paymentMethodFilter === 'all' || record.payment_method === paymentMethodFilter;
+    
     const matchesContractPending = !showContractPending || record.payment_method === 'contract';
     
-    return matchesSearch && matchesDateRange && matchesType && matchesCategory && matchesAmount && matchesUnit && matchesContractPending;
+    return matchesSearch && matchesDateRange && matchesType && matchesCategory && matchesAmount && matchesUnit && matchesPaymentMethod && matchesContractPending;
   });
 
   const incomeRecords = filteredRecords.filter(r => r.type === 'income');
