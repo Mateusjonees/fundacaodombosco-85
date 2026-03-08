@@ -10,6 +10,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PatientDetailsModal } from '@/components/PatientDetailsModal';
 import { 
   Heart, 
   Search, 
@@ -21,7 +22,8 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  CheckCircle
+  CheckCircle,
+  Eye
 } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isSameMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -68,6 +70,13 @@ const MyPatients: React.FC = () => {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [completeSchedule, setCompleteSchedule] = useState<Schedule | null>(null);
+  const [patientModalClientId, setPatientModalClientId] = useState<string | null>(null);
+  const [patientModalOpen, setPatientModalOpen] = useState(false);
+
+  const openPatientModal = (clientId: string) => {
+    setPatientModalClientId(clientId);
+    setPatientModalOpen(true);
+  };
 
   useEffect(() => {
     // Permitir acesso para todos os usuários autenticados
@@ -311,22 +320,6 @@ const MyPatients: React.FC = () => {
 
   return (
     <div className="w-full p-3 sm:p-6 space-y-4 sm:space-y-6">
-      {selectedClient ? (
-        <div>
-          <Button 
-            variant="outline" 
-            onClick={() => setSelectedClient(null)}
-            className="mb-4"
-          >
-            ← Voltar para Lista
-          </Button>
-          <ClientDetailsView 
-            client={selectedClient} 
-            onEdit={() => {}} 
-            onRefresh={() => loadMyPatients()}
-          />
-        </div>
-      ) : (
         <>
           {/* Cabeçalho - Otimizado para mobile */}
           <div className="flex flex-col gap-3 sm:gap-4 animate-fade-in">
@@ -400,7 +393,12 @@ const MyPatients: React.FC = () => {
                             {format(new Date(schedule.start_time), 'HH:mm')}
                           </div>
                           <div>
-                            <div className="font-medium text-sm uppercase">{schedule.clients?.name || schedule.title}</div>
+                            <div 
+                              className="font-medium text-sm uppercase text-primary cursor-pointer hover:underline"
+                              onClick={() => schedule.client_id && openPatientModal(schedule.client_id)}
+                            >
+                              {schedule.clients?.name || schedule.title}
+                            </div>
                             <Badge variant={getStatusColor(schedule.status)} className="text-[10px] mt-0.5">
                               {getStatusLabel(schedule.status)}
                             </Badge>
@@ -485,9 +483,12 @@ const MyPatients: React.FC = () => {
                                   <Clock className="h-3 w-3" />
                                   {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })}
                                 </div>
-                            <div className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs uppercase">
-                                  {schedule.clients?.name || 'Cliente N/A'}
-                                </div>
+                            <div 
+                              className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs uppercase cursor-pointer hover:text-primary transition-colors"
+                              onClick={(e) => { e.stopPropagation(); schedule.client_id && openPatientModal(schedule.client_id); }}
+                            >
+                              {schedule.clients?.name || 'Cliente N/A'}
+                            </div>
                               </div>
                             ))
                           )}
@@ -650,9 +651,10 @@ const MyPatients: React.FC = () => {
                       <div className="flex gap-2 pt-3 border-t border-border/50">
                         <Button 
                           size="sm" 
-                          onClick={() => setSelectedClient(client)}
+                          onClick={() => openPatientModal(client.id)}
                           className="flex-1"
                         >
+                          <Eye className="h-4 w-4 mr-1" />
                           Ver Detalhes
                         </Button>
                         <Button 
@@ -672,7 +674,6 @@ const MyPatients: React.FC = () => {
             </div>
           )}
         </>
-      )}
 
       {/* Diálogo de finalizar atendimento */}
       <CompleteAttendanceDialog
@@ -683,6 +684,13 @@ const MyPatients: React.FC = () => {
           setCompleteSchedule(null);
           loadMySchedules();
         }}
+      />
+
+      {/* Modal de detalhes do paciente */}
+      <PatientDetailsModal
+        clientId={patientModalClientId}
+        open={patientModalOpen}
+        onOpenChange={setPatientModalOpen}
       />
     </div>
   );
