@@ -306,6 +306,84 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         names: { memoriaImediata: 'Memória Imediata', memoriaTargia: 'Memória Tardia', memoriaTrabalho: 'Memória de Trabalho', reconhecimentoVisual: 'Reconhecimento Visual' },
         mainSubtest: 'memoriaImediata'
       };
+    case 'MOCA':
+      return {
+        subtests: ['totalScore'],
+        names: { totalScore: 'Escore Total' },
+        mainSubtest: 'totalScore'
+      };
+    case 'MEEM':
+      return {
+        subtests: ['totalScore'],
+        names: { totalScore: 'Escore Total' },
+        mainSubtest: 'totalScore'
+      };
+    case 'BRIEF2':
+      return {
+        subtests: ['gec', 'bri', 'eri', 'cri'],
+        names: { gec: 'Índice Global (GEC)', bri: 'Reg. Comportamental', eri: 'Reg. Emocional', cri: 'Reg. Cognitiva' },
+        mainSubtest: 'gec'
+      };
+    case 'CORSI':
+      return {
+        subtests: ['spanDireto', 'spanInverso'],
+        names: { spanDireto: 'Span Direto', spanInverso: 'Span Inverso' },
+        mainSubtest: 'spanDireto'
+      };
+    case 'CONNERS':
+      return {
+        subtests: ['desatencao', 'hiperatividade', 'indiceTDAH'],
+        names: { desatencao: 'Desatenção', hiperatividade: 'Hiperatividade', indiceTDAH: 'Índice TDAH' },
+        mainSubtest: 'indiceTDAH'
+      };
+    case 'VINELAND':
+      return {
+        subtests: ['compostoGeral', 'comunicacao', 'vidaDiaria', 'socializacao', 'habMotoras'],
+        names: { compostoGeral: 'CAG', comunicacao: 'Comunicação', vidaDiaria: 'Vida Diária', socializacao: 'Socialização', habMotoras: 'Hab. Motoras' },
+        mainSubtest: 'compostoGeral'
+      };
+    case 'ACE3':
+      return {
+        subtests: ['totalScore'],
+        names: { totalScore: 'Escore Total' },
+        mainSubtest: 'totalScore'
+      };
+    case 'CBCL':
+      return {
+        subtests: ['internalizacao', 'externalizacao', 'totalProblemas'],
+        names: { internalizacao: 'Internalização', externalizacao: 'Externalização', totalProblemas: 'Total Problemas' },
+        mainSubtest: 'totalProblemas'
+      };
+    case 'SDQ':
+      return {
+        subtests: ['totalDificuldades', 'proSocial'],
+        names: { totalDificuldades: 'Total Dificuldades', proSocial: 'Pró-social' },
+        mainSubtest: 'totalDificuldades'
+      };
+    case 'GDS':
+      return {
+        subtests: ['totalScore'],
+        names: { totalScore: 'Escore Total' },
+        mainSubtest: 'totalScore'
+      };
+    case 'TDE2':
+      return {
+        subtests: ['escrita', 'aritmetica', 'leitura', 'totalScore'],
+        names: { escrita: 'Escrita', aritmetica: 'Aritmética', leitura: 'Leitura', totalScore: 'Total' },
+        mainSubtest: 'totalScore'
+      };
+    case 'NEUPSILIN':
+      return {
+        subtests: ['orientacao', 'atencao', 'percepcao', 'memoria', 'aritmetica', 'linguagem', 'praxias', 'funcoesExecutivas'],
+        names: { orientacao: 'Orientação', atencao: 'Atenção', percepcao: 'Percepção', memoria: 'Memória', aritmetica: 'Aritmética', linguagem: 'Linguagem', praxias: 'Praxias', funcoesExecutivas: 'Funções Exec.' },
+        mainSubtest: 'memoria'
+      };
+    case 'CANCELAMENTO':
+      return {
+        subtests: ['totalLiquido'],
+        names: { totalLiquido: 'Total Líquido' },
+        mainSubtest: 'totalLiquido'
+      };
     default:
       return null;
   }
