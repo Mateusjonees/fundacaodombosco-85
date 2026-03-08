@@ -33,6 +33,10 @@ import NeuroTestTaylorForm from './NeuroTestTaylorForm';
 import NeuroTestTRPPForm from './NeuroTestTRPPForm';
 import NeuroTestFPTInfantilForm from './NeuroTestFPTInfantilForm';
 import NeuroTestFPTAdultoForm from './NeuroTestFPTAdultoForm';
+import NeuroTestReyForm from './NeuroTestReyForm';
+import NeuroTestStroopForm from './NeuroTestStroopForm';
+import NeuroTestWCSTForm from './NeuroTestWCSTForm';
+import NeuroTestWechslerForm from './NeuroTestWechslerForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -47,6 +51,10 @@ import { type TaylorResults } from '@/data/neuroTests/taylor';
 import { type TRPPResults } from '@/data/neuroTests/trpp';
 import { type FPTInfantilResults } from '@/data/neuroTests/fptInfantil';
 import { type FPTAdultoResults } from '@/data/neuroTests/fptAdulto';
+import { type ReyResults } from '@/data/neuroTests/rey';
+import { type StroopResults } from '@/data/neuroTests/stroop';
+import { type WCSTResults } from '@/data/neuroTests/wcst';
+import { type WechslerResults } from '@/data/neuroTests/wais';
 
 interface Schedule {
   id: string;
@@ -111,6 +119,10 @@ export default function CompleteAttendanceDialog({
   const [trppResults, setTrppResults] = useState<TRPPResults | null>(null);
   const [fptInfantilResults, setFptInfantilResults] = useState<FPTInfantilResults | null>(null);
   const [fptAdultoResults, setFptAdultoResults] = useState<FPTAdultoResults | null>(null);
+  const [reyResults, setReyResults] = useState<ReyResults | null>(null);
+  const [stroopResults, setStroopResults] = useState<StroopResults | null>(null);
+  const [wcstResults, setWcstResults] = useState<WCSTResults | null>(null);
+  const [wechslerResults, setWechslerResults] = useState<WechslerResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
@@ -180,6 +192,10 @@ export default function CompleteAttendanceDialog({
       setTrppResults(null);
       setFptInfantilResults(null);
       setFptAdultoResults(null);
+      setReyResults(null);
+      setStroopResults(null);
+      setWcstResults(null);
+      setWechslerResults(null);
       setNutritionData({});
       setProfessionalRole(null);
     }
@@ -231,6 +247,14 @@ export default function CompleteAttendanceDialog({
       setFptInfantilResults(null);
     } else if (testCode === 'FPT_ADULTO') {
       setFptAdultoResults(null);
+    } else if (testCode === 'REY') {
+      setReyResults(null);
+    } else if (testCode === 'STROOP') {
+      setStroopResults(null);
+    } else if (testCode === 'WCST') {
+      setWcstResults(null);
+    } else if (testCode === 'WECHSLER') {
+      setWechslerResults(null);
     }
   };
 
@@ -312,6 +336,22 @@ export default function CompleteAttendanceDialog({
 
   const handleFptAdultoResultsChange = useCallback((results: FPTAdultoResults | null) => {
     setFptAdultoResults(results);
+  }, []);
+
+  const handleReyResultsChange = useCallback((results: ReyResults | null) => {
+    setReyResults(results);
+  }, []);
+
+  const handleStroopResultsChange = useCallback((results: StroopResults | null) => {
+    setStroopResults(results);
+  }, []);
+
+  const handleWcstResultsChange = useCallback((results: WCSTResults | null) => {
+    setWcstResults(results);
+  }, []);
+
+  const handleWechslerResultsChange = useCallback((results: WechslerResults | null) => {
+    setWechslerResults(results);
   }, []);
 
   const handleComplete = async () => {
@@ -893,6 +933,82 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // Rey
+        if (reyResults && selectedTests.includes('REY')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'REY',
+            test_name: 'Figuras Complexas de Rey',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(reyResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(reyResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(reyResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Faixa etária: ${reyResults.ageGroup}`
+          });
+        }
+
+        // Stroop
+        if (stroopResults && selectedTests.includes('STROOP')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'STROOP',
+            test_name: 'Teste Stroop de Cores e Palavras',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(stroopResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(stroopResults.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(stroopResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(stroopResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Faixa etária: ${stroopResults.ageGroup}`
+          });
+        }
+
+        // WCST
+        if (wcstResults && selectedTests.includes('WCST')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'WCST',
+            test_name: 'Wisconsin - Teste de Classificação de Cartas',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(wcstResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(wcstResults.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(wcstResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(wcstResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Faixa etária: ${wcstResults.ageGroup}`
+          });
+        }
+
+        // Wechsler (WAIS/WISC)
+        if (wechslerResults && selectedTests.includes('WECHSLER')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'WECHSLER',
+            test_name: `Wechsler - ${wechslerResults.testVersion}`,
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(wechslerResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(wechslerResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(wechslerResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Versão: ${wechslerResults.testVersion}`
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -1180,6 +1296,38 @@ export default function CompleteAttendanceDialog({
                   <NeuroTestFPTAdultoForm
                     patientAge={patientAge}
                     onResultsChange={handleFptAdultoResultsChange}
+                  />
+                )}
+
+                {/* Formulário Figuras de Rey */}
+                {selectedTests.includes('REY') && (
+                  <NeuroTestReyForm
+                    patientAge={patientAge}
+                    onResultsChange={handleReyResultsChange}
+                  />
+                )}
+
+                {/* Formulário Stroop */}
+                {selectedTests.includes('STROOP') && (
+                  <NeuroTestStroopForm
+                    patientAge={patientAge}
+                    onResultsChange={handleStroopResultsChange}
+                  />
+                )}
+
+                {/* Formulário WCST */}
+                {selectedTests.includes('WCST') && (
+                  <NeuroTestWCSTForm
+                    patientAge={patientAge}
+                    onResultsChange={handleWcstResultsChange}
+                  />
+                )}
+
+                {/* Formulário Wechsler (WAIS/WISC) */}
+                {selectedTests.includes('WECHSLER') && (
+                  <NeuroTestWechslerForm
+                    patientAge={patientAge}
+                    onResultsChange={handleWechslerResultsChange}
                   />
                 )}
               </div>

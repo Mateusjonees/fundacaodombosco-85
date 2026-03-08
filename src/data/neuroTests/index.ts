@@ -85,6 +85,15 @@ export {
   lookupTMTBATempoPercentile
 } from './tmtAdultoPercentiles';
 
+// Rey exports
+export * from './rey';
+// Stroop exports
+export * from './stroop';
+// WCST exports
+export * from './wcst';
+// Wechsler exports
+export * from './wais';
+
 import { BPA2_TEST, type NeuroTestDefinition } from './bpa2';
 import { FDT_TEST } from './fdt';
 import { RAVLT_TEST } from './ravlt';
@@ -105,6 +114,10 @@ import { TAYLOR_TEST } from './taylor';
 import { TRPP_TEST } from './trpp';
 import { FPT_INFANTIL_TEST } from './fptInfantil';
 import { FPT_ADULTO_TEST } from './fptAdulto';
+import { REY_TEST } from './rey';
+import { STROOP_TEST } from './stroop';
+import { WCST_TEST } from './wcst';
+import { WECHSLER_TEST } from './wais';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -128,8 +141,11 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   TRPP_TEST,
   FPT_INFANTIL_TEST,
   FPT_ADULTO_TEST,
+  REY_TEST,
+  STROOP_TEST,
+  WCST_TEST,
+  WECHSLER_TEST,
 ];
-
 /**
  * Busca um teste pelo código
  */
