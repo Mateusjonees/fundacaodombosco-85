@@ -61,6 +61,7 @@ export default function Financial() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
   const [unitFilter, setUnitFilter] = useState('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
   const [showContractPending, setShowContractPending] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
