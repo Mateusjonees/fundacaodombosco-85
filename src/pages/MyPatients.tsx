@@ -674,7 +674,6 @@ const MyPatients: React.FC = () => {
             </div>
           )}
         </>
-      )}
 
       {/* Diálogo de finalizar atendimento */}
       <CompleteAttendanceDialog
