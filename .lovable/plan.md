@@ -1,41 +1,31 @@
 
 
-# Plano: Melhorias em "Meus Pacientes" + E-mail para Profissional ao Agendar
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-## Parte 1: Completar a aba "Meus Pacientes"
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
-A pagina atual tem: agenda (dia/semana/mes), lista de pacientes com cards, busca, botao finalizar atendimento e ver detalhes. Faltam funcionalidades uteis para o profissional no dia a dia:
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-### Melhorias planejadas:
+## Detalhes Tecnicos
 
-1. **Estatisticas resumidas no topo** — Cards com: total de pacientes vinculados, atendimentos da semana, atendimentos concluidos no mes, proxima consulta do dia
-2. **Tipo de atendimento visivel na agenda** — Mostrar o `title` (tipo de sessao) junto ao horario nos cards da semana/dia
-3. **Indicador de status na lista de pacientes** — Badge mostrando se o paciente tem agendamento proximo ou esta sem atendimento ha muito tempo (alerta)
-4. **Botao "Ir para Hoje"** — Atalho rapido para voltar ao dia atual na navegacao de datas
-5. **Contagem de sessoes realizadas** — Buscar do `schedules` quantas sessoes completed cada paciente tem com o profissional e exibir no card
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
-## Parte 2: E-mail para o Profissional ao Agendar
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-Atualmente, ao agendar, o sistema envia e-mail apenas para o paciente via `send-appointment-email`. Preciso enviar tambem para o profissional.
-
-### Implementacao:
-
-1. **Modificar a edge function `send-appointment-email`** — Adicionar campo opcional `professionalEmail` no request. Quando presente, enviar um segundo e-mail para o profissional com template adaptado (perspectiva do profissional: "Voce tem um atendimento marcado com [paciente]...")
-2. **Modificar `Schedule.tsx`** — Ao criar agendamento, buscar o email do profissional selecionado na tabela `profiles` (campo `email`) e passar como `professionalEmail` na chamada da edge function
-3. **Template do e-mail profissional** — Mesmo layout visual, mas com texto direcionado ao profissional: nome do paciente, data/hora, tipo de atendimento, unidade
-
-## Arquivos a modificar
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/pages/MyPatients.tsx` | Adicionar stats, botao Hoje, contagem sessoes, tipo atendimento na agenda |
-| `src/pages/Schedule.tsx` | Buscar email do profissional e enviar na chamada da edge function |
-| `supabase/functions/send-appointment-email/index.ts` | Aceitar `professionalEmail` e enviar e-mail ao profissional |
-
-## Detalhes tecnicos
-
-- **Stats**: queries ao Supabase com `count` para atendimentos da semana e mes filtrados por `employee_id = user.id`
-- **Sessoes por paciente**: query agrupada `schedules.select('client_id').eq('status','completed').eq('employee_id', user.id)` contando por client_id
-- **Email profissional**: buscar `email` de `profiles` onde `user_id = employee_id` selecionado. O campo `email` ja existe na tabela profiles
-- **Template profissional**: reutilizar o HTML existente trocando saudacao e contexto
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 

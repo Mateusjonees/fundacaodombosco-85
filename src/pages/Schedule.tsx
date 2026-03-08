@@ -386,6 +386,17 @@ export default function Schedule() {
                 sessionNumber: idx + 1
               }));
 
+              // Buscar email do profissional
+              let professionalEmail: string | undefined;
+              if (newAppointment.employee_id) {
+                const { data: profProfile } = await supabase
+                  .from('profiles')
+                  .select('email')
+                  .eq('user_id', newAppointment.employee_id)
+                  .maybeSingle();
+                professionalEmail = profProfile?.email || undefined;
+              }
+
               const response = await supabase.functions.invoke('send-appointment-email', {
                 body: {
                   clientEmail: selectedClientEmail,
@@ -397,7 +408,8 @@ export default function Schedule() {
                   notes: newAppointment.notes,
                   unit: newAppointment.unit,
                   scheduleIds: insertedSchedules.map(s => s.id),
-                  sessions: sessions
+                  sessions: sessions,
+                  professionalEmail
                 }
               });
 
