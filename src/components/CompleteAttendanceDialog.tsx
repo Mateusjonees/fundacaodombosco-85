@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2, Brain, Maximize2, Minimize2 } from 'lucide-react';
 import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
+import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
 import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
 import NeuroTestFDTForm from './NeuroTestFDTForm';
