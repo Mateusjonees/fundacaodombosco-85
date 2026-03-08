@@ -316,12 +316,36 @@ ${notificationMessage}
       if (selectedUnit !== 'all') {
         query = query.eq('unit', selectedUnit);
       }
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
       const {
         data,
         error
       } = await query;
       if (error) throw error;
-      setSchedules(data || []);
+
+      // Fetch created_by profile names
+      const createdByIds = [...new Set((data || []).map(s => s.created_by).filter(Boolean))];
+      let createdByMap: Record<string, string> = {};
+      if (createdByIds.length > 0) {
+        const { data: createdByProfiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', createdByIds);
+        createdByMap = (createdByProfiles || []).reduce((acc, p) => {
+          acc[p.user_id] = p.name;
+          return acc;
+        }, {} as Record<string, string>);
+      }
+
+      // Enrich with created_by_profile
+      const enriched = (data || []).map(s => ({
+        ...s,
+        created_by_profile: s.created_by ? { name: createdByMap[s.created_by] || 'Desconhecido' } : undefined
+      }));
+
+      setSchedules(enriched);
     } catch (error) {
       console.error('Error loading schedules:', error);
       toast({
