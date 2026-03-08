@@ -97,7 +97,7 @@ export function ProfessionalCommandAutocomplete({
     try {
       let query = supabase
         .from('profiles_public')
-        .select('id, user_id, name, email, phone, employee_role, unit, department')
+        .select('id, user_id, name, employee_role, unit, department')
         .eq('is_active', true)
         .not('employee_role', 'is', null)
         .limit(50);
