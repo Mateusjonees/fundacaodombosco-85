@@ -1571,6 +1571,7 @@ export default function CompleteAttendanceDialog({
                   onRemoveTest={handleRemoveTest}
                 />
 
+              <Suspense fallback={<NeuroFormFallback />}>
                 {/* Formulário BPA-2 */}
                 {selectedTests.includes('BPA2') && (
                   <NeuroTestBPA2Form
@@ -1876,6 +1877,7 @@ export default function CompleteAttendanceDialog({
                 {selectedTests.includes('CANCELAMENTO') && (
                   <NeuroTestCancelamentoForm patientAge={patientAge} onResultsChange={handleCancelamentoResultsChange} />
                 )}
+              </Suspense>
               </div>
             )}
 
