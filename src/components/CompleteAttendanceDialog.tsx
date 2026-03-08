@@ -933,6 +933,82 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // Rey
+        if (reyResults && selectedTests.includes('REY')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'REY',
+            test_name: 'Figuras Complexas de Rey',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(reyResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(reyResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(reyResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Faixa etária: ${reyResults.ageGroup}`
+          });
+        }
+
+        // Stroop
+        if (stroopResults && selectedTests.includes('STROOP')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'STROOP',
+            test_name: 'Teste Stroop de Cores e Palavras',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(stroopResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(stroopResults.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(stroopResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(stroopResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Faixa etária: ${stroopResults.ageGroup}`
+          });
+        }
+
+        // WCST
+        if (wcstResults && selectedTests.includes('WCST')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'WCST',
+            test_name: 'Wisconsin - Teste de Classificação de Cartas',
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(wcstResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(wcstResults.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(wcstResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(wcstResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Faixa etária: ${wcstResults.ageGroup}`
+          });
+        }
+
+        // Wechsler (WAIS/WISC)
+        if (wechslerResults && selectedTests.includes('WECHSLER')) {
+          testsToSave.push({
+            client_id: schedule.client_id,
+            schedule_id: schedule.id,
+            attendance_report_id: attendanceReport?.id || null,
+            test_code: 'WECHSLER',
+            test_name: `Wechsler - ${wechslerResults.testVersion}`,
+            patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(wechslerResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(wechslerResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(wechslerResults.classifications)),
+            applied_by: user.id,
+            applied_at: now,
+            notes: `Versão: ${wechslerResults.testVersion}`
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
