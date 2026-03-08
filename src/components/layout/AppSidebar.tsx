@@ -185,6 +185,16 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
       order_index: 5.6
     });
   }
+  if (permissions.isDirector() || permissions.isCoordinator() || permissions.hasAnyRole(['receptionist'])) {
+    items.push({
+      id: 'waiting-list',
+      title: 'Fila de Espera',
+      url: '/waiting-list',
+      icon: 'Archive',
+      category: 'GESTÃO CLÍNICA',
+      order_index: 5.7
+    });
+  }
 
 
 

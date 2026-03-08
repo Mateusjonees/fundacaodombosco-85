@@ -3468,6 +3468,86 @@ export type Database = {
           },
         ]
       }
+      waiting_list: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          created_by: string
+          id: string
+          notes: string | null
+          notified_at: string | null
+          notified_by: string | null
+          patient_email: string | null
+          patient_name: string
+          patient_phone: string | null
+          position_order: number | null
+          preferred_days: string[] | null
+          preferred_professional: string | null
+          preferred_shift: string | null
+          preferred_unit: string | null
+          priority: string
+          reason: string | null
+          scheduled_at: string | null
+          service_type: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          created_by: string
+          id?: string
+          notes?: string | null
+          notified_at?: string | null
+          notified_by?: string | null
+          patient_email?: string | null
+          patient_name: string
+          patient_phone?: string | null
+          position_order?: number | null
+          preferred_days?: string[] | null
+          preferred_professional?: string | null
+          preferred_shift?: string | null
+          preferred_unit?: string | null
+          priority?: string
+          reason?: string | null
+          scheduled_at?: string | null
+          service_type: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          notes?: string | null
+          notified_at?: string | null
+          notified_by?: string | null
+          patient_email?: string | null
+          patient_name?: string
+          patient_phone?: string | null
+          position_order?: number | null
+          preferred_days?: string[] | null
+          preferred_professional?: string | null
+          preferred_shift?: string | null
+          preferred_unit?: string | null
+          priority?: string
+          reason?: string | null
+          scheduled_at?: string | null
+          service_type?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiting_list_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       profiles_public: {

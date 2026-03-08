@@ -106,15 +106,52 @@ export function CancelAppointmentDialog({
     setLoading(true);
     try {
       if (cancelOption === 'all' && futureSessions.length > 0 && onCancelMultiple) {
-        // Cancelar este atendimento e todas as sessões futuras
         const allIds = [schedule.id, ...futureSessions.map(s => s.id)];
         await onCancelMultiple(allIds, reason.trim(), category);
       } else {
-        // Cancelar apenas este atendimento
         await onCancel(schedule.id, reason.trim(), category);
       }
+
+      // Verificar fila de espera para notificar sobre vaga disponível
+      try {
+        const { data: waitingPatients } = await supabase
+          .from('waiting_list')
+          .select('id, patient_name, service_type')
+          .eq('status', 'waiting')
+          .limit(5);
+
+        if (waitingPatients && waitingPatients.length > 0) {
+          // Criar notificação para coordenadores sobre vaga disponível
+          const names = waitingPatients.map((p: any) => p.patient_name).join(', ');
+          console.log(`[WaitingList] Vaga disponível - ${waitingPatients.length} paciente(s) na fila: ${names}`);
+
+          // Inserir notificação na tabela de notificações
+          const { data: coordinators } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .in('employee_role', ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist'])
+            .eq('is_active', true);
+
+          if (coordinators) {
+            for (const coord of coordinators) {
+              await supabase.from('appointment_notifications').insert({
+                schedule_id: schedule.id,
+                employee_id: coord.user_id,
+                client_id: schedule.client_id || schedule.id,
+                title: '🔔 Vaga Disponível - Fila de Espera',
+                message: `Agendamento cancelado. Há ${waitingPatients.length} paciente(s) na fila de espera: ${names}`,
+                appointment_date: schedule.start_time,
+                appointment_time: schedule.start_time.split('T')[1]?.substring(0, 5) || '00:00',
+                notification_type: 'waiting_list_vacancy',
+                created_by: null,
+              });
+            }
+          }
+        }
+      } catch (wlError) {
+        console.error('Erro ao verificar fila de espera:', wlError);
+      }
       
-      // Reset form
       setReason('');
       setCategory('');
       setCancelOption('single');
