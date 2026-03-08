@@ -1311,10 +1311,10 @@ ${notificationMessage}
 
     // Month Stats
     const monthStats = {
-      total: schedules.length,
-      confirmed: schedules.filter(s => s.status === 'confirmed').length,
-      scheduled: schedules.filter(s => s.status === 'scheduled').length,
-      cancelled: schedules.filter(s => s.status === 'cancelled').length
+      total: filteredSchedules.length,
+      confirmed: filteredSchedules.filter(s => s.status === 'confirmed').length,
+      scheduled: filteredSchedules.filter(s => s.status === 'scheduled').length,
+      cancelled: filteredSchedules.filter(s => s.status === 'cancelled').length
     };
     return <div className="space-y-4 md:space-y-6">
         {/* Month Stats */}
