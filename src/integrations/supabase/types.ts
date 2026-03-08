@@ -3687,10 +3687,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_assigned_to_client: { Args: { p_client_id: string }; Returns: boolean }
       is_coordinator: { Args: never; Returns: boolean }
       is_director: { Args: never; Returns: boolean }
       is_god_mode_director: { Args: never; Returns: boolean }
       is_manager: { Args: never; Returns: boolean }
+      is_manager_role: { Args: never; Returns: boolean }
       is_receptionist: { Args: never; Returns: boolean }
       log_sensitive_access: {
         Args: {
