@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Brain, Calculator, Trash2 } from 'lucide-react';
+import { Brain, Calculator, Trash2, Info, ChevronDown } from 'lucide-react';
 import { 
   RAVLT_TEST, 
   calculateReconhecimento,
@@ -42,6 +43,7 @@ export default function NeuroTestRAVLTForm({
     b1: 0, a6: 0, a7: 0, rec: 0
   });
   const [notes, setNotes] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Calcular resultados quando os scores mudam
   useEffect(() => {
@@ -224,6 +226,26 @@ export default function NeuroTestRAVLTForm({
         </p>
       </CardHeader>
       <CardContent className="p-3 pt-0 space-y-3">
+        {/* Instruções */}
+        <Collapsible open={showInstructions} onOpenChange={setShowInstructions}>
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-1.5 text-xs text-primary hover:underline w-full">
+              <Info className="h-3 w-3" />
+              <span>Instruções de aplicação</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${showInstructions ? 'rotate-180' : ''}`} />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-2 p-2.5 bg-muted/40 rounded-lg text-xs text-muted-foreground space-y-1">
+              <p>• <strong>A1-A5</strong>: Leia a lista A (15 palavras) e peça para o paciente repetir. Repita 5 vezes.</p>
+              <p>• <strong>B1</strong>: Leia a lista B (interferência) uma vez e peça para repetir.</p>
+              <p>• <strong>A6</strong>: Sem reler a lista A, peça para o paciente recordar as palavras da lista A.</p>
+              <p>• <strong>A7</strong>: Após 20-30 minutos, peça novamente para recordar a lista A.</p>
+              <p>• <strong>Reconhecimento</strong>: Apresente lista com 50 palavras (15 da lista A + 35 distratores). Registre quantas o paciente marcou.</p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
         {/* Tentativas de aprendizagem A1-A5 */}
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground font-medium">Tentativas de Aprendizagem</Label>

@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Brain, Calculator, Trash2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Brain, Calculator, Trash2, Info, ChevronDown } from 'lucide-react';
 import { 
   BPA2_TEST, 
   calculateSubtestScore, 
@@ -60,6 +61,7 @@ export default function NeuroTestBPA2Form({
     aa: { acertos: 0, erros: 0, omissoes: 0 }
   });
   const [notes, setNotes] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Calcular resultados quando os scores mudam
   useEffect(() => {
@@ -194,11 +196,11 @@ export default function NeuroTestBPA2Form({
 
   return (
     <Card className="border-primary/20">
-      <CardHeader className="p-3 pb-2">
+       <CardHeader className="p-3 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm sm:text-base flex items-center gap-2">
             <Brain className="h-4 w-4 text-primary" />
-            {BPA2_TEST.name}
+            {BPA2_TEST.name} - Bateria Psicológica para Avaliação da Atenção
           </CardTitle>
           <Button
             variant="ghost"
@@ -209,9 +211,31 @@ export default function NeuroTestBPA2Form({
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">Avalia 3 tipos de atenção • {patientAge} anos</p>
       </CardHeader>
       <CardContent className="p-3 pt-0 space-y-2.5">
+        {/* Instruções */}
+        <Collapsible open={showInstructions} onOpenChange={setShowInstructions}>
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-1.5 text-xs text-primary hover:underline w-full">
+              <Info className="h-3 w-3" />
+              <span>Instruções de aplicação</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${showInstructions ? 'rotate-180' : ''}`} />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-2 p-2.5 bg-muted/40 rounded-lg text-xs text-muted-foreground space-y-1">
+              <p>• <strong>AC (Atenção Concentrada)</strong>: O paciente marca os estímulos-alvo em meio a distratores.</p>
+              <p>• <strong>AD (Atenção Dividida)</strong>: O paciente identifica simultaneamente dois tipos de estímulo.</p>
+              <p>• <strong>AA (Atenção Alternada)</strong>: O paciente alterna o foco entre dois critérios diferentes.</p>
+              <p>• Para cada subteste, registre: <strong>A</strong> (Acertos), <strong>E</strong> (Erros) e <strong>O</strong> (Omissões).</p>
+              <p>• Fórmula: Escore = Acertos - Erros - Omissões.</p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
         {/* Subtestes */}
+        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Subtestes</Label>
         {renderSubtestRow('AC', 'Atenção Concentrada', 'ac')}
         {renderSubtestRow('AD', 'Atenção Dividida', 'ad')}
         {renderSubtestRow('AA', 'Atenção Alternada', 'aa')}

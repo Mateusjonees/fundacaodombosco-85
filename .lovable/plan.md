@@ -1,33 +1,31 @@
 
 
-## Resultado da Verificacao -- Todos os 45 Testes Estao Corretos
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-Apos revisar detalhadamente os 4 arquivos criticos de integracao, **todos os 45 testes neuropsicologicos estao corretamente configurados** e sem erros aparentes. Nao ha erros no console do navegador.
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
-### Pontos verificados
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-**1. `src/data/neuroTests/index.ts`** -- Registro global
-- Todos os 45 testes estao registrados no array `AVAILABLE_NEURO_TESTS`
-- Imports e exports corretos para todos os arquivos de dados
+## Detalhes Tecnicos
 
-**2. `src/components/PatientNeuroTestHistory.tsx`** -- Historico do paciente
-- Funcao `getTestConfig()` cobre todos os 45 codigos de teste (BPA2 ate CANCELAMENTO)
-- Subtestes, nomes e `mainSubtest` corretos para cada teste
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
-**3. `src/components/NeuroTestResults.tsx`** -- Exibicao de resultados
-- Mesma funcao `getTestConfig()` duplicada e sincronizada com o historico
-- Configuracoes identicas para todos os 45 testes
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-**4. `src/components/CompleteAttendanceDialog.tsx`** -- Formularios e persistencia
-- Imports de todos os 45 formularios e tipos de resultado
-- States, handlers e logica de salvamento para cada teste
-- Renderizacao condicional de cada formulario no dialog
-
-**5. `src/utils/laudoTextGenerator.ts`** -- Gerador de laudo
-- `DOMAIN_MAP` cobre todos os 45 codigos de teste
-- `TEST_FULL_NAMES` com nomes legíveis completos
-
-### Conclusao
-
-Nao ha necessidade de alteracoes. O sistema esta funcionalmente completo para os 45 testes. Para confirmar na pratica, recomendo testar o fluxo real: aplicar um teste em um atendimento e verificar se aparece corretamente no historico do paciente.
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 
