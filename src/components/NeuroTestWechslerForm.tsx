@@ -61,17 +61,17 @@ const NeuroTestWechslerForm: React.FC<NeuroTestWechslerFormProps> = ({ patientAg
     );
   }
 
-  const indexRows = [
-    { label: 'QI Total (Escala Completa)', key: 'qiTotal' as const, value: scores.qiTotal, required: true },
-    { label: 'Compreensão Verbal (ICV)', key: 'icv' as const, value: scores.icv || 0, required: false },
-    { label: testVersion === 'WISC-V' ? 'Visuoespacial (IVE)' : 'Organização Perceptual (IOP)', key: 'iop' as const, value: scores.iop || 0, required: false },
-    { label: 'Memória Operacional (IMO)', key: 'imo' as const, value: scores.imo || 0, required: false },
-    { label: 'Velocidade de Processamento (IVP)', key: 'ivp' as const, value: scores.ivp || 0, required: false },
+  const indexRows: Array<{ label: string; key: keyof WechslerScores; value: number; required: boolean }> = [
+    { label: 'QI Total (Escala Completa)', key: 'qiTotal', value: scores.qiTotal, required: true },
+    { label: 'Compreensão Verbal (ICV)', key: 'icv', value: scores.icv || 0, required: false },
+    { label: testVersion === 'WISC-V' ? 'Visuoespacial (IVE)' : 'Organização Perceptual (IOP)', key: 'iop', value: scores.iop || 0, required: false },
+    { label: 'Memória Operacional (IMO)', key: 'imo', value: scores.imo || 0, required: false },
+    { label: 'Velocidade de Processamento (IVP)', key: 'ivp', value: scores.ivp || 0, required: false },
   ];
 
   // WISC-V has IRF
   if (testVersion === 'WISC-V') {
-    indexRows.push({ label: 'Raciocínio Fluido (IRF)', key: 'irf' as const, value: scores.irf || 0, required: false });
+    indexRows.push({ label: 'Raciocínio Fluido (IRF)', key: 'irf', value: scores.irf || 0, required: false });
   }
 
   return (
