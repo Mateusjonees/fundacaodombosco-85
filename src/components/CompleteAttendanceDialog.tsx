@@ -139,6 +139,14 @@ export default function CompleteAttendanceDialog({
   const [stroopResults, setStroopResults] = useState<StroopResults | null>(null);
   const [wcstResults, setWcstResults] = useState<WCSTResults | null>(null);
   const [wechslerResults, setWechslerResults] = useState<WechslerResults | null>(null);
+  const [tolResults, setTolResults] = useState<ToLResults | null>(null);
+  const [d2Results, setD2Results] = useState<D2Results | null>(null);
+  const [bdiResults, setBdiResults] = useState<BDIResults | null>(null);
+  const [baiResults, setBaiResults] = useState<BAIResults | null>(null);
+  const [snapivResults, setSnapivResults] = useState<SNAPIVResults | null>(null);
+  const [mchatResults, setMchatResults] = useState<MCHATResults | null>(null);
+  const [ravenResults, setRavenResults] = useState<RavenResults | null>(null);
+  const [wmsResults, setWmsResults] = useState<WMSResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
