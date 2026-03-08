@@ -591,56 +591,90 @@ export default function Patients() {
     setIsDialogOpen(true);
   };
 
-  // Filtros aplicados no frontend (unit, age, professional)
-  // O searchTerm já é aplicado via React Query com debounce
-  const filteredClients = useMemo(
-    () =>
-      clients.filter((client) => {
-        const matchesUnit = unitFilter === "all" || client.unit === unitFilter;
-        const matchesAge =
-          ageFilter === "all" ||
-          (() => {
-            if (!client.birth_date) return true;
-            const birthDate = new Date(client.birth_date);
-            const today = new Date();
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-              age--;
-            }
-            if (ageFilter === "minor") return age < 18;
-            if (ageFilter === "adult") return age >= 18;
-            return true;
-          })();
+  // Helper: calcula idade a partir de birth_date
+  const getAge = (birthDate: string | undefined): number | null => {
+    if (!birthDate) return null;
+    const bd = new Date(birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - bd.getFullYear();
+    const monthDiff = today.getMonth() - bd.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < bd.getDate())) age--;
+    return age;
+  };
 
-        // Professional filter - only show if coordinator/director
-        const matchesProfessional =
-          !isCoordinatorOrDirector() ||
-          professionalFilter === "all" ||
-          (() => {
-            // Find assignments for this client
-            const clientAssignment = clientAssignments.find(
-              (assignment) => assignment.client_id === client.id && assignment.is_active,
-            );
+  // Filtros aplicados no frontend (unit, age, professional, laudo)
+  const filteredClients = useMemo(() => {
+    const filtered = clients.filter((client) => {
+      const matchesUnit = unitFilter === "all" || client.unit === unitFilter;
+      const matchesAge =
+        ageFilter === "all" ||
+        (() => {
+          const age = getAge(client.birth_date);
+          if (age === null) return true;
+          if (ageFilter === "minor") return age < 18;
+          if (ageFilter === "adult") return age >= 18;
+          return true;
+        })();
 
-            // If professional filter is selected, check if client is assigned to that professional
-            if (professionalFilter !== "all") {
-              // The professionalFilter contains the employee.id (profile id),
-              // but we need to compare with user_id in assignments
-              const selectedEmployee = employees.find((emp) => emp.id === professionalFilter);
-              if (selectedEmployee && clientAssignment) {
-                const matches = clientAssignment.employee_id === selectedEmployee.user_id;
-                return matches;
-              }
-              // If no assignment found and filtering by professional, don't show this client
-              return false;
+      const matchesProfessional =
+        !isCoordinatorOrDirector() ||
+        professionalFilter === "all" ||
+        (() => {
+          const clientAssignment = clientAssignments.find(
+            (assignment) => assignment.client_id === client.id && assignment.is_active,
+          );
+          if (professionalFilter !== "all") {
+            const selectedEmployee = employees.find((emp) => emp.id === professionalFilter);
+            if (selectedEmployee && clientAssignment) {
+              return clientAssignment.employee_id === selectedEmployee.user_id;
             }
-            return true;
-          })();
-        return matchesUnit && matchesAge && matchesProfessional;
-      }),
-    [clients, unitFilter, ageFilter, professionalFilter, clientAssignments, employees, isCoordinatorOrDirector],
-  );
+            return false;
+          }
+          return true;
+        })();
+
+      const matchesLaudo =
+        laudoFilter === "all" ||
+        (laudoFilter === "with_laudo" && clientLaudoIds.has(client.id)) ||
+        (laudoFilter === "without_laudo" && !clientLaudoIds.has(client.id));
+
+      return matchesUnit && matchesAge && matchesProfessional && matchesLaudo;
+    });
+
+    // Ordenação
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name_asc":
+          return a.name.localeCompare(b.name, 'pt-BR');
+        case "name_desc":
+          return b.name.localeCompare(a.name, 'pt-BR');
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "age_asc": {
+          const ageA = getAge(a.birth_date);
+          const ageB = getAge(b.birth_date);
+          if (ageA === null && ageB === null) return 0;
+          if (ageA === null) return 1;
+          if (ageB === null) return -1;
+          return ageA - ageB;
+        }
+        case "age_desc": {
+          const ageA = getAge(a.birth_date);
+          const ageB = getAge(b.birth_date);
+          if (ageA === null && ageB === null) return 0;
+          if (ageA === null) return 1;
+          if (ageB === null) return -1;
+          return ageB - ageA;
+        }
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [clients, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, isCoordinatorOrDirector]);
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
 
   // Renderizar tab bar de navegação (lista + pacientes abertos)
