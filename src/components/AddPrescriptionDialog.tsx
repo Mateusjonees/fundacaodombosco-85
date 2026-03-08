@@ -164,13 +164,15 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: 
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="service-type" className="text-sm font-medium">Tipo de Atendimento</Label>
-              <Select value={serviceType} onValueChange={(v: 'sus' | 'private') => setServiceType(v)}>
+              <Select value={serviceType} onValueChange={(v: string) => setServiceType(v as any)}>
                 <SelectTrigger className="h-11 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="private">Demanda Própria</SelectItem>
                   <SelectItem value="sus">SUS</SelectItem>
+                  <SelectItem value="external">Demanda Externa</SelectItem>
+                  <SelectItem value="laudo">Laudo</SelectItem>
                 </SelectContent>
               </Select>
             </div>

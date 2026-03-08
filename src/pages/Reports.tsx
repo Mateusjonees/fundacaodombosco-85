@@ -2049,6 +2049,22 @@ export default function Reports() {
                 </Card>
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-orange-600">
+                      {allPrescriptions.filter(p => p.service_type === 'external').length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Demanda Externa</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-indigo-600">
+                      {allPrescriptions.filter(p => p.service_type === 'laudo').length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Laudo</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-purple-600">
                       {new Set(allPrescriptions.map(p => p.client_id)).size}
                     </p>
@@ -2086,7 +2102,9 @@ export default function Reports() {
                         <TableCell>{prescription.employee?.name || 'N/A'}</TableCell>
                         <TableCell>
                           <Badge variant={prescription.service_type === 'sus' ? 'default' : 'secondary'}>
-                            {prescription.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}
+                            {prescription.service_type === 'sus' ? 'SUS' : 
+                             prescription.service_type === 'external' ? 'Demanda Externa' :
+                             prescription.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-xs">

@@ -118,11 +118,16 @@ export default function PrescriptionManager({
                           <User className="h-3.5 w-3.5" />
                           {prescription.employee?.name || 'Profissional'}
                         </div>
-                        {prescription.service_type === 'sus' ? <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                            SUS
-                          </Badge> : <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30">
-                            Demanda Própria
-                          </Badge>}
+                        <Badge className={
+                          prescription.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' :
+                          prescription.service_type === 'external' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30' :
+                          prescription.service_type === 'laudo' ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' :
+                          'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30'
+                        }>
+                          {prescription.service_type === 'sus' ? 'SUS' : 
+                           prescription.service_type === 'external' ? 'Demanda Externa' :
+                           prescription.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}
+                        </Badge>
                         {prescription.status === 'active' ? <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
                             Ativo
                           </Badge> : <Badge variant="secondary">Cancelado</Badge>}
@@ -181,11 +186,16 @@ export default function PrescriptionManager({
                   <User className="h-4 w-4" />
                   {selectedPrescription.employee?.name}
                 </div>
-                {selectedPrescription.service_type === 'sus' ? <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                    SUS
-                  </Badge> : <Badge className="bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30">
-                    Demanda Própria
-                  </Badge>}
+                <Badge className={
+                  selectedPrescription.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' :
+                  selectedPrescription.service_type === 'external' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30' :
+                  selectedPrescription.service_type === 'laudo' ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' :
+                  'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30'
+                }>
+                  {selectedPrescription.service_type === 'sus' ? 'SUS' : 
+                   selectedPrescription.service_type === 'external' ? 'Demanda Externa' :
+                   selectedPrescription.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}
+                </Badge>
               </div>
 
               {selectedPrescription.diagnosis && <div>

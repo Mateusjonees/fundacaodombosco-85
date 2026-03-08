@@ -128,6 +128,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [newNote, setNewNote] = useState('');
+  const [noteServiceType, setNoteServiceType] = useState('private');
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [addAnamnesisDialogOpen, setAddAnamnesisDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<ClientNote | null>(null);
@@ -418,7 +419,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
           client_id: client.id,
           note_text: newNote.trim(),
           created_by: user?.id,
-          note_type: 'general'
+          note_type: 'general',
+          service_type: noteServiceType
         });
 
       if (error) throw error;
@@ -429,6 +431,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       });
 
       setNewNote('');
+      setNoteServiceType('private');
       setAddNoteDialogOpen(false);
       loadNotes();
     } catch (error) {
@@ -548,7 +551,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       y += 5;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Profissional: ${noteItem.profiles?.name || 'N/A'}  |  Tipo: ${noteItem.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}  |  Data: ${formatDateTime(noteItem.created_at)}`, marginL, y);
+      doc.text(`Profissional: ${noteItem.profiles?.name || 'N/A'}  |  Tipo: ${noteItem.service_type === 'sus' ? 'SUS' : noteItem.service_type === 'external' ? 'Demanda Externa' : noteItem.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}  |  Data: ${formatDateTime(noteItem.created_at)}`, marginL, y);
       y += 6;
 
       // Parse note_text sections
@@ -1529,9 +1532,16 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                                   <span className="text-sm font-medium">{noteItem.profiles?.name || 'Usuário'}</span>
                                   <Badge 
                                     variant="outline" 
-                                    className={noteItem.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'}
+                                    className={
+                                      noteItem.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 
+                                      noteItem.service_type === 'external' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30' :
+                                      noteItem.service_type === 'laudo' ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' :
+                                      'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'
+                                    }
                                   >
-                                    {noteItem.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}
+                                    {noteItem.service_type === 'sus' ? 'SUS' : 
+                                     noteItem.service_type === 'external' ? 'Demanda Externa' :
+                                     noteItem.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-2">

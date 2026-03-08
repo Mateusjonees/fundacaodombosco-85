@@ -21,7 +21,7 @@ export interface Prescription {
   general_instructions?: string;
   follow_up_notes?: string;
   status: string;
-  service_type?: 'sus' | 'private';
+  service_type?: 'sus' | 'private' | 'external' | 'laudo';
   show_print_date?: boolean;
   show_prescription_date?: boolean;
   created_at: string;
