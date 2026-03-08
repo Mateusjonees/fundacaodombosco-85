@@ -220,6 +220,14 @@ export default function CompleteAttendanceDialog({
       setStroopResults(null);
       setWcstResults(null);
       setWechslerResults(null);
+      setTolResults(null);
+      setD2Results(null);
+      setBdiResults(null);
+      setBaiResults(null);
+      setSnapivResults(null);
+      setMchatResults(null);
+      setRavenResults(null);
+      setWmsResults(null);
       setNutritionData({});
       setProfessionalRole(null);
     }
