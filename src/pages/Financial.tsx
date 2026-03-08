@@ -544,6 +544,7 @@ export default function Financial() {
     setCategoryFilter('all');
     setAmountFilter({ min: '', max: '' });
     setUnitFilter('all');
+    setPaymentMethodFilter('all');
     setSearchTerm('');
   };
 
