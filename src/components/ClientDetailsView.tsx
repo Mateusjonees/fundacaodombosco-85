@@ -431,6 +431,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       });
 
       setNewNote('');
+      setNoteServiceType('private');
       setAddNoteDialogOpen(false);
       loadNotes();
     } catch (error) {
