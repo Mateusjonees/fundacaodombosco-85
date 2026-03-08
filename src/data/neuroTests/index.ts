@@ -93,6 +93,22 @@ export * from './stroop';
 export * from './wcst';
 // Wechsler exports
 export * from './wais';
+// Torre de Londres
+export * from './tol';
+// D2 Atenção Concentrada
+export * from './d2';
+// BDI-II Beck Depressão
+export * from './bdi';
+// BAI Beck Ansiedade
+export * from './bai';
+// SNAP-IV TDAH
+export * from './snapiv';
+// M-CHAT-R/F Autismo
+export * from './mchat';
+// Matrizes de Raven
+export * from './raven';
+// WMS Memória Wechsler
+export * from './wms';
 
 import { BPA2_TEST, type NeuroTestDefinition } from './bpa2';
 import { FDT_TEST } from './fdt';
@@ -118,6 +134,14 @@ import { REY_TEST } from './rey';
 import { STROOP_TEST } from './stroop';
 import { WCST_TEST } from './wcst';
 import { WECHSLER_TEST } from './wais';
+import { TOL_TEST } from './tol';
+import { D2_TEST } from './d2';
+import { BDI_TEST } from './bdi';
+import { BAI_TEST } from './bai';
+import { SNAPIV_TEST } from './snapiv';
+import { MCHAT_TEST } from './mchat';
+import { RAVEN_TEST } from './raven';
+import { WMS_TEST } from './wms';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -145,6 +169,14 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   STROOP_TEST,
   WCST_TEST,
   WECHSLER_TEST,
+  TOL_TEST,
+  D2_TEST,
+  BDI_TEST as unknown as NeuroTestDefinition,
+  BAI_TEST as unknown as NeuroTestDefinition,
+  SNAPIV_TEST as unknown as NeuroTestDefinition,
+  MCHAT_TEST as unknown as NeuroTestDefinition,
+  RAVEN_TEST,
+  WMS_TEST as unknown as NeuroTestDefinition,
 ];
 /**
  * Busca um teste pelo código

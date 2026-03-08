@@ -258,6 +258,54 @@ const getTestConfig = (testCode: string): TestConfig | null => {
         },
         mainSubtest: 'qiTotal'
       };
+    case 'TOL':
+      return {
+        subtests: ['totalAcertos'],
+        names: { totalAcertos: 'Total de Acertos' },
+        mainSubtest: 'totalAcertos'
+      };
+    case 'D2':
+      return {
+        subtests: ['rl', 'ic'],
+        names: { rl: 'Resultado Líquido', ic: 'Índice de Concentração' },
+        mainSubtest: 'rl'
+      };
+    case 'BDI':
+      return {
+        subtests: ['totalScore'],
+        names: { totalScore: 'Escore Total' },
+        mainSubtest: 'totalScore'
+      };
+    case 'BAI':
+      return {
+        subtests: ['totalScore'],
+        names: { totalScore: 'Escore Total' },
+        mainSubtest: 'totalScore'
+      };
+    case 'SNAPIV':
+      return {
+        subtests: ['desatencao', 'hiperatividade', 'tod'],
+        names: { desatencao: 'Desatenção', hiperatividade: 'Hiperatividade', tod: 'TOD' },
+        mainSubtest: 'desatencao'
+      };
+    case 'MCHAT':
+      return {
+        subtests: ['totalScore'],
+        names: { totalScore: 'Escore Total' },
+        mainSubtest: 'totalScore'
+      };
+    case 'RAVEN':
+      return {
+        subtests: ['total'],
+        names: { total: 'Total' },
+        mainSubtest: 'total'
+      };
+    case 'WMS':
+      return {
+        subtests: ['memoriaImediata', 'memoriaTargia', 'memoriaTrabalho', 'reconhecimentoVisual'],
+        names: { memoriaImediata: 'Memória Imediata', memoriaTargia: 'Memória Tardia', memoriaTrabalho: 'Memória de Trabalho', reconhecimentoVisual: 'Reconhecimento Visual' },
+        mainSubtest: 'memoriaImediata'
+      };
     default:
       return null;
   }

@@ -37,6 +37,14 @@ import NeuroTestReyForm from './NeuroTestReyForm';
 import NeuroTestStroopForm from './NeuroTestStroopForm';
 import NeuroTestWCSTForm from './NeuroTestWCSTForm';
 import NeuroTestWechslerForm from './NeuroTestWechslerForm';
+import NeuroTestToLForm from './NeuroTestToLForm';
+import NeuroTestD2Form from './NeuroTestD2Form';
+import NeuroTestBDIForm from './NeuroTestBDIForm';
+import NeuroTestBAIForm from './NeuroTestBAIForm';
+import NeuroTestSNAPIVForm from './NeuroTestSNAPIVForm';
+import NeuroTestMCHATForm from './NeuroTestMCHATForm';
+import NeuroTestRavenForm from './NeuroTestRavenForm';
+import NeuroTestWMSForm from './NeuroTestWMSForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -55,6 +63,14 @@ import { type ReyResults } from '@/data/neuroTests/rey';
 import { type StroopResults } from '@/data/neuroTests/stroop';
 import { type WCSTResults } from '@/data/neuroTests/wcst';
 import { type WechslerResults } from '@/data/neuroTests/wais';
+import { type ToLResults } from '@/data/neuroTests/tol';
+import { type D2Results } from '@/data/neuroTests/d2';
+import { type BDIResults } from '@/data/neuroTests/bdi';
+import { type BAIResults } from '@/data/neuroTests/bai';
+import { type SNAPIVResults } from '@/data/neuroTests/snapiv';
+import { type MCHATResults } from '@/data/neuroTests/mchat';
+import { type RavenResults } from '@/data/neuroTests/raven';
+import { type WMSResults } from '@/data/neuroTests/wms';
 
 interface Schedule {
   id: string;
@@ -123,6 +139,14 @@ export default function CompleteAttendanceDialog({
   const [stroopResults, setStroopResults] = useState<StroopResults | null>(null);
   const [wcstResults, setWcstResults] = useState<WCSTResults | null>(null);
   const [wechslerResults, setWechslerResults] = useState<WechslerResults | null>(null);
+  const [tolResults, setTolResults] = useState<ToLResults | null>(null);
+  const [d2Results, setD2Results] = useState<D2Results | null>(null);
+  const [bdiResults, setBdiResults] = useState<BDIResults | null>(null);
+  const [baiResults, setBaiResults] = useState<BAIResults | null>(null);
+  const [snapivResults, setSnapivResults] = useState<SNAPIVResults | null>(null);
+  const [mchatResults, setMchatResults] = useState<MCHATResults | null>(null);
+  const [ravenResults, setRavenResults] = useState<RavenResults | null>(null);
+  const [wmsResults, setWmsResults] = useState<WMSResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
@@ -196,6 +220,14 @@ export default function CompleteAttendanceDialog({
       setStroopResults(null);
       setWcstResults(null);
       setWechslerResults(null);
+      setTolResults(null);
+      setD2Results(null);
+      setBdiResults(null);
+      setBaiResults(null);
+      setSnapivResults(null);
+      setMchatResults(null);
+      setRavenResults(null);
+      setWmsResults(null);
       setNutritionData({});
       setProfessionalRole(null);
     }
@@ -255,6 +287,22 @@ export default function CompleteAttendanceDialog({
       setWcstResults(null);
     } else if (testCode === 'WECHSLER') {
       setWechslerResults(null);
+    } else if (testCode === 'TOL') {
+      setTolResults(null);
+    } else if (testCode === 'D2') {
+      setD2Results(null);
+    } else if (testCode === 'BDI') {
+      setBdiResults(null);
+    } else if (testCode === 'BAI') {
+      setBaiResults(null);
+    } else if (testCode === 'SNAPIV') {
+      setSnapivResults(null);
+    } else if (testCode === 'MCHAT') {
+      setMchatResults(null);
+    } else if (testCode === 'RAVEN') {
+      setRavenResults(null);
+    } else if (testCode === 'WMS') {
+      setWmsResults(null);
     }
   };
 
@@ -353,6 +401,15 @@ export default function CompleteAttendanceDialog({
   const handleWechslerResultsChange = useCallback((results: WechslerResults | null) => {
     setWechslerResults(results);
   }, []);
+
+  const handleTolResultsChange = useCallback((results: ToLResults | null) => { setTolResults(results); }, []);
+  const handleD2ResultsChange = useCallback((results: D2Results | null) => { setD2Results(results); }, []);
+  const handleBdiResultsChange = useCallback((results: BDIResults | null) => { setBdiResults(results); }, []);
+  const handleBaiResultsChange = useCallback((results: BAIResults | null) => { setBaiResults(results); }, []);
+  const handleSnapivResultsChange = useCallback((results: SNAPIVResults | null) => { setSnapivResults(results); }, []);
+  const handleMchatResultsChange = useCallback((results: MCHATResults | null) => { setMchatResults(results); }, []);
+  const handleRavenResultsChange = useCallback((results: RavenResults | null) => { setRavenResults(results); }, []);
+  const handleWmsResultsChange = useCallback((results: WMSResults | null) => { setWmsResults(results); }, []);
 
   const handleComplete = async () => {
     if (!schedule || !user) {
@@ -1009,6 +1066,110 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // Torre de Londres
+        if (tolResults && selectedTests.includes('TOL')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TOL', test_name: 'Torre de Londres', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(tolResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(tolResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(tolResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: tolResults.notes
+          });
+        }
+
+        // D2
+        if (d2Results && selectedTests.includes('D2')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'D2', test_name: 'D2 - Atenção Concentrada', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(d2Results.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(d2Results.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(d2Results.percentiles)),
+            classifications: JSON.parse(JSON.stringify(d2Results.classifications)),
+            applied_by: user.id, applied_at: now, notes: d2Results.notes
+          });
+        }
+
+        // BDI-II
+        if (bdiResults && selectedTests.includes('BDI')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'BDI', test_name: 'BDI-II - Inventário de Depressão de Beck', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(bdiResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(bdiResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: bdiResults.notes
+          });
+        }
+
+        // BAI
+        if (baiResults && selectedTests.includes('BAI')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'BAI', test_name: 'BAI - Inventário de Ansiedade de Beck', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(baiResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(baiResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: baiResults.notes
+          });
+        }
+
+        // SNAP-IV
+        if (snapivResults && selectedTests.includes('SNAPIV')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'SNAPIV', test_name: 'SNAP-IV - Rastreamento TDAH', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(snapivResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(snapivResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: snapivResults.notes
+          });
+        }
+
+        // M-CHAT-R/F
+        if (mchatResults && selectedTests.includes('MCHAT')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'MCHAT', test_name: 'M-CHAT-R/F - Rastreamento TEA', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(mchatResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(mchatResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: mchatResults.notes
+          });
+        }
+
+        // Raven
+        if (ravenResults && selectedTests.includes('RAVEN')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'RAVEN', test_name: `Matrizes de Raven (${ravenResults.version})`, patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(ravenResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(ravenResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(ravenResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: ravenResults.notes
+          });
+        }
+
+        // WMS
+        if (wmsResults && selectedTests.includes('WMS')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'WMS', test_name: 'WMS-IV - Escala de Memória Wechsler', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(wmsResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(wmsResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: wmsResults.notes
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
@@ -1329,6 +1490,46 @@ export default function CompleteAttendanceDialog({
                     patientAge={patientAge}
                     onResultsChange={handleWechslerResultsChange}
                   />
+                )}
+
+                {/* Torre de Londres */}
+                {selectedTests.includes('TOL') && (
+                  <NeuroTestToLForm patientAge={patientAge} onResultsChange={handleTolResultsChange} />
+                )}
+
+                {/* D2 Atenção Concentrada */}
+                {selectedTests.includes('D2') && (
+                  <NeuroTestD2Form patientAge={patientAge} onResultsChange={handleD2ResultsChange} />
+                )}
+
+                {/* BDI-II Depressão */}
+                {selectedTests.includes('BDI') && (
+                  <NeuroTestBDIForm patientAge={patientAge} onResultsChange={handleBdiResultsChange} />
+                )}
+
+                {/* BAI Ansiedade */}
+                {selectedTests.includes('BAI') && (
+                  <NeuroTestBAIForm patientAge={patientAge} onResultsChange={handleBaiResultsChange} />
+                )}
+
+                {/* SNAP-IV TDAH */}
+                {selectedTests.includes('SNAPIV') && (
+                  <NeuroTestSNAPIVForm patientAge={patientAge} onResultsChange={handleSnapivResultsChange} />
+                )}
+
+                {/* M-CHAT-R/F Autismo */}
+                {selectedTests.includes('MCHAT') && (
+                  <NeuroTestMCHATForm patientAge={patientAge} onResultsChange={handleMchatResultsChange} />
+                )}
+
+                {/* Matrizes de Raven */}
+                {selectedTests.includes('RAVEN') && (
+                  <NeuroTestRavenForm patientAge={patientAge} onResultsChange={handleRavenResultsChange} />
+                )}
+
+                {/* WMS Memória Wechsler */}
+                {selectedTests.includes('WMS') && (
+                  <NeuroTestWMSForm patientAge={patientAge} onResultsChange={handleWmsResultsChange} />
                 )}
               </div>
             )}
