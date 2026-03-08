@@ -163,7 +163,8 @@ const buildProfessionalEmailHtml = (
   appointmentType: string,
   unitInfo: { name: string; color: string; address: string },
   notes?: string,
-  sessions?: Array<{ date: string; time: string; sessionNumber: number }>
+  sessions?: Array<{ date: string; time: string; sessionNumber: number }>,
+  scheduledByName?: string
 ) => {
   const sessionsHtml = sessions && sessions.length > 1 ? `
     <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
