@@ -7,7 +7,7 @@ import { BirthdayAlerts } from '@/components/BirthdayAlerts';
 import { DashboardCharts } from '@/components/DashboardCharts';
 import { DashboardUpcomingAppointments } from '@/components/DashboardUpcomingAppointments';
 import { DashboardActionCards } from '@/components/DashboardActionCards';
-import { Users, Calendar, DollarSign, UserPlus, Activity, TrendingUp, TrendingDown, CheckCircle2 } from 'lucide-react';
+import { Users, Calendar, DollarSign, UserPlus, Activity, CheckCircle2 } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const StatCard = ({ 
-  title, value, subtitle, icon: Icon, color, onClick 
+  title, value, subtitle, icon: Icon, color, onClick, delay = 0 
 }: { 
   title: string; 
   value: string | number; 
@@ -24,9 +24,11 @@ const StatCard = ({
   icon: any; 
   color: string;
   onClick?: () => void;
+  delay?: number;
 }) => (
   <Card 
-    className={`group relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-md ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+    className={`group relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-md opacity-0 animate-stagger-in ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+    style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     onClick={onClick}
   >
     <CardContent className="p-3 sm:p-5">
@@ -66,7 +68,7 @@ export default function Dashboard() {
 
   if (isLoading || !stats) {
     return (
-      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
         <Skeleton className="h-20 sm:h-28 w-full rounded-2xl" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           {[...Array(4)].map((_, i) => (
@@ -82,20 +84,18 @@ export default function Dashboard() {
     );
   }
 
-  // Calcular progresso do dia
   const completionPercent = stats.todayAppointments > 0 
     ? Math.round((stats.completedToday / stats.todayAppointments) * 100) 
     : 0;
 
-  // Variação da receita
   const revenueChangeLabel = stats.revenueChange !== null && stats.revenueChange !== undefined
     ? (stats.revenueChange >= 0 ? `+${stats.revenueChange}%` : `${stats.revenueChange}%`)
     : null;
 
   return (
-    <div className="space-y-3 sm:space-y-5 animate-fade-in">
-      {/* Welcome card com data */}
-      <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-glow p-3 sm:p-8 text-primary-foreground">
+    <div className="space-y-3 sm:space-y-5">
+      {/* Welcome card */}
+      <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-glow p-3 sm:p-8 text-primary-foreground animate-scale-in">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCA0MEw0MCAwIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-50" />
         <div className="relative flex items-center justify-between gap-2 sm:gap-4">
           <div className="min-w-0">
@@ -119,7 +119,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats principais */}
+      {/* Stats - staggered animation */}
       <div className="grid grid-cols-2 gap-2 sm:gap-4">
         <StatCard
           title={isDirectorOrCoordinator ? 'Total Pacientes' : 'Meus Pacientes'}
@@ -127,6 +127,7 @@ export default function Dashboard() {
           icon={Users}
           color="text-blue-600 dark:text-blue-400"
           onClick={() => navigate('/clients')}
+          delay={50}
         />
         <StatCard
           title="Consultas Hoje"
@@ -135,6 +136,7 @@ export default function Dashboard() {
           icon={Calendar}
           color="text-emerald-600 dark:text-emerald-400"
           onClick={() => navigate('/schedule')}
+          delay={100}
         />
         {isDirectorOrCoordinator && (
           <>
@@ -145,6 +147,7 @@ export default function Dashboard() {
               icon={DollarSign}
               color="text-amber-600 dark:text-amber-400"
               onClick={() => navigate('/financial')}
+              delay={150}
             />
             <StatCard
               title="Funcionários"
@@ -152,14 +155,15 @@ export default function Dashboard() {
               icon={UserPlus}
               color="text-violet-600 dark:text-violet-400"
               onClick={() => navigate('/employees-new')}
+              delay={200}
             />
           </>
         )}
       </div>
 
-      {/* Progresso do dia + Cards de ação */}
+      {/* Progresso do dia */}
       {stats.todayAppointments > 0 && (
-        <Card className="border border-border/50">
+        <Card className="border border-border/50 animate-slide-up" style={{ animationDelay: '120ms', animationFillMode: 'forwards' }}>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -176,10 +180,10 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Cards de ação rápida - apenas para admin */}
+      {/* Action cards */}
       {isDirectorOrCoordinator && <DashboardActionCards />}
 
-      {/* Grid: Próximos atendimentos + Ponto + Aniversários */}
+      {/* Grid: Próximos + Ponto + Aniversários */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardUpcomingAppointments 
           userId={profile?.user_id} 
@@ -189,7 +193,7 @@ export default function Dashboard() {
         <BirthdayAlerts />
       </div>
 
-      {/* Charts para admins */}
+      {/* Charts */}
       {isDirectorOrCoordinator && <DashboardCharts />}
     </div>
   );

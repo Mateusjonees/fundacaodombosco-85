@@ -28,6 +28,7 @@ import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ScreenOrientationToggle } from '@/components/ScreenOrientationToggle';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
+import { PageTransition } from '@/components/ui/page-transition';
 
 // Lazy load header components - melhor LCP
 const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
@@ -65,34 +66,36 @@ const Install = lazy(() => import('@/pages/Install'));
 // Memoized route config to avoid re-creating on every render
 const AppRoutes = memo(() => (
   <Suspense fallback={<PageSkeleton />}>
-    <Routes>
-      <Route path="/" element={<ProtectedRoute requiredPermission="view_dashboard"><Dashboard /></ProtectedRoute>} />
-      <Route path="/clients" element={<ProtectedRoute requiredPermission="view_clients"><Clients /></ProtectedRoute>} />
-      <Route path="/schedule" element={<ProtectedRoute requiredPermission="view_schedules"><Schedule /></ProtectedRoute>} />
-      <Route path="/schedule-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><ScheduleControl /></ProtectedRoute>} />
-      <Route path="/attendance-validation" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><AttendanceValidation /></ProtectedRoute>} />
-      <Route path="/feedback-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><FeedbackControl /></ProtectedRoute>} />
-      <Route path="/financial" element={<ProtectedRoute requiredPermission="view_financial"><Financial /></ProtectedRoute>} />
-      <Route path="/contracts" element={<ProtectedRoute requiredPermission="view_contracts"><Contracts /></ProtectedRoute>} />
-      <Route path="/stock" element={<ProtectedRoute requiredPermission="view_stock"><StockManager /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute requiredPermission="view_reports"><Reports /></ProtectedRoute>} />
-      <Route path="/my-patients" element={<MyPatients />} />
-      <Route path="/medical-records" element={<ProtectedRoute requiredPermission="view_medical_records"><MedicalRecords /></ProtectedRoute>} />
-      <Route path="/employees-new" element={<ProtectedRoute requiredPermission="view_employees"><EmployeesNew /></ProtectedRoute>} />
-      <Route path="/employee-control" element={<ProtectedRoute allowedRoles={['director']}><EmployeeControl /></ProtectedRoute>} />
-      <Route path="/users" element={<ProtectedRoute requiredPermission="manage_users" allowedRoles={['director']}><UserManagement /></ProtectedRoute>} />
-      <Route path="/messages" element={<DirectMessages />} />
-      <Route path="/my-files" element={<ProtectedRoute requiredPermission="view_files"><MyFiles /></ProtectedRoute>} />
-      <Route path="/timesheet" element={<ProtectedRoute requiredPermission="view_timesheet"><Timesheet /></ProtectedRoute>} />
-      <Route path="/meeting-alerts" element={<MeetingAlerts />} />
-      <Route path="/neuroassessment" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'psychologist', 'psychopedagogue']}><Neuroassessment /></ProtectedRoute>} />
-      <Route path="/contract-templates" element={<ProtectedRoute allowedRoles={['director']}><ContractTemplates /></ProtectedRoute>} />
-      <Route path="/custom-roles" element={<ProtectedRoute allowedRoles={['director']}><CustomRoles /></ProtectedRoute>} />
-      <Route path="/anamnesis" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist', 'musictherapist', 'terapeuta_ocupacional', 'terapeuta_ocupacional_integracao']}><Anamnesis /></ProtectedRoute>} />
-      <Route path="/waiting-list" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><WaitingList /></ProtectedRoute>} />
-      <Route path="/install" element={<Install />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <PageTransition>
+      <Routes>
+        <Route path="/" element={<ProtectedRoute requiredPermission="view_dashboard"><Dashboard /></ProtectedRoute>} />
+        <Route path="/clients" element={<ProtectedRoute requiredPermission="view_clients"><Clients /></ProtectedRoute>} />
+        <Route path="/schedule" element={<ProtectedRoute requiredPermission="view_schedules"><Schedule /></ProtectedRoute>} />
+        <Route path="/schedule-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><ScheduleControl /></ProtectedRoute>} />
+        <Route path="/attendance-validation" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><AttendanceValidation /></ProtectedRoute>} />
+        <Route path="/feedback-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><FeedbackControl /></ProtectedRoute>} />
+        <Route path="/financial" element={<ProtectedRoute requiredPermission="view_financial"><Financial /></ProtectedRoute>} />
+        <Route path="/contracts" element={<ProtectedRoute requiredPermission="view_contracts"><Contracts /></ProtectedRoute>} />
+        <Route path="/stock" element={<ProtectedRoute requiredPermission="view_stock"><StockManager /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute requiredPermission="view_reports"><Reports /></ProtectedRoute>} />
+        <Route path="/my-patients" element={<MyPatients />} />
+        <Route path="/medical-records" element={<ProtectedRoute requiredPermission="view_medical_records"><MedicalRecords /></ProtectedRoute>} />
+        <Route path="/employees-new" element={<ProtectedRoute requiredPermission="view_employees"><EmployeesNew /></ProtectedRoute>} />
+        <Route path="/employee-control" element={<ProtectedRoute allowedRoles={['director']}><EmployeeControl /></ProtectedRoute>} />
+        <Route path="/users" element={<ProtectedRoute requiredPermission="manage_users" allowedRoles={['director']}><UserManagement /></ProtectedRoute>} />
+        <Route path="/messages" element={<DirectMessages />} />
+        <Route path="/my-files" element={<ProtectedRoute requiredPermission="view_files"><MyFiles /></ProtectedRoute>} />
+        <Route path="/timesheet" element={<ProtectedRoute requiredPermission="view_timesheet"><Timesheet /></ProtectedRoute>} />
+        <Route path="/meeting-alerts" element={<MeetingAlerts />} />
+        <Route path="/neuroassessment" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'psychologist', 'psychopedagogue']}><Neuroassessment /></ProtectedRoute>} />
+        <Route path="/contract-templates" element={<ProtectedRoute allowedRoles={['director']}><ContractTemplates /></ProtectedRoute>} />
+        <Route path="/custom-roles" element={<ProtectedRoute allowedRoles={['director']}><CustomRoles /></ProtectedRoute>} />
+        <Route path="/anamnesis" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist', 'musictherapist', 'terapeuta_ocupacional', 'terapeuta_ocupacional_integracao']}><Anamnesis /></ProtectedRoute>} />
+        <Route path="/waiting-list" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><WaitingList /></ProtectedRoute>} />
+        <Route path="/install" element={<Install />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </PageTransition>
   </Suspense>
 ));
 AppRoutes.displayName = 'AppRoutes';

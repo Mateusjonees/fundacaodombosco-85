@@ -70,15 +70,18 @@ export const DashboardUpcomingAppointments = ({ userId, isAdmin }: Props) => {
       </CardHeader>
       <CardContent className="space-y-2">
         {appointments.length === 0 ? (
-          <div className="text-center py-4">
-            <Clock className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+          <div className="text-center py-6 animate-fade-in">
+            <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-muted/80 mb-3">
+              <Clock className="h-6 w-6 text-muted-foreground/40" />
+            </div>
             <p className="text-xs text-muted-foreground">Nenhum atendimento restante hoje</p>
           </div>
         ) : (
-          appointments.map((apt: any) => (
+          appointments.map((apt: any, index: number) => (
             <div
               key={apt.id}
-              className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors opacity-0 animate-stagger-in"
+              style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'forwards' }}
             >
               <div className="text-center min-w-[48px]">
                 <p className="text-sm font-bold text-primary">
