@@ -134,6 +134,14 @@ import { REY_TEST } from './rey';
 import { STROOP_TEST } from './stroop';
 import { WCST_TEST } from './wcst';
 import { WECHSLER_TEST } from './wais';
+import { TOL_TEST } from './tol';
+import { D2_TEST } from './d2';
+import { BDI_TEST } from './bdi';
+import { BAI_TEST } from './bai';
+import { SNAPIV_TEST } from './snapiv';
+import { MCHAT_TEST } from './mchat';
+import { RAVEN_TEST } from './raven';
+import { WMS_TEST } from './wms';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
