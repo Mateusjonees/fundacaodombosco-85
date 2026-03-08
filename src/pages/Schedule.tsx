@@ -409,7 +409,8 @@ export default function Schedule() {
                   unit: newAppointment.unit,
                   scheduleIds: insertedSchedules.map(s => s.id),
                   sessions: sessions,
-                  professionalEmail
+                  professionalEmail,
+                  scheduledByName: userProfile?.name || undefined
                 }
               });
 

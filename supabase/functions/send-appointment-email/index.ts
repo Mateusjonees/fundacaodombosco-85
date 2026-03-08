@@ -31,6 +31,8 @@ interface AppointmentEmailRequest {
   }>;
   // Novo campo para e-mail do profissional
   professionalEmail?: string;
+  // Nome de quem agendou (recepcionista/coordenador)
+  scheduledByName?: string;
 }
 
 const getUnitInfo = (unit: string) => {
@@ -161,7 +163,8 @@ const buildProfessionalEmailHtml = (
   appointmentType: string,
   unitInfo: { name: string; color: string; address: string },
   notes?: string,
-  sessions?: Array<{ date: string; time: string; sessionNumber: number }>
+  sessions?: Array<{ date: string; time: string; sessionNumber: number }>,
+  scheduledByName?: string
 ) => {
   const sessionsHtml = sessions && sessions.length > 1 ? `
     <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
@@ -216,6 +219,10 @@ const buildProfessionalEmailHtml = (
                     <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top;">📍</td>
                     <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">${unitInfo.address}</td>
                   </tr>
+                  ${scheduledByName ? `<tr>
+                    <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top;">📝</td>
+                    <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">Agendado por: <strong>${scheduledByName}</strong></td>
+                  </tr>` : ''}
                 </table>
               </div>
             </div>
@@ -256,7 +263,8 @@ const handler = async (req: Request): Promise<Response> => {
       unit = 'madre',
       scheduleIds = [],
       sessions = [],
-      professionalEmail
+      professionalEmail,
+      scheduledByName
     }: AppointmentEmailRequest = await req.json();
 
     console.log("Enviando email de lembrete para:", clientEmail);
@@ -307,7 +315,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const professionalEmailHtml = buildProfessionalEmailHtml(
         professionalName, clientName, appointmentDate, appointmentTime,
-        appointmentType, unitInfo, notes, sessions
+        appointmentType, unitInfo, notes, sessions, scheduledByName
       );
 
       const { data: profData, error: profError } = await resend.emails.send({
