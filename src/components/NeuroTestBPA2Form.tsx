@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Brain, Calculator, Trash2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Brain, Calculator, Trash2, Info, ChevronDown } from 'lucide-react';
 import { 
   BPA2_TEST, 
   calculateSubtestScore, 
