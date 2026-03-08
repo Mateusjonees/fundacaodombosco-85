@@ -1555,6 +1555,12 @@ export default function Patients() {
                             {client.is_active ? "✓ Ativo" : "⏸ Inativo"}
                           </Badge>
                         </TableCell>
+                        <TableCell>
+                          {lastAppointments.get(client.id) 
+                            ? <span className="text-sm">{new Date(lastAppointments.get(client.id)!).toLocaleDateString("pt-BR")}</span>
+                            : <span className="text-xs text-muted-foreground">—</span>
+                          }
+                        </TableCell>
                         <TableCell>{new Date(client.created_at).toLocaleDateString("pt-BR")}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
