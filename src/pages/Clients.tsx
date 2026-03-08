@@ -237,6 +237,7 @@ export default function Patients() {
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [isMultiReportOpen, setIsMultiReportOpen] = useState(false);
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<Client | null>(null);
