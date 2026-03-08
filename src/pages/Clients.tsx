@@ -397,15 +397,15 @@ export default function Patients() {
     });
   };
 
-  // Exclusão permanente de cliente (apenas diretores)
+  // Exclusão permanente de cliente (diretores e coordenadores)
   const handleDeleteClient = async () => {
     if (!deleteConfirmClient) return;
     setIsDeleting(true);
     try {
-      // Limpar registros vinculados em cascata
       const clientId = deleteConfirmClient.id;
       
-      await Promise.all([
+      // Primeira onda: tabelas sem dependências entre si
+      const firstWave = [
         supabase.from('client_assignments').delete().eq('client_id', clientId),
         supabase.from('client_notes').delete().eq('client_id', clientId),
         supabase.from('client_documents').delete().eq('client_id', clientId),
@@ -413,15 +413,35 @@ export default function Patients() {
         supabase.from('medical_records').delete().eq('client_id', clientId),
         supabase.from('neuro_test_results').delete().eq('client_id', clientId),
         supabase.from('client_feedback_control').delete().eq('client_id', clientId),
-      ]);
+        supabase.from('absence_records').delete().eq('client_id', clientId),
+        supabase.from('anamnesis_records').delete().eq('client_id', clientId),
+        supabase.from('consent_records').delete().eq('client_id', clientId),
+        supabase.from('internal_referrals').delete().eq('client_id', clientId),
+        supabase.from('meeting_alerts').delete().eq('client_id', clientId),
+      ];
+      
+      const firstResults = await Promise.all(firstWave);
+      firstResults.forEach((r, i) => {
+        if (r.error) console.warn(`Cascade wave 1 item ${i} error:`, r.error.message);
+      });
 
-      // Remover agendamentos e notificações
-      await Promise.all([
+      // Segunda onda: agendamentos, notificações, financeiro
+      const secondWave = [
         supabase.from('appointment_notifications').delete().eq('client_id', clientId),
-        supabase.from('schedules').delete().eq('client_id', clientId),
         supabase.from('attendance_reports').delete().eq('client_id', clientId),
         supabase.from('client_payments').delete().eq('client_id', clientId),
-      ]);
+        supabase.from('financial_records').delete().eq('client_id', clientId),
+        supabase.from('automatic_financial_records').delete().eq('patient_id', clientId),
+      ];
+
+      const secondResults = await Promise.all(secondWave);
+      secondResults.forEach((r, i) => {
+        if (r.error) console.warn(`Cascade wave 2 item ${i} error:`, r.error.message);
+      });
+
+      // Terceira onda: schedules (precisa que appointment_notifications já tenha sido removido)
+      const { error: schedError } = await supabase.from('schedules').delete().eq('client_id', clientId);
+      if (schedError) console.warn('Cascade schedules error:', schedError.message);
 
       // Deletar o cliente
       const { error } = await supabase.from('clients').delete().eq('id', clientId);
