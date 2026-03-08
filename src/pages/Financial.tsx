@@ -61,6 +61,7 @@ export default function Financial() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
   const [unitFilter, setUnitFilter] = useState('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
   const [showContractPending, setShowContractPending] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -366,9 +367,11 @@ export default function Financial() {
     const matchesUnit = unitFilter === 'all' || 
       (record.clients && 'unit' in record.clients && record.clients.unit === unitFilter);
     
+    const matchesPaymentMethod = paymentMethodFilter === 'all' || record.payment_method === paymentMethodFilter;
+    
     const matchesContractPending = !showContractPending || record.payment_method === 'contract';
     
-    return matchesSearch && matchesDateRange && matchesType && matchesCategory && matchesAmount && matchesUnit && matchesContractPending;
+    return matchesSearch && matchesDateRange && matchesType && matchesCategory && matchesAmount && matchesUnit && matchesPaymentMethod && matchesContractPending;
   });
 
   const incomeRecords = filteredRecords.filter(r => r.type === 'income');
@@ -378,15 +381,39 @@ export default function Financial() {
   const totalExpenses = expenseRecords.reduce((sum, r) => sum + r.amount, 0);
   const balance = totalIncome - totalExpenses;
 
-  // Current month calculations
+  // Check if filters are active (not default month)
+  const hasActiveFilters = dateFilter.start || dateFilter.end || typeFilter !== 'all' || 
+    categoryFilter !== 'all' || amountFilter.min || amountFilter.max || 
+    unitFilter !== 'all' || paymentMethodFilter !== 'all' || searchTerm;
+
+  // Period label
+  const periodLabel = hasActiveFilters 
+    ? (dateFilter.start && dateFilter.end 
+        ? `${new Date(dateFilter.start + 'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(dateFilter.end + 'T12:00:00').toLocaleDateString('pt-BR')}`
+        : 'Filtros ativos')
+    : `Mês atual (${new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })})`;
+
+  // Current month calculations - only used when no filters active
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
-  const currentMonthRecords = filteredRecords.filter(r => {
+  const currentMonthRecords = records.filter(r => {
     const recordDate = new Date(r.date);
     return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
   });
   const currentMonthIncome = currentMonthRecords.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
   const currentMonthExpenses = currentMonthRecords.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
+
+  // Display values: use filteredRecords when filters are active, otherwise current month
+  const displayIncome = hasActiveFilters ? totalIncome : currentMonthIncome;
+  const displayExpenses = hasActiveFilters ? totalExpenses : currentMonthExpenses;
+  const displayBalance = displayIncome - displayExpenses;
+  const displayIncomeCount = hasActiveFilters 
+    ? incomeRecords.length 
+    : currentMonthRecords.filter(r => r.type === 'income').length;
+  const displayExpenseCount = hasActiveFilters
+    ? expenseRecords.length
+    : currentMonthRecords.filter(r => r.type === 'expense').length;
+  const ticketMedio = displayIncomeCount > 0 ? displayIncome / displayIncomeCount : 0;
 
   // Calcular totais de contas a receber
   const totalPendingAmount = pendingPayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
@@ -396,6 +423,31 @@ export default function Financial() {
     return dueDate < today;
   });
   const totalOverdueAmount = overduePayments.reduce((sum, payment) => sum + (payment.amount_due || 0), 0);
+
+  // Payment method breakdown from filteredRecords
+  const paymentMethodBreakdown = filteredRecords.reduce((acc, record) => {
+    const method = record.payment_method || 'unknown';
+    if (!acc[method]) acc[method] = { income: 0, expense: 0, count: 0 };
+    if (record.type === 'income') acc[method].income += record.amount;
+    else acc[method].expense += record.amount;
+    acc[method].count++;
+    return acc;
+  }, {} as Record<string, { income: number; expense: number; count: number }>);
+
+  const maxPaymentTotal = Math.max(
+    ...Object.values(paymentMethodBreakdown).map(v => v.income + v.expense),
+    1
+  );
+
+  // Category breakdown
+  const categoryBreakdown = filteredRecords.reduce((acc, record) => {
+    const cat = record.category;
+    if (!acc[cat]) acc[cat] = { income: 0, expense: 0, count: 0 };
+    if (record.type === 'income') acc[cat].income += record.amount;
+    else acc[cat].expense += record.amount;
+    acc[cat].count++;
+    return acc;
+  }, {} as Record<string, { income: number; expense: number; count: number }>);
 
   // Traduzir métodos de pagamento
   const translatePaymentMethod = (method: string | undefined): string => {
@@ -492,6 +544,7 @@ export default function Financial() {
     setCategoryFilter('all');
     setAmountFilter({ min: '', max: '' });
     setUnitFilter('all');
+    setPaymentMethodFilter('all');
     setSearchTerm('');
   };
 
@@ -650,6 +703,15 @@ export default function Financial() {
         </div>
       </div>
 
+      {/* Period indicator */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg text-sm">
+          <Filter className="h-4 w-4 text-primary" />
+          <span className="font-medium text-primary">Período: {periodLabel}</span>
+          <span className="text-muted-foreground">— {filteredRecords.length} transações</span>
+        </div>
+      )}
+
       {/* Financial Summary Cards - Design Moderno */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
@@ -662,10 +724,10 @@ export default function Financial() {
           </CardHeader>
           <CardContent className="relative">
             <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
-              R$ {currentMonthIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {displayIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {currentMonthRecords.filter(r => r.type === 'income').length} atendimentos
+              {displayIncomeCount} receitas
             </p>
           </CardContent>
         </Card>
@@ -680,22 +742,54 @@ export default function Financial() {
           </CardHeader>
           <CardContent className="relative">
             <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
-              R$ {currentMonthExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {displayExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Materiais adquiridos</p>
+            <p className="text-xs text-muted-foreground mt-1">{displayExpenseCount} despesas</p>
+          </CardContent>
+        </Card>
+        
+        <Card className={`group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${displayBalance >= 0 ? 'bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5' : 'bg-gradient-to-br from-red-500/10 via-card to-red-500/5'}`}>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Saldo Real</CardTitle>
+            <div className={`p-2 ${displayBalance >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'} rounded-lg`}>
+              <DollarSign className={`h-4 w-4 ${displayBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className={`text-xl sm:text-2xl font-bold ${displayBalance >= 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-red-600 to-red-500'} bg-clip-text text-transparent`}>
+              R$ {displayBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
           </CardContent>
         </Card>
         
         <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
             <div className="p-2 bg-blue-500/20 rounded-lg">
-              <DollarSign className="h-4 w-4 text-blue-600" />
+              <TrendingUp className="h-4 w-4 text-blue-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
             <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+              R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Por receita</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+            <div className="p-2 bg-orange-500/20 rounded-lg">
+              <DollarSign className="h-4 w-4 text-orange-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
               R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -704,53 +798,21 @@ export default function Financial() {
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5">
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Atraso</CardTitle>
-            <div className="p-2 bg-orange-500/20 rounded-lg">
-              <TrendingDown className="h-4 w-4 text-orange-600" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
-              R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {overduePayments.length} em atraso
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className={`group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${balance >= 0 ? 'bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5' : 'bg-gradient-to-br from-red-500/10 via-card to-red-500/5'}`}>
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resultado</CardTitle>
-            <div className={`p-2 ${balance >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'} rounded-lg`}>
-              <TrendingUp className={`h-4 w-4 ${balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className={`text-xl sm:text-2xl font-bold ${balance >= 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-red-600 to-red-500'} bg-clip-text text-transparent`}>
-              R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
-          </CardContent>
-        </Card>
-        
         <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-500/10 via-card to-purple-500/5">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atendimentos</CardTitle>
+            <CardTitle className="text-sm font-medium">Transações</CardTitle>
             <div className="p-2 bg-purple-500/20 rounded-lg">
               <Calendar className="h-4 w-4 text-purple-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
             <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-              {currentMonthRecords.filter(r => r.type === 'income').length}
+              {hasActiveFilters ? filteredRecords.length : currentMonthRecords.length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Este mês</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {hasActiveFilters ? 'No período' : 'Este mês'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -769,7 +831,7 @@ export default function Financial() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="dateStart">Data Início</Label>
               <Input
@@ -798,6 +860,49 @@ export default function Financial() {
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="income">Receitas</SelectItem>
                   <SelectItem value="expense">Despesas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="categoryFilter">Categoria</Label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="consultation">Consulta</SelectItem>
+                  <SelectItem value="therapy">Terapia</SelectItem>
+                  <SelectItem value="evaluation">Avaliação</SelectItem>
+                  <SelectItem value="foundation_revenue">Receita Fundação</SelectItem>
+                  <SelectItem value="other_income">Outras Receitas</SelectItem>
+                  <SelectItem value="supplies">Materiais</SelectItem>
+                  <SelectItem value="equipment">Equipamentos</SelectItem>
+                  <SelectItem value="maintenance">Manutenção</SelectItem>
+                  <SelectItem value="salary">Salário</SelectItem>
+                  <SelectItem value="professional_payment">Pgto Profissional</SelectItem>
+                  <SelectItem value="utilities">Utilidades</SelectItem>
+                  <SelectItem value="other_expense">Outras Despesas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentMethodFilter">Forma de Pagamento</Label>
+              <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="cash">Dinheiro</SelectItem>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                  <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                  <SelectItem value="bank_transfer">Transferência</SelectItem>
+                  <SelectItem value="boleto">Boleto</SelectItem>
+                  <SelectItem value="contract">Contrato</SelectItem>
+                  <SelectItem value="internal">Interno</SelectItem>
+                  <SelectItem value="combined">Combinado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -838,6 +943,121 @@ export default function Financial() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Resumo por Forma de Pagamento */}
+      {filteredRecords.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <DollarSign className="h-5 w-5" />
+              Resumo por Forma de Pagamento
+              <Badge variant="outline" className="ml-auto font-normal">
+                {periodLabel}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(paymentMethodBreakdown)
+                .sort((a, b) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense))
+                .map(([method, data]) => {
+                  const total = data.income + data.expense;
+                  const barWidth = (total / maxPaymentTotal) * 100;
+                  return (
+                    <div key={method} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{translatePaymentMethod(method)}</span>
+                        <div className="flex items-center gap-3 text-xs">
+                          {data.income > 0 && (
+                            <span className="text-green-600">
+                              +R$ {data.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                          {data.expense > 0 && (
+                            <span className="text-red-600">
+                              -R$ {data.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                          <Badge variant="secondary" className="text-xs h-5">
+                            {data.count}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full flex">
+                          {data.income > 0 && (
+                            <div 
+                              className="bg-green-500 h-full" 
+                              style={{ width: `${(data.income / maxPaymentTotal) * 100}%` }} 
+                            />
+                          )}
+                          {data.expense > 0 && (
+                            <div 
+                              className="bg-red-500 h-full" 
+                              style={{ width: `${(data.expense / maxPaymentTotal) * 100}%` }} 
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+            
+            {/* Resumo por Categoria */}
+            <div className="mt-6 pt-4 border-t">
+              <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Resumo por Categoria
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(categoryBreakdown)
+                  .sort((a, b) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense))
+                  .map(([cat, data]) => (
+                    <div key={cat} className="p-3 rounded-lg bg-muted/50 space-y-1">
+                      <p className="text-xs text-muted-foreground">{translateCategory(cat)}</p>
+                      {data.income > 0 && (
+                        <p className="text-sm font-medium text-green-600">
+                          +R$ {data.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                      {data.expense > 0 && (
+                        <p className="text-sm font-medium text-red-600">
+                          -R$ {data.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">{data.count} registros</p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Saldo líquido do período */}
+            <div className="mt-6 pt-4 border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="grid grid-cols-3 gap-6 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Total Receitas</p>
+                  <p className="text-lg font-bold text-green-600">
+                    R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Total Despesas</p>
+                  <p className="text-lg font-bold text-red-600">
+                    R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Saldo Líquido</p>
+                  <p className={`text-lg font-bold ${balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Banner de contratos pendentes de revisão */}
       {records.filter(r => r.payment_method === 'contract').length > 0 && (
