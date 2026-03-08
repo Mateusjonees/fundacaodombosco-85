@@ -287,6 +287,22 @@ export default function CompleteAttendanceDialog({
       setWcstResults(null);
     } else if (testCode === 'WECHSLER') {
       setWechslerResults(null);
+    } else if (testCode === 'TOL') {
+      setTolResults(null);
+    } else if (testCode === 'D2') {
+      setD2Results(null);
+    } else if (testCode === 'BDI') {
+      setBdiResults(null);
+    } else if (testCode === 'BAI') {
+      setBaiResults(null);
+    } else if (testCode === 'SNAPIV') {
+      setSnapivResults(null);
+    } else if (testCode === 'MCHAT') {
+      setMchatResults(null);
+    } else if (testCode === 'RAVEN') {
+      setRavenResults(null);
+    } else if (testCode === 'WMS') {
+      setWmsResults(null);
     }
   };
 
