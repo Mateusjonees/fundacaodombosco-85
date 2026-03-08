@@ -1142,6 +1142,7 @@ export default function PatientNeuroTestHistory({
   const [tests, setTests] = useState<NeuroTestResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [applierNames, setApplierNames] = useState<Record<string, string>>({});
+  const [laudoGeneratorOpen, setLaudoGeneratorOpen] = useState(false);
 
   useEffect(() => {
     fetchTests();
