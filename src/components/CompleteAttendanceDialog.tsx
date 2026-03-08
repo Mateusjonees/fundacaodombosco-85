@@ -1066,6 +1066,110 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // Torre de Londres
+        if (tolResults && selectedTests.includes('TOL')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TOL', test_name: 'Torre de Londres', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(tolResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(tolResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(tolResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: tolResults.notes
+          });
+        }
+
+        // D2
+        if (d2Results && selectedTests.includes('D2')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'D2', test_name: 'D2 - Atenção Concentrada', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(d2Results.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(d2Results.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify(d2Results.percentiles)),
+            classifications: JSON.parse(JSON.stringify(d2Results.classifications)),
+            applied_by: user.id, applied_at: now, notes: d2Results.notes
+          });
+        }
+
+        // BDI-II
+        if (bdiResults && selectedTests.includes('BDI')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'BDI', test_name: 'BDI-II - Inventário de Depressão de Beck', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(bdiResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(bdiResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: bdiResults.notes
+          });
+        }
+
+        // BAI
+        if (baiResults && selectedTests.includes('BAI')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'BAI', test_name: 'BAI - Inventário de Ansiedade de Beck', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(baiResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(baiResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: baiResults.notes
+          });
+        }
+
+        // SNAP-IV
+        if (snapivResults && selectedTests.includes('SNAPIV')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'SNAPIV', test_name: 'SNAP-IV - Rastreamento TDAH', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(snapivResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(snapivResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: snapivResults.notes
+          });
+        }
+
+        // M-CHAT-R/F
+        if (mchatResults && selectedTests.includes('MCHAT')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'MCHAT', test_name: 'M-CHAT-R/F - Rastreamento TEA', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(mchatResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(mchatResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: mchatResults.notes
+          });
+        }
+
+        // Raven
+        if (ravenResults && selectedTests.includes('RAVEN')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'RAVEN', test_name: `Matrizes de Raven (${ravenResults.version})`, patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(ravenResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(ravenResults.percentiles)),
+            classifications: JSON.parse(JSON.stringify(ravenResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: ravenResults.notes
+          });
+        }
+
+        // WMS
+        if (wmsResults && selectedTests.includes('WMS')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'WMS', test_name: 'WMS-IV - Escala de Memória Wechsler', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(wmsResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(wmsResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: wmsResults.notes
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
