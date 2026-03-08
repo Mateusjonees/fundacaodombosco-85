@@ -1157,8 +1157,8 @@ export default function Patients() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={editingClient ? handleUpdateClient : handleCreateClient} disabled={!newClient.name}>
-                  {editingClient ? "Atualizar" : "Cadastrar"}
+                <Button onClick={editingClient ? handleUpdateClient : handleCreateClient} disabled={!newClient.name || isSaving}>
+                  {isSaving ? "Salvando..." : editingClient ? "Atualizar" : "Cadastrar"}
                 </Button>
               </div>
             </DialogContent>
