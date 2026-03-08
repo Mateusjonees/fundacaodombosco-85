@@ -449,6 +449,179 @@ const renderBPA2Calculations = (calc: Record<string, number>) => {
   );
 };
 
+// Renderiza dados de entrada do TIN
+const renderTINInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.acertos ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 60)</p>
+  </div>
+);
+
+const renderTINCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Escore Padrão = Consulta tabela normativa por idade</span>
+    </div>
+    <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+      <span className="font-medium">Escore Padrão</span>
+      <span className="font-mono"><strong>{calc.escorePadrao ?? '-'}</strong> (M=100, DP=15)</span>
+    </div>
+  </div>
+);
+
+const renderPCFOInputs = (rawScores: Record<string, number | string>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.acertos ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 40)</p>
+    {rawScores.schoolingLevel && (
+      <p className="text-xs text-muted-foreground mt-1">
+        Nível: {rawScores.schoolingLevel === 'infantil' ? 'Educação Infantil' : 'Ensino Fundamental'}
+      </p>
+    )}
+  </div>
+);
+
+const renderPCFOCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">EP = Consulta tabela normativa por idade e escolaridade</span>
+    </div>
+    <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+      <span className="font-medium">Escore Padrão</span>
+      <span className="font-mono"><strong>{calc.escorePadrao ?? '-'}</strong> (M=100, DP=15)</span>
+    </div>
+  </div>
+);
+
+const renderTSBCInputs = (rawScores: Record<string, number | string>) => (
+  <div className="space-y-3">
+    <div className="grid grid-cols-2 gap-3">
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Ordem Direta (acertos)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.ordemDireta ?? '-'}</Badge>
+      </div>
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Ordem Inversa (acertos)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.ordemInversa ?? '-'}</Badge>
+      </div>
+    </div>
+    <div className="p-2 bg-muted/30 rounded-lg text-center">
+      <p className="text-xs text-muted-foreground">
+        Tipo de Escola: <strong>{rawScores.schoolType === 'publica' ? 'Pública' : 'Privada'}</strong>
+      </p>
+    </div>
+  </div>
+);
+
+const renderTSBCCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">EP = Consulta tabela normativa por idade e tipo de escola</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">EP Ordem Direta</span>
+        <span className="font-mono"><strong>{calc.escorePadraoOD ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">EP Ordem Inversa</span>
+        <span className="font-mono"><strong>{calc.escorePadraoOI ?? '-'}</strong></span>
+      </div>
+    </div>
+  </div>
+);
+
+const renderFVAInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Animais</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.animais ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Frutas</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.frutas ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Pares</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.pares ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderFVACalculations = (calc: Record<string, string>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Percentil = Consulta tabela normativa por idade</span>
+    </div>
+    <div className="grid grid-cols-3 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Animais</span>
+        <span className="font-mono text-sm">{calc.percentilAnimais ?? '-'}</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Frutas</span>
+        <span className="font-mono text-sm">{calc.percentilFrutas ?? '-'}</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Pares</span>
+        <span className="font-mono text-sm">{calc.percentilPares ?? '-'}</span>
+      </div>
+    </div>
+  </div>
+);
+
+const renderBNTBRInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.acertos ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 30)</p>
+  </div>
+);
+
+const renderBNTBRCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Z = (Acertos - Média) / DP → Percentil</span>
+    </div>
+    <div className="grid grid-cols-3 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Pontuação</span>
+        <span className="font-mono text-sm">{calc.pontuacao ?? '-'}</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Z-Score</span>
+        <span className="font-mono text-sm">{typeof calc.zScore === 'number' ? calc.zScore.toFixed(2) : '-'}</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Percentil</span>
+        <span className="font-mono text-sm">{calc.percentil ?? '-'}</span>
+      </div>
+    </div>
+  </div>
+);
+
+// Renderiza dados genéricos de entrada com label/valor
+const renderGenericInputs = (rawScores: Record<string, number>) => {
+  const entries = Object.entries(rawScores).filter(([_, v]) => v !== null && v !== undefined);
+  if (entries.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {entries.map(([key, val]) => (
+        <Badge key={key} variant="outline" className="font-mono">
+          {key}: {typeof val === 'number' ? val : String(val)}
+        </Badge>
+      ))}
+    </div>
+  );
+};
+
 export default function PatientNeuroTestHistory({
   clientId,
   clientName,
