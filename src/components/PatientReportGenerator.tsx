@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -459,7 +460,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           </style>
         </head>
         <body>
-          ${reportElement.innerHTML}
+          ${DOMPurify.sanitize(reportElement.innerHTML)}
         </body>
       </html>
     `);

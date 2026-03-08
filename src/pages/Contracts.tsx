@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -1018,7 +1019,7 @@ Contratante
             <body>
               <div class="content-wrapper">
                 <div class="print-info no-print">
-                  Impresso por: ${userName} em ${new Date().toLocaleString('pt-BR')}
+                  Impresso por: ${DOMPurify.sanitize(userName)} em ${new Date().toLocaleString('pt-BR')}
                 </div>
                 <div class="no-print" style="padding: 15mm 15mm 0 15mm; margin-bottom: 20px;">
                   <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir / Salvar PDF</button>
@@ -1030,10 +1031,10 @@ Contratante
                   <img src="${logoBase64}" alt="Fundação Dom Bosco" />
                   <h1>Contrato de Prestação de Serviços</h1>
                   <h2>Avaliação Neuropsicológica</h2>
-                  <p class="client-name">${contractData.clientName}</p>
+                  <p class="client-name">${DOMPurify.sanitize(contractData.clientName)}</p>
                 </div>
                 
-                <div class="contract-content">${contractContent}</div>
+                <div class="contract-content">${DOMPurify.sanitize(contractContent)}</div>
               </div>
               
               <!-- Rodapé com papel timbrado - final absoluto de cada página -->

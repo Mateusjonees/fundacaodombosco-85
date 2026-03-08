@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -366,9 +367,9 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           </head>
           <body>
             <div class="print-info">
-              Impresso por: ${userName} em ${new Date().toLocaleString('pt-BR')}
+              Impresso por: ${DOMPurify.sanitize(userName)} em ${new Date().toLocaleString('pt-BR')}
             </div>
-            ${contractRef.current.innerHTML}
+            ${DOMPurify.sanitize(contractRef.current.innerHTML)}
           </body>
         </html>
       `);
@@ -421,7 +422,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
             <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
             <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
           </div>
-          ${contractRef.current.innerHTML}
+          ${DOMPurify.sanitize(contractRef.current.innerHTML)}
         </body>
       </html>
     `);
