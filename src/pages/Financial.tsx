@@ -864,6 +864,49 @@ export default function Financial() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="categoryFilter">Categoria</Label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="consultation">Consulta</SelectItem>
+                  <SelectItem value="therapy">Terapia</SelectItem>
+                  <SelectItem value="evaluation">Avaliação</SelectItem>
+                  <SelectItem value="foundation_revenue">Receita Fundação</SelectItem>
+                  <SelectItem value="other_income">Outras Receitas</SelectItem>
+                  <SelectItem value="supplies">Materiais</SelectItem>
+                  <SelectItem value="equipment">Equipamentos</SelectItem>
+                  <SelectItem value="maintenance">Manutenção</SelectItem>
+                  <SelectItem value="salary">Salário</SelectItem>
+                  <SelectItem value="professional_payment">Pgto Profissional</SelectItem>
+                  <SelectItem value="utilities">Utilidades</SelectItem>
+                  <SelectItem value="other_expense">Outras Despesas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentMethodFilter">Forma de Pagamento</Label>
+              <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="cash">Dinheiro</SelectItem>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                  <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                  <SelectItem value="bank_transfer">Transferência</SelectItem>
+                  <SelectItem value="boleto">Boleto</SelectItem>
+                  <SelectItem value="contract">Contrato</SelectItem>
+                  <SelectItem value="internal">Interno</SelectItem>
+                  <SelectItem value="combined">Combinado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="unitFilter">Unidade</Label>
               <Select value={unitFilter} onValueChange={setUnitFilter}>
                 <SelectTrigger>
@@ -900,6 +943,121 @@ export default function Financial() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Resumo por Forma de Pagamento */}
+      {filteredRecords.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <DollarSign className="h-5 w-5" />
+              Resumo por Forma de Pagamento
+              <Badge variant="outline" className="ml-auto font-normal">
+                {periodLabel}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(paymentMethodBreakdown)
+                .sort((a, b) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense))
+                .map(([method, data]) => {
+                  const total = data.income + data.expense;
+                  const barWidth = (total / maxPaymentTotal) * 100;
+                  return (
+                    <div key={method} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{translatePaymentMethod(method)}</span>
+                        <div className="flex items-center gap-3 text-xs">
+                          {data.income > 0 && (
+                            <span className="text-green-600">
+                              +R$ {data.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                          {data.expense > 0 && (
+                            <span className="text-red-600">
+                              -R$ {data.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                          <Badge variant="secondary" className="text-xs h-5">
+                            {data.count}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full flex">
+                          {data.income > 0 && (
+                            <div 
+                              className="bg-green-500 h-full" 
+                              style={{ width: `${(data.income / maxPaymentTotal) * 100}%` }} 
+                            />
+                          )}
+                          {data.expense > 0 && (
+                            <div 
+                              className="bg-red-500 h-full" 
+                              style={{ width: `${(data.expense / maxPaymentTotal) * 100}%` }} 
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+            
+            {/* Resumo por Categoria */}
+            <div className="mt-6 pt-4 border-t">
+              <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Resumo por Categoria
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(categoryBreakdown)
+                  .sort((a, b) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense))
+                  .map(([cat, data]) => (
+                    <div key={cat} className="p-3 rounded-lg bg-muted/50 space-y-1">
+                      <p className="text-xs text-muted-foreground">{translateCategory(cat)}</p>
+                      {data.income > 0 && (
+                        <p className="text-sm font-medium text-green-600">
+                          +R$ {data.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                      {data.expense > 0 && (
+                        <p className="text-sm font-medium text-red-600">
+                          -R$ {data.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">{data.count} registros</p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Saldo líquido do período */}
+            <div className="mt-6 pt-4 border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="grid grid-cols-3 gap-6 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Total Receitas</p>
+                  <p className="text-lg font-bold text-green-600">
+                    R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Total Despesas</p>
+                  <p className="text-lg font-bold text-red-600">
+                    R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Saldo Líquido</p>
+                  <p className={`text-lg font-bold ${balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Banner de contratos pendentes de revisão */}
       {records.filter(r => r.payment_method === 'contract').length > 0 && (
