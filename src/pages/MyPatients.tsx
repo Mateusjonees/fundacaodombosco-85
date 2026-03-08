@@ -320,22 +320,6 @@ const MyPatients: React.FC = () => {
 
   return (
     <div className="w-full p-3 sm:p-6 space-y-4 sm:space-y-6">
-      {selectedClient ? (
-        <div>
-          <Button 
-            variant="outline" 
-            onClick={() => setSelectedClient(null)}
-            className="mb-4"
-          >
-            ← Voltar para Lista
-          </Button>
-          <ClientDetailsView 
-            client={selectedClient} 
-            onEdit={() => {}} 
-            onRefresh={() => loadMyPatients()}
-          />
-        </div>
-      ) : (
         <>
           {/* Cabeçalho - Otimizado para mobile */}
           <div className="flex flex-col gap-3 sm:gap-4 animate-fade-in">
