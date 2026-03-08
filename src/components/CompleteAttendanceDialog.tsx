@@ -1298,6 +1298,38 @@ export default function CompleteAttendanceDialog({
                     onResultsChange={handleFptAdultoResultsChange}
                   />
                 )}
+
+                {/* Formulário Figuras de Rey */}
+                {selectedTests.includes('REY') && (
+                  <NeuroTestReyForm
+                    patientAge={patientAge}
+                    onResultsChange={handleReyResultsChange}
+                  />
+                )}
+
+                {/* Formulário Stroop */}
+                {selectedTests.includes('STROOP') && (
+                  <NeuroTestStroopForm
+                    patientAge={patientAge}
+                    onResultsChange={handleStroopResultsChange}
+                  />
+                )}
+
+                {/* Formulário WCST */}
+                {selectedTests.includes('WCST') && (
+                  <NeuroTestWCSTForm
+                    patientAge={patientAge}
+                    onResultsChange={handleWcstResultsChange}
+                  />
+                )}
+
+                {/* Formulário Wechsler (WAIS/WISC) */}
+                {selectedTests.includes('WECHSLER') && (
+                  <NeuroTestWechslerForm
+                    patientAge={patientAge}
+                    onResultsChange={handleWechslerResultsChange}
+                  />
+                )}
               </div>
             )}
 
