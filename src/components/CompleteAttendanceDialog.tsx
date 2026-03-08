@@ -84,6 +84,19 @@ import { type SNAPIVResults } from '@/data/neuroTests/snapiv';
 import { type MCHATResults } from '@/data/neuroTests/mchat';
 import { type RavenResults } from '@/data/neuroTests/raven';
 import { type WMSResults } from '@/data/neuroTests/wms';
+import { type MoCAResults } from '@/data/neuroTests/moca';
+import { type MEEMResults } from '@/data/neuroTests/meem';
+import { type BRIEF2Results } from '@/data/neuroTests/brief2';
+import { type CorsiResults } from '@/data/neuroTests/corsi';
+import { type ConnersResults } from '@/data/neuroTests/conners';
+import { type VinelandResults } from '@/data/neuroTests/vineland';
+import { type ACE3Results } from '@/data/neuroTests/ace3';
+import { type CBCLResults } from '@/data/neuroTests/cbcl';
+import { type SDQResults } from '@/data/neuroTests/sdq';
+import { type GDSResults } from '@/data/neuroTests/gds';
+import { type TDE2Results } from '@/data/neuroTests/tde2';
+import { type NEUPSILINResults } from '@/data/neuroTests/neupsilin';
+import { type CancelamentoResults } from '@/data/neuroTests/cancelamento';
 
 interface Schedule {
   id: string;
