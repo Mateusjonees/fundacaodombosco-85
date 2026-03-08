@@ -93,6 +93,22 @@ export * from './stroop';
 export * from './wcst';
 // Wechsler exports
 export * from './wais';
+// Torre de Londres
+export * from './tol';
+// D2 Atenção Concentrada
+export * from './d2';
+// BDI-II Beck Depressão
+export * from './bdi';
+// BAI Beck Ansiedade
+export * from './bai';
+// SNAP-IV TDAH
+export * from './snapiv';
+// M-CHAT-R/F Autismo
+export * from './mchat';
+// Matrizes de Raven
+export * from './raven';
+// WMS Memória Wechsler
+export * from './wms';
 
 import { BPA2_TEST, type NeuroTestDefinition } from './bpa2';
 import { FDT_TEST } from './fdt';
