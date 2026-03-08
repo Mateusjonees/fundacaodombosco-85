@@ -146,7 +146,7 @@ export default function Financial() {
 
   const loadPendingPayments = async () => {
     try {
-      // Buscar pagamentos pendentes
+      // Buscar TODOS os pagamentos (todas unidades, todos status)
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('client_payments')
         .select(`
@@ -156,20 +156,26 @@ export default function Financial() {
           amount_paid,
           amount_remaining,
           payment_type,
+          payment_method,
           installments_total,
           installments_paid,
+          credit_card_installments,
+          down_payment_amount,
+          down_payment_method,
+          payment_combination,
           status,
           due_date,
           description,
+          notes,
+          unit,
           created_at
         `)
-        .eq('unit', 'madre')
-        .in('status', ['pending', 'partial', 'overdue'])
-        .order('due_date', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (paymentsError) throw paymentsError;
 
-      // Buscar parcelas pendentes
+      // Buscar parcelas de cada pagamento
+      const paymentIds = (paymentsData || []).map(p => p.id);
       const { data: installmentsData, error: installmentsError } = await supabase
         .from('payment_installments')
         .select(`
@@ -181,67 +187,41 @@ export default function Financial() {
           due_date,
           status,
           payment_method,
+          paid_at,
           notes
         `)
-        .in('status', ['pending', 'partial', 'overdue'])
-        .order('due_date', { ascending: true });
+        .in('client_payment_id', paymentIds.length > 0 ? paymentIds : ['none'])
+        .order('installment_number', { ascending: true });
 
       if (installmentsError) throw installmentsError;
 
-      // Buscar informações dos clientes para os pagamentos
-      const paymentClientIds = (paymentsData || []).map(p => p.client_id).filter(Boolean);
-      
-      // Buscar informações dos clientes para as parcelas
-      const installmentPaymentIds = (installmentsData || []).map(i => i.client_payment_id).filter(Boolean);
-      const { data: installmentPayments } = await supabase
-        .from('client_payments')
-        .select('id, client_id, description, payment_type')
-        .in('id', installmentPaymentIds);
-
-      const allClientIds = [
-        ...paymentClientIds,
-        ...(installmentPayments || []).map(p => p.client_id)
-      ].filter(Boolean);
-
+      // Buscar informações dos clientes
+      const allClientIds = [...new Set((paymentsData || []).map(p => p.client_id).filter(Boolean))];
       const { data: clientsData } = await supabase
         .from('clients')
-        .select('id, name, phone')
-        .in('id', allClientIds);
+        .select('id, name, phone, email, unit, cpf')
+        .in('id', allClientIds.length > 0 ? allClientIds : ['none']);
 
-      const clientsMap = (clientsData || []).reduce((acc, client) => {
+      const clientsMap = (clientsData || []).reduce((acc: Record<string, any>, client: any) => {
         acc[client.id] = client;
         return acc;
-      }, {} as Record<string, any>);
+      }, {});
 
-      const paymentsMap = (installmentPayments || []).reduce((acc, payment) => {
-        acc[payment.id] = payment;
+      // Agrupar parcelas por pagamento
+      const installmentsByPayment = (installmentsData || []).reduce((acc: Record<string, any[]>, inst: any) => {
+        if (!acc[inst.client_payment_id]) acc[inst.client_payment_id] = [];
+        acc[inst.client_payment_id].push(inst);
         return acc;
-      }, {} as Record<string, any>);
+      }, {});
 
-      // Combinar e processar dados
-      const combinedData = [
-        ...(paymentsData || []).map(payment => ({
-          ...payment,
-          type: 'payment',
-          amount_due: payment.amount_remaining,
-          client_name: clientsMap[payment.client_id]?.name,
-          client_phone: clientsMap[payment.client_id]?.phone
-        })),
-        ...(installmentsData || []).map(installment => {
-          const paymentInfo = paymentsMap[installment.client_payment_id];
-          return {
-            ...installment,
-            type: 'installment',
-            amount_due: installment.amount - installment.paid_amount,
-            client_name: clientsMap[paymentInfo?.client_id]?.name,
-            client_phone: clientsMap[paymentInfo?.client_id]?.phone,
-            description: paymentInfo?.description,
-            payment_type: paymentInfo?.payment_type
-          };
-        })
-      ];
+      // Combinar dados completos
+      const enrichedPayments = (paymentsData || []).map(payment => ({
+        ...payment,
+        client: clientsMap[payment.client_id] || null,
+        installments: installmentsByPayment[payment.id] || [],
+      }));
 
-      setPendingPayments(combinedData);
+      setPendingPayments(enrichedPayments);
     } catch (error) {
       console.error('Error loading pending payments:', error);
     }
