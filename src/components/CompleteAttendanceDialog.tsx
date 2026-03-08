@@ -1185,6 +1185,14 @@ export default function CompleteAttendanceDialog({
               </div>
             )}
 
+            {/* Avaliação Nutricional - Apenas para nutricionistas */}
+            {isNutritionistProfessional && (
+              <NutritionAssessmentForm
+                data={nutritionData}
+                onChange={setNutritionData}
+              />
+            )}
+
             {/* Seletor de Materiais */}
             <AttendanceMaterialSelector
               selectedMaterials={selectedMaterials}
