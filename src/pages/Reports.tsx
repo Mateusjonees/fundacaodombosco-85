@@ -2102,7 +2102,9 @@ export default function Reports() {
                         <TableCell>{prescription.employee?.name || 'N/A'}</TableCell>
                         <TableCell>
                           <Badge variant={prescription.service_type === 'sus' ? 'default' : 'secondary'}>
-                            {prescription.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}
+                            {prescription.service_type === 'sus' ? 'SUS' : 
+                             prescription.service_type === 'external' ? 'Demanda Externa' :
+                             prescription.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-xs">
