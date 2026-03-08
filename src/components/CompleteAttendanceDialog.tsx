@@ -116,12 +116,15 @@ export default function CompleteAttendanceDialog({
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
   const [nutritionData, setNutritionData] = useState<NutritionData>({});
 
-  // Calculate patient age and get unit
+  // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
     if (isOpen && schedule?.client_id) {
       fetchClientInfo();
     }
-  }, [isOpen, schedule?.client_id]);
+    if (isOpen && schedule?.employee_id) {
+      fetchProfessionalRole();
+    }
+  }, [isOpen, schedule?.client_id, schedule?.employee_id]);
 
   const fetchClientInfo = async () => {
     if (!schedule?.client_id) return;
