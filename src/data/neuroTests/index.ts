@@ -109,6 +109,32 @@ export * from './mchat';
 export * from './raven';
 // WMS Memória Wechsler
 export * from './wms';
+// MoCA
+export * from './moca';
+// MEEM
+export * from './meem';
+// BRIEF-2
+export * from './brief2';
+// Cubos de Corsi
+export * from './corsi';
+// Conners 3
+export * from './conners';
+// Vineland-3
+export * from './vineland';
+// ACE-III
+export * from './ace3';
+// CBCL
+export * from './cbcl';
+// SDQ
+export * from './sdq';
+// GDS
+export * from './gds';
+// TDE-II
+export * from './tde2';
+// NEUPSILIN
+export * from './neupsilin';
+// Cancelamento
+export * from './cancelamento';
 
 import { BPA2_TEST, type NeuroTestDefinition } from './bpa2';
 import { FDT_TEST } from './fdt';
@@ -142,6 +168,19 @@ import { SNAPIV_TEST } from './snapiv';
 import { MCHAT_TEST } from './mchat';
 import { RAVEN_TEST } from './raven';
 import { WMS_TEST } from './wms';
+import { MOCA_TEST } from './moca';
+import { MEEM_TEST } from './meem';
+import { BRIEF2_TEST } from './brief2';
+import { CORSI_TEST } from './corsi';
+import { CONNERS_TEST } from './conners';
+import { VINELAND_TEST } from './vineland';
+import { ACE3_TEST } from './ace3';
+import { CBCL_TEST } from './cbcl';
+import { SDQ_TEST } from './sdq';
+import { GDS_TEST } from './gds';
+import { TDE2_TEST } from './tde2';
+import { NEUPSILIN_TEST } from './neupsilin';
+import { CANCELAMENTO_TEST } from './cancelamento';
 
 // Lista de todos os testes disponíveis
 export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
@@ -177,6 +216,19 @@ export const AVAILABLE_NEURO_TESTS: NeuroTestDefinition[] = [
   MCHAT_TEST as unknown as NeuroTestDefinition,
   RAVEN_TEST,
   WMS_TEST as unknown as NeuroTestDefinition,
+  MOCA_TEST as unknown as NeuroTestDefinition,
+  MEEM_TEST as unknown as NeuroTestDefinition,
+  BRIEF2_TEST as unknown as NeuroTestDefinition,
+  CORSI_TEST as unknown as NeuroTestDefinition,
+  CONNERS_TEST as unknown as NeuroTestDefinition,
+  VINELAND_TEST as unknown as NeuroTestDefinition,
+  ACE3_TEST as unknown as NeuroTestDefinition,
+  CBCL_TEST as unknown as NeuroTestDefinition,
+  SDQ_TEST as unknown as NeuroTestDefinition,
+  GDS_TEST as unknown as NeuroTestDefinition,
+  TDE2_TEST as unknown as NeuroTestDefinition,
+  NEUPSILIN_TEST as unknown as NeuroTestDefinition,
+  CANCELAMENTO_TEST as unknown as NeuroTestDefinition,
 ];
 /**
  * Busca um teste pelo código
