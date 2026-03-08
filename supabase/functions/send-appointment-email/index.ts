@@ -315,7 +315,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const professionalEmailHtml = buildProfessionalEmailHtml(
         professionalName, clientName, appointmentDate, appointmentTime,
-        appointmentType, unitInfo, notes, sessions
+        appointmentType, unitInfo, notes, sessions, scheduledByName
       );
 
       const { data: profData, error: profError } = await resend.emails.send({
