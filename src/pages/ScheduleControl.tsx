@@ -10,17 +10,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle, Download, Phone, DollarSign, Mail, Video, Search, Filter, UserCheck, ClipboardCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ClientDetailsView from '@/components/ClientDetailsView';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoImage from '@/assets/fundacao-dom-bosco-logo.png';
+
 interface Schedule {
   id: string;
   client_id: string;
@@ -28,19 +30,50 @@ interface Schedule {
   start_time: string;
   end_time: string;
   title: string;
+  description?: string;
   status: string;
   notes?: string;
+  session_notes?: string;
   unit?: string;
   patient_arrived?: boolean;
+  arrived_at?: string;
+  patient_confirmed?: boolean;
+  patient_confirmed_at?: string;
+  patient_declined?: boolean;
+  is_online?: boolean;
+  location?: string;
+  meeting_link?: string;
+  session_amount?: number;
+  payment_method?: string;
+  completed_at?: string;
+  completed_by?: string;
+  email_sent_at?: string;
   created_by?: string;
+  created_at?: string;
   cancelled_by?: string;
   cancellation_reason?: string;
   clients?: {
     name: string;
+    phone?: string;
+    email?: string;
+    unit?: string;
+    diagnosis?: string;
+    birth_date?: string;
+    responsible_name?: string;
+    responsible_phone?: string;
   };
   profiles?: {
     name: string;
+    employee_role?: string;
   };
+  created_by_profile?: {
+    name: string;
+  };
+  attendance_reports?: {
+    id: string;
+    validation_status?: string;
+    status?: string;
+  }[];
 }
 type ViewMode = 'day' | 'week' | 'month';
 export default function ScheduleControl() {
@@ -66,6 +99,8 @@ export default function ScheduleControl() {
   const [notificationReason, setNotificationReason] = useState("");
   const [pdfConfigDialogOpen, setPdfConfigDialogOpen] = useState(false);
   const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const handleClientClick = async (clientId: string) => {
     try {
       const {
@@ -213,7 +248,7 @@ ${notificationMessage}
       loadEmployees();
       loadSchedules();
     }
-  }, [userProfile, selectedDate, viewMode, selectedEmployee, selectedUnit]);
+  }, [userProfile, selectedDate, viewMode, selectedEmployee, selectedUnit, statusFilter]);
   const loadUserProfile = async () => {
     if (!user) return;
     try {
@@ -269,8 +304,9 @@ ${notificationMessage}
       }
       let query = supabase.from('schedules').select(`
           *,
-          clients (name),
-          profiles:employee_id (name)
+          clients (name, phone, email, unit, diagnosis, birth_date, responsible_name, responsible_phone),
+          profiles:employee_id (name, employee_role),
+          attendance_reports (id, validation_status, status)
         `).gte('start_time', startDate.toISOString()).lt('start_time', endDate.toISOString()).order('start_time');
 
       // Filtros
@@ -280,12 +316,36 @@ ${notificationMessage}
       if (selectedUnit !== 'all') {
         query = query.eq('unit', selectedUnit);
       }
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
       const {
         data,
         error
       } = await query;
       if (error) throw error;
-      setSchedules(data || []);
+
+      // Fetch created_by profile names
+      const createdByIds = [...new Set((data || []).map(s => s.created_by).filter(Boolean))];
+      let createdByMap: Record<string, string> = {};
+      if (createdByIds.length > 0) {
+        const { data: createdByProfiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', createdByIds);
+        createdByMap = (createdByProfiles || []).reduce((acc, p) => {
+          acc[p.user_id] = p.name;
+          return acc;
+        }, {} as Record<string, string>);
+      }
+
+      // Enrich with created_by_profile
+      const enriched = (data || []).map(s => ({
+        ...s,
+        created_by_profile: s.created_by ? { name: createdByMap[s.created_by] || 'Desconhecido' } : undefined
+      }));
+
+      setSchedules(enriched);
     } catch (error) {
       console.error('Error loading schedules:', error);
       toast({
@@ -352,6 +412,49 @@ ${notificationMessage}
         {config.label}
       </Badge>;
   };
+
+  // Search-filtered schedules (status already filtered in query)
+  const filteredSchedules = schedules.filter(s => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      s.clients?.name?.toLowerCase().includes(term) ||
+      s.profiles?.name?.toLowerCase().includes(term) ||
+      s.title?.toLowerCase().includes(term) ||
+      s.description?.toLowerCase().includes(term) ||
+      s.notes?.toLowerCase().includes(term)
+    );
+  });
+
+  // Payment method translation
+  const translatePaymentMethod = (method: string | undefined): string => {
+    if (!method) return 'Não informado';
+    const map: Record<string, string> = {
+      'cash': 'Dinheiro', 'pix': 'PIX', 'credit_card': 'Cartão Crédito',
+      'debit_card': 'Cartão Débito', 'transfer': 'Transferência',
+      'bank_transfer': 'Transferência', 'boleto': 'Boleto',
+      'contract': 'Contrato', 'internal': 'Interno', 'combined': 'Combinado',
+      'dinheiro': 'Dinheiro', 'PIX': 'PIX',
+    };
+    return map[method] || method;
+  };
+
+  // Role label translation
+  const translateRole = (role: string | undefined): string => {
+    if (!role) return '';
+    const map: Record<string, string> = {
+      'director': 'Diretor(a)', 'coordinator_madre': 'Coord. Madre',
+      'coordinator_floresta': 'Coord. Floresta',
+      'coordinator_atendimento_floresta': 'Coord. Atend. Floresta',
+      'psicologo': 'Psicólogo(a)', 'psicopedagogo': 'Psicopedagogo(a)',
+      'fonoaudiologo': 'Fonoaudiólogo(a)', 'neuropsicologist': 'Neuropsicólogo(a)',
+      'terapeuta_ocupacional': 'Terapeuta Ocupacional',
+      'receptionist': 'Recepcionista', 'financeiro': 'Financeiro',
+      'psiquiatra': 'Psiquiatra', 'neuropediatra': 'Neuropediatra',
+    };
+    return map[role] || role;
+  };
+
   const getDateRangeText = () => {
     switch (viewMode) {
       case 'day':
@@ -699,7 +802,7 @@ ${notificationMessage}
   };
   const groupSchedulesByDate = () => {
     const grouped: Record<string, Schedule[]> = {};
-    schedules.forEach(schedule => {
+    filteredSchedules.forEach(schedule => {
       const dateKey = format(new Date(schedule.start_time), 'yyyy-MM-dd');
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
@@ -711,7 +814,7 @@ ${notificationMessage}
   const renderDayView = () => {
     // Agrupar agendamentos por hora
     const schedulesByHour: Record<string, Schedule[]> = {};
-    schedules.forEach(schedule => {
+    filteredSchedules.forEach(schedule => {
       const hour = format(new Date(schedule.start_time), 'HH:00');
       if (!schedulesByHour[hour]) {
         schedulesByHour[hour] = [];
@@ -722,10 +825,15 @@ ${notificationMessage}
 
     // Estatísticas do dia
     const dayStats = {
-      total: schedules.length,
-      confirmed: schedules.filter(s => s.status === 'confirmed').length,
-      scheduled: schedules.filter(s => s.status === 'scheduled').length,
-      cancelled: schedules.filter(s => s.status === 'cancelled').length
+      total: filteredSchedules.length,
+      confirmed: filteredSchedules.filter(s => s.status === 'confirmed').length,
+      scheduled: filteredSchedules.filter(s => s.status === 'scheduled').length,
+      completed: filteredSchedules.filter(s => s.status === 'completed').length,
+      cancelled: filteredSchedules.filter(s => s.status === 'cancelled').length,
+      arrived: filteredSchedules.filter(s => s.patient_arrived).length,
+      online: filteredSchedules.filter(s => s.is_online).length,
+      withReport: filteredSchedules.filter(s => s.attendance_reports && s.attendance_reports.length > 0).length,
+      totalValue: filteredSchedules.reduce((sum, s) => sum + (s.session_amount || 0), 0),
     };
     const getStatusColor = (status: string) => {
       switch (status) {
@@ -749,35 +857,70 @@ ${notificationMessage}
     };
     let lastPeriod = '';
     return <div className="space-y-4 md:space-y-6">
-        {/* Cards de Resumo do Dia */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 animate-fade-in">
+        {/* Cards de Resumo do Dia - Expandidos */}
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3 animate-fade-in">
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
+            <CardContent className="p-3 text-center">
               <div className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400">{dayStats.total}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Total</div>
+              <div className="text-xs text-muted-foreground font-medium">Total</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
+            <CardContent className="p-3 text-center">
               <div className="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400">{dayStats.confirmed}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Confirmados</div>
+              <div className="text-xs text-muted-foreground font-medium">Confirmados</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
+            <CardContent className="p-3 text-center">
               <div className="text-2xl sm:text-3xl font-bold text-amber-600 dark:text-amber-400">{dayStats.scheduled}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Agendados</div>
+              <div className="text-xs text-muted-foreground font-medium">Agendados</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-slate-500/10 to-slate-600/5 border-slate-500/20">
+            <CardContent className="p-3 text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-slate-600 dark:text-slate-400">{dayStats.completed}</div>
+              <div className="text-xs text-muted-foreground font-medium">Concluídos</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
-            <CardContent className="p-3 sm:p-4 text-center">
+            <CardContent className="p-3 text-center">
               <div className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">{dayStats.cancelled}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground font-medium">Cancelados</div>
+              <div className="text-xs text-muted-foreground font-medium">Cancelados</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+            <CardContent className="p-3 text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
+                {dayStats.totalValue > 0 ? `R$${dayStats.totalValue.toLocaleString('pt-BR')}` : dayStats.arrived}
+              </div>
+              <div className="text-xs text-muted-foreground font-medium">
+                {dayStats.totalValue > 0 ? 'Faturamento' : 'Chegaram'}
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {schedules.length === 0 ? <Card className="border-dashed border-2">
+        {/* Mini stats row */}
+        <div className="flex flex-wrap gap-2 text-xs">
+          {dayStats.arrived > 0 && (
+            <Badge variant="outline" className="gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400">
+              <UserCheck className="h-3 w-3" /> {dayStats.arrived} pacientes chegaram
+            </Badge>
+          )}
+          {dayStats.online > 0 && (
+            <Badge variant="outline" className="gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400">
+              <Video className="h-3 w-3" /> {dayStats.online} online
+            </Badge>
+          )}
+          {dayStats.withReport > 0 && (
+            <Badge variant="outline" className="gap-1 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400">
+              <ClipboardCheck className="h-3 w-3" /> {dayStats.withReport} com relatório
+            </Badge>
+          )}
+        </div>
+
+        {filteredSchedules.length === 0 ? <Card className="border-dashed border-2">
             <CardContent className="p-12 text-center">
               <CalendarIcon className="h-16 w-16 mx-auto text-muted-foreground/40 mb-4" />
               <h3 className="text-lg font-semibold text-muted-foreground">Nenhum agendamento</h3>
@@ -814,14 +957,21 @@ ${notificationMessage}
                       </div>
 
                       <div className="flex-1 space-y-3">
-                        {schedulesByHour[hour].map((schedule, scheduleIndex) => <Card key={schedule.id} className={cn("border-l-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] group", getStatusColor(schedule.status))} style={{
-                    animationDelay: `${hourIndex * 50 + scheduleIndex * 30}ms`
-                  }}>
+                        {schedulesByHour[hour].map((schedule, scheduleIndex) => {
+                    const attendanceReport = schedule.attendance_reports?.[0];
+                    const hasReport = !!attendanceReport;
+                    const reportValidated = attendanceReport?.validation_status === 'validated';
+                    const reportPending = attendanceReport && attendanceReport.validation_status !== 'validated' && attendanceReport.validation_status !== 'rejected';
+                    const durationMin = Math.round((new Date(schedule.end_time).getTime() - new Date(schedule.start_time).getTime()) / 60000);
+                    
+                    return <Card key={schedule.id} className={cn("border-l-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] group", getStatusColor(schedule.status))} style={{
+                      animationDelay: `${hourIndex * 50 + scheduleIndex * 30}ms`
+                    }}>
                             <CardContent className="p-4">
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 space-y-3">
-                                  {/* Time */}
-                                  <div className="flex items-center gap-2">
+                                  {/* Time + Duration + Service Type */}
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10">
                                       <Clock className="h-4 w-4 text-primary" />
                                       <span className="font-bold text-primary">
@@ -829,65 +979,160 @@ ${notificationMessage}
                                       </span>
                                     </div>
                                     <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                                      {Math.round((new Date(schedule.end_time).getTime() - new Date(schedule.start_time).getTime()) / 60000)} min
+                                      {durationMin} min
                                     </span>
+                                    {schedule.title && <Badge variant="outline" className="bg-background text-xs">
+                                        {schedule.title}
+                                      </Badge>}
+                                    {schedule.is_online && <Badge variant="outline" className="gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-xs">
+                                        <Video className="h-3 w-3" /> Online
+                                      </Badge>}
                                   </div>
                                   
-                                  {/* Patient */}
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
+                                  {/* Patient + Professional Row */}
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold shadow-md shrink-0">
                                       {(schedule.clients?.name || 'P')[0].toUpperCase()}
                                     </div>
-                                    <div>
-                                      <button onClick={() => handleClientClick(schedule.client_id)} className="font-semibold text-base hover:text-primary transition-colors">
+                                    <div className="flex-1 min-w-0">
+                                      <button onClick={() => handleClientClick(schedule.client_id)} className="font-semibold text-base hover:text-primary transition-colors truncate block">
                                         {schedule.clients?.name || 'Paciente não identificado'}
                                       </button>
                                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <User className="h-3.5 w-3.5" />
-                                        <span>{schedule.profiles?.name || 'Profissional não atribuído'}</span>
+                                        <User className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate">{schedule.profiles?.name || 'Profissional não atribuído'}</span>
+                                        {schedule.profiles?.employee_role && (
+                                          <span className="text-xs text-muted-foreground/60">({translateRole(schedule.profiles.employee_role)})</span>
+                                        )}
                                       </div>
+                                      {/* Patient contact info */}
+                                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                        {schedule.clients?.phone && (
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Phone className="h-3 w-3" /> {schedule.clients.phone}
+                                          </span>
+                                        )}
+                                        {schedule.clients?.email && (
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Mail className="h-3 w-3" /> {schedule.clients.email}
+                                          </span>
+                                        )}
+                                        {schedule.clients?.responsible_name && (
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            👤 Resp: {schedule.clients.responsible_name}
+                                            {schedule.clients.responsible_phone && ` (${schedule.clients.responsible_phone})`}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {schedule.clients?.diagnosis && (
+                                        <span className="text-xs text-muted-foreground/80 mt-0.5 block truncate">
+                                          Diagnóstico: {schedule.clients.diagnosis}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
 
-                                  {/* Unit Badge */}
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                                    <Badge variant={schedule.unit === 'madre' ? 'default' : schedule.unit === 'floresta' ? 'secondary' : 'outline'} className="font-medium">
-                                      {schedule.unit === 'madre' ? 'MADRE' : schedule.unit === 'floresta' ? 'Floresta' : schedule.unit === 'atendimento_floresta' ? 'Atendimento Floresta' : schedule.unit || 'N/A'}
+                                  {/* Badges row: unit, payment, location, report status */}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant={schedule.unit === 'madre' ? 'default' : schedule.unit === 'floresta' ? 'secondary' : 'outline'} className="font-medium text-xs">
+                                      <MapPin className="h-3 w-3 mr-1" />
+                                      {schedule.unit === 'madre' ? 'MADRE' : schedule.unit === 'floresta' ? 'Floresta' : schedule.unit === 'atendimento_floresta' ? 'Atend. Floresta' : schedule.unit || 'N/A'}
                                     </Badge>
-                                    {schedule.title && <Badge variant="outline" className="bg-background">
-                                        {schedule.title}
-                                      </Badge>}
+                                    {schedule.session_amount != null && schedule.session_amount > 0 && (
+                                      <Badge variant="outline" className="gap-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 text-xs">
+                                        <DollarSign className="h-3 w-3" />
+                                        R$ {schedule.session_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </Badge>
+                                    )}
+                                    {schedule.payment_method && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {translatePaymentMethod(schedule.payment_method)}
+                                      </Badge>
+                                    )}
+                                    {schedule.location && (
+                                      <Badge variant="outline" className="text-xs gap-1">
+                                        <MapPin className="h-3 w-3" /> {schedule.location}
+                                      </Badge>
+                                    )}
+                                    {hasReport && (
+                                      <Badge variant={reportValidated ? 'default' : reportPending ? 'secondary' : 'destructive'} className="text-xs gap-1">
+                                        <ClipboardCheck className="h-3 w-3" />
+                                        {reportValidated ? 'Relatório Validado' : reportPending ? 'Relatório Pendente' : 'Relatório Rejeitado'}
+                                      </Badge>
+                                    )}
                                   </div>
 
-                                  {/* Notes & Cancellation */}
+                                  {/* Description */}
+                                  {schedule.description && (
+                                    <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-lg">
+                                      {schedule.description}
+                                    </div>
+                                  )}
+
+                                  {/* Notes & Session notes */}
                                   {schedule.notes && <div className="text-sm bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
                                       <span className="font-medium text-blue-700 dark:text-blue-300">Observações:</span>{' '}
                                       <span className="text-blue-600 dark:text-blue-400">{schedule.notes}</span>
+                                    </div>}
+
+                                  {schedule.session_notes && <div className="text-sm bg-purple-50 dark:bg-purple-950/30 p-3 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
+                                      <span className="font-medium text-purple-700 dark:text-purple-300">Notas da sessão:</span>{' '}
+                                      <span className="text-purple-600 dark:text-purple-400">{schedule.session_notes}</span>
                                     </div>}
 
                                   {schedule.status === 'cancelled' && schedule.cancellation_reason && <div className="text-sm bg-red-50 dark:bg-red-950/30 p-3 rounded-lg border border-red-200/50 dark:border-red-800/50">
                                       <span className="font-medium text-red-700 dark:text-red-300">Motivo do cancelamento:</span>{' '}
                                       <span className="text-red-600 dark:text-red-400">{schedule.cancellation_reason}</span>
                                     </div>}
+
+                                  {/* Metadata row: created by, email sent, completed info */}
+                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground/70 border-t pt-2 mt-2">
+                                    {schedule.created_by_profile?.name && (
+                                      <span>📝 Agendado por: <strong>{schedule.created_by_profile.name}</strong></span>
+                                    )}
+                                    {schedule.created_at && (
+                                      <span>📅 Criado em: {format(new Date(schedule.created_at), "dd/MM/yy 'às' HH:mm")}</span>
+                                    )}
+                                    {schedule.email_sent_at && (
+                                      <span className="text-green-600">✉️ E-mail enviado: {format(new Date(schedule.email_sent_at), "dd/MM HH:mm")}</span>
+                                    )}
+                                    {schedule.patient_confirmed && schedule.patient_confirmed_at && (
+                                      <span className="text-emerald-600">✅ Paciente confirmou: {format(new Date(schedule.patient_confirmed_at), "dd/MM HH:mm")}</span>
+                                    )}
+                                    {schedule.patient_declined && (
+                                      <span className="text-red-600">❌ Paciente recusou</span>
+                                    )}
+                                    {schedule.arrived_at && (
+                                      <span className="text-emerald-600">🏥 Chegou: {format(new Date(schedule.arrived_at), "HH:mm")}</span>
+                                    )}
+                                    {schedule.completed_at && (
+                                      <span className="text-slate-600">✔️ Concluído: {format(new Date(schedule.completed_at), "dd/MM HH:mm")}</span>
+                                    )}
+                                    {schedule.meeting_link && (
+                                      <a href={schedule.meeting_link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                        🔗 Link da reunião
+                                      </a>
+                                    )}
+                                  </div>
                                 </div>
 
-                                <div className="flex flex-col items-end gap-2">
+                                <div className="flex flex-col items-end gap-2 shrink-0">
                                   {getStatusBadge(schedule.status)}
-                                  {schedule.patient_arrived && <Badge variant="outline" className="flex items-center gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800">
+                                  {schedule.patient_arrived && <Badge variant="outline" className="flex items-center gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 text-xs">
                                       <CheckCircle2 className="h-3 w-3" />
-                                      Paciente chegou
+                                      Chegou
                                     </Badge>}
                                   
                                   {/* Notification Button */}
-                                  {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && <Button size="sm" variant="outline" onClick={() => handleOpenNotificationDialog(schedule)} className="gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+                                  {(userProfile?.employee_role === 'director' || userProfile?.employee_role === 'coordinator_madre' || userProfile?.employee_role === 'coordinator_floresta') && <Button size="sm" variant="outline" onClick={() => handleOpenNotificationDialog(schedule)} className="gap-2 opacity-70 group-hover:opacity-100 transition-opacity text-xs">
                                       <Bell className="h-3 w-3" />
                                       Notificar
                                     </Button>}
                                 </div>
                               </div>
                             </CardContent>
-                          </Card>)}
+                          </Card>;
+                    })}
                       </div>
                     </div>
                   </div>;
@@ -1066,10 +1311,10 @@ ${notificationMessage}
 
     // Month Stats
     const monthStats = {
-      total: schedules.length,
-      confirmed: schedules.filter(s => s.status === 'confirmed').length,
-      scheduled: schedules.filter(s => s.status === 'scheduled').length,
-      cancelled: schedules.filter(s => s.status === 'cancelled').length
+      total: filteredSchedules.length,
+      confirmed: filteredSchedules.filter(s => s.status === 'confirmed').length,
+      scheduled: filteredSchedules.filter(s => s.status === 'scheduled').length,
+      cancelled: filteredSchedules.filter(s => s.status === 'cancelled').length
     };
     return <div className="space-y-4 md:space-y-6">
         {/* Month Stats */}
@@ -1223,7 +1468,7 @@ ${notificationMessage}
           </div>
           <Badge className="text-sm sm:text-lg px-3 sm:px-6 py-2 sm:py-3 w-fit bg-gradient-to-r from-purple-500/10 to-purple-600/10 text-purple-700 dark:text-purple-400 border-purple-500/20 shrink-0">
             <CalendarIcon className="h-4 w-4 mr-2" />
-            {schedules.length} agendamento{schedules.length !== 1 ? 's' : ''}
+            {filteredSchedules.length} agendamento{filteredSchedules.length !== 1 ? 's' : ''}
           </Badge>
         </div>
 
@@ -1268,9 +1513,19 @@ ${notificationMessage}
               </div>
 
               {/* Linha 2: Filtros */}
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
+                <div className="relative flex-1 sm:flex-none sm:w-[200px]">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar paciente ou profissional..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 h-9 text-xs sm:text-sm"
+                  />
+                </div>
+
                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                  <SelectTrigger className="w-full sm:w-[180px] md:w-[200px] h-9 text-xs sm:text-sm">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs sm:text-sm">
                     <SelectValue placeholder="Todos os profissionais" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1282,7 +1537,7 @@ ${notificationMessage}
                 </Select>
 
                 <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                  <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] h-9 text-xs sm:text-sm">
+                  <SelectTrigger className="w-full sm:w-[150px] h-9 text-xs sm:text-sm">
                     <SelectValue placeholder="Todas as unidades" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1293,7 +1548,21 @@ ${notificationMessage}
                   </SelectContent>
                 </Select>
 
-                <Button onClick={() => setPdfConfigDialogOpen(true)} variant="outline" className="gap-2 h-9 text-xs sm:text-sm w-full sm:w-auto" disabled={schedules.length === 0}>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[150px] h-9 text-xs sm:text-sm">
+                    <SelectValue placeholder="Todos os status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="scheduled">Agendado</SelectItem>
+                    <SelectItem value="confirmed">Confirmado</SelectItem>
+                    <SelectItem value="completed">Concluído</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button onClick={() => setPdfConfigDialogOpen(true)} variant="outline" className="gap-2 h-9 text-xs sm:text-sm w-full sm:w-auto" disabled={filteredSchedules.length === 0}>
                   <Download className="h-4 w-4" />
                   <span className="sm:inline">Baixar PDF</span>
                 </Button>
