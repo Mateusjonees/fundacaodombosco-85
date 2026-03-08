@@ -240,6 +240,8 @@ export default function Schedule() {
   };
 
   const handleCreateAppointment = async () => {
+    if (isSavingSchedule) return;
+    setIsSavingSchedule(true);
     try {
       const convertToISOString = (dateTimeLocal: string) => {
         if (!dateTimeLocal) return '';
