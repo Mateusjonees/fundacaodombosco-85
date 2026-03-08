@@ -83,6 +83,7 @@ interface Client {
   neuropsych_complaint?: string;
   treatment_expectations?: string;
   clinical_observations?: string;
+  gender?: string;
   is_active: boolean;
   created_at: string;
 }
