@@ -737,7 +737,10 @@ export default function Patients() {
         (laudoFilter === "with_laudo" && clientLaudoIds.has(client.id)) ||
         (laudoFilter === "without_laudo" && !clientLaudoIds.has(client.id));
 
-      return matchesStatus && matchesUnit && matchesAge && matchesProfessional && matchesLaudo;
+      const matchesGender =
+        genderFilter === "all" || client.gender === genderFilter;
+
+      return matchesStatus && matchesUnit && matchesAge && matchesProfessional && matchesLaudo && matchesGender;
     });
 
     // Ordenação
