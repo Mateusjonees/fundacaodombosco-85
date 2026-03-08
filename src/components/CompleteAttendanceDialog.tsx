@@ -113,6 +113,8 @@ export default function CompleteAttendanceDialog({
   const [fptAdultoResults, setFptAdultoResults] = useState<FPTAdultoResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
+  const [professionalRole, setProfessionalRole] = useState<string | null>(null);
+  const [nutritionData, setNutritionData] = useState<NutritionData>({});
 
   // Calculate patient age and get unit
   useEffect(() => {
