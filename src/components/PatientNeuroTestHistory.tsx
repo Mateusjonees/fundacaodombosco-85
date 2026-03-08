@@ -1706,6 +1706,16 @@ export default function PatientNeuroTestHistory({
         </Accordion>
       </CardContent>
     </Card>
+
+    {/* Gerador de Laudo */}
+    <LaudoFromTestsGenerator
+      open={laudoGeneratorOpen}
+      onOpenChange={setLaudoGeneratorOpen}
+      tests={testsForLaudo}
+      clientId={clientId}
+      clientName={clientName}
+      clientBirthDate={clientBirthDate}
+    />
     </div>
   );
 }
