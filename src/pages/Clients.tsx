@@ -41,6 +41,11 @@ import {
   X,
   Trash2,
   AlertTriangle,
+  ArrowUpDown,
+  Clock,
+  CalendarDays,
+  FileCheck,
+  FileX,
 } from "lucide-react";
 import { PatientCard } from "@/components/PatientCard";
 import { PageHeader } from "@/components/ui/page-header";
