@@ -36,7 +36,12 @@ export const useClients = (filters?: ClientFilters) => {
               `name.ilike.%${filters.searchTerm}%,cpf.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%`
             );
           }
-          if (filters?.limit) query = query.limit(filters.limit);
+          // Garantir que buscamos todos os registros (Supabase limita a 1000 por padrão)
+          if (filters?.limit) {
+            query = query.limit(filters.limit);
+          } else {
+            query = query.limit(5000);
+          }
           if (filters?.offset) query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
 
           const { data, error } = await query;
