@@ -51,8 +51,20 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'FDT':
       return {
-        subtests: ['inibicao', 'flexibilidade'],
+        subtests: [
+          'leitura', 'contagem', 'escolha', 'alternancia',
+          'errosLeitura', 'errosContagem', 'errosEscolha', 'errosAlternancia',
+          'inibicao', 'flexibilidade'
+        ],
         names: {
+          leitura: 'Tempo - Leitura',
+          contagem: 'Tempo - Contagem',
+          escolha: 'Tempo - Escolha',
+          alternancia: 'Tempo - Alternância',
+          errosLeitura: 'Erros - Leitura',
+          errosContagem: 'Erros - Contagem',
+          errosEscolha: 'Erros - Escolha',
+          errosAlternancia: 'Erros - Alternância',
           inibicao: 'Inibição',
           flexibilidade: 'Flexibilidade'
         },
