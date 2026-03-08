@@ -606,6 +606,10 @@ export default function Patients() {
   // Filtros aplicados no frontend (unit, age, professional, laudo)
   const filteredClients = useMemo(() => {
     const filtered = clients.filter((client) => {
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && client.is_active) ||
+        (statusFilter === "inactive" && !client.is_active);
       const matchesUnit = unitFilter === "all" || client.unit === unitFilter;
       const matchesAge =
         ageFilter === "all" ||
