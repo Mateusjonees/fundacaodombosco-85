@@ -263,7 +263,8 @@ const handler = async (req: Request): Promise<Response> => {
       unit = 'madre',
       scheduleIds = [],
       sessions = [],
-      professionalEmail
+      professionalEmail,
+      scheduledByName
     }: AppointmentEmailRequest = await req.json();
 
     console.log("Enviando email de lembrete para:", clientEmail);
