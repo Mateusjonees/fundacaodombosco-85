@@ -102,10 +102,14 @@ const getNormsForAge = (age: number): FVAAgeNorms | null => {
     return CHILDREN_NORMS[age] || null;
   }
   
-  // Adolescentes e adultos (13-70 anos)
-  // Para idades 11-12, usamos normas de 13-18
+  // Idades 11-12: usamos normas de crianças de 10 anos para animais
+  // e normas de 13-18 para frutas e pares
   if (age >= 11 && age <= 12) {
-    return ADULT_NORMS[0].norms;
+    return {
+      animais: CHILDREN_NORMS[10].animais,
+      frutas: ADULT_NORMS[0].norms.frutas,
+      pares: ADULT_NORMS[0].norms.pares
+    };
   }
   
   const adultNorm = ADULT_NORMS.find(

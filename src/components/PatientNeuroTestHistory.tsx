@@ -177,13 +177,14 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'HAYLING_ADULTO':
       return {
-        subtests: ['parteA', 'parteB', 'total'],
+        subtests: ['tempoA', 'tempoB', 'errosB', 'inibiçãoBA'],
         names: {
-          parteA: 'Parte A (Iniciação)',
-          parteB: 'Parte B (Inibição)',
-          total: 'Total'
+          tempoA: 'Parte A (Tempo)',
+          tempoB: 'Parte B (Tempo)',
+          errosB: 'Parte B (Erros)',
+          'inibiçãoBA': 'Inibição (B-A)'
         },
-        mainSubtest: 'total'
+        mainSubtest: 'inibiçãoBA'
       };
     case 'HAYLING_INFANTIL':
       return {
