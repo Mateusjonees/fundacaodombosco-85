@@ -41,6 +41,11 @@ import {
   X,
   Trash2,
   AlertTriangle,
+  ArrowUpDown,
+  Clock,
+  CalendarDays,
+  FileCheck,
+  FileX,
 } from "lucide-react";
 import { PatientCard } from "@/components/PatientCard";
 import { PageHeader } from "@/components/ui/page-header";
@@ -95,6 +100,9 @@ export default function Patients() {
   const [unitFilter, setUnitFilter] = useState("all");
   const [ageFilter, setAgeFilter] = useState("all");
   const [professionalFilter, setProfessionalFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("name_asc");
+  const [laudoFilter, setLaudoFilter] = useState("all");
+  const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
   // Debounce da busca para evitar queries excessivas durante digitação
@@ -236,6 +244,7 @@ export default function Patients() {
     loadUserProfile();
     loadEmployees();
     loadClientAssignments();
+    loadClientLaudos();
   }, [user]);
 
   // Restaurar tabs via URL (já inicializadas no useState, apenas garantir activeTab)
@@ -299,6 +308,21 @@ export default function Patients() {
       setClientAssignments(data || []);
     } catch (error) {
       console.error("Error loading client assignments:", error);
+    }
+  };
+
+  // Carregar IDs de clientes que possuem laudos
+  const loadClientLaudos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('client_laudos')
+        .select('client_id')
+        .eq('status', 'active');
+      if (error) throw error;
+      const ids = new Set((data || []).map(l => l.client_id));
+      setClientLaudoIds(ids);
+    } catch (error) {
+      console.error("Error loading client laudos:", error);
     }
   };
 
@@ -567,56 +591,90 @@ export default function Patients() {
     setIsDialogOpen(true);
   };
 
-  // Filtros aplicados no frontend (unit, age, professional)
-  // O searchTerm já é aplicado via React Query com debounce
-  const filteredClients = useMemo(
-    () =>
-      clients.filter((client) => {
-        const matchesUnit = unitFilter === "all" || client.unit === unitFilter;
-        const matchesAge =
-          ageFilter === "all" ||
-          (() => {
-            if (!client.birth_date) return true;
-            const birthDate = new Date(client.birth_date);
-            const today = new Date();
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-              age--;
-            }
-            if (ageFilter === "minor") return age < 18;
-            if (ageFilter === "adult") return age >= 18;
-            return true;
-          })();
+  // Helper: calcula idade a partir de birth_date
+  const getAge = (birthDate: string | undefined): number | null => {
+    if (!birthDate) return null;
+    const bd = new Date(birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - bd.getFullYear();
+    const monthDiff = today.getMonth() - bd.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < bd.getDate())) age--;
+    return age;
+  };
 
-        // Professional filter - only show if coordinator/director
-        const matchesProfessional =
-          !isCoordinatorOrDirector() ||
-          professionalFilter === "all" ||
-          (() => {
-            // Find assignments for this client
-            const clientAssignment = clientAssignments.find(
-              (assignment) => assignment.client_id === client.id && assignment.is_active,
-            );
+  // Filtros aplicados no frontend (unit, age, professional, laudo)
+  const filteredClients = useMemo(() => {
+    const filtered = clients.filter((client) => {
+      const matchesUnit = unitFilter === "all" || client.unit === unitFilter;
+      const matchesAge =
+        ageFilter === "all" ||
+        (() => {
+          const age = getAge(client.birth_date);
+          if (age === null) return true;
+          if (ageFilter === "minor") return age < 18;
+          if (ageFilter === "adult") return age >= 18;
+          return true;
+        })();
 
-            // If professional filter is selected, check if client is assigned to that professional
-            if (professionalFilter !== "all") {
-              // The professionalFilter contains the employee.id (profile id),
-              // but we need to compare with user_id in assignments
-              const selectedEmployee = employees.find((emp) => emp.id === professionalFilter);
-              if (selectedEmployee && clientAssignment) {
-                const matches = clientAssignment.employee_id === selectedEmployee.user_id;
-                return matches;
-              }
-              // If no assignment found and filtering by professional, don't show this client
-              return false;
+      const matchesProfessional =
+        !isCoordinatorOrDirector() ||
+        professionalFilter === "all" ||
+        (() => {
+          const clientAssignment = clientAssignments.find(
+            (assignment) => assignment.client_id === client.id && assignment.is_active,
+          );
+          if (professionalFilter !== "all") {
+            const selectedEmployee = employees.find((emp) => emp.id === professionalFilter);
+            if (selectedEmployee && clientAssignment) {
+              return clientAssignment.employee_id === selectedEmployee.user_id;
             }
-            return true;
-          })();
-        return matchesUnit && matchesAge && matchesProfessional;
-      }),
-    [clients, unitFilter, ageFilter, professionalFilter, clientAssignments, employees, isCoordinatorOrDirector],
-  );
+            return false;
+          }
+          return true;
+        })();
+
+      const matchesLaudo =
+        laudoFilter === "all" ||
+        (laudoFilter === "with_laudo" && clientLaudoIds.has(client.id)) ||
+        (laudoFilter === "without_laudo" && !clientLaudoIds.has(client.id));
+
+      return matchesUnit && matchesAge && matchesProfessional && matchesLaudo;
+    });
+
+    // Ordenação
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name_asc":
+          return a.name.localeCompare(b.name, 'pt-BR');
+        case "name_desc":
+          return b.name.localeCompare(a.name, 'pt-BR');
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "age_asc": {
+          const ageA = getAge(a.birth_date);
+          const ageB = getAge(b.birth_date);
+          if (ageA === null && ageB === null) return 0;
+          if (ageA === null) return 1;
+          if (ageB === null) return -1;
+          return ageA - ageB;
+        }
+        case "age_desc": {
+          const ageA = getAge(a.birth_date);
+          const ageB = getAge(b.birth_date);
+          if (ageA === null && ageB === null) return 0;
+          if (ageA === null) return 1;
+          if (ageB === null) return -1;
+          return ageB - ageA;
+        }
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [clients, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, isCoordinatorOrDirector]);
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
 
   // Renderizar tab bar de navegação (lista + pacientes abertos)
@@ -736,7 +794,9 @@ export default function Patients() {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
     return age < 18;
   }).length;
-  const activeFiltersCount = (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0);
+  const laudoCount = filteredClients.filter(c => clientLaudoIds.has(c.id)).length;
+  const withoutLaudoCount = filteredClients.length - laudoCount;
+  const activeFiltersCount = (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0) + (laudoFilter !== "all" ? 1 : 0) + (sortBy !== "name_asc" ? 1 : 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -1063,7 +1123,7 @@ export default function Patients() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatsCard
           title="Total de Pacientes"
           value={filteredClients.length}
@@ -1086,6 +1146,13 @@ export default function Patients() {
           variant="purple"
         />
         <StatsCard
+          title="Com Laudo"
+          value={laudoCount}
+          subtitle={`${withoutLaudoCount} sem laudo`}
+          icon={<FileCheck className="h-5 w-5" />}
+          variant="default"
+        />
+        <StatsCard
           title="Inativos"
           value={inactiveCount}
           subtitle="Fora de tratamento"
@@ -1104,9 +1171,27 @@ export default function Patients() {
           setUnitFilter("all");
           setAgeFilter("all");
           setProfessionalFilter("all");
+          setLaudoFilter("all");
+          setSortBy("name_asc");
         }}
         filters={
           <>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px] h-10">
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="Ordenar por" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
+                <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
+                <SelectItem value="newest">Mais Recentes</SelectItem>
+                <SelectItem value="oldest">Mais Antigos</SelectItem>
+                <SelectItem value="age_asc">Idade (Menor → Maior)</SelectItem>
+                <SelectItem value="age_desc">Idade (Maior → Menor)</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={unitFilter} onValueChange={setUnitFilter}>
               <SelectTrigger className="w-[160px] h-10">
                 <SelectValue placeholder="Unidade" />
@@ -1126,6 +1211,20 @@ export default function Patients() {
                 <SelectItem value="all">Todas Idades</SelectItem>
                 <SelectItem value="minor">Menores</SelectItem>
                 <SelectItem value="adult">Adultos</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={laudoFilter} onValueChange={setLaudoFilter}>
+              <SelectTrigger className="w-[160px] h-10">
+                <SelectValue placeholder="Laudo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos (Laudo)</SelectItem>
+                <SelectItem value="with_laudo">
+                  <span className="flex items-center gap-1.5"><FileCheck className="h-3.5 w-3.5 text-green-600" /> Com Laudo</span>
+                </SelectItem>
+                <SelectItem value="without_laudo">
+                  <span className="flex items-center gap-1.5"><FileX className="h-3.5 w-3.5 text-orange-500" /> Sem Laudo</span>
+                </SelectItem>
               </SelectContent>
             </Select>
             {isCoordinatorOrDirector() && (
