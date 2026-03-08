@@ -1261,6 +1261,175 @@ export default function CompleteAttendanceDialog({
           });
         }
 
+        // MoCA
+        if (mocaResults && selectedTests.includes('MOCA')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'MOCA', test_name: 'MoCA - Montreal Cognitive Assessment', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(mocaResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(mocaResults.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(mocaResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: mocaResults.notes
+          });
+        }
+
+        // MEEM
+        if (meemResults && selectedTests.includes('MEEM')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'MEEM', test_name: 'MEEM - Mini Exame do Estado Mental', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(meemResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(meemResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: meemResults.notes
+          });
+        }
+
+        // BRIEF-2
+        if (brief2Results && selectedTests.includes('BRIEF2')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'BRIEF2', test_name: 'BRIEF-2 - Inventário de Funções Executivas', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(brief2Results.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(brief2Results.indices)),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(brief2Results.classifications)),
+            applied_by: user.id, applied_at: now, notes: brief2Results.notes
+          });
+        }
+
+        // Cubos de Corsi
+        if (corsiResults && selectedTests.includes('CORSI')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'CORSI', test_name: 'Cubos de Corsi', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(corsiResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(corsiResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: corsiResults.notes
+          });
+        }
+
+        // Conners 3
+        if (connersResults && selectedTests.includes('CONNERS')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'CONNERS', test_name: 'Conners 3 - Avaliação TDAH', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(connersResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(connersResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: connersResults.notes
+          });
+        }
+
+        // Vineland-3
+        if (vinelandResults && selectedTests.includes('VINELAND')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'VINELAND', test_name: 'Vineland-3 - Comportamento Adaptativo', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(vinelandResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(vinelandResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: vinelandResults.notes
+          });
+        }
+
+        // ACE-III
+        if (ace3Results && selectedTests.includes('ACE3')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'ACE3', test_name: 'ACE-III - Addenbrooke\'s Cognitive Examination', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(ace3Results.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(ace3Results.classifications)),
+            applied_by: user.id, applied_at: now, notes: ace3Results.notes
+          });
+        }
+
+        // CBCL
+        if (cbclResults && selectedTests.includes('CBCL')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'CBCL', test_name: 'CBCL - Child Behavior Checklist', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(cbclResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(cbclResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: cbclResults.notes
+          });
+        }
+
+        // SDQ
+        if (sdqResults && selectedTests.includes('SDQ')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'SDQ', test_name: 'SDQ - Questionário de Capacidades e Dificuldades', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(sdqResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(sdqResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: sdqResults.notes
+          });
+        }
+
+        // GDS
+        if (gdsResults && selectedTests.includes('GDS')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'GDS', test_name: 'GDS - Escala de Depressão Geriátrica', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(gdsResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(gdsResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: gdsResults.notes
+          });
+        }
+
+        // TDE-II
+        if (tde2Results && selectedTests.includes('TDE2')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'TDE2', test_name: 'TDE-II - Teste de Desempenho Escolar', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(tde2Results.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(tde2Results.classifications)),
+            applied_by: user.id, applied_at: now, notes: tde2Results.notes
+          });
+        }
+
+        // NEUPSILIN
+        if (neupsilinResults && selectedTests.includes('NEUPSILIN')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'NEUPSILIN', test_name: 'NEUPSILIN - Avaliação Neuropsicológica Breve', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(neupsilinResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(neupsilinResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: neupsilinResults.notes
+          });
+        }
+
+        // Cancelamento
+        if (cancelamentoResults && selectedTests.includes('CANCELAMENTO')) {
+          testsToSave.push({
+            client_id: schedule.client_id, schedule_id: schedule.id, attendance_report_id: attendanceReport?.id || null,
+            test_code: 'CANCELAMENTO', test_name: 'Teste de Atenção por Cancelamento', patient_age: patientAge,
+            raw_scores: JSON.parse(JSON.stringify(cancelamentoResults.rawScores)),
+            calculated_scores: JSON.parse(JSON.stringify(cancelamentoResults.calculatedScores)),
+            percentiles: JSON.parse(JSON.stringify({})),
+            classifications: JSON.parse(JSON.stringify(cancelamentoResults.classifications)),
+            applied_by: user.id, applied_at: now, notes: cancelamentoResults.notes
+          });
+        }
+
         if (testsToSave.length > 0) {
           await supabase.from('neuro_test_results').insert(testsToSave);
         }
