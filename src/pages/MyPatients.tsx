@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PatientDetailsModal } from '@/components/PatientDetailsModal';
+import { StatsCard } from '@/components/ui/stats-card';
 import { 
   Heart, 
   Search, 
@@ -23,9 +24,12 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle,
-  Eye
+  Eye,
+  CalendarCheck,
+  TrendingUp,
+  Activity
 } from 'lucide-react';
-import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isSameMonth, addMonths, subMonths } from 'date-fns';
+import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isSameMonth, addMonths, subMonths, isToday as isDateToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ClientDetailsView from '@/components/ClientDetailsView';
 
@@ -73,13 +77,18 @@ const MyPatients: React.FC = () => {
   const [patientModalClientId, setPatientModalClientId] = useState<string | null>(null);
   const [patientModalOpen, setPatientModalOpen] = useState(false);
 
+  // Stats state
+  const [weekAppointments, setWeekAppointments] = useState(0);
+  const [monthCompleted, setMonthCompleted] = useState(0);
+  const [nextAppointment, setNextAppointment] = useState<string | null>(null);
+  const [sessionCounts, setSessionCounts] = useState<Map<string, number>>(new Map());
+
   const openPatientModal = (clientId: string) => {
     setPatientModalClientId(clientId);
     setPatientModalOpen(true);
   };
 
   useEffect(() => {
-    // Permitir acesso para todos os usuários autenticados
     if (!user) {
       toast({
         variant: "destructive",
@@ -91,13 +100,82 @@ const MyPatients: React.FC = () => {
 
     loadMyPatients();
     loadMySchedules();
+    loadStats();
   }, [user, selectedDate, viewMode]);
+
+  const loadStats = async () => {
+    if (!user) return;
+    try {
+      const now = new Date();
+      const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
+
+      // Atendimentos da semana
+      const { count: weekCount } = await supabase
+        .from('schedules')
+        .select('*', { count: 'exact', head: true })
+        .eq('employee_id', user.id)
+        .gte('start_time', weekStart.toISOString())
+        .lte('start_time', weekEnd.toISOString())
+        .in('status', ['scheduled', 'confirmed', 'completed']);
+
+      setWeekAppointments(weekCount || 0);
+
+      // Concluídos no mês
+      const { count: monthCount } = await supabase
+        .from('schedules')
+        .select('*', { count: 'exact', head: true })
+        .eq('employee_id', user.id)
+        .eq('status', 'completed')
+        .gte('start_time', monthStart.toISOString())
+        .lte('start_time', monthEnd.toISOString());
+
+      setMonthCompleted(monthCount || 0);
+
+      // Próxima consulta
+      const { data: nextData } = await supabase
+        .from('schedules')
+        .select('start_time, clients(name)')
+        .eq('employee_id', user.id)
+        .in('status', ['scheduled', 'confirmed'])
+        .gte('start_time', now.toISOString())
+        .order('start_time', { ascending: true })
+        .limit(1);
+
+      if (nextData && nextData.length > 0) {
+        const next = nextData[0];
+        const nextDate = new Date(next.start_time);
+        const clientName = (next.clients as any)?.name || 'Paciente';
+        setNextAppointment(`${format(nextDate, 'HH:mm')} - ${clientName}`);
+      } else {
+        setNextAppointment(null);
+      }
+
+      // Contagem de sessões por paciente
+      const { data: sessionsData } = await supabase
+        .from('schedules')
+        .select('client_id')
+        .eq('employee_id', user.id)
+        .eq('status', 'completed');
+
+      if (sessionsData) {
+        const counts = new Map<string, number>();
+        sessionsData.forEach(s => {
+          counts.set(s.client_id, (counts.get(s.client_id) || 0) + 1);
+        });
+        setSessionCounts(counts);
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
 
   const loadMySchedules = async () => {
     if (!user) return;
 
     try {
-      // Calcular range baseado no viewMode
       let rangeStart: Date, rangeEnd: Date;
       if (viewMode === 'day') {
         rangeStart = new Date(selectedDate);
@@ -129,7 +207,6 @@ const MyPatients: React.FC = () => {
         .lte('start_time', rangeEnd.toISOString())
         .order('start_time');
 
-      // Para todos os usuários, filtrar apenas agendamentos dos clientes vinculados
       const { data: assignedClients } = await supabase
         .from('client_assignments')
         .select('client_id')
@@ -142,7 +219,6 @@ const MyPatients: React.FC = () => {
       }
 
       const clientIds = assignedClients.map(a => a.client_id);
-      
       query = query.in('client_id', clientIds);
 
       const { data, error } = await query;
@@ -160,7 +236,6 @@ const MyPatients: React.FC = () => {
     try {
       setLoading(true);
       
-      // Para todos os usuários, apenas clientes vinculados através de client_assignments
       const { data, error } = await supabase
         .from('client_assignments')
         .select(`
@@ -185,7 +260,6 @@ const MyPatients: React.FC = () => {
 
       if (error) throw error;
       
-      // Extrair os dados dos clientes
       const clientsData = (data || [])
         .filter(assignment => assignment.clients)
         .map(assignment => assignment.clients)
@@ -210,11 +284,9 @@ const MyPatients: React.FC = () => {
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
     return age;
   };
 
@@ -251,6 +323,12 @@ const MyPatients: React.FC = () => {
     return schedules.filter(schedule => 
       isSameDay(new Date(schedule.start_time), date)
     );
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    setCurrentWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
   };
 
   const navigatePeriod = (direction: 'prev' | 'next') => {
@@ -303,17 +381,32 @@ const MyPatients: React.FC = () => {
     client.responsible_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Próximo agendamento por paciente
+  const nextAppointmentByClient = useMemo(() => {
+    const now = new Date();
+    const map = new Map<string, Date>();
+    schedules
+      .filter(s => ['scheduled', 'confirmed'].includes(s.status) && new Date(s.start_time) >= now)
+      .forEach(s => {
+        const existing = map.get(s.client_id);
+        const sDate = new Date(s.start_time);
+        if (!existing || sDate < existing) {
+          map.set(s.client_id, sDate);
+        }
+      });
+    return map;
+  }, [schedules]);
+
   if (loading) {
     return (
       <div className="w-full p-3 sm:p-6 space-y-4">
         <Skeleton className="h-16 w-full rounded-2xl" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
-        <Skeleton className="h-12 w-full rounded-xl" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
           ))}
         </div>
+        <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     );
   }
@@ -321,7 +414,7 @@ const MyPatients: React.FC = () => {
   return (
     <div className="w-full p-3 sm:p-6 space-y-4 sm:space-y-6">
         <>
-          {/* Cabeçalho - Otimizado para mobile */}
+          {/* Cabeçalho */}
           <div className="flex flex-col gap-3 sm:gap-4 animate-fade-in">
             <div className="flex items-start justify-between gap-3">
               <div className="relative pl-3 sm:pl-4">
@@ -330,7 +423,7 @@ const MyPatients: React.FC = () => {
                   Meus Pacientes
                 </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Gerencie seus pacientes
+                  Gerencie seus pacientes e agenda
                 </p>
               </div>
               <Badge className="text-sm sm:text-lg px-3 sm:px-6 py-2 sm:py-3 shrink-0 bg-gradient-to-r from-green-500/10 to-green-600/10 text-green-700 dark:text-green-400 border-green-500/20">
@@ -340,7 +433,36 @@ const MyPatients: React.FC = () => {
             </div>
           </div>
 
-          {/* Agenda - Layout responsivo com modos de visualização */}
+          {/* Estatísticas */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatsCard
+              title="Pacientes Vinculados"
+              value={clients.length}
+              icon={<Heart className="h-5 w-5" />}
+              variant="blue"
+            />
+            <StatsCard
+              title="Atendimentos na Semana"
+              value={weekAppointments}
+              icon={<CalendarCheck className="h-5 w-5" />}
+              variant="green"
+            />
+            <StatsCard
+              title="Concluídos no Mês"
+              value={monthCompleted}
+              icon={<TrendingUp className="h-5 w-5" />}
+              variant="purple"
+            />
+            <StatsCard
+              title="Próximo Atendimento"
+              value={nextAppointment ? '' : '—'}
+              subtitle={nextAppointment || 'Sem agendamentos'}
+              icon={<Activity className="h-5 w-5" />}
+              variant="orange"
+            />
+          </div>
+
+          {/* Agenda */}
           <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-primary/5 overflow-hidden">
             <CardHeader className="relative border-b px-3 sm:px-6 py-3 sm:py-4">
               <div className="flex flex-col gap-3">
@@ -375,12 +497,14 @@ const MyPatients: React.FC = () => {
                   <Button variant="outline" size="sm" onClick={() => navigatePeriod('next')} className="h-8 w-8 p-0">
                     <ChevronRight className="h-4 w-4" />
                   </Button>
+                  <Button variant="outline" size="sm" onClick={goToToday} className="h-8 px-3 text-xs ml-1">
+                    Hoje
+                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="relative p-3 sm:p-6">
               {viewMode === 'day' ? (
-                /* Visualização do Dia */
                 <div className="space-y-2">
                   {getDaySchedules(selectedDate).length === 0 ? (
                     <div className="text-sm text-muted-foreground text-center py-8">Sem agendamentos para este dia</div>
@@ -399,9 +523,12 @@ const MyPatients: React.FC = () => {
                             >
                               {schedule.clients?.name || schedule.title}
                             </div>
-                            <Badge variant={getStatusColor(schedule.status)} className="text-[10px] mt-0.5">
-                              {getStatusLabel(schedule.status)}
-                            </Badge>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <Badge variant={getStatusColor(schedule.status)} className="text-[10px]">
+                                {getStatusLabel(schedule.status)}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground">{schedule.title}</span>
+                            </div>
                           </div>
                         </div>
                         {(schedule.status === 'scheduled' || schedule.status === 'confirmed') && (
@@ -415,12 +542,10 @@ const MyPatients: React.FC = () => {
                   )}
                 </div>
               ) : viewMode === 'month' ? (
-                /* Visualização do Mês */
                 <div className="grid grid-cols-7 gap-1">
                   {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map(d => (
                     <div key={d} className="text-center text-[10px] sm:text-xs font-semibold text-muted-foreground py-1">{d}</div>
                   ))}
-                  {/* Preencher dias vazios antes do início do mês */}
                   {Array.from({ length: (startOfMonth(selectedDate).getDay() + 6) % 7 }).map((_, i) => (
                     <div key={`empty-${i}`} />
                   ))}
@@ -448,7 +573,6 @@ const MyPatients: React.FC = () => {
                   })}
                 </div>
               ) : (
-                /* Visualização da Semana */
                 <div className="flex md:grid md:grid-cols-7 gap-2 sm:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
                   {getWeekDays().map((day) => {
                     const daySchedules = getDaySchedules(day);
@@ -483,12 +607,13 @@ const MyPatients: React.FC = () => {
                                   <Clock className="h-3 w-3" />
                                   {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })}
                                 </div>
-                            <div 
-                              className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs uppercase cursor-pointer hover:text-primary transition-colors"
-                              onClick={(e) => { e.stopPropagation(); schedule.client_id && openPatientModal(schedule.client_id); }}
-                            >
-                              {schedule.clients?.name || 'Cliente N/A'}
-                            </div>
+                                <div 
+                                  className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs uppercase cursor-pointer hover:text-primary transition-colors"
+                                  onClick={(e) => { e.stopPropagation(); schedule.client_id && openPatientModal(schedule.client_id); }}
+                                >
+                                  {schedule.clients?.name || 'Cliente N/A'}
+                                </div>
+                                <div className="text-[9px] text-muted-foreground mt-0.5 truncate">{schedule.title}</div>
                               </div>
                             ))
                           )}
@@ -506,7 +631,7 @@ const MyPatients: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Barra de Pesquisa - Compacta no mobile */}
+          {/* Barra de Pesquisa */}
           <Card className="border-0 shadow-lg bg-gradient-to-br from-card via-card to-blue-500/5">
             <CardContent className="p-3 sm:pt-6 sm:px-6">
               <div className="relative">
@@ -547,8 +672,9 @@ const MyPatients: React.FC = () => {
                 const age = calculateAge(client.birth_date);
                 const daysSince = daysSinceLastSession(client.last_session_date);
                 const isMinor = age !== null && age < 18;
+                const sessions = sessionCounts.get(client.id) || 0;
+                const nextAppt = nextAppointmentByClient.get(client.id);
                 
-                // Configuração de cores por unidade
                 const unitConfig = {
                   madre: { 
                     gradient: 'from-blue-500 to-blue-600', 
@@ -577,7 +703,6 @@ const MyPatients: React.FC = () => {
                     className="group relative overflow-hidden border shadow-sm hover:shadow-lg transition-shadow duration-200 bg-card"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    {/* Header com gradiente da unidade */}
                     <div className={`h-1.5 bg-gradient-to-r ${config.gradient}`} />
                     
                     <CardHeader className="pb-3 pt-4">
@@ -627,15 +752,13 @@ const MyPatients: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Endereço */}
-                      {client.address && (
-                        <div className="flex items-start gap-2.5 text-sm">
-                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground line-clamp-1">
-                            {client.address}
-                          </span>
-                        </div>
-                      )}
+                      {/* Sessões realizadas */}
+                      <div className="flex items-center gap-2.5 text-sm">
+                        <CheckCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-foreground">
+                          {sessions} {sessions === 1 ? 'sessão realizada' : 'sessões realizadas'}
+                        </span>
+                      </div>
 
                       {/* Última sessão */}
                       {client.last_session_date && daysSince !== null && (
@@ -646,6 +769,23 @@ const MyPatients: React.FC = () => {
                           </span>
                         </div>
                       )}
+
+                      {/* Indicador de status/próximo agendamento */}
+                      {nextAppt ? (
+                        <div className="flex items-center gap-2.5 text-sm">
+                          <CalendarIcon className="h-4 w-4 text-emerald-500 shrink-0" />
+                          <span className="text-emerald-600 dark:text-emerald-400 text-xs">
+                            Próx: {format(nextAppt, "dd/MM 'às' HH:mm")}
+                          </span>
+                        </div>
+                      ) : daysSince && daysSince > 30 ? (
+                        <div className="flex items-center gap-2.5 text-sm">
+                          <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                          <span className="text-amber-600 dark:text-amber-400 text-xs">
+                            Sem agendamento próximo
+                          </span>
+                        </div>
+                      ) : null}
 
                       {/* Botões */}
                       <div className="flex gap-2 pt-3 border-t border-border/50">
@@ -683,6 +823,7 @@ const MyPatients: React.FC = () => {
         onComplete={() => {
           setCompleteSchedule(null);
           loadMySchedules();
+          loadStats();
         }}
       />
 
