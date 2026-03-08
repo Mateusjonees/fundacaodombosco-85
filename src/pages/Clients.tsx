@@ -898,7 +898,7 @@ export default function Patients() {
   }).length;
   const laudoCount = filteredClients.filter(c => clientLaudoIds.has(c.id)).length;
   const withoutLaudoCount = filteredClients.length - laudoCount;
-  const activeFiltersCount = (statusFilter !== "all" ? 1 : 0) + (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0) + (laudoFilter !== "all" ? 1 : 0) + (sortBy !== "name_asc" ? 1 : 0);
+  const activeFiltersCount = (statusFilter !== "all" ? 1 : 0) + (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0) + (laudoFilter !== "all" ? 1 : 0) + (genderFilter !== "all" ? 1 : 0) + (sortBy !== "name_asc" ? 1 : 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
