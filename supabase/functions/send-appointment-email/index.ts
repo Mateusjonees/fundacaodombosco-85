@@ -219,6 +219,10 @@ const buildProfessionalEmailHtml = (
                     <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top;">📍</td>
                     <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">${unitInfo.address}</td>
                   </tr>
+                  ${scheduledByName ? `<tr>
+                    <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top;">📝</td>
+                    <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">Agendado por: <strong>${scheduledByName}</strong></td>
+                  </tr>` : ''}
                 </table>
               </div>
             </div>
