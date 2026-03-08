@@ -10,17 +10,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, MapPin, FileText, Bell, CheckCircle2, XCircle, AlertCircle, Download, Phone, DollarSign, Mail, Video, Search, Filter, UserCheck, ClipboardCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ClientDetailsView from '@/components/ClientDetailsView';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoImage from '@/assets/fundacao-dom-bosco-logo.png';
+
 interface Schedule {
   id: string;
   client_id: string;
@@ -28,19 +30,50 @@ interface Schedule {
   start_time: string;
   end_time: string;
   title: string;
+  description?: string;
   status: string;
   notes?: string;
+  session_notes?: string;
   unit?: string;
   patient_arrived?: boolean;
+  arrived_at?: string;
+  patient_confirmed?: boolean;
+  patient_confirmed_at?: string;
+  patient_declined?: boolean;
+  is_online?: boolean;
+  location?: string;
+  meeting_link?: string;
+  session_amount?: number;
+  payment_method?: string;
+  completed_at?: string;
+  completed_by?: string;
+  email_sent_at?: string;
   created_by?: string;
+  created_at?: string;
   cancelled_by?: string;
   cancellation_reason?: string;
   clients?: {
     name: string;
+    phone?: string;
+    email?: string;
+    unit?: string;
+    diagnosis?: string;
+    birth_date?: string;
+    responsible_name?: string;
+    responsible_phone?: string;
   };
   profiles?: {
     name: string;
+    employee_role?: string;
   };
+  created_by_profile?: {
+    name: string;
+  };
+  attendance_reports?: {
+    id: string;
+    validation_status?: string;
+    status?: string;
+  }[];
 }
 type ViewMode = 'day' | 'week' | 'month';
 export default function ScheduleControl() {
