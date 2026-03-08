@@ -366,9 +366,9 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
           </head>
           <body>
             <div class="print-info">
-              Impresso por: ${userName} em ${new Date().toLocaleString('pt-BR')}
+              Impresso por: ${DOMPurify.sanitize(userName)} em ${new Date().toLocaleString('pt-BR')}
             </div>
-            ${contractRef.current.innerHTML}
+            ${DOMPurify.sanitize(contractRef.current.innerHTML)}
           </body>
         </html>
       `);
