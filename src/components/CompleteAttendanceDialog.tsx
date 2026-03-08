@@ -1791,6 +1791,71 @@ export default function CompleteAttendanceDialog({
                 {selectedTests.includes('WMS') && (
                   <NeuroTestWMSForm patientAge={patientAge} onResultsChange={handleWmsResultsChange} />
                 )}
+
+                {/* MoCA */}
+                {selectedTests.includes('MOCA') && (
+                  <NeuroTestMoCAForm patientAge={patientAge} onResultsChange={handleMocaResultsChange} />
+                )}
+
+                {/* MEEM */}
+                {selectedTests.includes('MEEM') && (
+                  <NeuroTestMEEMForm patientAge={patientAge} onResultsChange={handleMeemResultsChange} />
+                )}
+
+                {/* BRIEF-2 */}
+                {selectedTests.includes('BRIEF2') && (
+                  <NeuroTestBRIEF2Form patientAge={patientAge} onResultsChange={handleBrief2ResultsChange} />
+                )}
+
+                {/* Cubos de Corsi */}
+                {selectedTests.includes('CORSI') && (
+                  <NeuroTestCorsiForm patientAge={patientAge} onResultsChange={handleCorsiResultsChange} />
+                )}
+
+                {/* Conners 3 */}
+                {selectedTests.includes('CONNERS') && (
+                  <NeuroTestConnersForm patientAge={patientAge} onResultsChange={handleConnersResultsChange} />
+                )}
+
+                {/* Vineland-3 */}
+                {selectedTests.includes('VINELAND') && (
+                  <NeuroTestVinelandForm patientAge={patientAge} onResultsChange={handleVinelandResultsChange} />
+                )}
+
+                {/* ACE-III */}
+                {selectedTests.includes('ACE3') && (
+                  <NeuroTestACE3Form patientAge={patientAge} onResultsChange={handleAce3ResultsChange} />
+                )}
+
+                {/* CBCL */}
+                {selectedTests.includes('CBCL') && (
+                  <NeuroTestCBCLForm patientAge={patientAge} onResultsChange={handleCbclResultsChange} />
+                )}
+
+                {/* SDQ */}
+                {selectedTests.includes('SDQ') && (
+                  <NeuroTestSDQForm patientAge={patientAge} onResultsChange={handleSdqResultsChange} />
+                )}
+
+                {/* GDS */}
+                {selectedTests.includes('GDS') && (
+                  <NeuroTestGDSForm patientAge={patientAge} onResultsChange={handleGdsResultsChange} />
+                )}
+
+                {/* TDE-II */}
+                {selectedTests.includes('TDE2') && (
+                  <NeuroTestTDE2Form patientAge={patientAge} onResultsChange={handleTde2ResultsChange} />
+                )}
+
+                {/* NEUPSILIN */}
+                {selectedTests.includes('NEUPSILIN') && (
+                  <NeuroTestNEUPSILINForm patientAge={patientAge} onResultsChange={handleNeupsilinResultsChange} />
+                )}
+
+                {/* Cancelamento */}
+                {selectedTests.includes('CANCELAMENTO') && (
+                  <NeuroTestCancelamentoForm patientAge={patientAge} onResultsChange={handleCancelamentoResultsChange} />
+                )}
               </div>
             )}
 
