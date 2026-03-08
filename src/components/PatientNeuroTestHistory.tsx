@@ -607,6 +607,347 @@ const renderBNTBRCalculations = (calc: Record<string, number>) => (
   </div>
 );
 
+// FAS
+const renderFASInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    {['letraF', 'letraA', 'letraS'].map(key => {
+      const labels: Record<string, string> = { letraF: 'Letra F', letraA: 'Letra A', letraS: 'Letra S' };
+      return (
+        <div key={key} className="p-3 bg-muted/30 rounded-lg border text-center">
+          <p className="text-xs font-medium text-muted-foreground mb-1">{labels[key]}</p>
+          <Badge variant="outline" className="font-mono text-lg">{rawScores[key] ?? '-'}</Badge>
+        </div>
+      );
+    })}
+  </div>
+);
+
+const renderFASCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Total = F + A + S → Z-score → Percentil</span>
+    </div>
+    <div className="grid grid-cols-3 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Total FAS</span>
+        <span className="font-mono"><strong>{calc.totalFAS ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Z-Score</span>
+        <span className="font-mono">{typeof calc.zScore === 'number' ? calc.zScore.toFixed(2) : '-'}</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Percentil</span>
+        <span className="font-mono">{calc.percentil ?? '-'}</span>
+      </div>
+    </div>
+  </div>
+);
+
+// Hayling Adulto
+const renderHaylingAdultoInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Tempo A (seg)</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.tempoA ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Tempo B (seg)</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.tempoB ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Erros B</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.errosB ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderHaylingAdultoCalculations = (calc: Record<string, number | string>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Inibição B-A = Tempo B - Tempo A</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Inibição B-A</span>
+        <span className="font-mono"><strong>{typeof calc['inibiçãoBA'] === 'number' ? (calc['inibiçãoBA'] as number).toFixed(1) : calc['inibiçãoBA'] ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-muted/30 rounded-lg text-center">
+        <span className="font-medium block mb-1">Escolaridade</span>
+        <span className="font-mono">{calc.educationLevel ?? '-'}</span>
+      </div>
+    </div>
+  </div>
+);
+
+// Hayling Infantil
+const renderHaylingInfantilInputs = (rawScores: Record<string, number | string>) => (
+  <div className="space-y-2">
+    <div className="grid grid-cols-3 gap-3">
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Parte A (Tempo)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.parteATempo ?? '-'}</Badge>
+      </div>
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Parte B (Tempo)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.parteBTempo ?? '-'}</Badge>
+      </div>
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Parte B (Erros)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.parteBErros ?? '-'}</Badge>
+      </div>
+    </div>
+    <div className="p-2 bg-muted/30 rounded-lg text-center text-xs text-muted-foreground">
+      Tipo de Escola: <strong>{rawScores.schoolType === 'privada' ? 'Privada' : 'Pública'}</strong>
+    </div>
+  </div>
+);
+
+const renderHaylingInfantilCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Inibição B-A = Tempo B - Tempo A</span>
+    </div>
+    <div className="p-2 bg-primary/10 rounded-lg text-center">
+      <span className="font-medium block mb-1">Inibição B-A</span>
+      <span className="font-mono"><strong>{calc.inibicaoBA ?? '-'}</strong></span>
+    </div>
+  </div>
+);
+
+// TFV
+const renderTFVInputs = (rawScores: Record<string, number | string>) => (
+  <div className="space-y-2">
+    <div className="grid grid-cols-3 gap-3">
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Fluência Livre</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.fluenciaLivre ?? '-'}</Badge>
+      </div>
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Fluência Fonêmica</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.fluenciaFonemica ?? '-'}</Badge>
+      </div>
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Fluência Semântica</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.fluenciaSemantica ?? '-'}</Badge>
+      </div>
+    </div>
+    <div className="p-2 bg-muted/30 rounded-lg text-center text-xs text-muted-foreground">
+      Tipo de Escola: <strong>{rawScores.schoolType === 'privada' ? 'Privada' : 'Pública'}</strong>
+    </div>
+  </div>
+);
+
+// TOM
+const renderTOMInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalScore ?? '-'}</Badge>
+  </div>
+);
+
+const renderTOMCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Z = (Score - Média) / DP → Percentil</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Z-Score</span>
+        <span className="font-mono">{typeof calc.zScore === 'number' ? calc.zScore.toFixed(2) : '-'}</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Percentil</span>
+        <span className="font-mono">{calc.percentil ?? '-'}</span>
+      </div>
+    </div>
+  </div>
+);
+
+// Taylor
+const renderTaylorInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Cópia</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.copia ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Reprodução de Memória</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.reproducaoMemoria ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderTaylorCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Z = (Score - Média) / DP → Percentil</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Z Cópia</span>
+        <span className="font-mono">{typeof calc.zScoreCopia === 'number' ? calc.zScoreCopia.toFixed(2) : '-'}</span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Z Reprodução</span>
+        <span className="font-mono">{typeof calc.zScoreReproducao === 'number' ? calc.zScoreReproducao.toFixed(2) : '-'}</span>
+      </div>
+    </div>
+  </div>
+);
+
+// TRPP
+const renderTRPPInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Palavras</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.palavras ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Pseudopalavras</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.pseudopalavras ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderTRPPCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Total = Palavras + Pseudopalavras → Escore Padrão</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Total</span>
+        <span className="font-mono"><strong>{calc.total ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">Escore Padrão</span>
+        <span className="font-mono"><strong>{calc.escorePadrao ?? '-'}</strong></span>
+      </div>
+    </div>
+  </div>
+);
+
+// Trilhas (Infantil)
+const renderTrilhasInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Sequências A</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.sequenciasA ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Sequências B</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.sequenciasB ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderTrilhasCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Escore Padrão = Consulta tabela normativa por idade</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">EP Trilha A</span>
+        <span className="font-mono"><strong>{calc.escorePadraoA ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">EP Trilha B</span>
+        <span className="font-mono"><strong>{calc.escorePadraoB ?? '-'}</strong></span>
+      </div>
+    </div>
+  </div>
+);
+
+// TMT Adulto
+const renderTMTAdultoInputs = (rawScores: Record<string, number | string>) => (
+  <div className="space-y-2">
+    <div className="grid grid-cols-2 gap-3">
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Tempo A (seg)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.tempoA ?? '-'}</Badge>
+      </div>
+      <div className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">Tempo B (seg)</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores.tempoB ?? '-'}</Badge>
+      </div>
+    </div>
+    {rawScores.educationLevel && (
+      <div className="p-2 bg-muted/30 rounded-lg text-center text-xs text-muted-foreground">
+        Escolaridade: <strong>{rawScores.educationLevel}</strong>
+      </div>
+    )}
+  </div>
+);
+
+const renderTMTAdultoCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">B-A = Tempo B - Tempo A</span>
+    </div>
+    <div className="p-2 bg-primary/10 rounded-lg text-center">
+      <span className="font-medium block mb-1">TMT B-A</span>
+      <span className="font-mono"><strong>{typeof calc.tempoBA === 'number' ? calc.tempoBA.toFixed(1) : '-'}</strong></span>
+    </div>
+  </div>
+);
+
+// Trilhas Pré-Escolar
+const renderTrilhasPreEscolarInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Sequências A</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.sequenciasA ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Sequências B</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.sequenciasB ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderTrilhasPreEscolarCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Escore Padrão = Consulta tabela normativa por idade</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">EP Trilha A</span>
+        <span className="font-mono"><strong>{calc.trilhaA ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg text-center">
+        <span className="font-medium block mb-1">EP Trilha B</span>
+        <span className="font-mono"><strong>{calc.trilhaB ?? '-'}</strong></span>
+      </div>
+    </div>
+  </div>
+);
+
+// FPT (Infantil e Adulto)
+const renderFPTInputs = (rawScores: Record<string, number | string>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Desenhos Únicos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.desenhosUnicos ?? '-'}</Badge>
+    {rawScores.schoolYear && (
+      <p className="text-xs text-muted-foreground mt-1">Ano escolar: {rawScores.schoolYear}</p>
+    )}
+    {rawScores.ageGroup && (
+      <p className="text-xs text-muted-foreground mt-1">Faixa etária: {rawScores.ageGroup}</p>
+    )}
+  </div>
+);
+
 // Renderiza dados genéricos de entrada com label/valor
 const renderGenericInputs = (rawScores: Record<string, number>) => {
   const entries = Object.entries(rawScores).filter(([_, v]) => v !== null && v !== undefined);
