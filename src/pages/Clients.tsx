@@ -1198,6 +1198,20 @@ export default function Patients() {
                 <SelectItem value="age_desc">Idade (Maior → Menor)</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px] h-10">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="active">
+                  <span className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-green-600" /> Ativos</span>
+                </SelectItem>
+                <SelectItem value="inactive">
+                  <span className="flex items-center gap-1.5"><UserX className="h-3.5 w-3.5 text-orange-500" /> Inativos</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={unitFilter} onValueChange={setUnitFilter}>
               <SelectTrigger className="w-[160px] h-10">
                 <SelectValue placeholder="Unidade" />
