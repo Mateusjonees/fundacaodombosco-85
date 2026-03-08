@@ -355,6 +355,32 @@ export default function CompleteAttendanceDialog({
       setRavenResults(null);
     } else if (testCode === 'WMS') {
       setWmsResults(null);
+    } else if (testCode === 'MOCA') {
+      setMocaResults(null);
+    } else if (testCode === 'MEEM') {
+      setMeemResults(null);
+    } else if (testCode === 'BRIEF2') {
+      setBrief2Results(null);
+    } else if (testCode === 'CORSI') {
+      setCorsiResults(null);
+    } else if (testCode === 'CONNERS') {
+      setConnersResults(null);
+    } else if (testCode === 'VINELAND') {
+      setVinelandResults(null);
+    } else if (testCode === 'ACE3') {
+      setAce3Results(null);
+    } else if (testCode === 'CBCL') {
+      setCbclResults(null);
+    } else if (testCode === 'SDQ') {
+      setSdqResults(null);
+    } else if (testCode === 'GDS') {
+      setGdsResults(null);
+    } else if (testCode === 'TDE2') {
+      setTde2Results(null);
+    } else if (testCode === 'NEUPSILIN') {
+      setNeupsilinResults(null);
+    } else if (testCode === 'CANCELAMENTO') {
+      setCancelamentoResults(null);
     }
   };
 
