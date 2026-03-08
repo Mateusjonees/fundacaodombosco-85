@@ -418,7 +418,6 @@ export default function Patients() {
   const toggleSelectAll = useCallback(() => {
     setSelectedClients(prev => prev.length === filteredClients.length ? [] : filteredClients.map(c => c.id));
   }, [filteredClients]);
-  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, getAge, isCoordinatorOrDirector]);
 
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
 
