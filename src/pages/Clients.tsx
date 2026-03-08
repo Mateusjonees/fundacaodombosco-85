@@ -643,7 +643,7 @@ export default function Patients() {
         (laudoFilter === "with_laudo" && clientLaudoIds.has(client.id)) ||
         (laudoFilter === "without_laudo" && !clientLaudoIds.has(client.id));
 
-      return matchesUnit && matchesAge && matchesProfessional && matchesLaudo;
+      return matchesStatus && matchesUnit && matchesAge && matchesProfessional && matchesLaudo;
     });
 
     // Ordenação
