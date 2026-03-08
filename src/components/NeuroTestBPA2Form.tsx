@@ -61,6 +61,7 @@ export default function NeuroTestBPA2Form({
     aa: { acertos: 0, erros: 0, omissoes: 0 }
   });
   const [notes, setNotes] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Calcular resultados quando os scores mudam
   useEffect(() => {
