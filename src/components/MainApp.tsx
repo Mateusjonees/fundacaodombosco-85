@@ -152,108 +152,98 @@ export const MainApp = () => {
           <AppSidebar />
           
           <div className="flex-1 flex flex-col min-w-0 transition-all duration-150 ease-out">
-            {/* Header */}
-            <header className="bg-card/80 backdrop-blur-lg border-b border-border/60 px-3 sm:px-6 py-2 sm:py-3 sticky top-0 z-40">
+            {/* Header — clean & modern */}
+            <header className="bg-background/70 backdrop-blur-md border-b border-border/50 px-3 sm:px-4 py-1.5 sm:py-2 sticky top-0 z-40">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-border/60 bg-background/80 hover:bg-accent transition-all duration-200" />
-                  <div className="hidden sm:flex items-center gap-2">
-                    <div className="h-6 w-0.5 rounded-full bg-primary/30" />
-                    <h1 className="text-base font-bold text-foreground tracking-tight">FUNDAÇÃO DOM BOSCO</h1>
-                  </div>
-                  <h1 className="text-xs font-bold text-foreground sm:hidden">Clínica</h1>
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors duration-150" />
+                  <span className="hidden sm:block text-[13px] font-medium text-foreground/70 tracking-tight">
+                    Fundação Dom Bosco
+                  </span>
+                  <span className="text-[11px] font-medium text-foreground/60 sm:hidden">Clínica</span>
                 </div>
                 
-                <div className="flex items-center gap-1.5 sm:gap-4">
+                <div className="flex items-center gap-1 sm:gap-1.5">
                   <Suspense fallback={<div className="h-8 w-8" />}>
                     <QuickHelpCenter />
                   </Suspense>
-                  <Suspense fallback={<div className="h-9 w-20 sm:w-24 bg-muted rounded-lg animate-pulse" />}>
+                  <Suspense fallback={<div className="h-8 w-20 sm:w-24 bg-muted rounded-md animate-pulse" />}>
                     <GlobalSearch />
                   </Suspense>
-                  <Suspense fallback={<div className="h-9 w-9 bg-muted rounded-lg animate-pulse" />}>
+                  <Suspense fallback={<div className="h-8 w-8 bg-muted rounded-md animate-pulse" />}>
                     <NotificationBell />
                   </Suspense>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setAiOpen(true)}
-                    className="h-9 w-9 rounded-xl hover:bg-primary/10 p-0 overflow-hidden"
+                    className="h-8 w-8 rounded-md hover:bg-muted/60 p-0 overflow-hidden"
                     title="Bia IA"
                   >
-                    <img src={boscoIcon} alt="Bia IA" className="h-7 w-7 object-cover rounded-lg" />
+                    <img src={boscoIcon} alt="Bia IA" className="h-6 w-6 object-cover rounded-md" />
                   </Button>
                   <AIAssistant open={aiOpen} onOpenChange={setAiOpen} />
+                  
+                  <div className="h-5 w-px bg-border/60 mx-0.5 hidden sm:block" />
+                  
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 sm:h-10 sm:w-10 p-0 overflow-hidden">
+                      <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 p-0 overflow-hidden">
                         <UserAvatar 
                           name={userName}
                           avatarUrl={avatarUrl}
                           role={userRole}
                           size="sm"
-                          className="h-9 w-9 sm:h-10 sm:w-10"
+                          className="h-8 w-8"
                         />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-72 bg-card/95 backdrop-blur-xl z-50 p-0 rounded-2xl border shadow-xl overflow-hidden">
-                      {/* Header com gradiente */}
-                      <div className="relative px-4 pt-5 pb-4 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
-                        <div className="flex items-center gap-3">
-                          <div className="ring-2 ring-primary/20 rounded-full p-0.5">
-                            <UserAvatar 
-                              name={userName}
-                              avatarUrl={avatarUrl}
-                              role={userRole}
-                              size="md"
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <p className="text-sm font-bold text-foreground leading-tight uppercase">
+                    <DropdownMenuContent align="end" className="w-64 z-50 p-0 rounded-lg border shadow-lg overflow-hidden">
+                      {/* User info */}
+                      <div className="px-3 py-3 border-b border-border/50">
+                        <div className="flex items-center gap-2.5">
+                          <UserAvatar 
+                            name={userName}
+                            avatarUrl={avatarUrl}
+                            role={userRole}
+                            size="sm"
+                          />
+                          <div className="flex flex-col min-w-0">
+                            <p className="text-[13px] font-semibold text-foreground leading-tight uppercase truncate">
                               {userName}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <p className="text-[11px] text-muted-foreground">
                               {userRole ? ROLE_LABELS[userRole] : 'Carregando...'}
                             </p>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="p-1.5">
+                      <div className="p-1">
                         <DropdownMenuItem 
                           onClick={() => setProfileDialogOpen(true)} 
-                          className="cursor-pointer rounded-xl px-3 py-2.5 gap-3 focus:bg-muted/80"
+                          className="cursor-pointer rounded-md px-2.5 py-2 gap-2.5 text-[13px]"
                         >
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                            <Camera className="h-4 w-4 text-primary" />
-                          </div>
-                          <span className="text-sm font-medium">Meu Perfil</span>
+                          <Camera className="h-4 w-4 text-muted-foreground" />
+                          <span>Meu Perfil</span>
                         </DropdownMenuItem>
                         
-                        <div className="px-3 pt-3 pb-1">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Configurações</p>
-                        </div>
-                        
-                        <div className="px-1" onClick={(e) => e.stopPropagation()}>
+                        <div className="px-2.5" onClick={(e) => e.stopPropagation()}>
                           <ThemeToggle />
                         </div>
                         
-                        <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5 gap-3 focus:bg-muted/80">
+                        <DropdownMenuItem asChild className="cursor-pointer rounded-md px-2.5 py-2 gap-2.5 text-[13px]">
                           <Link to="/messages" className="flex items-center">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-                              <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <span className="text-sm font-medium">Mensagens</span>
+                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                            <span>Mensagens</span>
                           </Link>
                         </DropdownMenuItem>
                         
-                        <DropdownMenuSeparator className="my-1.5" />
+                        <DropdownMenuSeparator className="my-1" />
                         
-                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer rounded-xl px-3 py-2.5 gap-3 text-destructive focus:bg-destructive/10 focus:text-destructive">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
-                            <LogOut className="h-4 w-4" />
-                          </div>
-                          <span className="text-sm font-medium">Sair</span>
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer rounded-md px-2.5 py-2 gap-2.5 text-[13px] text-destructive focus:text-destructive">
+                          <LogOut className="h-4 w-4" />
+                          <span>Sair</span>
                         </DropdownMenuItem>
                       </div>
                     </DropdownMenuContent>
