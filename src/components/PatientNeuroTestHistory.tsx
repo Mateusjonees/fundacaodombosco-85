@@ -863,20 +863,28 @@ export default function PatientNeuroTestHistory({
         inputSection = renderBPA2Inputs(rawScores, calculatedScores);
         calculationsSection = renderBPA2Calculations(calculatedScores);
         break;
+      case 'TIN':
+        inputSection = renderTINInputs(rawScores);
+        calculationsSection = renderTINCalculations(calculatedScores);
+        break;
+      case 'PCFO':
+        inputSection = renderPCFOInputs(rawScores);
+        calculationsSection = renderPCFOCalculations(calculatedScores);
+        break;
+      case 'TSBC':
+        inputSection = renderTSBCInputs(rawScores);
+        calculationsSection = renderTSBCCalculations(calculatedScores);
+        break;
+      case 'FVA':
+        inputSection = renderFVAInputs(rawScores);
+        calculationsSection = renderFVACalculations(calculatedScores as unknown as Record<string, string>);
+        break;
+      case 'BNTBR':
+        inputSection = renderBNTBRInputs(rawScores);
+        calculationsSection = renderBNTBRCalculations(calculatedScores);
+        break;
       default: {
-        // Renderização genérica dos dados de entrada
-        const rawEntries = Object.entries(rawScores).filter(([_, v]) => v !== null && v !== undefined);
-        if (rawEntries.length > 0) {
-          inputSection = (
-            <div className="flex flex-wrap gap-2">
-              {rawEntries.map(([key, val]) => (
-                <Badge key={key} variant="outline" className="font-mono">
-                  {key}: {typeof val === 'number' ? val : String(val)}
-                </Badge>
-              ))}
-            </div>
-          );
-        }
+        inputSection = renderGenericInputs(rawScores);
         break;
       }
     }
