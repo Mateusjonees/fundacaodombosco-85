@@ -149,6 +149,26 @@ export default function NeuroTestFDTForm({
         </div>
       </CardHeader>
       <CardContent className="p-3 pt-0 space-y-3">
+        {/* Instruções */}
+        <Collapsible open={showInstructions} onOpenChange={setShowInstructions}>
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-1.5 text-xs text-primary hover:underline w-full">
+              <Info className="h-3 w-3" />
+              <span>Instruções de aplicação</span>
+              <ChevronDown className={`h-3 w-3 transition-transform ${showInstructions ? 'rotate-180' : ''}`} />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-2 p-2.5 bg-muted/40 rounded-lg text-xs text-muted-foreground space-y-1">
+              <p>• <strong>Leitura</strong>: O paciente lê os números escritos (1-5) o mais rápido possível.</p>
+              <p>• <strong>Contagem</strong>: O paciente conta a quantidade de estímulos em cada célula.</p>
+              <p>• <strong>Escolha</strong>: O paciente deve dizer a quantidade de estímulos (ignorando o número escrito - incongruente).</p>
+              <p>• <strong>Alternância</strong>: O paciente alterna entre ler e contar conforme a moldura.</p>
+              <p>• Registre o tempo em segundos e o número de erros para cada etapa.</p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
         {/* Tempos */}
         <div>
           <div className="flex items-center gap-1.5 mb-2">
