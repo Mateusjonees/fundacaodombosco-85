@@ -1173,6 +1173,7 @@ export default function Patients() {
         searchPlaceholder="Buscar por nome, CPF, telefone..."
         activeFiltersCount={activeFiltersCount}
         onClearFilters={() => {
+          setStatusFilter("all");
           setUnitFilter("all");
           setAgeFilter("all");
           setProfessionalFilter("all");
