@@ -1,6 +1,6 @@
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronRight, Moon, Sun, MoreHorizontal } from 'lucide-react';
+import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronRight, Moon, Sun, MoreHorizontal, ChevronsUpDown } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,13 +21,64 @@ const iconMapping: Record<string, LucideIcon> = {
   Heart, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain,
 };
 
+// Category accent colors for visual distinction
+const categoryAccents: Record<string, { icon: string; activeBg: string; activeText: string; dot: string }> = {
+  'GESTÃO CLÍNICA': {
+    icon: 'text-emerald-500 dark:text-emerald-400',
+    activeBg: 'bg-emerald-500/10 dark:bg-emerald-400/10',
+    activeText: 'text-emerald-700 dark:text-emerald-300',
+    dot: 'bg-emerald-500',
+  },
+  'AGENDA': {
+    icon: 'text-blue-500 dark:text-blue-400',
+    activeBg: 'bg-blue-500/10 dark:bg-blue-400/10',
+    activeText: 'text-blue-700 dark:text-blue-300',
+    dot: 'bg-blue-500',
+  },
+  'FINANCEIRO': {
+    icon: 'text-amber-500 dark:text-amber-400',
+    activeBg: 'bg-amber-500/10 dark:bg-amber-400/10',
+    activeText: 'text-amber-700 dark:text-amber-300',
+    dot: 'bg-amber-500',
+  },
+  'ESTOQUE': {
+    icon: 'text-purple-500 dark:text-purple-400',
+    activeBg: 'bg-purple-500/10 dark:bg-purple-400/10',
+    activeText: 'text-purple-700 dark:text-purple-300',
+    dot: 'bg-purple-500',
+  },
+  'EQUIPE': {
+    icon: 'text-cyan-500 dark:text-cyan-400',
+    activeBg: 'bg-cyan-500/10 dark:bg-cyan-400/10',
+    activeText: 'text-cyan-700 dark:text-cyan-300',
+    dot: 'bg-cyan-500',
+  },
+  'RELATÓRIOS': {
+    icon: 'text-rose-500 dark:text-rose-400',
+    activeBg: 'bg-rose-500/10 dark:bg-rose-400/10',
+    activeText: 'text-rose-700 dark:text-rose-300',
+    dot: 'bg-rose-500',
+  },
+  'COMUNICAÇÃO': {
+    icon: 'text-indigo-500 dark:text-indigo-400',
+    activeBg: 'bg-indigo-500/10 dark:bg-indigo-400/10',
+    activeText: 'text-indigo-700 dark:text-indigo-300',
+    dot: 'bg-indigo-500',
+  },
+  'PESSOAL': {
+    icon: 'text-slate-500 dark:text-slate-400',
+    activeBg: 'bg-slate-500/10 dark:bg-slate-400/10',
+    activeText: 'text-slate-700 dark:text-slate-300',
+    dot: 'bg-slate-500',
+  },
+};
+
 // Dynamic menu items based on role permissions
 const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   const items = [];
 
   items.push({ id: 'dashboard', title: 'Painel', url: '/', icon: 'Home', category: null, order_index: 0 });
 
-  // GESTÃO CLÍNICA
   if (permissions.canViewAllClients() || permissions.isProfessional() || customPermissions.hasPermission('view_clients')) {
     items.push({ id: 'clients', title: 'Pacientes', url: '/clients', icon: 'Users', category: 'GESTÃO CLÍNICA', order_index: 1 });
   }
@@ -53,7 +104,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     items.push({ id: 'waiting-list', title: 'Fila de Espera', url: '/waiting-list', icon: 'Archive', category: 'GESTÃO CLÍNICA', order_index: 5.7 });
   }
 
-  // AGENDA
   if (permissions.canViewAllSchedules() || permissions.isProfessional() || customPermissions.hasPermission('view_schedules')) {
     items.push({ id: 'schedule', title: 'Agenda', url: '/schedule', icon: 'Calendar', category: 'AGENDA', order_index: 6 });
   }
@@ -62,7 +112,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   }
   items.push({ id: 'meeting-alerts', title: 'Alertas de Reunião', url: '/meeting-alerts', icon: 'Bell', category: 'AGENDA', order_index: 8 });
 
-  // FINANCEIRO
   if (permissions.isDirector() || customPermissions.hasPermission('view_financial')) {
     items.push({ id: 'financial', title: 'Financeiro', url: '/financial', icon: 'DollarSign', category: 'FINANCEIRO', order_index: 9 });
   }
@@ -70,12 +119,10 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     items.push({ id: 'contracts', title: 'Contratos', url: '/contracts', icon: 'FolderOpen', category: 'FINANCEIRO', order_index: 10 });
   }
 
-  // ESTOQUE
   if (permissions.canManageStock() || customPermissions.hasPermission('view_stock')) {
     items.push({ id: 'stock', title: 'Estoque', url: '/stock', icon: 'Package', category: 'ESTOQUE', order_index: 11 });
   }
 
-  // EQUIPE
   if (permissions.canManageEmployees() || permissions.canManageUsers?.() || customPermissions.hasPermission('view_employees')) {
     items.push({ id: 'users', title: 'Gestão de Equipe', url: '/users', icon: 'Users', category: 'EQUIPE', order_index: 12 });
   }
@@ -83,15 +130,12 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     items.push({ id: 'employee-control', title: 'Controle de Funcionários', url: '/employee-control', icon: 'UserCheck', category: 'EQUIPE', order_index: 13 });
   }
 
-  // RELATÓRIOS
   if (permissions.canViewReports() || customPermissions.hasPermission('view_reports')) {
     items.push({ id: 'reports', title: 'Relatórios', url: '/reports', icon: 'BarChart3', category: 'RELATÓRIOS', order_index: 15 });
   }
 
-  // COMUNICAÇÃO
   items.push({ id: 'messages', title: 'Mensagens', url: '/messages', icon: 'MessageSquare', category: 'COMUNICAÇÃO', order_index: 16 });
 
-  // PESSOAL
   items.push({ id: 'my-files', title: 'Meus Arquivos', url: '/my-files', icon: 'Folder', category: 'PESSOAL', order_index: 17 });
   items.push({ id: 'timesheet', title: 'Ponto Eletrônico', url: '/timesheet', icon: 'Clock', category: 'PESSOAL', order_index: 18 });
 
@@ -107,40 +151,53 @@ interface MenuItem {
   order_index: number;
 }
 
-// Premium nav item with refined active indicator
+// Nav item with category-colored active state
 const SidebarNavItem = memo(({
   item,
   isActive,
   collapsed,
+  accent,
 }: {
   item: MenuItem;
   isActive: boolean;
   collapsed: boolean;
+  accent?: typeof categoryAccents[string];
 }) => {
   const IconComponent = iconMapping[item.icon];
+  const isDashboard = item.category === null;
 
   const content = (
     <NavLink
       to={item.url}
       className={cn(
-        "group relative flex items-center gap-3 px-3 py-[7px] rounded-md text-[13px] font-normal transition-all duration-200",
+        "group relative flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] transition-all duration-150",
         isActive
-          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-          : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
-        collapsed && "justify-center px-0 py-2"
+          ? cn(
+              "font-medium",
+              isDashboard
+                ? "bg-primary/10 text-primary dark:bg-primary/15"
+                : accent?.activeBg + " " + accent?.activeText
+            )
+          : "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
+        collapsed && "justify-center px-2 py-2.5 mx-auto"
       )}
     >
-      {/* Active indicator bar */}
-      {isActive && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-sidebar-primary" />
-      )}
       {IconComponent && (
-        <IconComponent className={cn(
-          "h-[16px] w-[16px] shrink-0 transition-colors duration-200",
-          isActive ? "text-sidebar-primary" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
-        )} strokeWidth={isActive ? 2.2 : 1.8} />
+        <div className={cn(
+          "flex items-center justify-center shrink-0 transition-colors duration-150",
+          collapsed ? "h-5 w-5" : "h-4 w-4"
+        )}>
+          <IconComponent className={cn(
+            "h-full w-full",
+            isActive
+              ? isDashboard
+                ? "text-primary"
+                : accent?.icon
+              : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/65"
+          )} strokeWidth={isActive ? 2 : 1.7} />
+        </div>
       )}
-      {!collapsed && <span className="truncate">{item.title}</span>}
+      {!collapsed && <span className="truncate leading-none">{item.title}</span>}
     </NavLink>
   );
 
@@ -151,7 +208,7 @@ const SidebarNavItem = memo(({
           <TooltipTrigger asChild>
             <div>{content}</div>
           </TooltipTrigger>
-          <TooltipContent side="right" className="text-xs font-medium">
+          <TooltipContent side="right" sideOffset={12} className="text-xs font-medium shadow-lg">
             {item.title}
           </TooltipContent>
         </Tooltip>
@@ -214,18 +271,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className={cn(
-      "border-r border-sidebar-border/60",
-      collapsed ? "w-[60px]" : "w-[252px]"
+      "border-r border-sidebar-border/50",
+      collapsed ? "w-[60px]" : "w-[256px]"
     )}>
       <SidebarContent className="flex flex-col h-full bg-sidebar">
-        {/* Header — minimal branding */}
+        {/* Header — workspace style */}
         <div className={cn(
-          "shrink-0 border-b border-sidebar-border/40",
-          collapsed ? "px-2 py-3" : "px-4 py-3.5"
+          "shrink-0",
+          collapsed ? "px-2 py-3" : "px-3 py-3"
         )}>
           {!collapsed ? (
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg overflow-hidden shrink-0 bg-sidebar-accent flex items-center justify-center">
+            <div className="flex items-center gap-2.5 px-1">
+              <div className="h-8 w-8 rounded-lg overflow-hidden shrink-0 shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
                 <img
                   alt="FDB"
                   src="/lovable-uploads/12d10c14-c39b-4936-8278-6b4465ada7b2.jpg"
@@ -233,18 +290,18 @@ export function AppSidebar() {
                   loading="lazy"
                 />
               </div>
-              <div className="flex flex-col min-w-0">
+              <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-[13px] font-semibold text-sidebar-foreground leading-tight truncate">
                   Dom Bosco
                 </span>
-                <span className="text-[11px] text-sidebar-foreground/50 leading-tight truncate">
+                <span className="text-[11px] text-sidebar-foreground/45 leading-tight truncate">
                   Clínica Multidisciplinar
                 </span>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="h-7 w-7 rounded-lg overflow-hidden bg-sidebar-accent">
+              <div className="h-7 w-7 rounded-lg overflow-hidden shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
                 <img
                   alt="FDB"
                   className="h-full w-full object-cover"
@@ -256,12 +313,16 @@ export function AppSidebar() {
           )}
         </div>
 
+        <div className={cn("mx-2", collapsed && "mx-1.5")}>
+          <div className="h-px bg-sidebar-border/50" />
+        </div>
+
         {/* Navigation */}
         <ScrollArea className="flex-1">
           <div className={cn("py-2", collapsed ? "px-1.5" : "px-2")}>
-            {/* Dashboard — standalone */}
+            {/* Dashboard */}
             {groupedItems.main && (
-              <div className="mb-1">
+              <div className="mb-2">
                 <SidebarMenu>
                   {groupedItems.main.map(item => (
                     <SidebarMenuItem key={item.id}>
@@ -274,22 +335,23 @@ export function AppSidebar() {
               </div>
             )}
 
-            {/* Categories */}
-            <div className={cn("space-y-3", collapsed && "space-y-2")}>
+            {/* Category groups */}
+            <div className={cn("space-y-4", collapsed && "space-y-2")}>
               {categories.map(category => {
                 if (!groupedItems[category] || groupedItems[category].length === 0) return null;
+                const accent = categoryAccents[category];
 
                 if (collapsed) {
                   return (
                     <div key={category}>
-                      <div className="flex justify-center py-1">
-                        <div className="h-px w-4 bg-sidebar-border/60" />
+                      <div className="flex justify-center py-0.5 mb-0.5">
+                        <div className={cn("h-1 w-1 rounded-full", accent?.dot || "bg-sidebar-border")} />
                       </div>
                       <SidebarMenu>
                         {groupedItems[category].map(item => (
                           <SidebarMenuItem key={item.id}>
                             <SidebarMenuButton asChild>
-                              <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} />
+                              <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} accent={accent} />
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
@@ -300,14 +362,17 @@ export function AppSidebar() {
 
                 return (
                   <div key={category}>
-                    <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/35 select-none">
-                      {category}
-                    </p>
+                    <div className="flex items-center gap-2 px-3 pt-1 pb-1.5">
+                      <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", accent?.dot || "bg-muted-foreground")} />
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-sidebar-foreground/40 select-none">
+                        {category}
+                      </span>
+                    </div>
                     <SidebarMenu>
                       {groupedItems[category].map(item => (
                         <SidebarMenuItem key={item.id}>
                           <SidebarMenuButton asChild>
-                            <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} />
+                            <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} accent={accent} />
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       ))}
@@ -319,8 +384,11 @@ export function AppSidebar() {
           </div>
         </ScrollArea>
 
-        {/* Footer — user account */}
-        <div className="shrink-0 border-t border-sidebar-border/40 p-2">
+        {/* Footer */}
+        <div className={cn("mx-2 mb-1", collapsed && "mx-1.5")}>
+          <div className="h-px bg-sidebar-border/50" />
+        </div>
+        <div className="shrink-0 p-2 pt-1">
           <UserAvatarFooter collapsed={collapsed} onLogout={handleLogout} />
         </div>
       </SidebarContent>
@@ -328,7 +396,7 @@ export function AppSidebar() {
   );
 }
 
-// Clean user footer with theme toggle
+// User footer
 const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; onLogout: () => void }) => {
   const { userName, userRole, avatarUrl } = useCurrentUser();
   const { theme, setTheme } = useTheme();
@@ -337,7 +405,7 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex justify-center w-full py-1 rounded-md hover:bg-sidebar-accent/50 transition-colors">
+          <button className="flex justify-center w-full py-1 rounded-lg hover:bg-sidebar-accent/60 transition-colors">
             <UserAvatar name={userName} avatarUrl={avatarUrl} role={userRole} size="sm" />
           </button>
         </DropdownMenuTrigger>
@@ -364,16 +432,23 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2.5 px-2.5 py-2 rounded-md w-full text-left cursor-pointer hover:bg-sidebar-accent/50 transition-colors duration-150">
-          <UserAvatar name={userName} avatarUrl={avatarUrl} role={userRole} size="sm" />
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-medium truncate text-sidebar-foreground">{userName || 'Usuário'}</p>
-            <p className="text-[10px] text-sidebar-foreground/45 truncate">{userRole || 'Carregando...'}</p>
+        <button className="flex items-center gap-2.5 px-2 py-2 rounded-lg w-full text-left cursor-pointer hover:bg-sidebar-accent/60 transition-colors duration-150 group">
+          <div className="shrink-0 ring-2 ring-sidebar-border/50 rounded-full">
+            <UserAvatar name={userName} avatarUrl={avatarUrl} role={userRole} size="sm" />
           </div>
-          <MoreHorizontal className="h-4 w-4 text-sidebar-foreground/30 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium truncate text-sidebar-foreground leading-tight">{userName || 'Usuário'}</p>
+            <p className="text-[10px] text-sidebar-foreground/40 truncate leading-tight mt-0.5">{userRole || 'Carregando...'}</p>
+          </div>
+          <ChevronsUpDown className="h-3.5 w-3.5 text-sidebar-foreground/25 group-hover:text-sidebar-foreground/50 shrink-0 transition-colors" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-[200px]">
+      <DropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-[220px]">
+        <div className="px-3 py-2">
+          <p className="font-medium text-sm truncate">{userName || 'Usuário'}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{userRole}</p>
+        </div>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="cursor-pointer gap-2">
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
