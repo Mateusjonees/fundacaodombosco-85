@@ -105,6 +105,7 @@ export default function Schedule() {
                              userRole === 'coordinator_floresta' ||
                              userRole === 'coordinator_atendimento_floresta';
 
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [newAppointment, setNewAppointment] = useState({
     client_id: '',
     employee_id: '',
