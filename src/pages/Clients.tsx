@@ -102,6 +102,7 @@ export default function Patients() {
   const [professionalFilter, setProfessionalFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name_asc");
   const [laudoFilter, setLaudoFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
