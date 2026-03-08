@@ -9,7 +9,7 @@ interface EmployeeFilters {
 }
 
 // Colunas otimizadas para listagem
-const LIST_COLUMNS = 'user_id, id, name, employee_role, department, unit, phone, email, is_active';
+const LIST_COLUMNS = 'user_id, id, name, employee_role, department, unit, is_active';
 
 /**
  * Hook otimizado para carregar funcionários com cache

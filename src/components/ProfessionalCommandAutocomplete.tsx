@@ -62,7 +62,7 @@ export function ProfessionalCommandAutocomplete({
         try {
           const { data } = await supabase
             .from('profiles_public')
-            .select('id, user_id, name, email, phone, employee_role, unit, department')
+            .select('id, user_id, name, employee_role, unit, department')
             .eq('user_id', value)
             .single();
           
@@ -97,13 +97,13 @@ export function ProfessionalCommandAutocomplete({
     try {
       let query = supabase
         .from('profiles_public')
-        .select('id, user_id, name, email, phone, employee_role, unit, department')
+        .select('id, user_id, name, employee_role, unit, department')
         .eq('is_active', true)
         .not('employee_role', 'is', null)
         .limit(50);
 
       if (search) {
-        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+        query = query.or(`name.ilike.%${search}%`);
       }
 
       if (roleFilter && roleFilter !== 'all') {
