@@ -1034,7 +1034,7 @@ Contratante
                   <p class="client-name">${DOMPurify.sanitize(contractData.clientName)}</p>
                 </div>
                 
-                <div class="contract-content">${contractContent}</div>
+                <div class="contract-content">${DOMPurify.sanitize(contractContent)}</div>
               </div>
               
               <!-- Rodapé com papel timbrado - final absoluto de cada página -->
