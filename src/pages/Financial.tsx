@@ -1273,143 +1273,304 @@ export default function Financial() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="pending">
+        <TabsContent value="pending" className="space-y-4">
+          {/* Resumo geral dos contratos */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <Card className="bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5 border-0">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground">Total Contratado</p>
+                <p className="text-lg font-bold text-blue-600">
+                  R$ {totalContractedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-muted-foreground">{pendingPayments.length} contratos</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-500/10 via-card to-green-500/5 border-0">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground">Total Recebido</p>
+                <p className="text-lg font-bold text-green-600">
+                  R$ {totalReceivedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-muted-foreground">{completedPayments.length} quitados</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5 border-0">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground">A Receber</p>
+                <p className="text-lg font-bold text-orange-600">
+                  R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-muted-foreground">{pendingOnly.length} pendentes</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-red-500/10 via-card to-red-500/5 border-0">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground">Em Atraso</p>
+                <p className="text-lg font-bold text-red-600">
+                  R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-muted-foreground">{overduePayments.length} vencidos</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-500/10 via-card to-purple-500/5 border-0">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground">% Recebido</p>
+                <p className="text-lg font-bold text-purple-600">
+                  {totalContractedAmount > 0 ? ((totalReceivedAmount / totalContractedAmount) * 100).toFixed(1) : '0'}%
+                </p>
+                <p className="text-xs text-muted-foreground">Taxa de conversão</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Lista detalhada de contratos/pagamentos */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-blue-600" />
-                  Contas a Receber
+                  Contratos e Pagamentos Detalhados
                 </CardTitle>
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="text-blue-600">
-                    Total: R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </Badge>
-                  {totalOverdueAmount > 0 && (
-                    <Badge variant="destructive">
-                      Em Atraso: R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </Badge>
-                  )}
+                <div className="flex gap-2 flex-wrap">
+                  <Select value={unitFilter} onValueChange={setUnitFilter}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Unidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas Unidades</SelectItem>
+                      <SelectItem value="madre">Madre</SelectItem>
+                      <SelectItem value="floresta">Floresta</SelectItem>
+                      <SelectItem value="atendimento_floresta">Atend. Floresta</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               {pendingPayments.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  Nenhum pagamento pendente encontrado.
+                  Nenhum contrato/pagamento encontrado.
                 </p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Paciente</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Vencimento</TableHead>
-                      <TableHead>Valor Devido</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Parcela</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pendingPayments.map((payment) => {
-                      const dueDate = new Date(payment.due_date);
-                      const today = new Date();
-                      const isOverdue = dueDate < today;
-                      const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
-                      
+                <div className="space-y-4">
+                  {pendingPayments
+                    .filter((p: any) => unitFilter === 'all' || p.unit === unitFilter)
+                    .map((payment: any) => {
+                      const isOverdue = payment.due_date && new Date(payment.due_date) < new Date();
+                      const paidInstallments = (payment.installments || []).filter((i: any) => i.status === 'paid');
+                      const pendingInstallments = (payment.installments || []).filter((i: any) => i.status !== 'paid');
+                      const progressPercent = payment.total_amount > 0 
+                        ? ((payment.amount_paid || 0) / payment.total_amount) * 100 
+                        : 0;
+
                       return (
-                        <TableRow key={`${payment.type}-${payment.id}`} className={isOverdue ? 'bg-red-50' : ''}>
-                          <TableCell className="font-medium">
-                            <div>
-                              <p className="uppercase">{payment.client_name || 'Paciente não identificado'}</p>
-                              {payment.client_phone && (
-                                <p className="text-xs text-muted-foreground">
-                                  {payment.client_phone}
+                        <div 
+                          key={payment.id} 
+                          className={`border rounded-lg p-4 space-y-3 ${
+                            payment.status === 'completed' ? 'border-green-200 bg-green-50/50 dark:bg-green-950/20' :
+                            isOverdue ? 'border-red-200 bg-red-50/50 dark:bg-red-950/20' : 
+                            'border-border'
+                          }`}
+                        >
+                          {/* Cabeçalho do contrato */}
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-semibold text-base uppercase">
+                                  {payment.client?.name || 'Paciente não identificado'}
+                                </h4>
+                                <Badge variant={
+                                  payment.status === 'completed' ? 'default' :
+                                  payment.status === 'partial' ? 'secondary' :
+                                  isOverdue ? 'destructive' : 'outline'
+                                }>
+                                  {payment.status === 'completed' ? '✅ Quitado' :
+                                   payment.status === 'partial' ? '⏳ Parcial' :
+                                   isOverdue ? '🚨 Vencido' : '⏰ Pendente'}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  {payment.unit === 'madre' ? 'Madre' : 
+                                   payment.unit === 'floresta' ? 'Floresta' : 
+                                   payment.unit === 'atendimento_floresta' ? 'Atend. Floresta' : 
+                                   payment.unit || 'N/A'}
+                                </Badge>
+                              </div>
+                              {payment.client?.phone && (
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  📞 {payment.client.phone} {payment.client?.email ? `· ✉ ${payment.client.email}` : ''}
                                 </p>
                               )}
+                              {payment.description && (
+                                <p className="text-sm text-muted-foreground mt-1">{payment.description}</p>
+                              )}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="max-w-xs">
-                              <p className="truncate">{payment.description || '-'}</p>
+                            <div className="text-right shrink-0">
+                              <p className="text-xl font-bold text-primary">
+                                R$ {(payment.total_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              <p className="text-xs text-muted-foreground">Valor do contrato</p>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={payment.payment_type === 'avista' ? 'default' : 'secondary'}>
-                              {payment.payment_type === 'avista' ? 'À Vista' : 'A Prazo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className={isOverdue ? 'text-red-600 font-medium' : ''}>
-                              {dueDate.toLocaleDateString('pt-BR')}
-                              <p className="text-xs text-muted-foreground">
-                                {isOverdue 
-                                  ? `${Math.abs(daysDiff)} dias em atraso` 
-                                  : daysDiff === 0 
-                                    ? 'Vence hoje' 
-                                    : `${daysDiff} dias restantes`
-                                }
+                          </div>
+
+                          {/* Barra de progresso */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                Pago: R$ {(payment.amount_paid || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                              <span className="text-muted-foreground">
+                                Restante: R$ {(payment.amount_remaining || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all ${
+                                  progressPercent >= 100 ? 'bg-green-500' : 
+                                  progressPercent > 50 ? 'bg-blue-500' : 
+                                  progressPercent > 0 ? 'bg-orange-500' : 'bg-muted-foreground/20'
+                                }`}
+                                style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground text-right">{progressPercent.toFixed(0)}% pago</p>
+                          </div>
+
+                          {/* Detalhes do pagamento */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm bg-muted/30 rounded-lg p-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Forma de Pagamento</p>
+                              <p className="font-medium">{translatePaymentMethod(payment.payment_method)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Tipo</p>
+                              <p className="font-medium">
+                                {payment.payment_type === 'avista' ? 'À Vista' : 
+                                 payment.payment_type === 'parcelado' ? 'Parcelado' : 
+                                 payment.payment_type || 'N/A'}
                               </p>
                             </div>
-                          </TableCell>
-                          <TableCell className="font-medium text-blue-600">
-                            R$ {(payment.amount_due || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={
-                                isOverdue ? 'destructive' : 
-                                payment.status === 'partial' ? 'default' : 
-                                'secondary'
-                              }
-                            >
-                              {isOverdue ? 'Vencido' : 
-                               payment.status === 'partial' ? 'Parcial' : 
-                               'Pendente'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {payment.type === 'installment' ? (
-                              <span className="text-sm">
-                                {payment.installment_number}ª parcela
-                              </span>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">
-                                Pagamento único
-                              </span>
-                            )}
-                          </TableCell>
-                        </TableRow>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Parcelas</p>
+                              <p className="font-medium">
+                                {payment.installments_total 
+                                  ? `${payment.installments_paid || 0}/${payment.installments_total} pagas`
+                                  : 'Pagamento único'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Vencimento</p>
+                              <p className={`font-medium ${isOverdue ? 'text-red-600' : ''}`}>
+                                {payment.due_date 
+                                  ? new Date(payment.due_date).toLocaleDateString('pt-BR')
+                                  : 'Não definido'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Entrada + Cartão */}
+                          {(payment.down_payment_amount > 0 || (payment.credit_card_installments && payment.credit_card_installments > 1)) && (
+                            <div className="flex flex-wrap gap-3 text-sm">
+                              {payment.down_payment_amount > 0 && (
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                                  <span className="text-green-700 dark:text-green-400 text-xs font-medium">
+                                    💰 Entrada: R$ {payment.down_payment_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {payment.down_payment_method && ` (${translatePaymentMethod(payment.down_payment_method)})`}
+                                  </span>
+                                </div>
+                              )}
+                              {payment.credit_card_installments && payment.credit_card_installments > 1 && (
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                  <span className="text-blue-700 dark:text-blue-400 text-xs font-medium">
+                                    💳 {payment.credit_card_installments}x no Cartão de Crédito
+                                    {payment.total_amount && payment.credit_card_installments > 0 && (
+                                      <> · R$ {((payment.total_amount - (payment.down_payment_amount || 0)) / payment.credit_card_installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} cada</>
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Pagamento combinado */}
+                          {payment.payment_combination && Array.isArray(payment.payment_combination) && payment.payment_combination.length > 0 && (
+                            <div className="text-sm">
+                              <p className="text-xs text-muted-foreground mb-1.5 font-medium">Pagamento Combinado:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {payment.payment_combination.map((combo: any, idx: number) => (
+                                  <Badge key={idx} variant="outline" className="text-xs py-1">
+                                    {translatePaymentMethod(combo.method || combo.payment_method)}: 
+                                    R$ {(combo.amount || combo.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {combo.installments && combo.installments > 1 && ` (${combo.installments}x)`}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Lista de parcelas detalhada */}
+                          {payment.installments && payment.installments.length > 0 && (
+                            <div className="text-sm">
+                              <p className="text-xs text-muted-foreground mb-2 font-medium">
+                                Parcelas ({paidInstallments.length} pagas / {pendingInstallments.length} pendentes):
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {payment.installments.map((inst: any) => {
+                                  const instOverdue = inst.due_date && new Date(inst.due_date) < new Date() && inst.status !== 'paid';
+                                  return (
+                                    <div 
+                                      key={inst.id} 
+                                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs ${
+                                        inst.status === 'paid' 
+                                          ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800' 
+                                          : instOverdue
+                                            ? 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800'
+                                            : 'bg-muted/50 border border-border'
+                                      }`}
+                                    >
+                                      <div>
+                                        <span className="font-medium">
+                                          {inst.status === 'paid' ? '✅' : instOverdue ? '🚨' : '⏳'} {inst.installment_number}ª parcela
+                                        </span>
+                                        <p className="text-muted-foreground">
+                                          Venc: {inst.due_date ? new Date(inst.due_date).toLocaleDateString('pt-BR') : '-'}
+                                        </p>
+                                        {inst.paid_at && (
+                                          <p className="text-green-600 text-[10px]">
+                                            Pago em {new Date(inst.paid_at).toLocaleDateString('pt-BR')}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="font-bold">
+                                          R$ {(inst.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </p>
+                                        {inst.paid_amount > 0 && inst.paid_amount < inst.amount && (
+                                          <p className="text-orange-600">
+                                            Pago: R$ {inst.paid_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Notas */}
+                          {payment.notes && (
+                            <p className="text-xs text-muted-foreground italic border-t pt-2">
+                              📝 {payment.notes}
+                            </p>
+                          )}
+
+                          {/* Data de criação */}
+                          <p className="text-[10px] text-muted-foreground">
+                            Criado em {new Date(payment.created_at).toLocaleDateString('pt-BR')} às {new Date(payment.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
                       );
                     })}
-                  </TableBody>
-                </Table>
-              )}
-
-              {pendingPayments.length > 0 && (
-                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-2">Resumo de Cobranças</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Total Pendente</p>
-                      <p className="font-medium text-blue-600">
-                        R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Em Atraso</p>
-                      <p className="font-medium text-red-600">
-                        R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">No Prazo</p>
-                      <p className="font-medium text-green-600">
-                        R$ {(totalPendingAmount - totalOverdueAmount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               )}
             </CardContent>
