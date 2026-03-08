@@ -334,6 +334,54 @@ export default function Patients() {
     }
   };
 
+  // Carregar última consulta de cada paciente
+  const loadLastAppointments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('client_id, completed_at')
+        .eq('status', 'completed')
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false });
+      if (error) throw error;
+      const map = new Map<string, string>();
+      (data || []).forEach((s: any) => {
+        if (!map.has(s.client_id)) {
+          map.set(s.client_id, s.completed_at);
+        }
+      });
+      setLastAppointments(map);
+    } catch (error) {
+      console.error("Error loading last appointments:", error);
+    }
+  };
+
+  // Exportar lista filtrada para Excel
+  const handleExportExcel = () => {
+    const exportData = filteredClients.map(c => ({
+      'Nome': c.name,
+      'CPF': c.cpf || '',
+      'Telefone': c.phone || '',
+      'E-mail': c.email || '',
+      'Unidade': c.unit === 'madre' ? 'MADRE' : c.unit === 'floresta' ? 'Floresta' : c.unit === 'atendimento_floresta' ? 'Atend. Floresta' : c.unit || '',
+      'Status': c.is_active ? 'Ativo' : 'Inativo',
+      'Gênero': c.gender === 'male' ? 'Masculino' : c.gender === 'female' ? 'Feminino' : c.gender || '',
+      'Data de Nascimento': c.birth_date ? new Date(c.birth_date).toLocaleDateString('pt-BR') : '',
+      'Última Consulta': lastAppointments.get(c.id) ? new Date(lastAppointments.get(c.id)!).toLocaleDateString('pt-BR') : '',
+      'Data de Cadastro': new Date(c.created_at).toLocaleDateString('pt-BR'),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Pacientes');
+    XLSX.writeFile(wb, `pacientes_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    
+    toast({
+      title: "Exportação concluída",
+      description: `${exportData.length} pacientes exportados para Excel.`,
+    });
+  };
+
   // loadClients removido - agora usamos React Query com useClients hook
 
   const handleCreateClient = async () => {
