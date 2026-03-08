@@ -192,6 +192,10 @@ export default function CompleteAttendanceDialog({
       setTrppResults(null);
       setFptInfantilResults(null);
       setFptAdultoResults(null);
+      setReyResults(null);
+      setStroopResults(null);
+      setWcstResults(null);
+      setWechslerResults(null);
       setNutritionData({});
       setProfessionalRole(null);
     }
