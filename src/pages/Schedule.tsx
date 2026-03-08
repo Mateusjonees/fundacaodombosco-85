@@ -433,6 +433,8 @@ export default function Schedule() {
         title: "Erro",
         description: "Erro ao salvar agendamento. Tente novamente.",
       });
+    } finally {
+      setIsSavingSchedule(false);
     }
   };
 
