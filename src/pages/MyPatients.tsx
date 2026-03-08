@@ -667,9 +667,10 @@ const MyPatients: React.FC = () => {
                       <div className="flex gap-2 pt-3 border-t border-border/50">
                         <Button 
                           size="sm" 
-                          onClick={() => setSelectedClient(client)}
+                          onClick={() => openPatientModal(client.id)}
                           className="flex-1"
                         >
+                          <Eye className="h-4 w-4 mr-1" />
                           Ver Detalhes
                         </Button>
                         <Button 
