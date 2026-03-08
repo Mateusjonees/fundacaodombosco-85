@@ -356,6 +356,44 @@ export default function Patients() {
     setIsDialogOpen(true);
   }, []);
 
+  // === Filtering & sorting (must be before callbacks that reference it) ===
+  const filteredClients = useMemo(() => {
+    const filtered = clients.filter((client) => {
+      const matchesStatus = statusFilter === "all" || (statusFilter === "active" && client.is_active) || (statusFilter === "inactive" && !client.is_active);
+      const matchesUnit = unitFilter === "all" || client.unit === unitFilter;
+      const matchesAge = ageFilter === "all" || (() => {
+        const age = getAge(client.birth_date);
+        if (age === null) return false;
+        return ageFilter === "minor" ? age < 18 : age >= 18;
+      })();
+      const matchesProfessional = !isCoordinatorOrDirector() || professionalFilter === "all" || (() => {
+        const ca = clientAssignments.find(a => a.client_id === client.id && a.is_active);
+        const emp = employees.find(e => e.id === professionalFilter);
+        return emp && ca ? ca.employee_id === emp.user_id : false;
+      })();
+      const matchesLaudo = laudoFilter === "all" || (laudoFilter === "with_laudo" && clientLaudoIds.has(client.id)) || (laudoFilter === "without_laudo" && !clientLaudoIds.has(client.id));
+      const matchesGender = genderFilter === "all" || client.gender === genderFilter;
+      return matchesStatus && matchesUnit && matchesAge && matchesProfessional && matchesLaudo && matchesGender;
+    });
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name_asc": return a.name.localeCompare(b.name, 'pt-BR');
+        case "name_desc": return b.name.localeCompare(a.name, 'pt-BR');
+        case "newest": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "age_asc": case "age_desc": {
+          const ageA = getAge(a.birth_date), ageB = getAge(b.birth_date);
+          if (ageA === null && ageB === null) return 0;
+          if (ageA === null) return 1;
+          if (ageB === null) return -1;
+          return sortBy === "age_asc" ? ageA - ageB : ageB - ageA;
+        }
+        default: return 0;
+      }
+    });
+    return filtered;
+  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, getAge, isCoordinatorOrDirector]);
+
   const handleExportExcel = useCallback(() => {
     const exportData = filteredClients.map(c => ({
       'Nome': c.name, 'CPF': c.cpf || '', 'Telefone': c.phone || '', 'E-mail': c.email || '',
@@ -380,44 +418,6 @@ export default function Patients() {
   const toggleSelectAll = useCallback(() => {
     setSelectedClients(prev => prev.length === filteredClients.length ? [] : filteredClients.map(c => c.id));
   }, [filteredClients]);
-
-  // === Filtering & sorting ===
-  const filteredClients = useMemo(() => {
-    const filtered = clients.filter((client) => {
-      const matchesStatus = statusFilter === "all" || (statusFilter === "active" && client.is_active) || (statusFilter === "inactive" && !client.is_active);
-      const matchesUnit = unitFilter === "all" || client.unit === unitFilter;
-      const matchesAge = ageFilter === "all" || (() => {
-        const age = getAge(client.birth_date);
-        if (age === null) return false;
-        return ageFilter === "minor" ? age < 18 : age >= 18;
-      })();
-      const matchesProfessional = !isCoordinatorOrDirector() || professionalFilter === "all" || (() => {
-        const ca = clientAssignments.find(a => a.client_id === client.id && a.is_active);
-        const emp = employees.find(e => e.id === professionalFilter);
-        return emp && ca ? ca.employee_id === emp.user_id : false;
-      })();
-      const matchesLaudo = laudoFilter === "all" || (laudoFilter === "with_laudo" && clientLaudoIds.has(client.id)) || (laudoFilter === "without_laudo" && !clientLaudoIds.has(client.id));
-      const matchesGender = genderFilter === "all" || client.gender === genderFilter;
-      return matchesStatus && matchesUnit && matchesAge && matchesProfessional && matchesLaudo && matchesGender;
-    });
-
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "name_asc": return a.name.localeCompare(b.name, 'pt-BR');
-        case "name_desc": return b.name.localeCompare(a.name, 'pt-BR');
-        case "newest": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case "oldest": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        case "age_asc": case "age_desc": {
-          const ageA = getAge(a.birth_date), ageB = getAge(b.birth_date);
-          if (ageA === null && ageB === null) return 0;
-          if (ageA === null) return 1;
-          if (ageB === null) return -1;
-          return sortBy === "age_asc" ? ageA - ageB : ageB - ageA;
-        }
-        default: return 0;
-      }
-    });
-    return filtered;
   }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, getAge, isCoordinatorOrDirector]);
 
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
