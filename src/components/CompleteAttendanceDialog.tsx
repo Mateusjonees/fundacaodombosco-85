@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -13,53 +13,73 @@ import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
-import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
-import NeuroTestFDTForm from './NeuroTestFDTForm';
-import NeuroTestRAVLTForm from './NeuroTestRAVLTForm';
-import NeuroTestTINForm, { type TINResults } from './NeuroTestTINForm';
-import NeuroTestPCFOForm, { type PCFOResults } from './NeuroTestPCFOForm';
-import NeuroTestTSBCForm from './NeuroTestTSBCForm';
-import NeuroTestFVAForm from './NeuroTestFVAForm';
-import NeuroTestBNTBRForm from './NeuroTestBNTBRForm';
-import NeuroTestTrilhasForm, { type TrilhasResults } from './NeuroTestTrilhasForm';
-import NeuroTestTMTAdultoForm, { type TMTAdultoResults } from './NeuroTestTMTAdultoForm';
-import NeuroTestTrilhasPreEscolarForm from './NeuroTestTrilhasPreEscolarForm';
-import NeuroTestFASForm from './NeuroTestFASForm';
-import NeuroTestHaylingAdultoForm, { type HaylingResults } from './NeuroTestHaylingAdultoForm';
-import NeuroTestHaylingInfantilForm from './NeuroTestHaylingInfantilForm';
-import NeuroTestTFVForm from './NeuroTestTFVForm';
-import NeuroTestTOMForm from './NeuroTestTOMForm';
-import NeuroTestTaylorForm from './NeuroTestTaylorForm';
-import NeuroTestTRPPForm from './NeuroTestTRPPForm';
-import NeuroTestFPTInfantilForm from './NeuroTestFPTInfantilForm';
-import NeuroTestFPTAdultoForm from './NeuroTestFPTAdultoForm';
-import NeuroTestReyForm from './NeuroTestReyForm';
-import NeuroTestStroopForm from './NeuroTestStroopForm';
-import NeuroTestWCSTForm from './NeuroTestWCSTForm';
-import NeuroTestWechslerForm from './NeuroTestWechslerForm';
-import NeuroTestToLForm from './NeuroTestToLForm';
-import NeuroTestD2Form from './NeuroTestD2Form';
-import NeuroTestBDIForm from './NeuroTestBDIForm';
-import NeuroTestBAIForm from './NeuroTestBAIForm';
-import NeuroTestSNAPIVForm from './NeuroTestSNAPIVForm';
-import NeuroTestMCHATForm from './NeuroTestMCHATForm';
-import NeuroTestRavenForm from './NeuroTestRavenForm';
-import NeuroTestWMSForm from './NeuroTestWMSForm';
-import NeuroTestMoCAForm from './NeuroTestMoCAForm';
-import NeuroTestMEEMForm from './NeuroTestMEEMForm';
-import NeuroTestBRIEF2Form from './NeuroTestBRIEF2Form';
-import NeuroTestCorsiForm from './NeuroTestCorsiForm';
-import NeuroTestConnersForm from './NeuroTestConnersForm';
-import NeuroTestVinelandForm from './NeuroTestVinelandForm';
-import NeuroTestACE3Form from './NeuroTestACE3Form';
-import NeuroTestCBCLForm from './NeuroTestCBCLForm';
-import NeuroTestSDQForm from './NeuroTestSDQForm';
-import NeuroTestGDSForm from './NeuroTestGDSForm';
-import NeuroTestTDE2Form from './NeuroTestTDE2Form';
-import NeuroTestNEUPSILINForm from './NeuroTestNEUPSILINForm';
-import NeuroTestCancelamentoForm from './NeuroTestCancelamentoForm';
+
+// Lazy load - formulários só carregam quando selecionados pelo profissional
+const NeuroTestBPA2Form = lazy(() => import('./NeuroTestBPA2Form'));
+const NeuroTestFDTForm = lazy(() => import('./NeuroTestFDTForm'));
+const NeuroTestRAVLTForm = lazy(() => import('./NeuroTestRAVLTForm'));
+const NeuroTestTINForm = lazy(() => import('./NeuroTestTINForm'));
+const NeuroTestPCFOForm = lazy(() => import('./NeuroTestPCFOForm'));
+const NeuroTestTSBCForm = lazy(() => import('./NeuroTestTSBCForm'));
+const NeuroTestFVAForm = lazy(() => import('./NeuroTestFVAForm'));
+const NeuroTestBNTBRForm = lazy(() => import('./NeuroTestBNTBRForm'));
+const NeuroTestTrilhasForm = lazy(() => import('./NeuroTestTrilhasForm'));
+const NeuroTestTMTAdultoForm = lazy(() => import('./NeuroTestTMTAdultoForm'));
+const NeuroTestTrilhasPreEscolarForm = lazy(() => import('./NeuroTestTrilhasPreEscolarForm'));
+const NeuroTestFASForm = lazy(() => import('./NeuroTestFASForm'));
+const NeuroTestHaylingAdultoForm = lazy(() => import('./NeuroTestHaylingAdultoForm'));
+const NeuroTestHaylingInfantilForm = lazy(() => import('./NeuroTestHaylingInfantilForm'));
+const NeuroTestTFVForm = lazy(() => import('./NeuroTestTFVForm'));
+const NeuroTestTOMForm = lazy(() => import('./NeuroTestTOMForm'));
+const NeuroTestTaylorForm = lazy(() => import('./NeuroTestTaylorForm'));
+const NeuroTestTRPPForm = lazy(() => import('./NeuroTestTRPPForm'));
+const NeuroTestFPTInfantilForm = lazy(() => import('./NeuroTestFPTInfantilForm'));
+const NeuroTestFPTAdultoForm = lazy(() => import('./NeuroTestFPTAdultoForm'));
+const NeuroTestReyForm = lazy(() => import('./NeuroTestReyForm'));
+const NeuroTestStroopForm = lazy(() => import('./NeuroTestStroopForm'));
+const NeuroTestWCSTForm = lazy(() => import('./NeuroTestWCSTForm'));
+const NeuroTestWechslerForm = lazy(() => import('./NeuroTestWechslerForm'));
+const NeuroTestToLForm = lazy(() => import('./NeuroTestToLForm'));
+const NeuroTestD2Form = lazy(() => import('./NeuroTestD2Form'));
+const NeuroTestBDIForm = lazy(() => import('./NeuroTestBDIForm'));
+const NeuroTestBAIForm = lazy(() => import('./NeuroTestBAIForm'));
+const NeuroTestSNAPIVForm = lazy(() => import('./NeuroTestSNAPIVForm'));
+const NeuroTestMCHATForm = lazy(() => import('./NeuroTestMCHATForm'));
+const NeuroTestRavenForm = lazy(() => import('./NeuroTestRavenForm'));
+const NeuroTestWMSForm = lazy(() => import('./NeuroTestWMSForm'));
+const NeuroTestMoCAForm = lazy(() => import('./NeuroTestMoCAForm'));
+const NeuroTestMEEMForm = lazy(() => import('./NeuroTestMEEMForm'));
+const NeuroTestBRIEF2Form = lazy(() => import('./NeuroTestBRIEF2Form'));
+const NeuroTestCorsiForm = lazy(() => import('./NeuroTestCorsiForm'));
+const NeuroTestConnersForm = lazy(() => import('./NeuroTestConnersForm'));
+const NeuroTestVinelandForm = lazy(() => import('./NeuroTestVinelandForm'));
+const NeuroTestACE3Form = lazy(() => import('./NeuroTestACE3Form'));
+const NeuroTestCBCLForm = lazy(() => import('./NeuroTestCBCLForm'));
+const NeuroTestSDQForm = lazy(() => import('./NeuroTestSDQForm'));
+const NeuroTestGDSForm = lazy(() => import('./NeuroTestGDSForm'));
+const NeuroTestTDE2Form = lazy(() => import('./NeuroTestTDE2Form'));
+const NeuroTestNEUPSILINForm = lazy(() => import('./NeuroTestNEUPSILINForm'));
+const NeuroTestCancelamentoForm = lazy(() => import('./NeuroTestCancelamentoForm'));
+
+// Tipos (apenas interfaces, não aumentam o bundle)
+import { type BPA2Results } from './NeuroTestBPA2Form';
+import { type TINResults } from './NeuroTestTINForm';
+import { type PCFOResults } from './NeuroTestPCFOForm';
+import { type TrilhasResults } from './NeuroTestTrilhasForm';
+import { type TMTAdultoResults } from './NeuroTestTMTAdultoForm';
+import { type HaylingResults } from './NeuroTestHaylingAdultoForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
+
+// Fallback de loading para formulários lazy
+const NeuroFormFallback = () => (
+  <Card className="border-primary/20">
+    <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      <span className="text-sm">Carregando formulário...</span>
+    </CardContent>
+  </Card>
+);
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
 import { type FVAResults } from '@/data/neuroTests/fva';
 import { type BNTBRResults } from '@/data/neuroTests/bntbr';
@@ -1551,6 +1571,7 @@ export default function CompleteAttendanceDialog({
                   onRemoveTest={handleRemoveTest}
                 />
 
+              <Suspense fallback={<NeuroFormFallback />}>
                 {/* Formulário BPA-2 */}
                 {selectedTests.includes('BPA2') && (
                   <NeuroTestBPA2Form
@@ -1856,6 +1877,7 @@ export default function CompleteAttendanceDialog({
                 {selectedTests.includes('CANCELAMENTO') && (
                   <NeuroTestCancelamentoForm patientAge={patientAge} onResultsChange={handleCancelamentoResultsChange} />
                 )}
+              </Suspense>
               </div>
             )}
 
