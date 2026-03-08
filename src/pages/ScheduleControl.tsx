@@ -1513,9 +1513,19 @@ ${notificationMessage}
               </div>
 
               {/* Linha 2: Filtros */}
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
+                <div className="relative flex-1 sm:flex-none sm:w-[200px]">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar paciente ou profissional..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 h-9 text-xs sm:text-sm"
+                  />
+                </div>
+
                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                  <SelectTrigger className="w-full sm:w-[180px] md:w-[200px] h-9 text-xs sm:text-sm">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs sm:text-sm">
                     <SelectValue placeholder="Todos os profissionais" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1527,7 +1537,7 @@ ${notificationMessage}
                 </Select>
 
                 <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                  <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] h-9 text-xs sm:text-sm">
+                  <SelectTrigger className="w-full sm:w-[150px] h-9 text-xs sm:text-sm">
                     <SelectValue placeholder="Todas as unidades" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1538,7 +1548,21 @@ ${notificationMessage}
                   </SelectContent>
                 </Select>
 
-                <Button onClick={() => setPdfConfigDialogOpen(true)} variant="outline" className="gap-2 h-9 text-xs sm:text-sm w-full sm:w-auto" disabled={schedules.length === 0}>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[150px] h-9 text-xs sm:text-sm">
+                    <SelectValue placeholder="Todos os status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="scheduled">Agendado</SelectItem>
+                    <SelectItem value="confirmed">Confirmado</SelectItem>
+                    <SelectItem value="completed">Concluído</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button onClick={() => setPdfConfigDialogOpen(true)} variant="outline" className="gap-2 h-9 text-xs sm:text-sm w-full sm:w-auto" disabled={filteredSchedules.length === 0}>
                   <Download className="h-4 w-4" />
                   <span className="sm:inline">Baixar PDF</span>
                 </Button>
