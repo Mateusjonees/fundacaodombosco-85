@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Brain, Calendar, ChevronDown, ClipboardCopy, Calculator, FileInput, User } from 'lucide-react';
+import { Brain, Calendar, ChevronDown, ClipboardCopy, Calculator, FileInput, User, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 import NeuroScoreCalculator from './NeuroScoreCalculator';
+import LaudoFromTestsGenerator from './LaudoFromTestsGenerator';
+import type { TestDataForLaudo } from '@/utils/laudoTextGenerator';
 
 interface NeuroTestResult {
   id: string;
@@ -1140,6 +1142,7 @@ export default function PatientNeuroTestHistory({
   const [tests, setTests] = useState<NeuroTestResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [applierNames, setApplierNames] = useState<Record<string, string>>({});
+  const [laudoGeneratorOpen, setLaudoGeneratorOpen] = useState(false);
 
   useEffect(() => {
     fetchTests();
@@ -1510,6 +1513,21 @@ export default function PatientNeuroTestHistory({
 
   const clientAge = calculateAge(clientBirthDate);
 
+
+  // Converter testes para formato do gerador de laudo
+  const testsForLaudo: TestDataForLaudo[] = tests.map(t => ({
+    id: t.id,
+    test_code: t.test_code,
+    test_name: t.test_name,
+    patient_age: t.patient_age,
+    applied_at: t.applied_at,
+    raw_scores: t.raw_scores as Record<string, any>,
+    calculated_scores: t.calculated_scores as Record<string, any>,
+    percentiles: t.percentiles as Record<string, any>,
+    classifications: t.classifications as Record<string, string>,
+    notes: t.notes,
+  }));
+
   return (
     <div className="space-y-6">
       {/* Calculadora de Scores */}
@@ -1522,11 +1540,24 @@ export default function PatientNeuroTestHistory({
       {/* Histórico de Testes */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            Histórico de Testes Neuropsicológicos
-            <Badge variant="secondary" className="ml-auto">{tests.length} teste(s)</Badge>
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              Histórico de Testes Neuropsicológicos
+              <Badge variant="secondary" className="ml-1">{tests.length} teste(s)</Badge>
+            </CardTitle>
+            {tests.length > 0 && (
+              <Button
+                onClick={() => setLaudoGeneratorOpen(true)}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Gerar Rascunho de Laudo
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
         <Accordion type="single" collapsible className="w-full">
@@ -1675,6 +1706,16 @@ export default function PatientNeuroTestHistory({
         </Accordion>
       </CardContent>
     </Card>
+
+    {/* Gerador de Laudo */}
+    <LaudoFromTestsGenerator
+      open={laudoGeneratorOpen}
+      onOpenChange={setLaudoGeneratorOpen}
+      tests={testsForLaudo}
+      clientId={clientId}
+      clientName={clientName}
+      clientBirthDate={clientBirthDate}
+    />
     </div>
   );
 }
