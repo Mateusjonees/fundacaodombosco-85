@@ -679,7 +679,7 @@ export default function Patients() {
             }}
             onBack={handleBackToList}
             onRefresh={refreshClients}
-            onDelete={isGodMode() ? () => setDeleteConfirmClient(activeClient) : undefined}
+            onDelete={canDeleteClients() ? () => setDeleteConfirmClient(activeClient) : undefined}
           />
         </div>
 

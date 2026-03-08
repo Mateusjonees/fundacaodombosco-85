@@ -176,7 +176,7 @@ export const useRolePermissions = () => {
     return isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist', 'staff']);
   };
 
-  const canDeleteClients = (): boolean => isGodMode();
+  const canDeleteClients = (): boolean => isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']);
   const canEditClients = (): boolean => isGodMode() || hasAnyRole(['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']);
   const canDeleteEmployees = (): boolean => isGodMode();
   const canEditEmployees = (): boolean => isGodMode() || hasAnyRole(ROLE_GROUPS.COORDINATOR_AND_HIGHER);
