@@ -247,6 +247,14 @@ export default function CompleteAttendanceDialog({
       setFptInfantilResults(null);
     } else if (testCode === 'FPT_ADULTO') {
       setFptAdultoResults(null);
+    } else if (testCode === 'REY') {
+      setReyResults(null);
+    } else if (testCode === 'STROOP') {
+      setStroopResults(null);
+    } else if (testCode === 'WCST') {
+      setWcstResults(null);
+    } else if (testCode === 'WECHSLER') {
+      setWechslerResults(null);
     }
   };
 
