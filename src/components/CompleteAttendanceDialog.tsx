@@ -180,6 +180,8 @@ export default function CompleteAttendanceDialog({
       setTrppResults(null);
       setFptInfantilResults(null);
       setFptAdultoResults(null);
+      setNutritionData({});
+      setProfessionalRole(null);
     }
   }, [isOpen]);
 
