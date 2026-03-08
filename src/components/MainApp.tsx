@@ -272,6 +272,7 @@ export const MainApp = () => {
           </div>
           <MobileBottomNav />
           <ScreenOrientationToggle />
+          <ScrollToTop />
         </div>
       </SidebarProvider>
     </Router>
