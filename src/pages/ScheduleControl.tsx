@@ -304,8 +304,9 @@ ${notificationMessage}
       }
       let query = supabase.from('schedules').select(`
           *,
-          clients (name),
-          profiles:employee_id (name)
+          clients (name, phone, email, unit, diagnosis, birth_date, responsible_name, responsible_phone),
+          profiles:employee_id (name, employee_role),
+          attendance_reports (id, validation_status, status)
         `).gte('start_time', startDate.toISOString()).lt('start_time', endDate.toISOString()).order('start_time');
 
       // Filtros
