@@ -610,7 +610,7 @@ export default function Patients() {
         ageFilter === "all" ||
         (() => {
           const age = getAge(client.birth_date);
-          if (age === null) return true;
+          if (age === null) return false; // Sem data de nascimento = excluído do filtro de idade
           if (ageFilter === "minor") return age < 18;
           if (ageFilter === "adult") return age >= 18;
           return true;
