@@ -679,7 +679,7 @@ export default function Patients() {
     });
 
     return filtered;
-  }, [clients, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, userProfile?.employee_role]);
+  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, userProfile?.employee_role]);
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
 
   // Renderizar tab bar de navegação (lista + pacientes abertos)
