@@ -70,6 +70,13 @@ const MyPatients: React.FC = () => {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [completeSchedule, setCompleteSchedule] = useState<Schedule | null>(null);
+  const [patientModalClientId, setPatientModalClientId] = useState<string | null>(null);
+  const [patientModalOpen, setPatientModalOpen] = useState(false);
+
+  const openPatientModal = (clientId: string) => {
+    setPatientModalClientId(clientId);
+    setPatientModalOpen(true);
+  };
 
   useEffect(() => {
     // Permitir acesso para todos os usuários autenticados
