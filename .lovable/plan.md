@@ -1,31 +1,59 @@
 
 
-# Botao de Rotacao de Tela para Mobile/Tablet
+# Plano: Melhorar Filtros e Resumo Financeiro
 
-## O que sera feito
-Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
+## Problemas Identificados
 
-## Como vai funcionar
-- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
-- Ao clicar, a tela alternara entre orientacao retrato e paisagem
-- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
-- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
-- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
+1. **Sem filtro por forma de pagamento** — Os filtros avancados nao tem opcao para filtrar por PIX, Dinheiro, Cartao, etc.
+2. **Sem filtro por categoria** — Existe o state `categoryFilter` mas nao aparece no painel de filtros avancados (so filtra internamente)
+3. **Saldo real nao reflete os filtros** — Os cards de resumo no topo mostram apenas o mes atual, nao reagem aos filtros de data aplicados
+4. **Sem resumo por forma de pagamento** — Nao mostra totais agrupados por metodo de pagamento (quanto entrou via PIX, quanto via Cartao, etc.)
 
-## Detalhes Tecnicos
+## Melhorias Planejadas
 
-### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
-- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
-- Verificara suporte do navegador antes de exibir o botao
-- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
-- Icone do lucide-react: `RotateCcw` ou `Smartphone`
-- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
+### 1. Adicionar filtro por Forma de Pagamento
+Novo select no painel de filtros com opcoes: Todos, Dinheiro, PIX, Cartao Credito, Cartao Debito, Transferencia, Boleto, Contrato, Interno.
 
-### 2. Integracao no `MainApp.tsx`
-- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
+### 2. Adicionar filtro por Categoria
+Select com categorias de receita e despesa no painel de filtros.
 
-### 3. Tratamento de erros
-- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
-- Caso o navegador nao suporte, o botao nao sera renderizado
-- Em caso de falha ao rotacionar, exibira um toast informando o usuario
+### 3. Cards de resumo reativos aos filtros
+Os 6 cards do topo passam a refletir os `filteredRecords` (periodo filtrado), nao so o mes atual. Mostrar:
+- **Receita Total** (do periodo filtrado)
+- **Despesas** (do periodo filtrado)
+- **Saldo Real** = Receita - Despesas (do filtro ativo)
+- **Ticket Medio**
+- **Total de Transacoes**
+- **A Receber**
+
+Indicacao visual do periodo ativo (ex: "Periodo: 01/01 a 31/03" ou "Mes atual").
+
+### 4. Resumo por Forma de Pagamento
+Novo card/secao abaixo dos filtros mostrando totais agrupados:
+- PIX: R$ X.XXX
+- Dinheiro: R$ X.XXX
+- Cartao: R$ X.XXX
+- etc.
+
+Com barras visuais proporcionais para facil leitura.
+
+### 5. Melhorar o "Relatorio Detalhado" no rodape
+Substituir o card basico atual por um resumo completo com:
+- Totais por categoria (Consulta, Terapia, Avaliacao, Materiais, Salarios)
+- Totais por forma de pagamento
+- Saldo liquido do periodo
+
+## Arquivo a modificar
+
+| Arquivo | Alteracao |
+|---------|-----------|
+| `src/pages/Financial.tsx` | Adicionar filtro pagamento + categoria, cards reativos, resumo por pagamento |
+
+## Detalhes tecnicos
+
+- Novo state: `paymentMethodFilter` para filtro por forma de pagamento
+- `filteredRecords` ja existe e sera usado para calcular os totais nos cards
+- Agrupamento por payment_method: `reduce` sobre `filteredRecords` para gerar mapa de totais
+- Cards do topo: trocar `currentMonthIncome/Expenses` por totais calculados de `filteredRecords`
+- Manter `currentMonth` como fallback quando nenhum filtro de data esta ativo
 
