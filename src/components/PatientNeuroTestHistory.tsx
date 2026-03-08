@@ -1511,7 +1511,7 @@ export default function PatientNeuroTestHistory({
     return age;
   };
 
-
+  const clientAge = calculateAge(clientBirthDate);
 
 
   // Converter testes para formato do gerador de laudo
