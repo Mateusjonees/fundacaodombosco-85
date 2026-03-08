@@ -3475,39 +3475,36 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           department: string | null
-          email: string | null
           employee_role: Database["public"]["Enums"]["employee_role"] | null
           id: string | null
           is_active: boolean | null
           name: string | null
-          phone: string | null
           unit: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
           department?: string | null
-          email?: string | null
           employee_role?: Database["public"]["Enums"]["employee_role"] | null
           id?: string | null
           is_active?: boolean | null
           name?: string | null
-          phone?: string | null
           unit?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
           department?: string | null
-          email?: string | null
           employee_role?: Database["public"]["Enums"]["employee_role"] | null
           id?: string | null
           is_active?: boolean | null
           name?: string | null
-          phone?: string | null
           unit?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
