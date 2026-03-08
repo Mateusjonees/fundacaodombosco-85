@@ -223,6 +223,8 @@ export default function AddAnamnesisDialog({
               <SelectContent>
                 <SelectItem value="private">Demanda Própria</SelectItem>
                 <SelectItem value="sus">SUS</SelectItem>
+                <SelectItem value="external">Demanda Externa</SelectItem>
+                <SelectItem value="laudo">Laudo</SelectItem>
               </SelectContent>
             </Select>
           </div>

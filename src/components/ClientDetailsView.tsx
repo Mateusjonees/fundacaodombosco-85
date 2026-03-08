@@ -1529,9 +1529,16 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                                   <span className="text-sm font-medium">{noteItem.profiles?.name || 'Usuário'}</span>
                                   <Badge 
                                     variant="outline" 
-                                    className={noteItem.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'}
+                                    className={
+                                      noteItem.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 
+                                      noteItem.service_type === 'external' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30' :
+                                      noteItem.service_type === 'laudo' ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' :
+                                      'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'
+                                    }
                                   >
-                                    {noteItem.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}
+                                    {noteItem.service_type === 'sus' ? 'SUS' : 
+                                     noteItem.service_type === 'external' ? 'Demanda Externa' :
+                                     noteItem.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
