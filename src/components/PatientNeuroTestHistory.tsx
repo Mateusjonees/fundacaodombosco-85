@@ -1224,6 +1224,49 @@ export default function PatientNeuroTestHistory({
         inputSection = renderBNTBRInputs(rawScores);
         calculationsSection = renderBNTBRCalculations(calculatedScores);
         break;
+      case 'FAS':
+        inputSection = renderFASInputs(rawScores);
+        calculationsSection = renderFASCalculations(calculatedScores);
+        break;
+      case 'HAYLING_ADULTO':
+        inputSection = renderHaylingAdultoInputs(rawScores);
+        calculationsSection = renderHaylingAdultoCalculations(calculatedScores as unknown as Record<string, number | string>);
+        break;
+      case 'HAYLING_INFANTIL':
+        inputSection = renderHaylingInfantilInputs(rawScores as unknown as Record<string, number | string>);
+        calculationsSection = renderHaylingInfantilCalculations(calculatedScores);
+        break;
+      case 'TFV':
+        inputSection = renderTFVInputs(rawScores as unknown as Record<string, number | string>);
+        break;
+      case 'TOM':
+        inputSection = renderTOMInputs(rawScores);
+        calculationsSection = renderTOMCalculations(calculatedScores);
+        break;
+      case 'TAYLOR':
+        inputSection = renderTaylorInputs(rawScores);
+        calculationsSection = renderTaylorCalculations(calculatedScores);
+        break;
+      case 'TRPP':
+        inputSection = renderTRPPInputs(rawScores);
+        calculationsSection = renderTRPPCalculations(calculatedScores);
+        break;
+      case 'TRILHAS':
+        inputSection = renderTrilhasInputs(rawScores);
+        calculationsSection = renderTrilhasCalculations(calculatedScores);
+        break;
+      case 'TMT_ADULTO':
+        inputSection = renderTMTAdultoInputs(rawScores as unknown as Record<string, number | string>);
+        calculationsSection = renderTMTAdultoCalculations(calculatedScores);
+        break;
+      case 'TRILHAS_PRE_ESCOLAR':
+        inputSection = renderTrilhasPreEscolarInputs(rawScores);
+        calculationsSection = renderTrilhasPreEscolarCalculations(calculatedScores);
+        break;
+      case 'FPT_INFANTIL':
+      case 'FPT_ADULTO':
+        inputSection = renderFPTInputs(rawScores as unknown as Record<string, number | string>);
+        break;
       default: {
         inputSection = renderGenericInputs(rawScores);
         break;
