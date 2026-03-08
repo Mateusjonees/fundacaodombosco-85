@@ -126,6 +126,16 @@ export default function CompleteAttendanceDialog({
     }
   }, [isOpen, schedule?.client_id, schedule?.employee_id]);
 
+  const fetchProfessionalRole = async () => {
+    if (!schedule?.employee_id) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('employee_role')
+      .eq('user_id', schedule.employee_id)
+      .maybeSingle();
+    if (data) setProfessionalRole(data.employee_role);
+  };
+
   const fetchClientInfo = async () => {
     if (!schedule?.client_id) return;
     
