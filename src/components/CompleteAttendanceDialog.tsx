@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2, Brain, Maximize2, Minimize2 } from 'lucide-react';
 import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
+import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
 import NeuroTestBPA2Form, { type BPA2Results } from './NeuroTestBPA2Form';
 import NeuroTestFDTForm from './NeuroTestFDTForm';
@@ -112,13 +113,28 @@ export default function CompleteAttendanceDialog({
   const [fptAdultoResults, setFptAdultoResults] = useState<FPTAdultoResults | null>(null);
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
+  const [professionalRole, setProfessionalRole] = useState<string | null>(null);
+  const [nutritionData, setNutritionData] = useState<NutritionData>({});
 
-  // Calculate patient age and get unit
+  // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
     if (isOpen && schedule?.client_id) {
       fetchClientInfo();
     }
-  }, [isOpen, schedule?.client_id]);
+    if (isOpen && schedule?.employee_id) {
+      fetchProfessionalRole();
+    }
+  }, [isOpen, schedule?.client_id, schedule?.employee_id]);
+
+  const fetchProfessionalRole = async () => {
+    if (!schedule?.employee_id) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('employee_role')
+      .eq('user_id', schedule.employee_id)
+      .maybeSingle();
+    if (data) setProfessionalRole(data.employee_role);
+  };
 
   const fetchClientInfo = async () => {
     if (!schedule?.client_id) return;
@@ -164,6 +180,8 @@ export default function CompleteAttendanceDialog({
       setTrppResults(null);
       setFptInfantilResults(null);
       setFptAdultoResults(null);
+      setNutritionData({});
+      setProfessionalRole(null);
     }
   }, [isOpen]);
 
@@ -317,6 +335,7 @@ export default function CompleteAttendanceDialog({
 
     setLoading(true);
     try {
+      const isNutritionist = professionalRole === 'nutritionist';
       const isAtendimentoFloresta = clientUnit === 'atendimento_floresta';
       const isNeuroUnit = clientUnit === 'floresta';
 
@@ -352,6 +371,14 @@ export default function CompleteAttendanceDialog({
         ? JSON.parse(JSON.stringify(selectedMaterials)) 
         : null;
 
+      // Preparar dados de nutrição como attachments
+      const hasNutritionData = isNutritionist && Object.values(nutritionData).some(v => v && v.toString().trim() !== '');
+      const attachmentsData = hasNutritionData 
+        ? JSON.parse(JSON.stringify({ nutrition_assessment: nutritionData }))
+        : null;
+
+      const attendanceType = isNutritionist ? 'Consulta Nutricional' : 'Consulta';
+
       // Atualizar schedule
       const { error: scheduleError } = await supabase.from('schedules').update({
         status: scheduleStatus,
@@ -372,13 +399,14 @@ export default function CompleteAttendanceDialog({
           employee_id: schedule.employee_id,
           patient_name: schedule.clients?.name || '',
           professional_name: professionalName,
-          attendance_type: 'Consulta',
+          attendance_type: attendanceType,
           start_time: schedule.start_time,
           end_time: schedule.end_time,
           session_duration: durationMinutes,
           observations: sessionNotes,
           session_notes: sessionNotes,
           materials_used: materialsUsed,
+          attachments: attachmentsData,
           created_by: user.id,
           completed_by: user.id,
           completed_by_name: completedByName,
@@ -937,6 +965,7 @@ export default function CompleteAttendanceDialog({
   if (!schedule) return null;
 
   const isNeuroUnit = clientUnit === 'floresta';
+  const isNutritionistProfessional = professionalRole === 'nutritionist';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -1154,6 +1183,14 @@ export default function CompleteAttendanceDialog({
                   />
                 )}
               </div>
+            )}
+
+            {/* Avaliação Nutricional - Apenas para nutricionistas */}
+            {isNutritionistProfessional && (
+              <NutritionAssessmentForm
+                data={nutritionData}
+                onChange={setNutritionData}
+              />
             )}
 
             {/* Seletor de Materiais */}
