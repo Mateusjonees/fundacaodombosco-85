@@ -33,6 +33,10 @@ import NeuroTestTaylorForm from './NeuroTestTaylorForm';
 import NeuroTestTRPPForm from './NeuroTestTRPPForm';
 import NeuroTestFPTInfantilForm from './NeuroTestFPTInfantilForm';
 import NeuroTestFPTAdultoForm from './NeuroTestFPTAdultoForm';
+import NeuroTestReyForm from './NeuroTestReyForm';
+import NeuroTestStroopForm from './NeuroTestStroopForm';
+import NeuroTestWCSTForm from './NeuroTestWCSTForm';
+import NeuroTestWechslerForm from './NeuroTestWechslerForm';
 import { type FDTResults } from '@/data/neuroTests/fdt';
 import { type RAVLTResults } from '@/data/neuroTests/ravlt';
 import { type TSBCResults } from '@/data/neuroTests/tsbc';
@@ -47,6 +51,10 @@ import { type TaylorResults } from '@/data/neuroTests/taylor';
 import { type TRPPResults } from '@/data/neuroTests/trpp';
 import { type FPTInfantilResults } from '@/data/neuroTests/fptInfantil';
 import { type FPTAdultoResults } from '@/data/neuroTests/fptAdulto';
+import { type ReyResults } from '@/data/neuroTests/rey';
+import { type StroopResults } from '@/data/neuroTests/stroop';
+import { type WCSTResults } from '@/data/neuroTests/wcst';
+import { type WechslerResults } from '@/data/neuroTests/wais';
 
 interface Schedule {
   id: string;
