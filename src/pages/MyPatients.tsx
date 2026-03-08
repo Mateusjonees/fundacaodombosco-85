@@ -409,7 +409,12 @@ const MyPatients: React.FC = () => {
                             {format(new Date(schedule.start_time), 'HH:mm')}
                           </div>
                           <div>
-                            <div className="font-medium text-sm uppercase">{schedule.clients?.name || schedule.title}</div>
+                            <div 
+                              className="font-medium text-sm uppercase text-primary cursor-pointer hover:underline"
+                              onClick={() => schedule.client_id && openPatientModal(schedule.client_id)}
+                            >
+                              {schedule.clients?.name || schedule.title}
+                            </div>
                             <Badge variant={getStatusColor(schedule.status)} className="text-[10px] mt-0.5">
                               {getStatusLabel(schedule.status)}
                             </Badge>
