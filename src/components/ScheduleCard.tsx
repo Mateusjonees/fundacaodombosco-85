@@ -52,7 +52,7 @@ interface ScheduleCardProps {
 
 // Unit colors imported from centralized config
 
-export const ScheduleCard = ({
+export const ScheduleCard = memo(({
   schedule,
   employees,
   userProfile,
