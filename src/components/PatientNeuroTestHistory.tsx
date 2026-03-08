@@ -1008,8 +1008,8 @@ export default function PatientNeuroTestHistory({
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4 pt-2">
-                    {/* Seções de entrada e cálculos (apenas para testes com config) */}
-                    {config && renderInputAndCalculations(test)}
+                    {/* Seções de entrada e cálculos */}
+                    {renderInputAndCalculations(test)}
 
                     {/* Tabela de resultados */}
                     <Collapsible defaultOpen>
