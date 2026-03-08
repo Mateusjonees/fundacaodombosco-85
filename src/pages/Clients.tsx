@@ -1345,6 +1345,20 @@ export default function Patients() {
                 </SelectItem>
               </SelectContent>
             </Select>
+            <Select value={genderFilter} onValueChange={setGenderFilter}>
+              <SelectTrigger className="w-[150px] h-10">
+                <SelectValue placeholder="Gênero" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Gêneros</SelectItem>
+                <SelectItem value="male">
+                  <span className="flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" /> Masculino</span>
+                </SelectItem>
+                <SelectItem value="female">
+                  <span className="flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" /> Feminino</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
             {isCoordinatorOrDirector() && (
               <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
                 <SelectTrigger className="w-[180px] h-10">
@@ -1358,6 +1372,15 @@ export default function Patients() {
                 </SelectContent>
               </Select>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              className="h-10 gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Exportar Excel
+            </Button>
           </>
         }
       />
