@@ -88,6 +88,7 @@ const AppRoutes = memo(() => (
       <Route path="/contract-templates" element={<ProtectedRoute allowedRoles={['director']}><ContractTemplates /></ProtectedRoute>} />
       <Route path="/custom-roles" element={<ProtectedRoute allowedRoles={['director']}><CustomRoles /></ProtectedRoute>} />
       <Route path="/anamnesis" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist', 'musictherapist', 'terapeuta_ocupacional', 'terapeuta_ocupacional_integracao']}><Anamnesis /></ProtectedRoute>} />
+      <Route path="/waiting-list" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist']}><WaitingList /></ProtectedRoute>} />
       <Route path="/install" element={<Install />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
