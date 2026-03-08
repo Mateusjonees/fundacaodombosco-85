@@ -794,7 +794,9 @@ export default function Patients() {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
     return age < 18;
   }).length;
-  const activeFiltersCount = (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0);
+  const laudoCount = filteredClients.filter(c => clientLaudoIds.has(c.id)).length;
+  const withoutLaudoCount = filteredClients.length - laudoCount;
+  const activeFiltersCount = (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0) + (laudoFilter !== "all" ? 1 : 0) + (sortBy !== "name_asc" ? 1 : 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
