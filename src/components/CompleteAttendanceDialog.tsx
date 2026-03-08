@@ -267,6 +267,19 @@ export default function CompleteAttendanceDialog({
       setMchatResults(null);
       setRavenResults(null);
       setWmsResults(null);
+      setMocaResults(null);
+      setMeemResults(null);
+      setBrief2Results(null);
+      setCorsiResults(null);
+      setConnersResults(null);
+      setVinelandResults(null);
+      setAce3Results(null);
+      setCbclResults(null);
+      setSdqResults(null);
+      setGdsResults(null);
+      setTde2Results(null);
+      setNeupsilinResults(null);
+      setCancelamentoResults(null);
       setNutritionData({});
       setProfessionalRole(null);
     }
