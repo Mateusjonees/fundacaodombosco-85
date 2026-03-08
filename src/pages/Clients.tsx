@@ -46,7 +46,9 @@ import {
   CalendarDays,
   FileCheck,
   FileX,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { PatientCard } from "@/components/PatientCard";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
@@ -81,6 +83,7 @@ interface Client {
   neuropsych_complaint?: string;
   treatment_expectations?: string;
   clinical_observations?: string;
+  gender?: string;
   is_active: boolean;
   created_at: string;
 }
@@ -103,7 +106,9 @@ export default function Patients() {
   const [sortBy, setSortBy] = useState("name_asc");
   const [laudoFilter, setLaudoFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
   const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
+  const [lastAppointments, setLastAppointments] = useState<Map<string, string>>(new Map());
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
   // Debounce da busca para evitar queries excessivas durante digitação
@@ -247,6 +252,7 @@ export default function Patients() {
     loadEmployees();
     loadClientAssignments();
     loadClientLaudos();
+    loadLastAppointments();
   }, [user]);
 
   // Restaurar tabs via URL (já inicializadas no useState, apenas garantir activeTab)
@@ -326,6 +332,54 @@ export default function Patients() {
     } catch (error) {
       console.error("Error loading client laudos:", error);
     }
+  };
+
+  // Carregar última consulta de cada paciente
+  const loadLastAppointments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('client_id, completed_at')
+        .eq('status', 'completed')
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false });
+      if (error) throw error;
+      const map = new Map<string, string>();
+      (data || []).forEach((s: any) => {
+        if (!map.has(s.client_id)) {
+          map.set(s.client_id, s.completed_at);
+        }
+      });
+      setLastAppointments(map);
+    } catch (error) {
+      console.error("Error loading last appointments:", error);
+    }
+  };
+
+  // Exportar lista filtrada para Excel
+  const handleExportExcel = () => {
+    const exportData = filteredClients.map(c => ({
+      'Nome': c.name,
+      'CPF': c.cpf || '',
+      'Telefone': c.phone || '',
+      'E-mail': c.email || '',
+      'Unidade': c.unit === 'madre' ? 'MADRE' : c.unit === 'floresta' ? 'Floresta' : c.unit === 'atendimento_floresta' ? 'Atend. Floresta' : c.unit || '',
+      'Status': c.is_active ? 'Ativo' : 'Inativo',
+      'Gênero': c.gender === 'male' ? 'Masculino' : c.gender === 'female' ? 'Feminino' : c.gender || '',
+      'Data de Nascimento': c.birth_date ? new Date(c.birth_date).toLocaleDateString('pt-BR') : '',
+      'Última Consulta': lastAppointments.get(c.id) ? new Date(lastAppointments.get(c.id)!).toLocaleDateString('pt-BR') : '',
+      'Data de Cadastro': new Date(c.created_at).toLocaleDateString('pt-BR'),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Pacientes');
+    XLSX.writeFile(wb, `pacientes_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    
+    toast({
+      title: "Exportação concluída",
+      description: `${exportData.length} pacientes exportados para Excel.`,
+    });
   };
 
   // loadClients removido - agora usamos React Query com useClients hook
@@ -683,7 +737,10 @@ export default function Patients() {
         (laudoFilter === "with_laudo" && clientLaudoIds.has(client.id)) ||
         (laudoFilter === "without_laudo" && !clientLaudoIds.has(client.id));
 
-      return matchesStatus && matchesUnit && matchesAge && matchesProfessional && matchesLaudo;
+      const matchesGender =
+        genderFilter === "all" || client.gender === genderFilter;
+
+      return matchesStatus && matchesUnit && matchesAge && matchesProfessional && matchesLaudo && matchesGender;
     });
 
     // Ordenação
@@ -719,7 +776,7 @@ export default function Patients() {
     });
 
     return filtered;
-  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, sortBy, clientAssignments, employees, clientLaudoIds, userProfile?.employee_role]);
+  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, userProfile?.employee_role]);
   const activeClient = openTabs.find(t => t.id === activeTabId) || null;
 
   // Renderizar tab bar de navegação (lista + pacientes abertos)
@@ -841,7 +898,7 @@ export default function Patients() {
   }).length;
   const laudoCount = filteredClients.filter(c => clientLaudoIds.has(c.id)).length;
   const withoutLaudoCount = filteredClients.length - laudoCount;
-  const activeFiltersCount = (statusFilter !== "all" ? 1 : 0) + (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0) + (laudoFilter !== "all" ? 1 : 0) + (sortBy !== "name_asc" ? 1 : 0);
+  const activeFiltersCount = (statusFilter !== "all" ? 1 : 0) + (unitFilter !== "all" ? 1 : 0) + (ageFilter !== "all" ? 1 : 0) + (professionalFilter !== "all" ? 1 : 0) + (laudoFilter !== "all" ? 1 : 0) + (genderFilter !== "all" ? 1 : 0) + (sortBy !== "name_asc" ? 1 : 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -1218,6 +1275,7 @@ export default function Patients() {
           setAgeFilter("all");
           setProfessionalFilter("all");
           setLaudoFilter("all");
+          setGenderFilter("all");
           setSortBy("name_asc");
         }}
         filters={
@@ -1287,6 +1345,20 @@ export default function Patients() {
                 </SelectItem>
               </SelectContent>
             </Select>
+            <Select value={genderFilter} onValueChange={setGenderFilter}>
+              <SelectTrigger className="w-[150px] h-10">
+                <SelectValue placeholder="Gênero" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Gêneros</SelectItem>
+                <SelectItem value="male">
+                  <span className="flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" /> Masculino</span>
+                </SelectItem>
+                <SelectItem value="female">
+                  <span className="flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" /> Feminino</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
             {isCoordinatorOrDirector() && (
               <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
                 <SelectTrigger className="w-[180px] h-10">
@@ -1300,6 +1372,15 @@ export default function Patients() {
                 </SelectContent>
               </Select>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              className="h-10 gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Exportar Excel
+            </Button>
           </>
         }
       />
@@ -1396,6 +1477,7 @@ export default function Patients() {
                       isSelected={selectedClients.includes(client.id)}
                       showCheckbox={isCoordinatorOrDirector()}
                       showActions={true}
+                      lastAppointment={lastAppointments.get(client.id)}
                       onSelect={() => toggleClientSelection(client.id)}
                       onView={() => handleOpenQuickView(client.id)}
                       onEdit={isCoordinatorOrDirector() ? () => openEditDialog(client) : undefined}
@@ -1423,6 +1505,7 @@ export default function Patients() {
                       <TableHead>Telefone</TableHead>
                       <TableHead>Area</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Última Consulta</TableHead>
                       <TableHead>Data de Cadastro</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
@@ -1471,6 +1554,12 @@ export default function Patients() {
                           >
                             {client.is_active ? "✓ Ativo" : "⏸ Inativo"}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {lastAppointments.get(client.id) 
+                            ? <span className="text-sm">{new Date(lastAppointments.get(client.id)!).toLocaleDateString("pt-BR")}</span>
+                            : <span className="text-xs text-muted-foreground">—</span>
+                          }
                         </TableCell>
                         <TableCell>{new Date(client.created_at).toLocaleDateString("pt-BR")}</TableCell>
                         <TableCell>

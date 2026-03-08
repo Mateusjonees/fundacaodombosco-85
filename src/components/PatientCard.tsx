@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/UserAvatar";
 import { getUnitStyle } from "@/utils/unitUtils";
+import { CalendarDays } from "lucide-react";
 
 interface Client {
   id: string;
@@ -22,6 +23,7 @@ interface PatientCardProps {
   isSelected?: boolean;
   showCheckbox?: boolean;
   showActions?: boolean;
+  lastAppointment?: string;
   onSelect?: () => void;
   onView?: () => void;
   onEdit?: () => void;
@@ -58,6 +60,7 @@ export function PatientCard({
   client,
   isSelected = false,
   showCheckbox = false,
+  lastAppointment,
   onSelect,
   onView,
 }: PatientCardProps) {
@@ -119,6 +122,13 @@ export function PatientCard({
                 </span>
               )}
             </div>
+            {/* Última consulta */}
+            {lastAppointment && (
+              <div className="flex items-center gap-1 mt-1.5 text-[10px] text-muted-foreground">
+                <CalendarDays className="h-3 w-3" />
+                <span>Última consulta: {new Date(lastAppointment).toLocaleDateString('pt-BR')}</span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
