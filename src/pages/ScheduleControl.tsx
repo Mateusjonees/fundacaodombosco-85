@@ -1468,7 +1468,7 @@ ${notificationMessage}
           </div>
           <Badge className="text-sm sm:text-lg px-3 sm:px-6 py-2 sm:py-3 w-fit bg-gradient-to-r from-purple-500/10 to-purple-600/10 text-purple-700 dark:text-purple-400 border-purple-500/20 shrink-0">
             <CalendarIcon className="h-4 w-4 mr-2" />
-            {schedules.length} agendamento{schedules.length !== 1 ? 's' : ''}
+            {filteredSchedules.length} agendamento{filteredSchedules.length !== 1 ? 's' : ''}
           </Badge>
         </div>
 
