@@ -1491,6 +1491,46 @@ export default function CompleteAttendanceDialog({
                     onResultsChange={handleWechslerResultsChange}
                   />
                 )}
+
+                {/* Torre de Londres */}
+                {selectedTests.includes('TOL') && (
+                  <NeuroTestToLForm patientAge={patientAge} onResultsChange={handleTolResultsChange} />
+                )}
+
+                {/* D2 Atenção Concentrada */}
+                {selectedTests.includes('D2') && (
+                  <NeuroTestD2Form patientAge={patientAge} onResultsChange={handleD2ResultsChange} />
+                )}
+
+                {/* BDI-II Depressão */}
+                {selectedTests.includes('BDI') && (
+                  <NeuroTestBDIForm patientAge={patientAge} onResultsChange={handleBdiResultsChange} />
+                )}
+
+                {/* BAI Ansiedade */}
+                {selectedTests.includes('BAI') && (
+                  <NeuroTestBAIForm patientAge={patientAge} onResultsChange={handleBaiResultsChange} />
+                )}
+
+                {/* SNAP-IV TDAH */}
+                {selectedTests.includes('SNAPIV') && (
+                  <NeuroTestSNAPIVForm patientAge={patientAge} onResultsChange={handleSnapivResultsChange} />
+                )}
+
+                {/* M-CHAT-R/F Autismo */}
+                {selectedTests.includes('MCHAT') && (
+                  <NeuroTestMCHATForm patientAge={patientAge} onResultsChange={handleMchatResultsChange} />
+                )}
+
+                {/* Matrizes de Raven */}
+                {selectedTests.includes('RAVEN') && (
+                  <NeuroTestRavenForm patientAge={patientAge} onResultsChange={handleRavenResultsChange} />
+                )}
+
+                {/* WMS Memória Wechsler */}
+                {selectedTests.includes('WMS') && (
+                  <NeuroTestWMSForm patientAge={patientAge} onResultsChange={handleWmsResultsChange} />
+                )}
               </div>
             )}
 
