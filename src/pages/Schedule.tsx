@@ -324,11 +324,28 @@ export default function SchedulePage() {
             </div>
           )}
 
-          {/* Day summary */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground px-1">
-            <span className="font-medium">{filteredSchedules.length} agendamento(s)</span>
-            {dayStats.confirmed > 0 && <span className="text-emerald-600 dark:text-emerald-400">● {dayStats.confirmed} presente(s)</span>}
-            {dayStats.completed > 0 && <span className="text-primary">● {dayStats.completed} concluído(s)</span>}
+          {/* Day summary with status indicators */}
+          <div className="flex items-center gap-3 text-sm px-1 flex-wrap">
+            <span className="font-semibold text-foreground">{filteredSchedules.length} agendamento(s)</span>
+            <span className="h-4 w-px bg-border" />
+            {dayStats.confirmed > 0 && (
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                {dayStats.confirmed} presente(s)
+              </span>
+            )}
+            {dayStats.completed > 0 && (
+              <span className="flex items-center gap-1.5 text-primary">
+                <span className="h-2 w-2 rounded-full bg-primary" />
+                {dayStats.completed} concluído(s)
+              </span>
+            )}
+            {filteredSchedules.filter((s: any) => s.status === 'cancelled').length > 0 && (
+              <span className="flex items-center gap-1.5 text-destructive">
+                <span className="h-2 w-2 rounded-full bg-destructive" />
+                {filteredSchedules.filter((s: any) => s.status === 'cancelled').length} cancelado(s)
+              </span>
+            )}
           </div>
 
           {/* Schedule list */}
