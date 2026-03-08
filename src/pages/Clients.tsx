@@ -1505,6 +1505,7 @@ export default function Patients() {
                       <TableHead>Telefone</TableHead>
                       <TableHead>Area</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Última Consulta</TableHead>
                       <TableHead>Data de Cadastro</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
