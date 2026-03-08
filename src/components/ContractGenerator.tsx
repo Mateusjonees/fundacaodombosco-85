@@ -421,7 +421,7 @@ export const ContractGenerator = ({ client }: ContractGeneratorProps) => {
             <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Imprimir</button>
             <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
           </div>
-          ${contractRef.current.innerHTML}
+          ${DOMPurify.sanitize(contractRef.current.innerHTML)}
         </body>
       </html>
     `);
