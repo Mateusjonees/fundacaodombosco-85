@@ -338,6 +338,22 @@ export default function CompleteAttendanceDialog({
     setFptAdultoResults(results);
   }, []);
 
+  const handleReyResultsChange = useCallback((results: ReyResults | null) => {
+    setReyResults(results);
+  }, []);
+
+  const handleStroopResultsChange = useCallback((results: StroopResults | null) => {
+    setStroopResults(results);
+  }, []);
+
+  const handleWcstResultsChange = useCallback((results: WCSTResults | null) => {
+    setWcstResults(results);
+  }, []);
+
+  const handleWechslerResultsChange = useCallback((results: WechslerResults | null) => {
+    setWechslerResults(results);
+  }, []);
+
   const handleComplete = async () => {
     if (!schedule || !user) {
       toast({
