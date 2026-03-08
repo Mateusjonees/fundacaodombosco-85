@@ -70,8 +70,10 @@ export const DashboardUpcomingAppointments = ({ userId, isAdmin }: Props) => {
       </CardHeader>
       <CardContent className="space-y-2">
         {appointments.length === 0 ? (
-          <div className="text-center py-4">
-            <Clock className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+          <div className="text-center py-6 animate-fade-in">
+            <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-muted/80 mb-3">
+              <Clock className="h-6 w-6 text-muted-foreground/40" />
+            </div>
             <p className="text-xs text-muted-foreground">Nenhum atendimento restante hoje</p>
           </div>
         ) : (
