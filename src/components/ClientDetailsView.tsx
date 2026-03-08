@@ -128,6 +128,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [newNote, setNewNote] = useState('');
+  const [noteServiceType, setNoteServiceType] = useState('private');
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [addAnamnesisDialogOpen, setAddAnamnesisDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<ClientNote | null>(null);
