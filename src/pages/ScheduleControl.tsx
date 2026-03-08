@@ -412,6 +412,49 @@ ${notificationMessage}
         {config.label}
       </Badge>;
   };
+
+  // Search-filtered schedules (status already filtered in query)
+  const filteredSchedules = schedules.filter(s => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      s.clients?.name?.toLowerCase().includes(term) ||
+      s.profiles?.name?.toLowerCase().includes(term) ||
+      s.title?.toLowerCase().includes(term) ||
+      s.description?.toLowerCase().includes(term) ||
+      s.notes?.toLowerCase().includes(term)
+    );
+  });
+
+  // Payment method translation
+  const translatePaymentMethod = (method: string | undefined): string => {
+    if (!method) return 'Não informado';
+    const map: Record<string, string> = {
+      'cash': 'Dinheiro', 'pix': 'PIX', 'credit_card': 'Cartão Crédito',
+      'debit_card': 'Cartão Débito', 'transfer': 'Transferência',
+      'bank_transfer': 'Transferência', 'boleto': 'Boleto',
+      'contract': 'Contrato', 'internal': 'Interno', 'combined': 'Combinado',
+      'dinheiro': 'Dinheiro', 'PIX': 'PIX',
+    };
+    return map[method] || method;
+  };
+
+  // Role label translation
+  const translateRole = (role: string | undefined): string => {
+    if (!role) return '';
+    const map: Record<string, string> = {
+      'director': 'Diretor(a)', 'coordinator_madre': 'Coord. Madre',
+      'coordinator_floresta': 'Coord. Floresta',
+      'coordinator_atendimento_floresta': 'Coord. Atend. Floresta',
+      'psicologo': 'Psicólogo(a)', 'psicopedagogo': 'Psicopedagogo(a)',
+      'fonoaudiologo': 'Fonoaudiólogo(a)', 'neuropsicologist': 'Neuropsicólogo(a)',
+      'terapeuta_ocupacional': 'Terapeuta Ocupacional',
+      'receptionist': 'Recepcionista', 'financeiro': 'Financeiro',
+      'psiquiatra': 'Psiquiatra', 'neuropediatra': 'Neuropediatra',
+    };
+    return map[role] || role;
+  };
+
   const getDateRangeText = () => {
     switch (viewMode) {
       case 'day':
