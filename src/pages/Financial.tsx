@@ -703,6 +703,15 @@ export default function Financial() {
         </div>
       </div>
 
+      {/* Period indicator */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg text-sm">
+          <Filter className="h-4 w-4 text-primary" />
+          <span className="font-medium text-primary">Período: {periodLabel}</span>
+          <span className="text-muted-foreground">— {filteredRecords.length} transações</span>
+        </div>
+      )}
+
       {/* Financial Summary Cards - Design Moderno */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-500/10 via-card to-green-500/5">
@@ -715,10 +724,10 @@ export default function Financial() {
           </CardHeader>
           <CardContent className="relative">
             <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
-              R$ {currentMonthIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {displayIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {currentMonthRecords.filter(r => r.type === 'income').length} atendimentos
+              {displayIncomeCount} receitas
             </p>
           </CardContent>
         </Card>
@@ -733,22 +742,54 @@ export default function Financial() {
           </CardHeader>
           <CardContent className="relative">
             <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
-              R$ {currentMonthExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {displayExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Materiais adquiridos</p>
+            <p className="text-xs text-muted-foreground mt-1">{displayExpenseCount} despesas</p>
+          </CardContent>
+        </Card>
+        
+        <Card className={`group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${displayBalance >= 0 ? 'bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5' : 'bg-gradient-to-br from-red-500/10 via-card to-red-500/5'}`}>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Saldo Real</CardTitle>
+            <div className={`p-2 ${displayBalance >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'} rounded-lg`}>
+              <DollarSign className={`h-4 w-4 ${displayBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className={`text-xl sm:text-2xl font-bold ${displayBalance >= 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-red-600 to-red-500'} bg-clip-text text-transparent`}>
+              R$ {displayBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
           </CardContent>
         </Card>
         
         <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
             <div className="p-2 bg-blue-500/20 rounded-lg">
-              <DollarSign className="h-4 w-4 text-blue-600" />
+              <TrendingUp className="h-4 w-4 text-blue-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
             <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+              R$ {ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Por receita</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+            <div className="p-2 bg-orange-500/20 rounded-lg">
+              <DollarSign className="h-4 w-4 text-orange-600" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
               R$ {totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -757,53 +798,21 @@ export default function Financial() {
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-orange-500/10 via-card to-orange-500/5">
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Atraso</CardTitle>
-            <div className="p-2 bg-orange-500/20 rounded-lg">
-              <TrendingDown className="h-4 w-4 text-orange-600" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
-              R$ {totalOverdueAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {overduePayments.length} em atraso
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className={`group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${balance >= 0 ? 'bg-gradient-to-br from-emerald-500/10 via-card to-emerald-500/5' : 'bg-gradient-to-br from-red-500/10 via-card to-red-500/5'}`}>
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resultado</CardTitle>
-            <div className={`p-2 ${balance >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'} rounded-lg`}>
-              <TrendingUp className={`h-4 w-4 ${balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className={`text-xl sm:text-2xl font-bold ${balance >= 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-red-600 to-red-500'} bg-clip-text text-transparent`}>
-              R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
-          </CardContent>
-        </Card>
-        
         <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-500/10 via-card to-purple-500/5">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atendimentos</CardTitle>
+            <CardTitle className="text-sm font-medium">Transações</CardTitle>
             <div className="p-2 bg-purple-500/20 rounded-lg">
               <Calendar className="h-4 w-4 text-purple-600" />
             </div>
           </CardHeader>
           <CardContent className="relative">
             <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-              {currentMonthRecords.filter(r => r.type === 'income').length}
+              {hasActiveFilters ? filteredRecords.length : currentMonthRecords.length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Este mês</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {hasActiveFilters ? 'No período' : 'Este mês'}
+            </p>
           </CardContent>
         </Card>
       </div>
