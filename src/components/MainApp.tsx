@@ -58,6 +58,7 @@ const Neuroassessment = lazy(() => import('@/pages/Neuroassessment'));
 const ContractTemplates = lazy(() => import('@/pages/ContractTemplates'));
 const CustomRoles = lazy(() => import('@/pages/CustomRoles'));
 const Anamnesis = lazy(() => import('@/pages/Anamnesis'));
+const WaitingList = lazy(() => import('@/pages/WaitingList'));
 const Install = lazy(() => import('@/pages/Install'));
 
 // Memoized route config to avoid re-creating on every render
