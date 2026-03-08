@@ -499,9 +499,12 @@ const MyPatients: React.FC = () => {
                                   <Clock className="h-3 w-3" />
                                   {format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })}
                                 </div>
-                            <div className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs uppercase">
-                                  {schedule.clients?.name || 'Cliente N/A'}
-                                </div>
+                            <div 
+                              className="text-foreground truncate font-medium mt-0.5 text-[10px] sm:text-xs uppercase cursor-pointer hover:text-primary transition-colors"
+                              onClick={(e) => { e.stopPropagation(); schedule.client_id && openPatientModal(schedule.client_id); }}
+                            >
+                              {schedule.clients?.name || 'Cliente N/A'}
+                            </div>
                               </div>
                             ))
                           )}
