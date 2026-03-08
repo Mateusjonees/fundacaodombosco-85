@@ -802,7 +802,7 @@ ${notificationMessage}
   };
   const groupSchedulesByDate = () => {
     const grouped: Record<string, Schedule[]> = {};
-    schedules.forEach(schedule => {
+    filteredSchedules.forEach(schedule => {
       const dateKey = format(new Date(schedule.start_time), 'yyyy-MM-dd');
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
