@@ -103,7 +103,7 @@ export function ProfessionalCommandAutocomplete({
         .limit(50);
 
       if (search) {
-        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+        query = query.or(`name.ilike.%${search}%`);
       }
 
       if (roleFilter && roleFilter !== 'all') {
