@@ -248,7 +248,7 @@ ${notificationMessage}
       loadEmployees();
       loadSchedules();
     }
-  }, [userProfile, selectedDate, viewMode, selectedEmployee, selectedUnit]);
+  }, [userProfile, selectedDate, viewMode, selectedEmployee, selectedUnit, statusFilter]);
   const loadUserProfile = async () => {
     if (!user) return;
     try {
