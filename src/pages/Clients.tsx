@@ -1123,7 +1123,7 @@ export default function Patients() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatsCard
           title="Total de Pacientes"
           value={filteredClients.length}
@@ -1146,6 +1146,13 @@ export default function Patients() {
           variant="purple"
         />
         <StatsCard
+          title="Com Laudo"
+          value={laudoCount}
+          subtitle={`${withoutLaudoCount} sem laudo`}
+          icon={<FileCheck className="h-5 w-5" />}
+          variant="default"
+        />
+        <StatsCard
           title="Inativos"
           value={inactiveCount}
           subtitle="Fora de tratamento"
@@ -1164,9 +1171,27 @@ export default function Patients() {
           setUnitFilter("all");
           setAgeFilter("all");
           setProfessionalFilter("all");
+          setLaudoFilter("all");
+          setSortBy("name_asc");
         }}
         filters={
           <>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px] h-10">
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="Ordenar por" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
+                <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
+                <SelectItem value="newest">Mais Recentes</SelectItem>
+                <SelectItem value="oldest">Mais Antigos</SelectItem>
+                <SelectItem value="age_asc">Idade (Menor → Maior)</SelectItem>
+                <SelectItem value="age_desc">Idade (Maior → Menor)</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={unitFilter} onValueChange={setUnitFilter}>
               <SelectTrigger className="w-[160px] h-10">
                 <SelectValue placeholder="Unidade" />
@@ -1186,6 +1211,20 @@ export default function Patients() {
                 <SelectItem value="all">Todas Idades</SelectItem>
                 <SelectItem value="minor">Menores</SelectItem>
                 <SelectItem value="adult">Adultos</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={laudoFilter} onValueChange={setLaudoFilter}>
+              <SelectTrigger className="w-[160px] h-10">
+                <SelectValue placeholder="Laudo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos (Laudo)</SelectItem>
+                <SelectItem value="with_laudo">
+                  <span className="flex items-center gap-1.5"><FileCheck className="h-3.5 w-3.5 text-green-600" /> Com Laudo</span>
+                </SelectItem>
+                <SelectItem value="without_laudo">
+                  <span className="flex items-center gap-1.5"><FileX className="h-3.5 w-3.5 text-orange-500" /> Sem Laudo</span>
+                </SelectItem>
               </SelectContent>
             </Select>
             {isCoordinatorOrDirector() && (
