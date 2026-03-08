@@ -1538,6 +1538,9 @@ export default function PatientNeuroTestHistory({
         onSaved={fetchTests}
       />
       
+      {/* Gráfico de Evolução */}
+      <NeuroTestEvolutionChart tests={tests} />
+
       {/* Histórico de Testes */}
       <Card>
         <CardHeader>
