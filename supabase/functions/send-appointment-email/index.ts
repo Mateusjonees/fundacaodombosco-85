@@ -31,6 +31,8 @@ interface AppointmentEmailRequest {
   }>;
   // Novo campo para e-mail do profissional
   professionalEmail?: string;
+  // Nome de quem agendou (recepcionista/coordenador)
+  scheduledByName?: string;
 }
 
 const getUnitInfo = (unit: string) => {
