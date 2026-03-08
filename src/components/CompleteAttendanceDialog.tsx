@@ -488,6 +488,19 @@ export default function CompleteAttendanceDialog({
   const handleMchatResultsChange = useCallback((results: MCHATResults | null) => { setMchatResults(results); }, []);
   const handleRavenResultsChange = useCallback((results: RavenResults | null) => { setRavenResults(results); }, []);
   const handleWmsResultsChange = useCallback((results: WMSResults | null) => { setWmsResults(results); }, []);
+  const handleMocaResultsChange = useCallback((results: MoCAResults | null) => { setMocaResults(results); }, []);
+  const handleMeemResultsChange = useCallback((results: MEEMResults | null) => { setMeemResults(results); }, []);
+  const handleBrief2ResultsChange = useCallback((results: BRIEF2Results | null) => { setBrief2Results(results); }, []);
+  const handleCorsiResultsChange = useCallback((results: CorsiResults | null) => { setCorsiResults(results); }, []);
+  const handleConnersResultsChange = useCallback((results: ConnersResults | null) => { setConnersResults(results); }, []);
+  const handleVinelandResultsChange = useCallback((results: VinelandResults | null) => { setVinelandResults(results); }, []);
+  const handleAce3ResultsChange = useCallback((results: ACE3Results | null) => { setAce3Results(results); }, []);
+  const handleCbclResultsChange = useCallback((results: CBCLResults | null) => { setCbclResults(results); }, []);
+  const handleSdqResultsChange = useCallback((results: SDQResults | null) => { setSdqResults(results); }, []);
+  const handleGdsResultsChange = useCallback((results: GDSResults | null) => { setGdsResults(results); }, []);
+  const handleTde2ResultsChange = useCallback((results: TDE2Results | null) => { setTde2Results(results); }, []);
+  const handleNeupsilinResultsChange = useCallback((results: NEUPSILINResults | null) => { setNeupsilinResults(results); }, []);
+  const handleCancelamentoResultsChange = useCallback((results: CancelamentoResults | null) => { setCancelamentoResults(results); }, []);
 
   const handleComplete = async () => {
     if (!schedule || !user) {
