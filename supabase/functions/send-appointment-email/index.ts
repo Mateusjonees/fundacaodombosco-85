@@ -14,6 +14,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SCHEDULE_URL = "https://www.sistemafundacaodombosco.org/schedule";
+const LOGO_URL = "https://fundacaodombosco.org/wp-content/uploads/elementor/thumbs/logo-saude-cor_fundacao_dom_bosco_acolher_capacitar_assistencia_social_educacao_saude_criancas_adolescentes_inclusao_reabilitacao_belo_horizonte-qu213x2bru42zepyl57mrub7z9j2wqtwrnty2vwul8.png";
+
 interface AppointmentEmailRequest {
   clientEmail: string;
   clientName: string;
@@ -29,9 +32,7 @@ interface AppointmentEmailRequest {
     time: string;
     sessionNumber: number;
   }>;
-  // Novo campo para e-mail do profissional
   professionalEmail?: string;
-  // Nome de quem agendou (recepcionista/coordenador)
   scheduledByName?: string;
 }
 
@@ -64,6 +65,143 @@ const getUnitInfo = (unit: string) => {
   }
 };
 
+const getMonthName = (month: string) => {
+  const months = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  return months[parseInt(month)] || '';
+};
+
+const buildSessionsTable = (
+  sessions: Array<{ date: string; time: string; sessionNumber: number }>,
+  color: string
+) => {
+  if (!sessions || sessions.length <= 1) return '';
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+      <tr>
+        <td style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 12px; padding: 20px;">
+          <p style="color: #1e40af; font-size: 14px; font-weight: 700; margin: 0 0 14px 0; letter-spacing: 0.3px;">
+            📋 ${sessions.length} SESSÕES AGENDADAS
+          </p>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${sessions.map(s => `
+              <tr>
+                <td style="padding: 8px 12px; background: white; border-radius: 8px;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="width: 36px; color: ${color}; font-weight: 700; font-size: 14px;">#${s.sessionNumber}</td>
+                      <td style="color: #334155; font-size: 13px; font-weight: 500;">${s.date}</td>
+                      <td style="color: #64748b; font-size: 13px; text-align: right;">${s.time}h</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr><td style="height: 6px;"></td></tr>
+            `).join('')}
+          </table>
+        </td>
+      </tr>
+    </table>
+  `;
+};
+
+const buildDateBlock = (appointmentDate: string, color: string) => {
+  const day = appointmentDate.split('/')[0];
+  const monthName = getMonthName(appointmentDate.split('/')[1]);
+  const year = appointmentDate.split('/')[2] || '';
+  return `
+    <td style="width: 80px; vertical-align: top;">
+      <table cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, ${color}, ${color}cc); border-radius: 14px; width: 76px; text-align: center; box-shadow: 0 4px 12px ${color}30;">
+        <tr><td style="padding: 14px 8px 4px;">
+          <span style="color: white; font-size: 28px; font-weight: 800; line-height: 1;">${day}</span>
+        </td></tr>
+        <tr><td style="padding: 0 8px 4px;">
+          <span style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600; text-transform: uppercase;">${monthName}</span>
+        </td></tr>
+        <tr><td style="padding: 0 8px 12px;">
+          <span style="color: rgba(255,255,255,0.7); font-size: 11px;">${year}</span>
+        </td></tr>
+      </table>
+    </td>
+  `;
+};
+
+const buildNotesBlock = (notes?: string) => {
+  if (!notes) return '';
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+      <tr>
+        <td style="background: linear-gradient(135deg, #fffbeb, #fef3c7); border-left: 4px solid #f59e0b; padding: 16px 20px; border-radius: 0 12px 12px 0;">
+          <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.5;">
+            <strong>📝 Observações:</strong><br/>${notes}
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+};
+
+const buildEmailShell = (
+  unitInfo: { name: string; color: string },
+  bodyContent: string,
+  badgeText?: string
+) => `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 0;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 40px 16px;">
+        <tr>
+          <td align="center">
+            <table width="560" cellpadding="0" cellspacing="0" style="max-width: 560px; width: 100%;">
+              <!-- Header -->
+              <tr>
+                <td style="background: linear-gradient(135deg, ${unitInfo.color}, ${unitInfo.color}cc); border-radius: 20px 20px 0 0; padding: 32px 28px; text-align: center;">
+                  <img src="${LOGO_URL}" alt="Fundação Dom Bosco" style="max-width: 140px; height: auto; margin-bottom: 12px;" />
+                  <p style="color: rgba(255,255,255,0.9); font-size: 12px; margin: 0; letter-spacing: 1px; text-transform: uppercase; font-weight: 600;">${unitInfo.name}</p>
+                </td>
+              </tr>
+              ${badgeText ? `
+              <tr>
+                <td style="background: #ffffff; padding: 0; text-align: center;">
+                  <table cellpadding="0" cellspacing="0" style="margin: -16px auto 0;">
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #059669, #10b981); color: white; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 24px; border-radius: 20px; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+                        ${badgeText}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              ` : ''}
+              <!-- Body -->
+              <tr>
+                <td style="background: #ffffff; padding: ${badgeText ? '20px' : '36px'} 32px 36px;">
+                  ${bodyContent}
+                </td>
+              </tr>
+              <!-- Footer -->
+              <tr>
+                <td style="background: #f8fafc; border-radius: 0 0 20px 20px; padding: 24px 28px; text-align: center; border-top: 1px solid #e2e8f0;">
+                  <p style="color: #94a3b8; font-size: 11px; margin: 0 0 4px 0; letter-spacing: 0.5px;">
+                    FUNDAÇÃO DOM BOSCO · SAÚDE
+                  </p>
+                  <p style="color: #cbd5e1; font-size: 10px; margin: 0;">
+                    Este é um e-mail automático · Não responda esta mensagem
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  </html>
+`;
+
+// ─── E-mail para o PACIENTE ────────────────────────────────────────────
 const buildClientEmailHtml = (
   clientName: string,
   appointmentDate: string,
@@ -74,87 +212,63 @@ const buildClientEmailHtml = (
   notes?: string,
   sessions?: Array<{ date: string; time: string; sessionNumber: number }>
 ) => {
-  const sessionsHtml = sessions && sessions.length > 1 ? `
-    <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
-      <p style="color: #166534; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">
-        📋 Sessões agendadas (${sessions.length} sessões):
-      </p>
-      <ul style="margin: 0; padding-left: 20px; color: #166534; font-size: 13px;">
-        ${sessions.map(s => `<li style="margin: 4px 0;">Sessão ${s.sessionNumber}: ${s.date} às ${s.time}</li>`).join('')}
-      </ul>
-    </div>
-  ` : '';
-
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      </head>
-      <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; margin: 0; padding: 32px 16px;">
-        <div style="max-width: 560px; margin: 0 auto;">
-          <div style="background: white; border-radius: 16px 16px 0 0; padding: 28px; text-align: center; border-bottom: 3px solid ${unitInfo.color};">
-            <img src="https://fundacaodombosco.org/wp-content/uploads/elementor/thumbs/logo-saude-cor_fundacao_dom_bosco_acolher_capacitar_assistencia_social_educacao_saude_criancas_adolescentes_inclusao_reabilitacao_belo_horizonte-qu213x2bru42zepyl57mrub7z9j2wqtwrnty2vwul8.png" alt="Fundação Dom Bosco" style="max-width: 160px; height: auto;" />
-          </div>
-          <div style="background: white; padding: 32px 28px;">
-            <p style="color: #1a202c; font-size: 18px; font-weight: 600; margin: 0 0 4px 0;">
-              Olá, ${clientName}! 👋
-            </p>
-            <p style="color: #718096; font-size: 14px; margin: 0 0 24px 0;">
-              ${sessions && sessions.length > 1 
-                ? `Você tem ${sessions.length} sessões agendadas na <strong style="color: ${unitInfo.color};">${unitInfo.name}</strong>.`
-                : `Seu atendimento está confirmado na <strong style="color: ${unitInfo.color};">${unitInfo.name}</strong>.`}
-            </p>
-            <div style="background: linear-gradient(135deg, ${unitInfo.color}0A, ${unitInfo.color}15); border: 1px solid ${unitInfo.color}30; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-              <div style="display: flex; margin-bottom: 16px;">
-                <div style="background: ${unitInfo.color}; color: white; border-radius: 10px; padding: 12px 16px; text-align: center; min-width: 64px;">
-                  <div style="font-size: 22px; font-weight: 700; line-height: 1;">${appointmentDate.split('/')[0]}</div>
-                  <div style="font-size: 11px; text-transform: uppercase; opacity: 0.9; margin-top: 2px;">${['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][parseInt(appointmentDate.split('/')[1])] || ''}</div>
-                </div>
-                <div style="margin-left: 16px; display: flex; flex-direction: column; justify-content: center;">
-                  <div style="color: #1a202c; font-size: 16px; font-weight: 600;">🕐 ${appointmentTime}h</div>
-                  <div style="color: #718096; font-size: 13px; margin-top: 2px;">${appointmentType}</div>
-                </div>
-              </div>
-              <div style="border-top: 1px solid ${unitInfo.color}25; padding-top: 14px;">
-                <table style="width: 100%; border-collapse: collapse;">
+  const bodyContent = `
+    <p style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 6px 0;">
+      Olá, ${clientName}! 👋
+    </p>
+    <p style="color: #64748b; font-size: 15px; margin: 0 0 28px 0; line-height: 1.5;">
+      ${sessions && sessions.length > 1 
+        ? `Você tem <strong>${sessions.length} sessões</strong> agendadas.`
+        : 'Seu atendimento está <strong>confirmado</strong>. Confira os detalhes abaixo:'}
+    </p>
+    
+    <!-- Card -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+      <tr>
+        <td style="border: 2px solid ${unitInfo.color}20; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="height: 4px; background: linear-gradient(90deg, ${unitInfo.color}, ${unitInfo.color}88);"></td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="padding: 24px;">
+            <tr>
+              ${buildDateBlock(appointmentDate, unitInfo.color)}
+              <td style="vertical-align: top; padding-left: 20px;">
+                <p style="color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 4px 0;">⏰ ${appointmentTime}h</p>
+                <p style="color: ${unitInfo.color}; font-size: 14px; font-weight: 600; margin: 0 0 16px 0;">${appointmentType}</p>
+                <table cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top; width: 32px;">👨‍⚕️</td>
-                    <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">${professionalName}</td>
+                    <td style="padding: 5px 0; color: #475569; font-size: 13px;">👨‍⚕️&nbsp;&nbsp;<strong>${professionalName}</strong></td>
                   </tr>
                   <tr>
-                    <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top;">📍</td>
-                    <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">${unitInfo.address}</td>
+                    <td style="padding: 5px 0; color: #475569; font-size: 13px;">📍&nbsp;&nbsp;${unitInfo.address}</td>
                   </tr>
                 </table>
-              </div>
-            </div>
-            ${sessionsHtml}
-            ${notes ? `
-            <div style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
-              <p style="color: #92400e; font-size: 13px; margin: 0;">
-                <strong>Observações:</strong> ${notes}
-              </p>
-            </div>
-            ` : ''}
-            <div style="background: #f0f4f8; border-radius: 10px; padding: 14px 16px; text-align: center;">
-              <p style="color: #4a5568; font-size: 13px; margin: 0;">
-                ⏰ Chegue com <strong>10 minutos de antecedência</strong>
-              </p>
-            </div>
-          </div>
-          <div style="background: #f7fafc; border-radius: 0 0 16px 16px; padding: 20px 28px; text-align: center; border-top: 1px solid #e2e8f0;">
-            <p style="color: #a0aec0; font-size: 11px; margin: 0;">
-              Fundação Dom Bosco · Este é um e-mail automático
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    ${buildSessionsTable(sessions || [], unitInfo.color)}
+    ${buildNotesBlock(notes)}
+
+    <!-- Lembrete -->
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 12px; padding: 16px 20px; text-align: center;">
+          <p style="color: #0369a1; font-size: 14px; margin: 0; font-weight: 600;">
+            ⏰ Chegue com <strong>10 minutos</strong> de antecedência
+          </p>
+        </td>
+      </tr>
+    </table>
   `;
+
+  return buildEmailShell(unitInfo, bodyContent);
 };
 
+// ─── E-mail para o PROFISSIONAL ────────────────────────────────────────
 const buildProfessionalEmailHtml = (
   professionalName: string,
   clientName: string,
@@ -166,86 +280,75 @@ const buildProfessionalEmailHtml = (
   sessions?: Array<{ date: string; time: string; sessionNumber: number }>,
   scheduledByName?: string
 ) => {
-  const sessionsHtml = sessions && sessions.length > 1 ? `
-    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
-      <p style="color: #1e40af; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">
-        📋 Sessões agendadas (${sessions.length} sessões):
-      </p>
-      <ul style="margin: 0; padding-left: 20px; color: #1e40af; font-size: 13px;">
-        ${sessions.map(s => `<li style="margin: 4px 0;">Sessão ${s.sessionNumber}: ${s.date} às ${s.time}</li>`).join('')}
-      </ul>
-    </div>
-  ` : '';
-
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      </head>
-      <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; margin: 0; padding: 32px 16px;">
-        <div style="max-width: 560px; margin: 0 auto;">
-          <div style="background: white; border-radius: 16px 16px 0 0; padding: 28px; text-align: center; border-bottom: 3px solid ${unitInfo.color};">
-            <img src="https://fundacaodombosco.org/wp-content/uploads/elementor/thumbs/logo-saude-cor_fundacao_dom_bosco_acolher_capacitar_assistencia_social_educacao_saude_criancas_adolescentes_inclusao_reabilitacao_belo_horizonte-qu213x2bru42zepyl57mrub7z9j2wqtwrnty2vwul8.png" alt="Fundação Dom Bosco" style="max-width: 160px; height: auto;" />
-          </div>
-          <div style="background: white; padding: 32px 28px;">
-            <p style="color: #1a202c; font-size: 18px; font-weight: 600; margin: 0 0 4px 0;">
-              Olá, ${professionalName}! 👋
-            </p>
-            <p style="color: #718096; font-size: 14px; margin: 0 0 24px 0;">
-              ${sessions && sessions.length > 1 
-                ? `Você tem ${sessions.length} novos atendimentos agendados na <strong style="color: ${unitInfo.color};">${unitInfo.name}</strong>.`
-                : `Você tem um novo atendimento agendado na <strong style="color: ${unitInfo.color};">${unitInfo.name}</strong>.`}
-            </p>
-            <div style="background: linear-gradient(135deg, ${unitInfo.color}0A, ${unitInfo.color}15); border: 1px solid ${unitInfo.color}30; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-              <div style="display: flex; margin-bottom: 16px;">
-                <div style="background: ${unitInfo.color}; color: white; border-radius: 10px; padding: 12px 16px; text-align: center; min-width: 64px;">
-                  <div style="font-size: 22px; font-weight: 700; line-height: 1;">${appointmentDate.split('/')[0]}</div>
-                  <div style="font-size: 11px; text-transform: uppercase; opacity: 0.9; margin-top: 2px;">${['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][parseInt(appointmentDate.split('/')[1])] || ''}</div>
-                </div>
-                <div style="margin-left: 16px; display: flex; flex-direction: column; justify-content: center;">
-                  <div style="color: #1a202c; font-size: 16px; font-weight: 600;">🕐 ${appointmentTime}h</div>
-                  <div style="color: #718096; font-size: 13px; margin-top: 2px;">${appointmentType}</div>
-                </div>
-              </div>
-              <div style="border-top: 1px solid ${unitInfo.color}25; padding-top: 14px;">
-                <table style="width: 100%; border-collapse: collapse;">
+  const bodyContent = `
+    <p style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 6px 0;">
+      Olá, ${professionalName}! 👋
+    </p>
+    <p style="color: #64748b; font-size: 15px; margin: 0 0 28px 0; line-height: 1.5;">
+      ${sessions && sessions.length > 1 
+        ? `Você tem <strong>${sessions.length} novos atendimentos</strong> agendados.`
+        : 'Você tem um <strong>novo atendimento</strong> agendado. Confira os detalhes:'}
+    </p>
+    
+    <!-- Card -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+      <tr>
+        <td style="border: 2px solid ${unitInfo.color}20; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="height: 4px; background: linear-gradient(90deg, ${unitInfo.color}, ${unitInfo.color}88);"></td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="padding: 24px;">
+            <tr>
+              ${buildDateBlock(appointmentDate, unitInfo.color)}
+              <td style="vertical-align: top; padding-left: 20px;">
+                <p style="color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 4px 0;">⏰ ${appointmentTime}h</p>
+                <p style="color: ${unitInfo.color}; font-size: 14px; font-weight: 600; margin: 0 0 16px 0;">${appointmentType}</p>
+                <table cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top; width: 32px;">👤</td>
-                    <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">Paciente: <strong>${clientName}</strong></td>
+                    <td style="padding: 5px 0; color: #475569; font-size: 13px;">👤&nbsp;&nbsp;Paciente: <strong>${clientName}</strong></td>
                   </tr>
                   <tr>
-                    <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top;">📍</td>
-                    <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">${unitInfo.address}</td>
+                    <td style="padding: 5px 0; color: #475569; font-size: 13px;">📍&nbsp;&nbsp;${unitInfo.address}</td>
                   </tr>
-                  ${scheduledByName ? `<tr>
-                    <td style="padding: 6px 0; color: #718096; font-size: 13px; vertical-align: top;">📝</td>
-                    <td style="padding: 6px 0; color: #2d3748; font-size: 13px; font-weight: 500;">Agendado por: <strong>${scheduledByName}</strong></td>
-                  </tr>` : ''}
+                  ${scheduledByName ? `
+                  <tr>
+                    <td style="padding: 5px 0; color: #475569; font-size: 13px;">🗓️&nbsp;&nbsp;Agendado por: <strong>${scheduledByName}</strong></td>
+                  </tr>
+                  ` : ''}
                 </table>
-              </div>
-            </div>
-            ${sessionsHtml}
-            ${notes ? `
-            <div style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
-              <p style="color: #92400e; font-size: 13px; margin: 0;">
-                <strong>Observações:</strong> ${notes}
-              </p>
-            </div>
-            ` : ''}
-          </div>
-          <div style="background: #f7fafc; border-radius: 0 0 16px 16px; padding: 20px 28px; text-align: center; border-top: 1px solid #e2e8f0;">
-            <p style="color: #a0aec0; font-size: 11px; margin: 0;">
-              Fundação Dom Bosco · Este é um e-mail automático
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    ${buildSessionsTable(sessions || [], unitInfo.color)}
+    ${buildNotesBlock(notes)}
+
+    <!-- Botão Ver Agenda -->
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center" style="padding: 8px 0;">
+          <a href="${SCHEDULE_URL}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, ${unitInfo.color}, ${unitInfo.color}cc); color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 44px; border-radius: 12px; box-shadow: 0 4px 16px ${unitInfo.color}40; letter-spacing: 0.3px;">
+            📅&nbsp;&nbsp;Ver Minha Agenda
+          </a>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" style="padding: 8px 0 0;">
+          <a href="${SCHEDULE_URL}" target="_blank" style="color: #94a3b8; font-size: 11px; text-decoration: none;">
+            sistemafundacaodombosco.org/schedule
+          </a>
+        </td>
+      </tr>
+    </table>
   `;
+
+  return buildEmailShell(unitInfo, bodyContent, '🔔 NOVO ATENDIMENTO');
 };
 
+// ─── Handler ───────────────────────────────────────────────────────────
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -271,15 +374,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     const unitInfo = getUnitInfo(unit);
 
-    // Registrar que o email foi enviado
+    // Registrar envio
     if (scheduleIds.length > 0) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
       const { error: updateError } = await supabase
         .from('schedules')
-        .update({ 
-          email_sent_at: new Date().toISOString()
-        })
+        .update({ email_sent_at: new Date().toISOString() })
         .in('id', scheduleIds);
 
       if (updateError) {
@@ -309,7 +409,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Email do paciente enviado com sucesso:", data);
 
-    // E-mail para o profissional (se professionalEmail fornecido)
+    // E-mail para o profissional
     if (professionalEmail) {
       console.log("Enviando email para profissional:", professionalEmail);
 
@@ -329,7 +429,6 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (profError) {
         console.error("Erro ao enviar email para profissional:", profError);
-        // Não faz throw — o e-mail do paciente já foi enviado
       } else {
         console.log("Email do profissional enviado com sucesso:", profData);
       }
@@ -337,19 +436,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ success: true, data }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error in send-appointment-email function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
