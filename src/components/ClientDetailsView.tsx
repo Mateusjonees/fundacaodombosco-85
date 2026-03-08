@@ -548,7 +548,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       y += 5;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Profissional: ${noteItem.profiles?.name || 'N/A'}  |  Tipo: ${noteItem.service_type === 'sus' ? 'SUS' : 'Demanda Própria'}  |  Data: ${formatDateTime(noteItem.created_at)}`, marginL, y);
+      doc.text(`Profissional: ${noteItem.profiles?.name || 'N/A'}  |  Tipo: ${noteItem.service_type === 'sus' ? 'SUS' : noteItem.service_type === 'external' ? 'Demanda Externa' : noteItem.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}  |  Data: ${formatDateTime(noteItem.created_at)}`, marginL, y);
       y += 6;
 
       // Parse note_text sections
