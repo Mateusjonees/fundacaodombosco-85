@@ -1182,8 +1182,8 @@ export default function Schedule() {
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateAppointment}>
-                {editingSchedule ? 'Salvar' : 'Criar'}
+              <Button onClick={handleCreateAppointment} disabled={isSavingSchedule}>
+                {isSavingSchedule ? 'Salvando...' : editingSchedule ? 'Salvar' : 'Criar'}
               </Button>
             </div>
           </DialogContent>
