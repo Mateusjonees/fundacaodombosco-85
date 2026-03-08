@@ -62,7 +62,7 @@ export function ProfessionalCommandAutocomplete({
         try {
           const { data } = await supabase
             .from('profiles_public')
-            .select('id, user_id, name, email, phone, employee_role, unit, department')
+            .select('id, user_id, name, employee_role, unit, department')
             .eq('user_id', value)
             .single();
           
