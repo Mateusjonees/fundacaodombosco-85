@@ -55,6 +55,11 @@ export default function NeuroTestFDTForm({
   onRemove
 }: NeuroTestFDTFormProps) {
   const [scores, setScores] = useState<FDTScores>({
+    leitura: 0, contagem: 0, escolha: 0, alternancia: 0,
+    errosLeitura: 0, errosContagem: 0, errosEscolha: 0, errosAlternancia: 0
+  });
+  const [notes, setNotes] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
     leitura: 0,
     contagem: 0,
     escolha: 0,
