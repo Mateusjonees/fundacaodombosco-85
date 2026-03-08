@@ -99,6 +99,8 @@ export default function ScheduleControl() {
   const [notificationReason, setNotificationReason] = useState("");
   const [pdfConfigDialogOpen, setPdfConfigDialogOpen] = useState(false);
   const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const handleClientClick = async (clientId: string) => {
     try {
       const {
