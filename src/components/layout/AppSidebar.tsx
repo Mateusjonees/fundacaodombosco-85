@@ -1,4 +1,5 @@
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
+import { useNeuroStats } from '@/hooks/useNeuroStats';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronRight, Moon, Sun, MoreHorizontal, ChevronsUpDown } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
@@ -157,11 +158,13 @@ const SidebarNavItem = memo(({
   isActive,
   collapsed,
   accent,
+  badgeCount,
 }: {
   item: MenuItem;
   isActive: boolean;
   collapsed: boolean;
   accent?: typeof categoryAccents[string];
+  badgeCount?: number;
 }) => {
   const IconComponent = iconMapping[item.icon];
   const isDashboard = item.category === null;
@@ -198,6 +201,14 @@ const SidebarNavItem = memo(({
         </div>
       )}
       {!collapsed && <span className="truncate leading-none">{item.title}</span>}
+      {!collapsed && badgeCount && badgeCount > 0 && (
+        <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground animate-pulse">
+          {badgeCount}
+        </span>
+      )}
+      {collapsed && badgeCount && badgeCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-destructive animate-pulse" />
+      )}
     </NavLink>
   );
 
@@ -230,6 +241,8 @@ export function AppSidebar() {
   const customPermissions = useCustomPermissions();
   const currentPath = location.pathname;
   const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
+  const isNeuroCoordinator = ['coordinator_floresta', 'coordinator_atendimento_floresta'].includes(permissions.userRole || '');
+  const { data: neuroStats } = useNeuroStats(isNeuroCoordinator);
 
   useEffect(() => {
     if (!permissions.loading && !customPermissions.loading) {
@@ -351,7 +364,7 @@ export function AppSidebar() {
                         {groupedItems[category].map(item => (
                           <SidebarMenuItem key={item.id}>
                             <SidebarMenuButton asChild>
-                              <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} accent={accent} />
+                              <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} accent={accent} badgeCount={item.id === 'neuroassessment' ? neuroStats?.overdueReports : undefined} />
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
@@ -372,7 +385,7 @@ export function AppSidebar() {
                       {groupedItems[category].map(item => (
                         <SidebarMenuItem key={item.id}>
                           <SidebarMenuButton asChild>
-                            <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} accent={accent} />
+                            <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} accent={accent} badgeCount={item.id === 'neuroassessment' ? neuroStats?.overdueReports : undefined} />
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       ))}

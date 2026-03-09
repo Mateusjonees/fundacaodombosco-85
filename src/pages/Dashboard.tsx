@@ -7,7 +7,9 @@ import { BirthdayAlerts } from '@/components/BirthdayAlerts';
 import { DashboardCharts } from '@/components/DashboardCharts';
 import { DashboardUpcomingAppointments } from '@/components/DashboardUpcomingAppointments';
 import { DashboardActionCards } from '@/components/DashboardActionCards';
-import { Users, Calendar, DollarSign, UserPlus, Activity, CheckCircle2 } from 'lucide-react';
+import { NeuroDeadlineAlerts } from '@/components/NeuroDeadlineAlerts';
+import { useNeuroStats } from '@/hooks/useNeuroStats';
+import { Users, Calendar, DollarSign, UserPlus, Activity, CheckCircle2, Brain, AlertTriangle, Clock, FileText } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLE_LABELS } from '@/hooks/useRolePermissions';
@@ -61,6 +63,8 @@ export default function Dashboard() {
 
   const isLoading = profileLoading || statsLoading;
   const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
+  const isNeuroCoordinator = ['coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
+  const { data: neuroStats } = useNeuroStats(isNeuroCoordinator);
 
   const today = new Date();
   const greeting = today.getHours() < 12 ? 'Bom dia' : today.getHours() < 18 ? 'Boa tarde' : 'Boa noite';
@@ -178,6 +182,50 @@ export default function Dashboard() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Seção Neuro para coordenadores neuro */}
+      {isNeuroCoordinator && neuroStats && (
+        <div className="space-y-3">
+          <NeuroDeadlineAlerts />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+            <StatCard
+              title="Laudos Pendentes"
+              value={neuroStats.pendingReports}
+              subtitle={neuroStats.overdueReports > 0 ? `${neuroStats.overdueReports} vencido(s)` : undefined}
+              icon={FileText}
+              color="text-amber-600 dark:text-amber-400"
+              onClick={() => navigate('/neuroassessment')}
+              delay={50}
+            />
+            <StatCard
+              title="Próximos Vencimentos"
+              value={neuroStats.upcomingDeadlines}
+              subtitle="Nos próximos 7 dias"
+              icon={AlertTriangle}
+              color="text-rose-600 dark:text-rose-400"
+              onClick={() => navigate('/neuroassessment')}
+              delay={100}
+            />
+            <StatCard
+              title="Laudos Entregues"
+              value={neuroStats.deliveredReports}
+              icon={CheckCircle2}
+              color="text-emerald-600 dark:text-emerald-400"
+              onClick={() => navigate('/neuroassessment')}
+              delay={150}
+            />
+            <StatCard
+              title="Horas Neuro"
+              value={`${neuroStats.totalHours}h`}
+              subtitle={`${neuroStats.totalPatients} pacientes`}
+              icon={Brain}
+              color="text-violet-600 dark:text-violet-400"
+              onClick={() => navigate('/neuroassessment')}
+              delay={200}
+            />
+          </div>
+        </div>
       )}
 
       {/* Action cards */}
