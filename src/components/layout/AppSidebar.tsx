@@ -385,7 +385,7 @@ export function AppSidebar() {
                       {groupedItems[category].map(item => (
                         <SidebarMenuItem key={item.id}>
                           <SidebarMenuButton asChild>
-                            <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} accent={accent} />
+                            <SidebarNavItem item={item} isActive={isActive(item.url)} collapsed={collapsed} accent={accent} badgeCount={item.id === 'neuroassessment' ? neuroStats?.overdueReports : undefined} />
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       ))}
