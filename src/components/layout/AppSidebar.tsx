@@ -199,6 +199,14 @@ const SidebarNavItem = memo(({
         </div>
       )}
       {!collapsed && <span className="truncate leading-none">{item.title}</span>}
+      {!collapsed && badgeCount && badgeCount > 0 && (
+        <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground animate-pulse">
+          {badgeCount}
+        </span>
+      )}
+      {collapsed && badgeCount && badgeCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-destructive animate-pulse" />
+      )}
     </NavLink>
   );
 
