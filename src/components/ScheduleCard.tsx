@@ -70,7 +70,9 @@ export const ScheduleCard = memo(({
   const [patientModalOpen, setPatientModalOpen] = useState(false);
   const [professionalModalOpen, setProfessionalModalOpen] = useState(false);
 
-  const professional = employees.find(emp => emp.user_id === schedule.employee_id);
+  // Busca na lista de employees, com fallback para dados do join (schedule.profiles)
+  const professional = employees.find(emp => emp.user_id === schedule.employee_id)
+    || (schedule.profiles ? { name: (schedule.profiles as any).name, employee_role: (schedule.profiles as any).employee_role, user_id: schedule.employee_id } : undefined);
   const unitStyle = getUnitStyle(schedule.unit);
   const isCompleted = schedule.status === 'completed';
   const isCancelled = schedule.status === 'cancelled';
