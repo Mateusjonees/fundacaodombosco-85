@@ -1,41 +1,31 @@
 
 
-## Verificacao dos Testes Neuropsicologicos: Percentis e Historico
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-### Analise Realizada
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
-Analisei o fluxo completo: definicao dos testes (`src/data/neuroTests/`), formularios de entrada (`NeuroTest*Form.tsx`), salvamento no banco (`CompleteAttendanceDialog.tsx`), e exibicao no historico (`PatientNeuroTestHistory.tsx`).
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-### 1. Percentis - Situacao Atual
+## Detalhes Tecnicos
 
-Os testes se dividem em dois grupos por design:
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
-**Testes COM percentil calculado** (salvam percentis no banco): BPA2, RAVLT, FDT, TIN, PCFO, TSBC, FVA, BNTBR, TRILHAS, TMT_ADULTO, FAS, HAYLING (ambos), TFV, TOM, TAYLOR, TRPP, FPT (ambos), REY, STROOP, WCST, WECHSLER, TOL, D2, RAVEN -- todos salvam `percentiles` preenchidos.
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-**Testes SEM percentil por natureza** (escalas clinicas com classificacao direta): BDI, BAI, SNAP-IV, M-CHAT, WMS, MoCA, MEEM, BRIEF-2, Corsi, Conners, Vineland, ACE-III, CBCL, SDQ, GDS, TDE2, NEUPSILIN, Cancelamento -- salvam `percentiles: {}` (vazio). Isso e **correto** pois esses instrumentos usam pontos de corte ou classificacoes diretas, nao tabelas de percentil.
-
-**Conclusao**: O calculo de percentis esta correto. Testes que tem tabelas normativas com percentis os salvam; escalas clinicas que usam pontos de corte salvam apenas classificacoes.
-
-### 2. Historico do Paciente - Situacao Atual
-
-O historico funciona corretamente:
-- `CompleteAttendanceDialog.tsx` salva na tabela `neuro_test_results` via `supabase.from('neuro_test_results').insert(testsToSave)`
-- `PatientNeuroTestHistory.tsx` busca com `supabase.from('neuro_test_results').select('*').eq('client_id', clientId)`
-- O historico aparece na aba "Testes Neuro" do `ClientDetailsView.tsx` (apenas para pacientes da unidade `floresta`)
-- O `NeuroScoreCalculator` tambem permite salvar testes avulsos no historico
-
-**Potencial problema identificado**: O historico so aparece para pacientes com `unit === 'floresta'`. Se testes forem aplicados a pacientes de outra unidade, os resultados sao salvos no banco mas nao tem interface para visualizacao.
-
-### 3. Problema menor encontrado
-
-No `NeuroTestResults.tsx` e `PatientNeuroTestHistory.tsx`, os testes que salvam `percentiles: {}` mostram a tabela de resultados corretamente usando `classifications` quando percentis estao vazios. O componente trata isso adequadamente.
-
-### Resumo
-
-Nao ha bug critico. O sistema esta funcionando conforme o esperado:
-- Testes com dados normativos calculam e salvam percentis corretamente
-- Escalas clinicas usam classificacoes diretas (sem percentil) -- comportamento correto
-- Todos os resultados sao salvos na tabela `neuro_test_results` e aparecem no historico do paciente
-
-A unica ressalva e que a aba de historico de testes neuro so esta visivel para pacientes da unidade "floresta". Se desejar expandir para todas as unidades, seria uma mudanca simples.
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 

@@ -1349,13 +1349,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                       <Edit className="h-4 w-4 mr-1.5" />
                       Cadastro
                     </TabsTrigger>
-                    {client.unit === 'floresta' && (
-                      <TabsTrigger value="neuro_tests" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
-                        <Brain className="h-4 w-4 mr-1.5" />
-                        <span className="hidden sm:inline">Testes Neuro</span>
-                        <span className="sm:hidden">Neuro</span>
-                      </TabsTrigger>
-                    )}
+                    <TabsTrigger value="neuro_tests" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
+                      <Brain className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Testes Neuro</span>
+                      <span className="sm:hidden">Neuro</span>
+                    </TabsTrigger>
                   </TabsList>
 
                   {/* Registration Tab - Edição de Dados Cadastrais */}
@@ -1703,16 +1701,14 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                     </div>
                   </TabsContent>
 
-                  {/* Neuro Tests Tab - Only for Floresta unit */}
-                  {client.unit === 'floresta' && (
-                    <TabsContent value="neuro_tests" className="space-y-6">
-                      <PatientNeuroTestHistory
-                        clientId={client.id}
-                        clientName={client.name}
-                        clientBirthDate={client.birth_date || undefined}
-                      />
-                    </TabsContent>
-                  )}
+                  {/* Neuro Tests Tab - Available for all units */}
+                  <TabsContent value="neuro_tests" className="space-y-6">
+                    <PatientNeuroTestHistory
+                      clientId={client.id}
+                      clientName={client.name}
+                      clientBirthDate={client.birth_date || undefined}
+                    />
+                  </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
