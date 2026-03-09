@@ -1223,7 +1223,7 @@ export default function CompleteAttendanceDialog({
             test_code: 'BAI', test_name: 'BAI - Inventário de Ansiedade de Beck', patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(baiResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify({})),
-            percentiles: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(baiResults.percentiles || {})),
             classifications: JSON.parse(JSON.stringify(baiResults.classifications)),
             applied_by: user.id, applied_at: now, notes: baiResults.notes
           });
