@@ -158,11 +158,13 @@ const SidebarNavItem = memo(({
   isActive,
   collapsed,
   accent,
+  badgeCount,
 }: {
   item: MenuItem;
   isActive: boolean;
   collapsed: boolean;
   accent?: typeof categoryAccents[string];
+  badgeCount?: number;
 }) => {
   const IconComponent = iconMapping[item.icon];
   const isDashboard = item.category === null;
