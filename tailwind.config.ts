@@ -89,9 +89,9 @@ export default {
 						height: '0'
 					}
 				},
-				'page-enter': {
-					'0%': { opacity: '0', transform: 'translateY(4px)' },
-					'100%': { opacity: '1', transform: 'translateY(0)' }
+			'page-enter': {
+					'0%': { opacity: '0.6' },
+					'100%': { opacity: '1' }
 				},
 				'page-exit': {
 					'0%': { opacity: '1', transform: 'translateY(0)' },
