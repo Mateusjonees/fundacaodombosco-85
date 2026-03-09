@@ -1017,157 +1017,154 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   return (
     <TooltipProvider>
-      <div className="space-y-6 animate-fade-in">
-        {/* Hero Header */}
-        <Card className={`${unitColors.bg} ${unitColors.border} border-2 overflow-hidden`}>
-          <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              {/* Avatar + Nome juntos no mobile */}
-              <div className="flex items-center gap-3 sm:block">
-                <Avatar className={`h-14 w-14 sm:h-20 sm:w-20 ${unitColors.avatar} text-xl sm:text-2xl font-bold shadow-lg shrink-0`}>
-                  <AvatarFallback className={unitColors.avatar}>
-                    {getInitials(client.name)}
-                  </AvatarFallback>
-                </Avatar>
-                {/* Nome visível apenas no mobile ao lado do avatar */}
-                <div className="sm:hidden min-w-0">
-                  <h1 className="text-lg font-bold uppercase leading-tight truncate">{client.name}</h1>
-                  <Badge 
-                    variant={client.is_active ? 'default' : 'secondary'}
-                    className={`text-xs mt-1 ${client.is_active ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : ''}`}
-                  >
-                    {client.is_active ? 'Ativo' : 'Inativo'}
-                  </Badge>
-                </div>
-              </div>
+      <div className="space-y-5 animate-fade-in">
+        {/* Hero Header - Compacto e informativo */}
+        <Card className={`overflow-hidden border-0 shadow-lg`}>
+          {/* Barra de cor da unidade */}
+          <div className={`h-1.5 bg-gradient-to-r ${unitColors.gradient || 'from-primary to-primary/60'}`} />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+              {/* Avatar */}
+              <Avatar className={`h-16 w-16 sm:h-20 sm:w-20 ${unitColors.avatar} text-xl sm:text-2xl font-bold shadow-md shrink-0 ring-2 ring-background`}>
+                <AvatarFallback className={unitColors.avatar}>
+                  {getInitials(client.name)}
+                </AvatarFallback>
+              </Avatar>
 
               {/* Info Principal */}
-              <div className="flex-1 space-y-2 min-w-0">
-                <div className="hidden sm:flex flex-wrap items-center gap-3">
-                  <h1 className="text-2xl md:text-3xl font-bold uppercase">{client.name}</h1>
+              <div className="flex-1 min-w-0 space-y-3">
+                {/* Nome + Status */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl font-bold uppercase tracking-wide leading-tight">{client.name}</h1>
                   <Badge 
                     variant={client.is_active ? 'default' : 'secondary'}
-                    className={client.is_active ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : ''}
+                    className={`text-xs font-semibold ${client.is_active 
+                      ? 'bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30' 
+                      : 'bg-muted text-muted-foreground'}`}
                   >
+                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${client.is_active ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/50'}`} />
                     {client.is_active ? 'Ativo' : 'Inativo'}
                   </Badge>
                 </div>
                 
-                {/* Quick Info Badges */}
-                <div className="flex flex-wrap gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                  {client.cpf && (
-                    <Badge variant="outline" className="font-normal text-xs">
-                      <User className="h-3 w-3 mr-1" />
-                      CPF: {client.cpf}
-                    </Badge>
-                  )}
-                  {client.phone && (
-                    <Badge variant="outline" className="font-normal text-xs">
-                      <Phone className="h-3 w-3 mr-1" />
-                      {client.phone}
-                    </Badge>
-                  )}
+                {/* Quick Info - Grid compacto */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                   {client.unit && (
-                    <Badge className={`text-xs ${unitColors.badge}`}>
-                      {getUnitLabel(client.unit)}
-                    </Badge>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${unitColors.bg} ${unitColors.border} border`}>
+                      <Activity className={`h-3.5 w-3.5 ${unitColors.text} shrink-0`} />
+                      <span className={`font-medium text-xs ${unitColors.text}`}>{getUnitLabel(client.unit)}</span>
+                    </div>
                   )}
                   {client.birth_date && (
-                    <Badge variant="outline" className="font-normal text-xs">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {calculateAge(client.birth_date)} anos
-                    </Badge>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="font-medium text-xs">{calculateAge(client.birth_date)} anos</span>
+                    </div>
+                  )}
+                  {client.phone && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="font-medium text-xs truncate">{client.phone}</span>
+                    </div>
+                  )}
+                  {client.cpf && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
+                      <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="font-medium text-xs">{client.cpf}</span>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleScheduleAppointment}>
-                  <Calendar className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Agendar</span>
+              {/* Action Buttons - Vertical no desktop */}
+              <div className="flex sm:flex-col gap-2 shrink-0">
+                <Button size="sm" onClick={handleScheduleAppointment} className="gap-1.5">
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline text-xs">Agendar</span>
                 </Button>
                 
                 {isCoordinatorOrDirector() && (
-                  <Button variant="outline" size="sm" onClick={onEdit}>
-                    <Edit className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Editar</span>
+                  <Button variant="outline" size="sm" onClick={onEdit} className="gap-1.5">
+                    <Edit className="h-4 w-4" />
+                    <span className="hidden sm:inline text-xs">Editar</span>
                   </Button>
                 )}
 
                 {userProfile?.employee_role === 'director' && onDelete && (
-                  <Button variant="destructive" size="sm" onClick={onDelete}>
-                    <Trash2 className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Excluir</span>
+                  <Button variant="destructive" size="sm" onClick={onDelete} className="gap-1.5">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="hidden sm:inline text-xs">Excluir</span>
                   </Button>
                 )}
                 
-                <Button variant="outline" size="sm" onClick={onBack}>
-                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Voltar</span>
+                <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline text-xs">Voltar</span>
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${unitColors.bg}`}>
-                  <Clock className={`h-5 w-5 ${unitColors.text}`} />
+        {/* Stats Cards - Mais compactos */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="border-0 shadow-sm hover:shadow-md transition-all bg-gradient-to-br from-background to-muted/30">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-lg ${unitColors.bg}`}>
+                  <Clock className={`h-4 w-4 ${unitColors.text}`} />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Próximo Agendamento</p>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Próximo</p>
                   {nextAppointment ? (
-                    <p className="font-semibold text-sm">{nextAppointment.date} às {nextAppointment.time}</p>
+                    <p className="font-bold text-xs truncate">{nextAppointment.date}</p>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Sem agendamento</p>
+                    <p className="text-xs text-muted-foreground italic">Nenhum</p>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${unitColors.bg}`}>
-                  <Users className={`h-5 w-5 ${unitColors.text}`} />
+          <Card className="border-0 shadow-sm hover:shadow-md transition-all bg-gradient-to-br from-background to-muted/30">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-lg ${unitColors.bg}`}>
+                  <Users className={`h-4 w-4 ${unitColors.text}`} />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Profissionais</p>
-                  <p className="font-semibold text-sm">{assignedProfessionals.length} vinculado{assignedProfessionals.length !== 1 ? 's' : ''}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Equipe</p>
+                  <p className="font-bold text-xs">{assignedProfessionals.length} prof.</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${unitColors.bg}`}>
-                  <FolderOpen className={`h-5 w-5 ${unitColors.text}`} />
+          <Card className="border-0 shadow-sm hover:shadow-md transition-all bg-gradient-to-br from-background to-muted/30">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-lg ${unitColors.bg}`}>
+                  <FolderOpen className={`h-4 w-4 ${unitColors.text}`} />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Documentos</p>
-                  <p className="font-semibold text-sm">{documents.length} anexado{documents.length !== 1 ? 's' : ''}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Docs</p>
+                  <p className="font-bold text-xs">{documents.length} arquivo{documents.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${unitColors.bg}`}>
-                  <FileText className={`h-5 w-5 ${unitColors.text}`} />
+          <Card className="border-0 shadow-sm hover:shadow-md transition-all bg-gradient-to-br from-background to-muted/30">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-lg ${laudoInfo ? 'bg-green-500/10' : unitColors.bg}`}>
+                  <FileText className={`h-4 w-4 ${laudoInfo ? 'text-green-600' : unitColors.text}`} />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Laudo</p>
-                  <p className="font-semibold text-sm">{laudoInfo ? 'Disponível' : 'Pendente'}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Laudo</p>
+                  <p className={`font-bold text-xs ${laudoInfo ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                    {laudoInfo ? '✓ Pronto' : '⏳ Pendente'}
+                  </p>
                 </div>
               </div>
             </CardContent>
