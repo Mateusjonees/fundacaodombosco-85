@@ -184,6 +184,50 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {/* Seção Neuro para coordenadores neuro */}
+      {isNeuroCoordinator && neuroStats && (
+        <div className="space-y-3">
+          <NeuroDeadlineAlerts />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+            <StatCard
+              title="Laudos Pendentes"
+              value={neuroStats.pendingReports}
+              subtitle={neuroStats.overdueReports > 0 ? `${neuroStats.overdueReports} vencido(s)` : undefined}
+              icon={FileText}
+              color="text-amber-600 dark:text-amber-400"
+              onClick={() => navigate('/neuroassessment')}
+              delay={50}
+            />
+            <StatCard
+              title="Próximos Vencimentos"
+              value={neuroStats.upcomingDeadlines}
+              subtitle="Nos próximos 7 dias"
+              icon={AlertTriangle}
+              color="text-rose-600 dark:text-rose-400"
+              onClick={() => navigate('/neuroassessment')}
+              delay={100}
+            />
+            <StatCard
+              title="Laudos Entregues"
+              value={neuroStats.deliveredReports}
+              icon={CheckCircle2}
+              color="text-emerald-600 dark:text-emerald-400"
+              onClick={() => navigate('/neuroassessment')}
+              delay={150}
+            />
+            <StatCard
+              title="Horas Neuro"
+              value={`${neuroStats.totalHours}h`}
+              subtitle={`${neuroStats.totalPatients} pacientes`}
+              icon={Brain}
+              color="text-violet-600 dark:text-violet-400"
+              onClick={() => navigate('/neuroassessment')}
+              delay={200}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Action cards */}
       {isDirectorOrCoordinator && <DashboardActionCards />}
 
