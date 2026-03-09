@@ -1701,16 +1701,14 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                     </div>
                   </TabsContent>
 
-                  {/* Neuro Tests Tab - Only for Floresta unit */}
-                  {client.unit === 'floresta' && (
-                    <TabsContent value="neuro_tests" className="space-y-6">
-                      <PatientNeuroTestHistory
-                        clientId={client.id}
-                        clientName={client.name}
-                        clientBirthDate={client.birth_date || undefined}
-                      />
-                    </TabsContent>
-                  )}
+                  {/* Neuro Tests Tab - Available for all units */}
+                  <TabsContent value="neuro_tests" className="space-y-6">
+                    <PatientNeuroTestHistory
+                      clientId={client.id}
+                      clientName={client.name}
+                      clientBirthDate={client.birth_date || undefined}
+                    />
+                  </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
