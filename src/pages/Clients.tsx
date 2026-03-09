@@ -511,7 +511,7 @@ export default function Patients() {
         filters={
           <>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px] h-10"><div className="flex items-center gap-1.5"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /><SelectValue placeholder="Ordenar por" /></div></SelectTrigger>
+              <SelectTrigger className="w-[160px] h-9"><div className="flex items-center gap-1.5"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /><SelectValue placeholder="Ordenar por" /></div></SelectTrigger>
               <SelectContent>
                 <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
                 <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
@@ -522,7 +522,7 @@ export default function Patients() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px] h-10"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos Status</SelectItem>
                 <SelectItem value="active"><span className="flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-green-600" /> Ativos</span></SelectItem>
@@ -530,7 +530,7 @@ export default function Patients() {
               </SelectContent>
             </Select>
             <Select value={unitFilter} onValueChange={setUnitFilter}>
-              <SelectTrigger className="w-[160px] h-10"><SelectValue placeholder="Unidade" /></SelectTrigger>
+              <SelectTrigger className="w-[150px] h-9"><SelectValue placeholder="Unidade" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas Unidades</SelectItem>
                 <SelectItem value="madre">MADRE</SelectItem>
@@ -539,7 +539,7 @@ export default function Patients() {
               </SelectContent>
             </Select>
             <Select value={ageFilter} onValueChange={setAgeFilter}>
-              <SelectTrigger className="w-[140px] h-10"><SelectValue placeholder="Idade" /></SelectTrigger>
+              <SelectTrigger className="w-[130px] h-9"><SelectValue placeholder="Idade" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas Idades</SelectItem>
                 <SelectItem value="minor">Menores</SelectItem>
@@ -547,7 +547,7 @@ export default function Patients() {
               </SelectContent>
             </Select>
             <Select value={laudoFilter} onValueChange={setLaudoFilter}>
-              <SelectTrigger className="w-[160px] h-10"><SelectValue placeholder="Laudo" /></SelectTrigger>
+              <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Laudo" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos (Laudo)</SelectItem>
                 <SelectItem value="with_laudo"><span className="flex items-center gap-1.5"><FileCheck className="h-3.5 w-3.5 text-green-600" /> Com Laudo</span></SelectItem>
@@ -555,7 +555,7 @@ export default function Patients() {
               </SelectContent>
             </Select>
             <Select value={genderFilter} onValueChange={setGenderFilter}>
-              <SelectTrigger className="w-[150px] h-10"><SelectValue placeholder="Gênero" /></SelectTrigger>
+              <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Gênero" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos Gêneros</SelectItem>
                 <SelectItem value="male"><span className="flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" /> Masculino</span></SelectItem>
@@ -564,14 +564,14 @@ export default function Patients() {
             </Select>
             {isCoordinatorOrDirector() && (
               <Select value={professionalFilter} onValueChange={setProfessionalFilter}>
-                <SelectTrigger className="w-[180px] h-10"><SelectValue placeholder="Profissional" /></SelectTrigger>
+                <SelectTrigger className="w-[170px] h-9"><SelectValue placeholder="Profissional" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos Profissionais</SelectItem>
                   {employees.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             )}
-            <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-10 gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-9 gap-2">
               <Download className="h-4 w-4" /> Exportar Excel
             </Button>
           </>

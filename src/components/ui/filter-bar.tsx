@@ -30,16 +30,16 @@ export function FilterBar({
 
   return (
     <div className={cn("space-y-3", className)}>
-      {/* Main search bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Unified filter row */}
+      <div className="flex flex-wrap items-center gap-2">
         {/* Search input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative w-full sm:w-auto sm:min-w-[220px] sm:max-w-[280px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="pl-9 pr-9 h-10 bg-background"
+            className="pl-9 pr-9 h-9 bg-background text-sm"
           />
           {searchValue && (
             <button
@@ -51,18 +51,18 @@ export function FilterBar({
           )}
         </div>
 
-        {/* Filter toggle button (mobile) */}
+        {/* Filter toggle button (mobile only) */}
         {collapsible && filters && (
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="sm:hidden h-10 gap-2"
+            className="sm:hidden h-9 gap-2"
           >
             <Filter className="h-4 w-4" />
             Filtros
             {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                 {activeFiltersCount}
               </Badge>
             )}
@@ -70,19 +70,18 @@ export function FilterBar({
           </Button>
         )}
 
-        {/* Filters (desktop - always visible) */}
-        <div className="hidden sm:flex items-center gap-2 flex-wrap">
+        {/* Filters inline (desktop) */}
+        <div className="hidden sm:contents">
           {filters}
-          
-          {/* Clear filters button */}
+
           {activeFiltersCount > 0 && onClearFilters && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onClearFilters}
-              className="h-10 text-muted-foreground hover:text-foreground gap-1"
+              className="h-9 text-muted-foreground hover:text-foreground gap-1 text-xs"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
               Limpar ({activeFiltersCount})
             </Button>
           )}
@@ -93,7 +92,7 @@ export function FilterBar({
       {collapsible && isExpanded && filters && (
         <div className="sm:hidden flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg animate-fade-in">
           {filters}
-          
+
           {activeFiltersCount > 0 && onClearFilters && (
             <Button
               variant="ghost"
@@ -108,10 +107,10 @@ export function FilterBar({
         </div>
       )}
 
-      {/* Active filters badges */}
+      {/* Active filters indicator */}
       {activeFiltersCount > 0 && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Filter className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Filter className="h-3 w-3" />
           <span>{activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}</span>
         </div>
       )}
