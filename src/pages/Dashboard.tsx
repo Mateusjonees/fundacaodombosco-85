@@ -63,6 +63,8 @@ export default function Dashboard() {
 
   const isLoading = profileLoading || statsLoading;
   const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
+  const isNeuroCoordinator = ['coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
+  const { data: neuroStats } = useNeuroStats(isNeuroCoordinator);
 
   const today = new Date();
   const greeting = today.getHours() < 12 ? 'Bom dia' : today.getHours() < 18 ? 'Boa tarde' : 'Boa noite';
