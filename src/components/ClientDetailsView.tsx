@@ -1349,13 +1349,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                       <Edit className="h-4 w-4 mr-1.5" />
                       Cadastro
                     </TabsTrigger>
-                    {client.unit === 'floresta' && (
-                      <TabsTrigger value="neuro_tests" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
-                        <Brain className="h-4 w-4 mr-1.5" />
-                        <span className="hidden sm:inline">Testes Neuro</span>
-                        <span className="sm:hidden">Neuro</span>
-                      </TabsTrigger>
-                    )}
+                    <TabsTrigger value="neuro_tests" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
+                      <Brain className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Testes Neuro</span>
+                      <span className="sm:hidden">Neuro</span>
+                    </TabsTrigger>
                   </TabsList>
 
                   {/* Registration Tab - Edição de Dados Cadastrais */}
