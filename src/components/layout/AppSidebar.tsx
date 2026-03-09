@@ -241,6 +241,8 @@ export function AppSidebar() {
   const customPermissions = useCustomPermissions();
   const currentPath = location.pathname;
   const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
+  const isNeuroCoordinator = ['coordinator_floresta', 'coordinator_atendimento_floresta'].includes(permissions.userRole || '');
+  const { data: neuroStats } = useNeuroStats(isNeuroCoordinator);
 
   useEffect(() => {
     if (!permissions.loading && !customPermissions.loading) {
