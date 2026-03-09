@@ -1210,7 +1210,7 @@ export default function CompleteAttendanceDialog({
             test_code: 'BDI', test_name: 'BDI-II - Inventário de Depressão de Beck', patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(bdiResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify({})),
-            percentiles: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(bdiResults.percentiles || {})),
             classifications: JSON.parse(JSON.stringify(bdiResults.classifications)),
             applied_by: user.id, applied_at: now, notes: bdiResults.notes
           });
@@ -1223,7 +1223,7 @@ export default function CompleteAttendanceDialog({
             test_code: 'BAI', test_name: 'BAI - Inventário de Ansiedade de Beck', patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(baiResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify({})),
-            percentiles: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(baiResults.percentiles || {})),
             classifications: JSON.parse(JSON.stringify(baiResults.classifications)),
             applied_by: user.id, applied_at: now, notes: baiResults.notes
           });
@@ -1327,7 +1327,7 @@ export default function CompleteAttendanceDialog({
             test_code: 'CORSI', test_name: 'Cubos de Corsi', patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(corsiResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify({})),
-            percentiles: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(corsiResults.percentiles || {})),
             classifications: JSON.parse(JSON.stringify(corsiResults.classifications)),
             applied_by: user.id, applied_at: now, notes: corsiResults.notes
           });
