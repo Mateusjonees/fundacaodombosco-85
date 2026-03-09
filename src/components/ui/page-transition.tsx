@@ -1,5 +1,4 @@
 import { ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface PageTransitionProps {
@@ -8,19 +7,11 @@ interface PageTransitionProps {
 }
 
 /**
- * Animação de transição suave entre páginas usando a rota como key
+ * Transição leve entre páginas — sem key por rota para evitar remontagem
  */
 export const PageTransition = ({ children, className }: PageTransitionProps) => {
-  const location = useLocation();
-
   return (
-    <div 
-      key={location.pathname}
-      className={cn(
-        "animate-page-enter",
-        className
-      )}
-    >
+    <div className={cn("animate-page-enter", className)}>
       {children}
     </div>
   );
