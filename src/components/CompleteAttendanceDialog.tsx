@@ -1327,7 +1327,7 @@ export default function CompleteAttendanceDialog({
             test_code: 'CORSI', test_name: 'Cubos de Corsi', patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(corsiResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify({})),
-            percentiles: JSON.parse(JSON.stringify({})),
+            percentiles: JSON.parse(JSON.stringify(corsiResults.percentiles || {})),
             classifications: JSON.parse(JSON.stringify(corsiResults.classifications)),
             applied_by: user.id, applied_at: now, notes: corsiResults.notes
           });
