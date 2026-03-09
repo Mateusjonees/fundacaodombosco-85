@@ -1,4 +1,5 @@
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
+import { useNeuroStats } from '@/hooks/useNeuroStats';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronRight, Moon, Sun, MoreHorizontal, ChevronsUpDown } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
