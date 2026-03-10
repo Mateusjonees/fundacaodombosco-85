@@ -1642,7 +1642,7 @@ export default function Financial() {
                                           </p>
                                         )}
                                       </div>
-                                      <div className="text-right">
+                                      <div className="text-right flex flex-col items-end gap-1">
                                         <p className="font-bold">
                                           R$ {(inst.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </p>
@@ -1650,6 +1650,22 @@ export default function Financial() {
                                           <p className="text-orange-600">
                                             Pago: R$ {inst.paid_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                           </p>
+                                        )}
+                                        {canMarkPayments && inst.status !== 'paid' && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-6 text-[10px] gap-1 px-2 border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/30"
+                                            disabled={markingInstallment === inst.id}
+                                            onClick={() => {
+                                              if (window.confirm(`Confirmar pagamento da ${inst.installment_number}ª parcela de R$ ${(inst.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}?`)) {
+                                                handleMarkInstallmentPaid(inst.id, inst.amount);
+                                              }
+                                            }}
+                                          >
+                                            <Check className="h-3 w-3" />
+                                            {markingInstallment === inst.id ? 'Salvando...' : 'Marcar Pago'}
+                                          </Button>
                                         )}
                                       </div>
                                     </div>
