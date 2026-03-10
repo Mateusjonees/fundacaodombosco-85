@@ -1083,11 +1083,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                   <span className="hidden sm:inline text-xs">Agendar</span>
                 </Button>
                 
-                {isCoordinatorOrDirector() &&
-                <Button variant="outline" size="sm" onClick={onEdit} className="gap-1.5">
-                    <Edit className="h-4 w-4" />
-                    <span className="hidden sm:inline text-xs">Editar</span>
-                  </Button>
+                {isCoordinatorOrDirector()
+
+
+
+
                 }
 
                 {userProfile?.employee_role === 'director' && onDelete &&
