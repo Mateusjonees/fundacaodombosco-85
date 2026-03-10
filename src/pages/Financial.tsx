@@ -64,6 +64,8 @@ export default function Financial() {
   const [unitFilter, setUnitFilter] = useState('all');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
   const [showContractPending, setShowContractPending] = useState(false);
+  const [expandedContractMethod, setExpandedContractMethod] = useState(false);
+  const [markingInstallment, setMarkingInstallment] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { userRole, loading: roleLoading } = useRolePermissions();
