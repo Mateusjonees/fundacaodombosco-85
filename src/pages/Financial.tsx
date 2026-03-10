@@ -1171,9 +1171,9 @@ export default function Financial() {
         </Alert>
       )}
 
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs defaultValue={isCoordinatorOnly ? "pending" : "all"} className="w-full">
         <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
-          <TabsTrigger value="all">Todas</TabsTrigger>
+          {!isCoordinatorOnly && <TabsTrigger value="all">Todas</TabsTrigger>}
           <TabsTrigger value="income">Receitas</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
           <TabsTrigger value="pending">A Receber</TabsTrigger>
