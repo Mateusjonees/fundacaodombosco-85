@@ -1,31 +1,50 @@
 
 
-# Botao de Rotacao de Tela para Mobile/Tablet
+## Plano: Detalhamento de Contratos no Resumo Financeiro + Controle de Boletos pela Coordenadora
 
-## O que sera feito
-Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
+### Contexto
 
-## Como vai funcionar
-- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
-- Ao clicar, a tela alternara entre orientacao retrato e paisagem
-- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
-- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
-- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
+O "Resumo por Forma de Pagamento" mostra "Contrato" como uma linha simples (valor + quantidade). O usuário quer que ao exibir "Contrato", mostre os detalhes completos como na aba "A Receber" (parcelas, valores, entrada, status). Além disso, a coordenadora Tati (`coordinator_floresta`) precisa poder marcar pagamentos de boleto mensais como recebidos, mês a mês.
 
-## Detalhes Tecnicos
+---
 
-### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
-- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
-- Verificara suporte do navegador antes de exibir o botao
-- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
-- Icone do lucide-react: `RotateCcw` ou `Smartphone`
-- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
+### Mudanças Planejadas
 
-### 2. Integracao no `MainApp.tsx`
-- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
+#### 1. Expandir "Contrato" no Resumo por Forma de Pagamento
 
-### 3. Tratamento de erros
-- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
-- Caso o navegador nao suporte, o botao nao sera renderizado
-- Em caso de falha ao rotacionar, exibira um toast informando o usuario
+No `Financial.tsx`, na seção "Resumo por Forma de Pagamento", quando o método for `contract`/`Contrato`:
+
+- Tornar a linha clicável (accordion/expansão)
+- Ao expandir, mostrar uma mini-lista com os contratos de `pendingPayments`, incluindo:
+  - Nome do paciente
+  - Valor total do contrato
+  - Parcelas pagas/total
+  - Valor entrada + forma
+  - Cartão de crédito parcelas
+  - Barra de progresso
+  - Status (Quitado/Parcial/Pendente/Vencido)
+- Reutilizar dados já carregados em `pendingPayments`
+
+#### 2. Controle de Boletos pela Coordenadora (Check Mensal)
+
+Permitir que `coordinator_floresta` (Tati) marque parcelas como pagas diretamente na aba "A Receber" do financeiro:
+
+- Adicionar botão "✓ Marcar como Pago" em cada parcela pendente na lista de parcelas do contrato (seção que já existe em linhas 1510-1557)
+- Ao clicar, abrir dialog simples pedindo confirmação e data de pagamento
+- Atualizar `payment_installments` (status='paid', paid_amount=amount, paid_at=now)
+- O trigger `update_payment_status()` já existe e atualiza automaticamente o `client_payments`
+- Expandir a permissão de acesso: atualmente só `director` e `financeiro` acessam o financeiro. Adicionar `coordinator_floresta` à verificação de acesso na página Financial (ou usar permissão customizada `view_financial`)
+
+#### 3. Permissão de Acesso
+
+- No `Financial.tsx` (linha 91-92), adicionar `coordinator_floresta` ao check de acesso, mas com visão limitada (apenas aba "A Receber" e controle de boletos)
+- Alternativamente, usar `customPermissions.hasPermission('view_financial')` que já existe
+
+---
+
+### Arquivos Afetados
+
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/Financial.tsx` | Expandir resumo "Contrato" com detalhes; adicionar botão de check em parcelas; permitir acesso `coordinator_floresta` |
 
