@@ -988,11 +988,23 @@ export default function Financial() {
                 .sort((a, b) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense))
                 .map(([method, data]) => {
                   const total = data.income + data.expense;
-                  const barWidth = (total / maxPaymentTotal) * 100;
+                  const isContract = method === 'contract' || method === 'Contrato';
+                  const contractPayments = isContract ? pendingPayments : [];
+                  
                   return (
                     <div key={method} className="space-y-1.5">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{translatePaymentMethod(method)}</span>
+                      <div 
+                        className={`flex items-center justify-between text-sm ${isContract ? 'cursor-pointer hover:bg-muted/50 rounded-lg px-2 py-1 -mx-2 transition-colors' : ''}`}
+                        onClick={isContract ? () => setExpandedContractMethod(!expandedContractMethod) : undefined}
+                      >
+                        <span className="font-medium flex items-center gap-1">
+                          {translatePaymentMethod(method)}
+                          {isContract && (
+                            expandedContractMethod 
+                              ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> 
+                              : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
+                        </span>
                         <div className="flex items-center gap-3 text-xs">
                           {data.income > 0 && (
                             <span className="text-green-600">
@@ -1025,6 +1037,55 @@ export default function Financial() {
                           )}
                         </div>
                       </div>
+
+                      {/* Detalhes expandidos de contratos */}
+                      {isContract && expandedContractMethod && contractPayments.length > 0 && (
+                        <div className="mt-3 space-y-2 border-t pt-3">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">
+                            {contractPayments.length} contrato{contractPayments.length > 1 ? 's' : ''} detalhado{contractPayments.length > 1 ? 's' : ''}:
+                          </p>
+                          {contractPayments.map((p: any) => {
+                            const progress = p.total_amount > 0 ? ((p.amount_paid || 0) / p.total_amount) * 100 : 0;
+                            const isOverdue = p.due_date && new Date(p.due_date) < new Date() && p.status !== 'completed';
+                            return (
+                              <div key={p.id} className={`rounded-lg border p-3 space-y-2 text-xs ${
+                                p.status === 'completed' ? 'border-green-200 bg-green-50/50 dark:bg-green-950/20' :
+                                isOverdue ? 'border-red-200 bg-red-50/50 dark:bg-red-950/20' : 'border-border'
+                              }`}>
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold text-sm uppercase">{p.client?.name || 'N/A'}</span>
+                                  <Badge variant={
+                                    p.status === 'completed' ? 'default' :
+                                    p.status === 'partial' ? 'secondary' :
+                                    isOverdue ? 'destructive' : 'outline'
+                                  } className="text-[10px]">
+                                    {p.status === 'completed' ? '✅ Quitado' :
+                                     p.status === 'partial' ? '⏳ Parcial' :
+                                     isOverdue ? '🚨 Vencido' : '⏰ Pendente'}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-muted-foreground">
+                                  <span>R$ {(p.total_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  <span>{p.installments_paid || 0}/{p.installments_total || 0} parcelas</span>
+                                </div>
+                                {p.down_payment_amount > 0 && (
+                                  <span className="text-green-600">
+                                    💰 Entrada: R$ {p.down_payment_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {p.down_payment_method && ` (${translatePaymentMethod(p.down_payment_method)})`}
+                                  </span>
+                                )}
+                                {p.credit_card_installments > 1 && (
+                                  <span className="text-blue-600">
+                                    💳 {p.credit_card_installments}x no Cartão
+                                  </span>
+                                )}
+                                <Progress value={progress} className="h-1.5" />
+                                <span className="text-muted-foreground">{progress.toFixed(0)}% pago</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
