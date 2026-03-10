@@ -364,6 +364,9 @@ export default function Financial() {
     } finally {
       setMarkingInstallment(null);
     }
+  };
+
+  const filteredRecords = records.filter(record => {
     const matchesSearch = record.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase());
