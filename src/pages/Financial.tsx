@@ -92,6 +92,7 @@ export default function Financial() {
     
     // Verificar permissão: apenas diretor
     const hasAccess = userRole === 'director' || 
+                      userRole === 'coordinator_floresta' ||
                       customPermissions.hasPermission('view_financial');
     
     if (!hasAccess) {
