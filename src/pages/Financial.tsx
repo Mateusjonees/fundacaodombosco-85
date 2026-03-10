@@ -549,7 +549,11 @@ export default function Financial() {
   }
 
   const hasAccess = userRole === 'director' || 
+                    userRole === 'coordinator_floresta' ||
                     customPermissions.hasPermission('view_financial');
+
+  const isCoordinatorOnly = userRole === 'coordinator_floresta' && userRole !== 'director';
+  const canMarkPayments = userRole === 'director' || userRole === 'coordinator_floresta';
 
   if (!hasAccess) {
     return (
