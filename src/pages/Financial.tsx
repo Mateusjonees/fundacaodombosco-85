@@ -552,7 +552,7 @@ export default function Financial() {
                     userRole === 'coordinator_floresta' ||
                     customPermissions.hasPermission('view_financial');
 
-  const isCoordinatorOnly = userRole === 'coordinator_floresta' && userRole !== 'director';
+  const isCoordinatorOnly = userRole === 'coordinator_floresta';
   const canMarkPayments = userRole === 'director' || userRole === 'coordinator_floresta';
 
   if (!hasAccess) {
