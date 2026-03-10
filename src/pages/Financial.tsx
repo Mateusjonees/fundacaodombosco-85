@@ -333,7 +333,37 @@ export default function Financial() {
     }
   };
 
-  const filteredRecords = records.filter(record => {
+  // Marcar parcela como paga (coordenadora/diretor)
+  const handleMarkInstallmentPaid = async (installmentId: string, amount: number) => {
+    setMarkingInstallment(installmentId);
+    try {
+      const { error } = await supabase
+        .from('payment_installments')
+        .update({
+          status: 'paid',
+          paid_amount: amount,
+          paid_at: new Date().toISOString(),
+          payment_method: 'boleto'
+        })
+        .eq('id', installmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Parcela marcada como paga",
+        description: "O status do contrato foi atualizado automaticamente.",
+      });
+      loadPendingPayments();
+    } catch (error) {
+      console.error('Error marking installment as paid:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível marcar a parcela como paga.",
+      });
+    } finally {
+      setMarkingInstallment(null);
+    }
     const matchesSearch = record.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase());
