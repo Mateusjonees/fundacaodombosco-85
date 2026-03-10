@@ -15,14 +15,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { getUnitStyle } from '@/utils/unitUtils';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Calendar, 
-  Edit, 
-  FileText, 
-  Plus, 
-  Users, 
-  MapPin, 
-  Phone, 
+import {
+  Calendar,
+  Edit,
+  FileText,
+  Plus,
+  Users,
+  MapPin,
+  Phone,
   Mail,
   User,
   Activity,
@@ -47,8 +47,8 @@ import {
   Pill,
   ClipboardList,
   Trash2,
-  Pencil
-} from 'lucide-react';
+  Pencil } from
+'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
 import ClientPaymentManager from './ClientPaymentManager';
@@ -86,7 +86,7 @@ interface ClientNote {
   note_type: string;
   created_at: string;
   service_type?: string;
-  profiles?: { name: string };
+  profiles?: {name: string;};
 }
 
 interface ClientDocument {
@@ -95,14 +95,14 @@ interface ClientDocument {
   document_type: string;
   file_path: string;
   uploaded_at: string;
-  profiles?: { name: string };
+  profiles?: {name: string;};
 }
 
 interface AssignedProfessional {
   id: string;
   employee_id: string;
   is_active: boolean;
-  profiles?: { name: string; employee_role: string };
+  profiles?: {name: string;employee_role: string;};
   assigned_at: string;
 }
 
@@ -144,17 +144,17 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
   const [currentAssignments, setCurrentAssignments] = useState<any[]>([]);
   const { toast } = useToast();
-  const [laudoInfo, setLaudoInfo] = useState<{ file_path: string; completed_at: string } | null>(null);
+  const [laudoInfo, setLaudoInfo] = useState<{file_path: string;completed_at: string;} | null>(null);
   const [loadingLaudo, setLoadingLaudo] = useState(false);
-  const [nextAppointment, setNextAppointment] = useState<{ date: string; time: string } | null>(null);
+  const [nextAppointment, setNextAppointment] = useState<{date: string;time: string;} | null>(null);
   const [showReportGenerator, setShowReportGenerator] = useState(false);
 
   // Helper function to check if user is coordinator or director
   const isCoordinatorOrDirector = () => {
-    return userProfile?.employee_role === 'director' || 
-           userProfile?.employee_role === 'coordinator_madre' || 
-           userProfile?.employee_role === 'coordinator_floresta' ||
-           userProfile?.employee_role === 'coordinator_atendimento_floresta';
+    return userProfile?.employee_role === 'director' ||
+    userProfile?.employee_role === 'coordinator_madre' ||
+    userProfile?.employee_role === 'coordinator_floresta' ||
+    userProfile?.employee_role === 'coordinator_atendimento_floresta';
   };
 
   // Get unit color classes from centralized config
@@ -162,12 +162,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   // Get initials from name
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
+    return name.
+    split(' ').
+    map((word) => word[0]).
+    slice(0, 2).
+    join('').
+    toUpperCase();
   };
 
   useEffect(() => {
@@ -176,33 +176,33 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadClientData = async () => {
     await Promise.all([
-      loadNotes(),
-      loadDocuments(), 
-      loadAssignedProfessionals(),
-      loadEmployees(),
-      loadUserProfile(),
-      loadAvailableEmployees(),
-      loadCurrentAssignments(),
-      loadLaudoInfo(),
-      loadNextAppointment()
-    ]);
+    loadNotes(),
+    loadDocuments(),
+    loadAssignedProfessionals(),
+    loadEmployees(),
+    loadUserProfile(),
+    loadAvailableEmployees(),
+    loadCurrentAssignments(),
+    loadLaudoInfo(),
+    loadNextAppointment()]
+    );
   };
 
   const loadNextAppointment = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('start_time')
-        .eq('client_id', client.id)
-        .gte('start_time', today)
-        .neq('status', 'cancelled')
-        .order('start_time', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.
+      from('schedules').
+      select('start_time').
+      eq('client_id', client.id).
+      gte('start_time', today).
+      neq('status', 'cancelled').
+      order('start_time', { ascending: true }).
+      limit(1).
+      maybeSingle();
 
       if (error) throw error;
-      
+
       if (data) {
         const date = new Date(data.start_time);
         setNextAppointment({
@@ -219,13 +219,13 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadUserProfile = async () => {
     if (!user) return;
-    
+
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('employee_role')
-        .eq('user_id', user.id)
-        .single();
+      const { data, error } = await supabase.
+      from('profiles').
+      select('employee_role').
+      eq('user_id', user.id).
+      single();
 
       if (error) throw error;
       setUserProfile(data);
@@ -237,14 +237,14 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const loadLaudoInfo = async () => {
     try {
       setLoadingLaudo(true);
-      const { data, error } = await supabase
-        .from('client_feedback_control')
-        .select('laudo_file_path, completed_at')
-        .eq('client_id', client.id)
-        .not('laudo_file_path', 'is', null)
-        .order('completed_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.
+      from('client_feedback_control').
+      select('laudo_file_path, completed_at').
+      eq('client_id', client.id).
+      not('laudo_file_path', 'is', null).
+      order('completed_at', { ascending: false }).
+      limit(1).
+      maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
 
@@ -267,9 +267,9 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     if (!laudoInfo?.file_path) return;
 
     try {
-      const { data, error } = await supabase.storage
-        .from('laudos')
-        .download(laudoInfo.file_path);
+      const { data, error } = await supabase.storage.
+      from('laudos').
+      download(laudoInfo.file_path);
 
       if (error) throw error;
 
@@ -284,14 +284,14 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
       toast({
         title: "Sucesso",
-        description: "Laudo baixado com sucesso!",
+        description: "Laudo baixado com sucesso!"
       });
     } catch (error: any) {
       console.error('Error downloading laudo:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível baixar o laudo.",
+        description: "Não foi possível baixar o laudo."
       });
     }
   };
@@ -300,9 +300,9 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     if (!laudoInfo?.file_path) return;
 
     try {
-      const { data, error } = await supabase.storage
-        .from('laudos')
-        .createSignedUrl(laudoInfo.file_path, 3600);
+      const { data, error } = await supabase.storage.
+      from('laudos').
+      createSignedUrl(laudoInfo.file_path, 3600);
 
       if (error) throw error;
 
@@ -312,31 +312,31 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível visualizar o laudo.",
+        description: "Não foi possível visualizar o laudo."
       });
     }
   };
 
   const loadNotes = async () => {
     try {
-      const { data: notesData, error } = await supabase
-        .from('client_notes')
-        .select('id, note_text, note_type, created_at, created_by, service_type')
-        .eq('client_id', client.id)
-        .order('created_at', { ascending: false });
+      const { data: notesData, error } = await supabase.
+      from('client_notes').
+      select('id, note_text, note_type, created_at, created_by, service_type').
+      eq('client_id', client.id).
+      order('created_at', { ascending: false });
 
       if (error) throw error;
 
       if (notesData && notesData.length > 0) {
-        const creatorIds = [...new Set(notesData.map(n => n.created_by))];
-        const { data: profiles } = await supabase
-          .from('profiles_public')
-          .select('user_id, name')
-          .in('user_id', creatorIds);
+        const creatorIds = [...new Set(notesData.map((n) => n.created_by))];
+        const { data: profiles } = await supabase.
+        from('profiles_public').
+        select('user_id, name').
+        in('user_id', creatorIds);
 
-        const notesWithProfiles = notesData.map(note => ({
+        const notesWithProfiles = notesData.map((note) => ({
           ...note,
-          profiles: profiles?.find(p => p.user_id === note.created_by) || undefined
+          profiles: profiles?.find((p) => p.user_id === note.created_by) || undefined
         }));
 
         setNotes(notesWithProfiles);
@@ -350,19 +350,19 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadDocuments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('client_documents')
-        .select(`
+      const { data, error } = await supabase.
+      from('client_documents').
+      select(`
           id,
           document_name,
           document_type,
           file_path,
           uploaded_at,
           profiles:uploaded_by (name)
-        `)
-        .eq('client_id', client.id)
-        .eq('is_active', true)
-        .order('uploaded_at', { ascending: false });
+        `).
+      eq('client_id', client.id).
+      eq('is_active', true).
+      order('uploaded_at', { ascending: false });
 
       if (error) throw error;
       setDocuments(data || []);
@@ -373,30 +373,30 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadAssignedProfessionals = async () => {
     try {
-      const { data: assignments, error } = await supabase
-        .from('client_assignments')
-        .select('id, assigned_at, employee_id, is_active')
-        .eq('client_id', client.id)
-        .eq('is_active', true)
-        .order('assigned_at', { ascending: false });
+      const { data: assignments, error } = await supabase.
+      from('client_assignments').
+      select('id, assigned_at, employee_id, is_active').
+      eq('client_id', client.id).
+      eq('is_active', true).
+      order('assigned_at', { ascending: false });
 
       if (error) throw error;
 
       if (assignments && assignments.length > 0) {
-        const employeeIds = assignments.map(a => a.employee_id);
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles_public')
-          .select('user_id, name, employee_role')
-          .in('user_id', employeeIds);
+        const employeeIds = assignments.map((a) => a.employee_id);
+        const { data: profiles, error: profilesError } = await supabase.
+        from('profiles_public').
+        select('user_id, name, employee_role').
+        in('user_id', employeeIds);
 
         if (profilesError) throw profilesError;
 
-        const assignedWithProfiles = assignments.map(assignment => ({
+        const assignedWithProfiles = assignments.map((assignment) => ({
           id: assignment.id,
           employee_id: assignment.employee_id,
           is_active: assignment.is_active,
           assigned_at: assignment.assigned_at,
-          profiles: profiles?.find(p => p.user_id === assignment.employee_id) || { name: 'N/A', employee_role: 'N/A' }
+          profiles: profiles?.find((p) => p.user_id === assignment.employee_id) || { name: 'N/A', employee_role: 'N/A' }
         }));
 
         setAssignedProfessionals(assignedWithProfiles);
@@ -413,21 +413,21 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('client_notes')
-        .insert({
-          client_id: client.id,
-          note_text: newNote.trim(),
-          created_by: user?.id,
-          note_type: 'general',
-          service_type: noteServiceType
-        });
+      const { error } = await supabase.
+      from('client_notes').
+      insert({
+        client_id: client.id,
+        note_text: newNote.trim(),
+        created_by: user?.id,
+        note_type: 'general',
+        service_type: noteServiceType
+      });
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Nota adicionada com sucesso!",
+        description: "Nota adicionada com sucesso!"
       });
 
       setNewNote('');
@@ -439,7 +439,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível adicionar a nota.",
+        description: "Não foi possível adicionar a nota."
       });
     } finally {
       setLoading(false);
@@ -448,19 +448,19 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const handleDeleteNote = async () => {
     if (!noteToDelete) return;
-    
+
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('client_notes')
-        .delete()
-        .eq('id', noteToDelete.id);
+      const { error } = await supabase.
+      from('client_notes').
+      delete().
+      eq('id', noteToDelete.id);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Anamnese excluída com sucesso!",
+        description: "Anamnese excluída com sucesso!"
       });
 
       setNoteToDelete(null);
@@ -471,7 +471,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível excluir a nota.",
+        description: "Não foi possível excluir a nota."
       });
     } finally {
       setLoading(false);
@@ -523,7 +523,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     let y = 20;
 
     const checkPage = (needed: number) => {
-      if (y + needed > 275) { doc.addPage(); y = 20; }
+      if (y + needed > 275) {doc.addPage();y = 20;}
     };
 
     // Header
@@ -535,8 +535,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     doc.setFont('helvetica', 'normal');
     doc.text(`Paciente: ${client.name}`, marginL, y);
     y += 5;
-    if (client.cpf) { doc.text(`CPF: ${client.cpf}`, marginL, y); y += 5; }
-    if (client.unit) { doc.text(`Unidade: ${client.unit}`, marginL, y); y += 5; }
+    if (client.cpf) {doc.text(`CPF: ${client.cpf}`, marginL, y);y += 5;}
+    if (client.unit) {doc.text(`Unidade: ${client.unit}`, marginL, y);y += 5;}
     doc.text(`Data de emissão: ${new Date().toLocaleString('pt-BR')}`, marginL, y);
     y += 3;
     doc.setDrawColor(100);
@@ -590,11 +590,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadEmployees = async () => {
     try {
-      const { data: profiles, error } = await supabase
-        .from('profiles_public')
-        .select('user_id, name, employee_role')
-        .eq('is_active', true)
-        .order('name');
+      const { data: profiles, error } = await supabase.
+      from('profiles_public').
+      select('user_id, name, employee_role').
+      eq('is_active', true).
+      order('name');
 
       if (error) throw error;
       setEmployees(profiles || []);
@@ -608,50 +608,50 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
     setLoading(true);
     try {
-      const { data: existing, error: checkError } = await supabase
-        .from('client_assignments')
-        .select('id, is_active')
-        .eq('client_id', client.id)
-        .eq('employee_id', selectedProfessional)
-        .maybeSingle();
+      const { data: existing, error: checkError } = await supabase.
+      from('client_assignments').
+      select('id, is_active').
+      eq('client_id', client.id).
+      eq('employee_id', selectedProfessional).
+      maybeSingle();
 
       if (checkError) throw checkError;
 
       if (existing) {
         if (!existing.is_active) {
-          const { error: updateError } = await supabase
-            .from('client_assignments')
-            .update({ 
-              is_active: true,
-              assigned_by: user?.id 
-            })
-            .eq('id', existing.id);
+          const { error: updateError } = await supabase.
+          from('client_assignments').
+          update({
+            is_active: true,
+            assigned_by: user?.id
+          }).
+          eq('id', existing.id);
 
           if (updateError) throw updateError;
         } else {
           toast({
             variant: "destructive",
             title: "Já vinculado",
-            description: "Este profissional já está vinculado a este paciente.",
+            description: "Este profissional já está vinculado a este paciente."
           });
           setLoading(false);
           return;
         }
       } else {
-        const { error } = await supabase
-          .from('client_assignments')
-          .insert({
-            client_id: client.id,
-            employee_id: selectedProfessional,
-            assigned_by: user?.id
-          });
+        const { error } = await supabase.
+        from('client_assignments').
+        insert({
+          client_id: client.id,
+          employee_id: selectedProfessional,
+          assigned_by: user?.id
+        });
 
         if (error) throw error;
       }
 
       toast({
         title: "Sucesso",
-        description: "Profissional vinculado com sucesso!",
+        description: "Profissional vinculado com sucesso!"
       });
 
       setSelectedProfessional('');
@@ -662,7 +662,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível vincular o profissional.",
+        description: "Não foi possível vincular o profissional."
       });
     } finally {
       setLoading(false);
@@ -671,21 +671,21 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const handleRemoveProfessional = async (assignmentId: string) => {
     const confirmed = window.confirm('Tem certeza que deseja remover este profissional do cliente?');
-    
+
     if (!confirmed) return;
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('client_assignments')
-        .update({ is_active: false })
-        .eq('id', assignmentId);
+      const { error } = await supabase.
+      from('client_assignments').
+      update({ is_active: false }).
+      eq('id', assignmentId);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Profissional removido com sucesso!",
+        description: "Profissional removido com sucesso!"
       });
 
       loadAssignedProfessionals();
@@ -694,7 +694,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível remover o profissional.",
+        description: "Não foi possível remover o profissional."
       });
     } finally {
       setLoading(false);
@@ -705,21 +705,21 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     const confirmed = window.confirm(
       `Tem certeza que deseja ${client.is_active ? 'desativar' : 'reativar'} o cliente "${client.name}"?`
     );
-    
+
     if (!confirmed) return;
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('clients')
-        .update({ is_active: !client.is_active })
-        .eq('id', client.id);
+      const { error } = await supabase.
+      from('clients').
+      update({ is_active: !client.is_active }).
+      eq('id', client.id);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: `Cliente ${client.is_active ? 'desativado' : 'reativado'} com sucesso!`,
+        description: `Cliente ${client.is_active ? 'desativado' : 'reativado'} com sucesso!`
       });
 
       if (onRefresh) onRefresh();
@@ -728,7 +728,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar o status do cliente.",
+        description: "Não foi possível atualizar o status do cliente."
       });
     } finally {
       setLoading(false);
@@ -736,41 +736,41 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   };
 
   const handleAssignProfessional = async () => {
-    const validEmployees = selectedEmployees.filter(emp => emp && emp.trim() !== '');
-    
+    const validEmployees = selectedEmployees.filter((emp) => emp && emp.trim() !== '');
+
     if (validEmployees.length === 0) return;
 
     try {
       for (const employeeId of validEmployees) {
-        const { data: existing, error: checkError } = await supabase
-          .from('client_assignments')
-          .select('id, is_active')
-          .eq('client_id', client.id)
-          .eq('employee_id', employeeId)
-          .maybeSingle();
+        const { data: existing, error: checkError } = await supabase.
+        from('client_assignments').
+        select('id, is_active').
+        eq('client_id', client.id).
+        eq('employee_id', employeeId).
+        maybeSingle();
 
         if (checkError) throw checkError;
 
         if (existing) {
           if (!existing.is_active) {
-            const { error: updateError } = await supabase
-              .from('client_assignments')
-              .update({ 
-                is_active: true,
-                assigned_by: user?.id 
-              })
-              .eq('id', existing.id);
+            const { error: updateError } = await supabase.
+            from('client_assignments').
+            update({
+              is_active: true,
+              assigned_by: user?.id
+            }).
+            eq('id', existing.id);
 
             if (updateError) throw updateError;
           }
         } else {
-          const { error: insertError } = await supabase
-            .from('client_assignments')
-            .insert({
-              client_id: client.id,
-              employee_id: employeeId,
-              assigned_by: user?.id
-            });
+          const { error: insertError } = await supabase.
+          from('client_assignments').
+          insert({
+            client_id: client.id,
+            employee_id: employeeId,
+            assigned_by: user?.id
+          });
 
           if (insertError) throw insertError;
         }
@@ -778,9 +778,9 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
       toast({
         title: "Sucesso",
-        description: `${validEmployees.length} profissional(is) vinculado(s) com sucesso!`,
+        description: `${validEmployees.length} profissional(is) vinculado(s) com sucesso!`
       });
-      
+
       setIsAssignDialogOpen(false);
       setSelectedEmployees(['']);
       loadCurrentAssignments();
@@ -791,7 +791,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível vincular os profissionais.",
+        description: "Não foi possível vincular os profissionais."
       });
     }
   };
@@ -815,11 +815,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadAvailableEmployees = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles_public')
-        .select('id, user_id, name, employee_role')
-        .eq('is_active', true)
-        .order('name');
+      const { data, error } = await supabase.
+      from('profiles_public').
+      select('id, user_id, name, employee_role').
+      eq('is_active', true).
+      order('name');
 
       if (error) throw error;
       setAvailableEmployees(data || []);
@@ -830,9 +830,9 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadCurrentAssignments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('client_assignments')
-        .select(`
+      const { data, error } = await supabase.
+      from('client_assignments').
+      select(`
           id,
           employee_id,
           assigned_at,
@@ -841,9 +841,9 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
             name,
             employee_role
           )
-        `)
-        .eq('client_id', client.id)
-        .eq('is_active', true);
+        `).
+      eq('client_id', client.id).
+      eq('is_active', true);
 
       if (error) throw error;
       setCurrentAssignments(data || []);
@@ -854,18 +854,18 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const handleRemoveAssignment = async (assignmentId: string) => {
     try {
-      const { error } = await supabase
-        .from('client_assignments')
-        .update({ is_active: false })
-        .eq('id', assignmentId);
+      const { error } = await supabase.
+      from('client_assignments').
+      update({ is_active: false }).
+      eq('id', assignmentId);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Vinculação removida com sucesso!",
+        description: "Vinculação removida com sucesso!"
       });
-      
+
       loadCurrentAssignments();
       loadAssignedProfessionals();
     } catch (error) {
@@ -873,7 +873,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível remover a vinculação.",
+        description: "Não foi possível remover a vinculação."
       });
     }
   };
@@ -892,28 +892,28 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       const fileName = `${Date.now()}_${sanitizedName}`;
       const filePath = `client-documents/${client.id}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('user-documents')
-        .upload(filePath, selectedFile);
+      const { error: uploadError } = await supabase.storage.
+      from('user-documents').
+      upload(filePath, selectedFile);
 
       if (uploadError) throw uploadError;
 
-      const { error: dbError } = await supabase
-        .from('client_documents')
-        .insert({
-          client_id: client.id,
-          document_name: selectedFile.name,
-          document_type: fileExt || 'document',
-          file_path: filePath,
-          file_size: selectedFile.size,
-          uploaded_by: user?.id
-        });
+      const { error: dbError } = await supabase.
+      from('client_documents').
+      insert({
+        client_id: client.id,
+        document_name: selectedFile.name,
+        document_type: fileExt || 'document',
+        file_path: filePath,
+        file_size: selectedFile.size,
+        uploaded_by: user?.id
+      });
 
       if (dbError) throw dbError;
 
       toast({
         title: "Sucesso",
-        description: "Documento enviado com sucesso!",
+        description: "Documento enviado com sucesso!"
       });
 
       setSelectedFile(null);
@@ -924,7 +924,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: `Não foi possível enviar o documento: ${error.message || error}`,
+        description: `Não foi possível enviar o documento: ${error.message || error}`
       });
     } finally {
       setLoading(false);
@@ -933,9 +933,9 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const handleDownloadDocument = async (doc: ClientDocument) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('user-documents')
-        .download(doc.file_path);
+      const { data, error } = await supabase.storage.
+      from('user-documents').
+      download(doc.file_path);
 
       if (error) throw error;
 
@@ -950,23 +950,23 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
       toast({
         title: "Download concluído",
-        description: "O documento foi baixado com sucesso!",
+        description: "O documento foi baixado com sucesso!"
       });
     } catch (error) {
       console.error('Error downloading document:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível baixar o documento.",
+        description: "Não foi possível baixar o documento."
       });
     }
   };
 
   const handleViewDocument = async (doc: ClientDocument) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('user-documents')
-        .createSignedUrl(doc.file_path, 3600);
+      const { data, error } = await supabase.storage.
+      from('user-documents').
+      createSignedUrl(doc.file_path, 3600);
 
       if (error) throw error;
 
@@ -976,17 +976,17 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível visualizar o documento.",
+        description: "Não foi possível visualizar o documento."
       });
     }
   };
 
   const getUnitLabel = (unit: string) => {
     switch (unit) {
-      case 'madre': return 'MADRE';
-      case 'floresta': return 'Floresta';
-      case 'atendimento_floresta': return 'Atendimento Floresta';
-      default: return unit || 'Não informado';
+      case 'madre':return 'MADRE';
+      case 'floresta':return 'Floresta';
+      case 'atendimento_floresta':return 'Atendimento Floresta';
+      default:return unit || 'Não informado';
     }
   };
 
@@ -994,24 +994,24 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     // Extrair ano, mês e dia diretamente da string para evitar problema de timezone
     const match = birthDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!match) return 0;
-    
+
     const [, yearStr, monthStr, dayStr] = match;
     const birthYear = parseInt(yearStr, 10);
     const birthMonth = parseInt(monthStr, 10);
     const birthDay = parseInt(dayStr, 10);
-    
+
     const today = new Date();
     const todayYear = today.getFullYear();
     const todayMonth = today.getMonth() + 1;
     const todayDay = today.getDate();
-    
+
     let age = todayYear - birthYear;
-    
+
     // Se ainda não fez aniversário este ano, subtrai 1
-    if (todayMonth < birthMonth || (todayMonth === birthMonth && todayDay < birthDay)) {
+    if (todayMonth < birthMonth || todayMonth === birthMonth && todayDay < birthDay) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -1036,12 +1036,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                 {/* Nome + Status */}
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-bold uppercase tracking-wide leading-tight">{client.name}</h1>
-                  <Badge 
+                  <Badge
                     variant={client.is_active ? 'default' : 'secondary'}
-                    className={`text-xs font-semibold ${client.is_active 
-                      ? 'bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30' 
-                      : 'bg-muted text-muted-foreground'}`}
-                  >
+                    className={`text-xs font-semibold ${client.is_active ?
+                    'bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30' :
+                    'bg-muted text-muted-foreground'}`}>
+                    
                     <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${client.is_active ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/50'}`} />
                     {client.is_active ? 'Ativo' : 'Inativo'}
                   </Badge>
@@ -1049,30 +1049,30 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                 
                 {/* Quick Info - Grid compacto */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-                  {client.unit && (
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${unitColors.bg} ${unitColors.border} border`}>
+                  {client.unit &&
+                  <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${unitColors.bg} ${unitColors.border} border`}>
                       <Activity className={`h-3.5 w-3.5 ${unitColors.text} shrink-0`} />
                       <span className={`font-medium text-xs ${unitColors.text}`}>{getUnitLabel(client.unit)}</span>
                     </div>
-                  )}
-                  {client.birth_date && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
+                  }
+                  {client.birth_date &&
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
                       <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <span className="font-medium text-xs">{calculateAge(client.birth_date)} anos</span>
                     </div>
-                  )}
-                  {client.phone && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
+                  }
+                  {client.phone &&
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
                       <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <span className="font-medium text-xs truncate">{client.phone}</span>
                     </div>
-                  )}
-                  {client.cpf && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
+                  }
+                  {client.cpf &&
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
                       <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <span className="font-medium text-xs">{client.cpf}</span>
                     </div>
-                  )}
+                  }
                 </div>
               </div>
 
@@ -1083,19 +1083,19 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                   <span className="hidden sm:inline text-xs">Agendar</span>
                 </Button>
                 
-                {isCoordinatorOrDirector() && (
-                  <Button variant="outline" size="sm" onClick={onEdit} className="gap-1.5">
+                {isCoordinatorOrDirector() &&
+                <Button variant="outline" size="sm" onClick={onEdit} className="gap-1.5">
                     <Edit className="h-4 w-4" />
                     <span className="hidden sm:inline text-xs">Editar</span>
                   </Button>
-                )}
+                }
 
-                {userProfile?.employee_role === 'director' && onDelete && (
-                  <Button variant="destructive" size="sm" onClick={onDelete} className="gap-1.5">
+                {userProfile?.employee_role === 'director' && onDelete &&
+                <Button variant="destructive" size="sm" onClick={onDelete} className="gap-1.5">
                     <Trash2 className="h-4 w-4" />
                     <span className="hidden sm:inline text-xs">Excluir</span>
                   </Button>
-                )}
+                }
                 
                 <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
                   <ArrowLeft className="h-4 w-4" />
@@ -1116,11 +1116,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Próximo</p>
-                  {nextAppointment ? (
-                    <p className="font-bold text-xs truncate">{nextAppointment.date}</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">Nenhum</p>
-                  )}
+                  {nextAppointment ?
+                  <p className="font-bold text-xs truncate">{nextAppointment.date}</p> :
+
+                  <p className="text-xs text-muted-foreground italic">Nenhum</p>
+                  }
                 </div>
               </div>
             </CardContent>
@@ -1184,30 +1184,30 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                {client.cpf && (
-                  <div className="flex justify-between">
+                {client.cpf &&
+                <div className="flex justify-between">
                     <span className="text-muted-foreground">CPF</span>
                     <span className="font-medium">{client.cpf}</span>
                   </div>
-                )}
-                {client.birth_date && (
-                  <div className="flex justify-between">
+                }
+                {client.birth_date &&
+                <div className="flex justify-between">
                     <span className="text-muted-foreground">Nascimento</span>
                     <span className="font-medium">{formatDate(client.birth_date)} ({calculateAge(client.birth_date)} anos)</span>
                   </div>
-                )}
-                {client.email && (
-                  <div className="flex justify-between items-center">
+                }
+                {client.email &&
+                <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Email</span>
                     <span className="font-medium text-right truncate max-w-[150px]">{client.email}</span>
                   </div>
-                )}
-                {client.phone && (
-                  <div className="flex justify-between">
+                }
+                {client.phone &&
+                <div className="flex justify-between">
                     <span className="text-muted-foreground">Telefone</span>
                     <span className="font-medium">{client.phone}</span>
                   </div>
-                )}
+                }
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Cadastrado em</span>
                   <span className="font-medium">{formatDate(client.created_at)}</span>
@@ -1216,8 +1216,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
             </Card>
 
             {/* Responsible Card */}
-            {(client.responsible_name || client.responsible_phone || client.responsible_cpf) && (
-              <Card className="hover:shadow-md transition-shadow">
+            {(client.responsible_name || client.responsible_phone || client.responsible_cpf) &&
+            <Card className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Heart className={`h-5 w-5 ${unitColors.text}`} />
@@ -1225,27 +1225,27 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
-                  {client.responsible_name && (
-                    <div className="flex justify-between">
+                  {client.responsible_name &&
+                <div className="flex justify-between">
                       <span className="text-muted-foreground">Nome</span>
                       <span className="font-medium">{client.responsible_name}</span>
                     </div>
-                  )}
-                  {client.responsible_phone && (
-                    <div className="flex justify-between">
+                }
+                  {client.responsible_phone &&
+                <div className="flex justify-between">
                       <span className="text-muted-foreground">Telefone</span>
                       <span className="font-medium">{client.responsible_phone}</span>
                     </div>
-                  )}
-                  {client.responsible_cpf && (
-                    <div className="flex justify-between">
+                }
+                  {client.responsible_cpf &&
+                <div className="flex justify-between">
                       <span className="text-muted-foreground">CPF</span>
                       <span className="font-medium">{client.responsible_cpf}</span>
                     </div>
-                  )}
+                }
                 </CardContent>
               </Card>
-            )}
+            }
 
             {/* Address Card */}
             <Card className="hover:shadow-md transition-shadow">
@@ -1268,42 +1268,42 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                     <Users className={`h-5 w-5 ${unitColors.text}`} />
                     Profissionais
                   </CardTitle>
-                  {isCoordinatorOrDirector() && (
-                    <Button 
-                      size="sm" 
-                      variant="ghost"
-                      onClick={() => {
-                        setIsAssignDialogOpen(true);
-                        setSelectedEmployees(['']);
-                        loadAvailableEmployees();
-                        loadCurrentAssignments();
-                      }}
-                    >
+                  {isCoordinatorOrDirector() &&
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setIsAssignDialogOpen(true);
+                      setSelectedEmployees(['']);
+                      loadAvailableEmployees();
+                      loadCurrentAssignments();
+                    }}>
+                    
                       <Plus className="h-4 w-4" />
                     </Button>
-                  )}
+                  }
                 </div>
               </CardHeader>
               <CardContent>
-                {assignedProfessionals.length > 0 ? (
-                  <div className="space-y-2">
-                    {assignedProfessionals.slice(0, 3).map((assignment) => (
-                      <div key={assignment.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                {assignedProfessionals.length > 0 ?
+                <div className="space-y-2">
+                    {assignedProfessionals.slice(0, 3).map((assignment) =>
+                  <div key={assignment.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                         <div>
                           <p className="font-medium text-sm">{assignment.profiles?.name}</p>
                           <p className="text-xs text-muted-foreground">{assignment.profiles?.employee_role}</p>
                         </div>
                       </div>
-                    ))}
-                    {assignedProfessionals.length > 3 && (
-                      <p className="text-xs text-muted-foreground text-center">
+                  )}
+                    {assignedProfessionals.length > 3 &&
+                  <p className="text-xs text-muted-foreground text-center">
                         +{assignedProfessionals.length - 3} mais
                       </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nenhum profissional vinculado</p>
-                )}
+                  }
+                  </div> :
+
+                <p className="text-sm text-muted-foreground">Nenhum profissional vinculado</p>
+                }
               </CardContent>
             </Card>
           </div>
@@ -1355,12 +1355,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
                   {/* Registration Tab - Edição de Dados Cadastrais */}
                   <TabsContent value="registration">
-                    <ClientEditTab 
-                      client={client} 
+                    <ClientEditTab
+                      client={client}
                       onSuccess={() => {
                         if (onRefresh) onRefresh();
-                      }} 
-                    />
+                      }} />
+                    
                   </TabsContent>
 
                   {/* Clinical Tab */}
@@ -1375,17 +1375,17 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <h3 className="font-semibold text-lg">Diagnóstico</h3>
-                              {client.diagnosis ? (
-                                <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+                              {client.diagnosis ?
+                              <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
                                   <ClipboardCheck className="h-3 w-3 mr-1" />
                                   Definido
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30">
+                                </Badge> :
+
+                              <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30">
                                   <AlertCircle className="h-3 w-3 mr-1" />
                                   Pendente
                                 </Badge>
-                              )}
+                              }
                             </div>
                             <p className={`text-base ${client.diagnosis ? '' : 'text-muted-foreground italic'}`}>
                               {client.diagnosis || 'Diagnóstico ainda não definido'}
@@ -1477,12 +1477,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                           Evolução do Atendimento
                         </h4>
                         <div className="flex items-center gap-2">
-                          {notes.length > 0 && (
-                            <Button size="sm" variant="outline" onClick={generateAnamnesisPdf}>
+                          {notes.length > 0 &&
+                          <Button size="sm" variant="outline" onClick={generateAnamnesisPdf}>
                               <Download className="h-4 w-4 mr-2" />
                               Gerar PDF
                             </Button>
-                          )}
+                          }
                           <Button size="sm" onClick={() => setAddAnamnesisDialogOpen(true)}>
                             <Plus className="h-4 w-4 mr-2" />
                             Anamnese
@@ -1495,8 +1495,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                         onOpenChange={handleCloseAnamnesisDialog}
                         clientId={client.id}
                         onSuccess={loadNotes}
-                        editingNote={editingNote}
-                      />
+                        editingNote={editingNote} />
+                      
 
                       {/* Delete Confirmation Dialog */}
                       <Dialog open={deleteNoteDialogOpen} onOpenChange={setDeleteNoteDialogOpen}>
@@ -1518,37 +1518,37 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                         </DialogContent>
                       </Dialog>
                       
-                      {notes.length > 0 ? (
-                        <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                          {notes.map((noteItem) => (
-                            <div key={noteItem.id} className={`border-l-4 ${unitColors.border} pl-4 py-3 bg-muted/30 rounded-r-lg`}>
+                      {notes.length > 0 ?
+                      <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                          {notes.map((noteItem) =>
+                        <div key={noteItem.id} className={`border-l-4 ${unitColors.border} pl-4 py-3 bg-muted/30 rounded-r-lg`}>
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium">{noteItem.profiles?.name || 'Usuário'}</span>
-                                  <Badge 
-                                    variant="outline" 
-                                    className={
-                                      noteItem.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' : 
-                                      noteItem.service_type === 'external' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30' :
-                                      noteItem.service_type === 'laudo' ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' :
-                                      'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'
-                                    }
-                                  >
-                                    {noteItem.service_type === 'sus' ? 'SUS' : 
-                                     noteItem.service_type === 'external' ? 'Demanda Externa' :
-                                     noteItem.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}
+                                  <Badge
+                                variant="outline"
+                                className={
+                                noteItem.service_type === 'sus' ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30' :
+                                noteItem.service_type === 'external' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30' :
+                                noteItem.service_type === 'laudo' ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' :
+                                'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'
+                                }>
+                                
+                                    {noteItem.service_type === 'sus' ? 'SUS' :
+                                noteItem.service_type === 'external' ? 'Demanda Externa' :
+                                noteItem.service_type === 'laudo' ? 'Laudo' : 'Demanda Própria'}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-muted-foreground">{formatDateTime(noteItem.created_at)}</span>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-7 w-7 p-0"
-                                        onClick={() => handleEditNote(noteItem)}
-                                      >
+                                      <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => handleEditNote(noteItem)}>
+                                    
                                         <Pencil className="h-3.5 w-3.5" />
                                       </Button>
                                     </TooltipTrigger>
@@ -1556,15 +1556,15 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                        onClick={() => {
-                                          setNoteToDelete(noteItem);
-                                          setDeleteNoteDialogOpen(true);
-                                        }}
-                                      >
+                                      <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                    onClick={() => {
+                                      setNoteToDelete(noteItem);
+                                      setDeleteNoteDialogOpen(true);
+                                    }}>
+                                    
                                         <Trash2 className="h-3.5 w-3.5" />
                                       </Button>
                                     </TooltipTrigger>
@@ -1574,11 +1574,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                               </div>
                               <p className="text-sm whitespace-pre-wrap">{noteItem.note_text}</p>
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-sm text-center py-8">Nenhuma nota registrada.</p>
-                      )}
+                        )}
+                        </div> :
+
+                      <p className="text-muted-foreground text-sm text-center py-8">Nenhuma nota registrada.</p>
+                      }
                     </div>
                   </TabsContent>
 
@@ -1599,11 +1599,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
                   {/* Financial Tab */}
                   <TabsContent value="financial" className="space-y-6">
-                    <ClientPaymentManager 
-                      clientId={client.id} 
+                    <ClientPaymentManager
+                      clientId={client.id}
                       clientName={client.name}
-                      userProfile={userProfile}
-                    />
+                      userProfile={userProfile} />
+                    
                     
                     <div className="border-t pt-6">
                       <h4 className="font-medium mb-4 flex items-center gap-2">
@@ -1636,8 +1636,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                                 id="file"
                                 type="file"
                                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                              />
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                              
                               <p className="text-sm text-muted-foreground">
                                 Formatos aceitos: PDF, DOC, DOCX, JPG, PNG
                               </p>
@@ -1656,10 +1656,10 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                     </div>
 
                     {/* Documents List */}
-                    {documents.length > 0 ? (
-                      <div className="space-y-3">
-                        {documents.map((doc) => (
-                          <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-2">
+                    {documents.length > 0 ?
+                    <div className="space-y-3">
+                        {documents.map((doc) =>
+                      <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-2">
                             <div className="flex-1">
                               <p className="font-medium text-sm">{doc.document_name}</p>
                               <p className="text-xs text-muted-foreground">
@@ -1686,16 +1686,16 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                               </Tooltip>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm text-center py-8">Nenhum documento anexado.</p>
-                    )}
+                      )}
+                      </div> :
+
+                    <p className="text-muted-foreground text-sm text-center py-8">Nenhum documento anexado.</p>
+                    }
 
                     {/* Laudo Section */}
-                    <div className="border-t pt-6">
-                      <ClientLaudoManager client={client} />
-                    </div>
+                    
+
+                    
                   </TabsContent>
 
                   {/* Neuro Tests Tab - Available for all units */}
@@ -1703,8 +1703,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                     <PatientNeuroTestHistory
                       clientId={client.id}
                       clientName={client.name}
-                      clientBirthDate={client.birth_date || undefined}
-                    />
+                      clientBirthDate={client.birth_date || undefined} />
+                    
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -1713,8 +1713,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
         </div>
 
         {/* Action Bar */}
-        {isCoordinatorOrDirector() && (
-          <Card>
+        {isCoordinatorOrDirector() &&
+        <Card>
             <CardContent className="pt-4 pb-4">
               <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                 <Button variant="outline" size="sm" onClick={handleGenerateReport}>
@@ -1722,21 +1722,21 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                   Gerar Relatório
                 </Button>
                 
-                {client.is_active ? (
-                  <Button variant="destructive" size="sm" onClick={handleDeactivateClient}>
+                {client.is_active ?
+              <Button variant="destructive" size="sm" onClick={handleDeactivateClient}>
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     Desativar
-                  </Button>
-                ) : (
-                  <Button variant="default" size="sm" onClick={handleDeactivateClient}>
+                  </Button> :
+
+              <Button variant="default" size="sm" onClick={handleDeactivateClient}>
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reativar
                   </Button>
-                )}
+              }
               </div>
             </CardContent>
           </Card>
-        )}
+        }
 
         {/* Dialog para Vincular Profissional */}
         <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
@@ -1746,92 +1746,92 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
             </DialogHeader>
             
             <div className="space-y-4">
-              {currentAssignments.length > 0 && (
-                <div>
+              {currentAssignments.length > 0 &&
+              <div>
                   <h4 className="font-medium mb-2 text-sm">Profissionais Vinculados:</h4>
                   <div className="space-y-2">
-                    {currentAssignments.map((assignment: any) => (
-                      <div key={assignment.id} className="flex items-center justify-between p-2 border rounded-lg">
+                    {currentAssignments.map((assignment: any) =>
+                  <div key={assignment.id} className="flex items-center justify-between p-2 border rounded-lg">
                         <span className="text-sm">{assignment.profiles?.name} - {assignment.profiles?.employee_role}</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleRemoveAssignment(assignment.id)}
-                        >
+                        <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveAssignment(assignment.id)}>
+                      
                           <UserX className="h-4 w-4" />
                         </Button>
                       </div>
-                    ))}
+                  )}
                   </div>
                 </div>
-              )}
+              }
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm">Selecionar Profissionais:</Label>
-                  <Button 
+                  <Button
                     type="button"
-                    variant="outline" 
-                    size="sm" 
-                    onClick={addEmployeeField}
-                  >
+                    variant="outline"
+                    size="sm"
+                    onClick={addEmployeeField}>
+                    
                     <Plus className="h-4 w-4 mr-1" />
                     Adicionar
                   </Button>
                 </div>
                 
-                {selectedEmployees.map((selectedEmployee, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Select 
-                      value={selectedEmployee} 
-                      onValueChange={(value) => updateEmployeeSelection(index, value)}
-                    >
+                {selectedEmployees.map((selectedEmployee, index) =>
+                <div key={index} className="flex items-center gap-2">
+                    <Select
+                    value={selectedEmployee}
+                    onValueChange={(value) => updateEmployeeSelection(index, value)}>
+                    
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Escolha um profissional" />
                       </SelectTrigger>
                       <SelectContent className="bg-background border shadow-md z-50">
-                        {availableEmployees
-                          .filter(emp => {
-                            const isAlreadyAssigned = currentAssignments.some((a: any) => a.employee_id === emp.user_id);
-                            const isAlreadySelected = selectedEmployees.some((selEmp, selIndex) => 
-                              selIndex !== index && selEmp === emp.user_id
-                            );
-                            return !isAlreadyAssigned && !isAlreadySelected;
-                          })
-                          .map((employee: any) => (
-                          <SelectItem key={employee.user_id} value={employee.user_id}>
+                        {availableEmployees.
+                      filter((emp) => {
+                        const isAlreadyAssigned = currentAssignments.some((a: any) => a.employee_id === emp.user_id);
+                        const isAlreadySelected = selectedEmployees.some((selEmp, selIndex) =>
+                        selIndex !== index && selEmp === emp.user_id
+                        );
+                        return !isAlreadyAssigned && !isAlreadySelected;
+                      }).
+                      map((employee: any) =>
+                      <SelectItem key={employee.user_id} value={employee.user_id}>
                             {employee.name} - {employee.employee_role}
                           </SelectItem>
-                        ))}
+                      )}
                       </SelectContent>
                     </Select>
                     
-                    {selectedEmployees.length > 1 && (
-                      <Button 
-                        type="button"
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => removeEmployeeField(index)}
-                      >
+                    {selectedEmployees.length > 1 &&
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeEmployeeField(index)}>
+                    
                         <Minus className="h-4 w-4" />
                       </Button>
-                    )}
+                  }
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
             <DialogFooter>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setIsAssignDialogOpen(false);
                   setSelectedEmployees(['']);
-                }}
-              >
+                }}>
+                
                 Cancelar
               </Button>
-              <Button onClick={handleAssignProfessional} disabled={!selectedEmployees.some(emp => emp && emp.trim() !== '')}>
+              <Button onClick={handleAssignProfessional} disabled={!selectedEmployees.some((emp) => emp && emp.trim() !== '')}>
                 Vincular Selecionados
               </Button>
             </DialogFooter>
@@ -1839,12 +1839,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
         </Dialog>
 
         {/* Gerador de Relatório Completo */}
-        <PatientReportGenerator 
-          client={client} 
-          isOpen={showReportGenerator} 
-          onClose={() => setShowReportGenerator(false)} 
-        />
+        <PatientReportGenerator
+          client={client}
+          isOpen={showReportGenerator}
+          onClose={() => setShowReportGenerator(false)} />
+        
       </div>
-    </TooltipProvider>
-  );
+    </TooltipProvider>);
+
 }
