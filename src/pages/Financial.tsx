@@ -1174,13 +1174,13 @@ export default function Financial() {
       <Tabs defaultValue={isCoordinatorOnly ? "pending" : "all"} className="w-full">
         <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
           {!isCoordinatorOnly && <TabsTrigger value="all">Todas</TabsTrigger>}
-          <TabsTrigger value="income">Receitas</TabsTrigger>
-          <TabsTrigger value="expenses">Despesas</TabsTrigger>
+          {!isCoordinatorOnly && <TabsTrigger value="income">Receitas</TabsTrigger>}
+          {!isCoordinatorOnly && <TabsTrigger value="expenses">Despesas</TabsTrigger>}
           <TabsTrigger value="pending">A Receber</TabsTrigger>
-          <TabsTrigger value="notes">Notas</TabsTrigger>
-          <TabsTrigger value="projection">Projeção</TabsTrigger>
-          <TabsTrigger value="default">Inadimplência</TabsTrigger>
-          <TabsTrigger value="costcenter">Centro Custo</TabsTrigger>
+          {!isCoordinatorOnly && <TabsTrigger value="notes">Notas</TabsTrigger>}
+          {!isCoordinatorOnly && <TabsTrigger value="projection">Projeção</TabsTrigger>}
+          {!isCoordinatorOnly && <TabsTrigger value="default">Inadimplência</TabsTrigger>}
+          {!isCoordinatorOnly && <TabsTrigger value="costcenter">Centro Custo</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
