@@ -37,6 +37,7 @@ import { executeDirectImport } from "@/utils/directImport";
 import { ClientFormDialog } from "@/components/clients/ClientFormDialog";
 import { ClientsTable } from "@/components/clients/ClientsTable";
 import { DeleteClientDialog } from "@/components/clients/DeleteClientDialog";
+import { updateClientsFromSpreadsheet } from "@/utils/updateClientsFromSpreadsheet";
 
 interface Client {
   id: string;
