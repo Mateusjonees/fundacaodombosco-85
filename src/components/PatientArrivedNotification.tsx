@@ -222,10 +222,10 @@ export default function PatientArrivedNotification() {
           <Bell className="h-20 w-20 text-red-600 animate-bounce" />
         </div>
         <h1 className="text-4xl font-black text-red-600 mb-3 tracking-tight">
-          PACIENTE CHEGOU!
+          {patientName ? `${patientName.toUpperCase()} CHEGOU!` : 'PACIENTE CHEGOU!'}
         </h1>
         <p className="text-xl text-gray-700 font-semibold mb-6">
-          Seu paciente está aguardando atendimento
+          {patientName ? `${patientName} está aguardando atendimento` : 'Seu paciente está aguardando atendimento'}
         </p>
         <div className="bg-red-100 border-2 border-red-300 rounded-xl p-4 mb-6">
           <p className="text-red-700 font-bold text-lg animate-pulse">
