@@ -1515,7 +1515,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                         onOpenChange={handleCloseAnamnesisDialog}
                         clientId={client.id}
                         onSuccess={loadNotes}
-                        editingNote={editingNote} />
+                        editingNote={editingNote}
+                        defaultServiceType={scheduleServiceType || undefined} />
                       
 
                       {/* Delete Confirmation Dialog */}
