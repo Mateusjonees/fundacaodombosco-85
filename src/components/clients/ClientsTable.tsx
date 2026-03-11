@@ -28,6 +28,7 @@ interface ClientsTableProps {
   clients: Client[];
   selectedClients: string[];
   lastAppointments: Map<string, string>;
+  firstAppointments?: Map<string, string>;
   clientLaudoIds?: Set<string>;
   clientAnamnesisIds?: Set<string>;
   clientProfessionals?: Map<string, string>;
@@ -80,6 +81,7 @@ export const ClientsTable = memo(({
   clients,
   selectedClients,
   lastAppointments,
+  firstAppointments = new Map<string, string>(),
   clientLaudoIds = new Set<string>(),
   clientAnamnesisIds = new Set<string>(),
   clientProfessionals = new Map<string, string>(),
@@ -116,7 +118,7 @@ export const ClientsTable = memo(({
             <TableHead className="font-semibold text-[10px] w-[5%] px-1 text-center">LAUDO</TableHead>
             <TableHead className="font-semibold text-[10px] w-[5%] px-1 text-center">STATUS</TableHead>
             <TableHead className="font-semibold text-[10px] w-[7%] px-1">1ª SESSÃO</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[7%] px-1">DATA FIM</TableHead>
+            <TableHead className="font-semibold text-[10px] w-[7%] px-1">ÚLT. ATIV.</TableHead>
             <TableHead className="font-semibold text-[10px] w-[7%] px-1">CADASTRO</TableHead>
           </TableRow>
         </TableHeader>
@@ -180,8 +182,8 @@ export const ClientsTable = memo(({
                 <TableCell className="px-1 text-center">
                   <span className={`inline-block w-2 h-2 rounded-full ${client.is_active ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
                 </TableCell>
-                <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(client.neuro_test_start_date)}</TableCell>
-                <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(client.neuro_report_deadline)}</TableCell>
+                <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(firstAppointments.get(client.id))}</TableCell>
+                <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(lastAppointments.get(client.id))}</TableCell>
                 <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(client.created_at?.slice(0, 10))}</TableCell>
               </TableRow>
             );
