@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Eye, Edit, FileText, Power, Trash2, Phone } from "lucide-react";
+import { Eye, Edit, FileText, Power, Trash2, Phone, FileCheck, FileX } from "lucide-react";
 
 interface Client {
   id: string;
