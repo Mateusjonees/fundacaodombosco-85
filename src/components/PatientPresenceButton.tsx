@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, CheckCircle, Bell } from 'lucide-react';
+import { CheckCircle, Bell } from 'lucide-react';
+import { mostrarNotificacao } from '@/components/notifications/NotificationProvider';
 
 interface PatientPresenceButtonProps {
   scheduleId: string;
@@ -60,7 +61,6 @@ export default function PatientPresenceButton({
 
       const clientId = scheduleData?.client_id;
 
-      // Criar notificação na tabela appointment_notifications (listener do profissional monitora esta tabela)
       if (clientId) {
         const today = new Date().toISOString().split('T')[0];
         const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -70,7 +70,7 @@ export default function PatientPresenceButton({
             schedule_id: scheduleId,
             employee_id: employeeId,
             client_id: clientId,
-            title: `🔔 ${clientName} Chegou!`,
+            title: 'Paciente chegou',
             message: `${clientName} chegou para o atendimento e está aguardando.`,
             notification_type: 'patient_arrived',
             appointment_date: today,
@@ -85,8 +85,12 @@ export default function PatientPresenceButton({
           console.log('Patient arrival notification created successfully');
         }
       }
-      // Play notification sound
-      playNotificationSound();
+
+      mostrarNotificacao('Paciente chegou', `${clientName} chegou para atendimento`, {
+        dedupeKey: `patient-arrived-${scheduleId}`,
+        tag: `patient-arrived-${scheduleId}`,
+        url: '/schedule',
+      });
 
       toast({
         title: "Presença Confirmada!",
@@ -106,31 +110,12 @@ export default function PatientPresenceButton({
     }
   };
 
-  const playNotificationSound = () => {
-    // Create audio context and play a notification beep
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const gainNode = audioContext.createGain();
-      const oscillator = audioContext.createOscillator();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = 800; // 800Hz bell-like sound
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
-    } catch (error) {
-      console.log('Could not play notification sound:', error);
-    }
-  };
+
 
   if (patientArrived) {
     return (
       <div className="flex items-center gap-2">
-        <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+        <Badge variant="secondary" className="border-border bg-secondary text-secondary-foreground">
           <CheckCircle className="h-3 w-3 mr-1" />
           Chegou
         </Badge>
@@ -152,7 +137,7 @@ export default function PatientPresenceButton({
       size="sm"
       onClick={handleConfirmPresence}
       disabled={loading}
-      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+      className="border-border text-foreground hover:bg-muted"
     >
       <Bell className="h-4 w-4 mr-1" />
       {loading ? 'Confirmando...' : 'Confirmar Presença'}

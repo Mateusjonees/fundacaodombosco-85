@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
 import { supabase } from "@/integrations/supabase/client";
 import { checkForUpdates } from "@/utils/cacheControl";
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 
 
 
@@ -142,7 +143,9 @@ const App = () => {
           <Toaster />
           <Sonner />
           <AuthProvider>
-            <AppContent />
+            <NotificationProvider>
+              <AppContent />
+            </NotificationProvider>
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
