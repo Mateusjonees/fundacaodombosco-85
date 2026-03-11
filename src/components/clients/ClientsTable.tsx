@@ -28,6 +28,7 @@ interface ClientsTableProps {
   clients: Client[];
   selectedClients: string[];
   lastAppointments: Map<string, string>;
+  firstAppointments?: Map<string, string>;
   clientLaudoIds?: Set<string>;
   clientAnamnesisIds?: Set<string>;
   clientProfessionals?: Map<string, string>;

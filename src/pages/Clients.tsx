@@ -735,6 +735,7 @@ export default function Patients() {
                   clients={filteredClients}
                   selectedClients={selectedClients}
                   lastAppointments={lastAppointments}
+                  firstAppointments={firstAppointments}
                   clientLaudoIds={clientLaudoIds}
                   clientAnamnesisIds={clientAnamnesisIds}
                   clientProfessionals={clientProfessionals}
