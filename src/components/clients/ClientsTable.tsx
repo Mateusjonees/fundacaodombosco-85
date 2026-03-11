@@ -69,7 +69,7 @@ export const ClientsTable = memo(({
             <TableHead className="font-semibold">Status</TableHead>
             <TableHead className="font-semibold">Laudo</TableHead>
             <TableHead className="font-semibold">Última Consulta</TableHead>
-            <TableHead className="font-semibold">Cadastro</TableHead>
+            <TableHead className="font-semibold">1ª Sessão</TableHead>
             <TableHead className="font-semibold">Ações</TableHead>
           </TableRow>
         </TableHeader>
