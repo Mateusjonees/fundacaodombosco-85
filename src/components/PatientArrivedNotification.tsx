@@ -30,11 +30,20 @@ export default function PatientArrivedNotification() {
         (payload) => {
           const newRecord = payload.new as any;
           const scheduleId = newRecord?.id;
+          const clientId = newRecord?.client_id;
           
           // Checa apenas se patient_arrived é true e se ainda não alertou este ID
           if (newRecord?.patient_arrived && scheduleId && !alertedIds.has(scheduleId)) {
             alertedIds.add(scheduleId);
-            triggerMaxAlert();
+            // Buscar nome do paciente
+            if (clientId) {
+              supabase.from('clients').select('name').eq('id', clientId).single()
+                .then(({ data }) => {
+                  triggerMaxAlert(data?.name || 'Paciente');
+                });
+            } else {
+              triggerMaxAlert('Paciente');
+            }
           }
         }
       )
