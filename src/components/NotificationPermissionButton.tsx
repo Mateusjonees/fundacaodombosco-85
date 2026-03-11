@@ -2,6 +2,7 @@ import { BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 export const NotificationPermissionButton = () => {
   const { permission, isSupported, requestPermission } = usePushNotifications();
@@ -10,7 +11,23 @@ export const NotificationPermissionButton = () => {
   if (!isSupported || permission === 'granted') return null;
 
   const handleClick = async () => {
-    await requestPermission();
+    if (permission === 'denied') {
+      toast.error('Notificações bloqueadas', {
+        description: 'As notificações foram bloqueadas anteriormente. Para ativar, clique no ícone de cadeado 🔒 na barra de endereço do navegador → Permissões → Notificações → Permitir. Depois recarregue a página.',
+        duration: 10000,
+      });
+      return;
+    }
+
+    const granted = await requestPermission();
+    if (granted) {
+      toast.success('Notificações ativadas com sucesso! 🔔');
+    } else {
+      toast.error('Notificações bloqueadas', {
+        description: 'Para ativar, clique no ícone de cadeado 🔒 na barra de endereço → Permissões → Notificações → Permitir.',
+        duration: 8000,
+      });
+    }
   };
 
   return (
@@ -28,7 +45,7 @@ export const NotificationPermissionButton = () => {
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        <p>Clique para ativar notificações</p>
+        <p>{permission === 'denied' ? 'Notificações bloqueadas — clique para instruções' : 'Clique para ativar notificações'}</p>
       </TooltipContent>
     </Tooltip>
   );
