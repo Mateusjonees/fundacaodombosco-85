@@ -1,36 +1,31 @@
 
 
-## Diagnóstico: Por que o alerta não está funcionando
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-**Problema principal encontrado**: A tabela `appointment_notifications` **NÃO está habilitada no Supabase Realtime**. Apenas estas tabelas estão na publicação Realtime: `schedules`, `internal_messages`, `meeting_alerts`, `channels`, `channel_members`, `user_presence`.
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
-O Canal 2 (listener em `appointment_notifications`) simplesmente não recebe eventos. O Canal 1 (listener em `schedules`) deveria funcionar pois `schedules` está habilitada, mas pode estar falhando silenciosamente por problemas de RLS no Realtime ou pelo filtro.
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-Além disso, o `.subscribe()` não tem callback de status — erros de conexão são ignorados silenciosamente.
+## Detalhes Tecnicos
 
-## Plano de Correção
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
-### 1. Adicionar `appointment_notifications` à publicação Realtime
-Migration SQL:
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE appointment_notifications;
-```
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-### 2. Melhorar o subscribe com logs de debug
-Adicionar callback no `.subscribe()` dos dois canais para logar status (`SUBSCRIBED`, `CHANNEL_ERROR`, etc.), facilitando diagnóstico futuro.
-
-### 3. Adicionar subscribe com status logging
-```typescript
-.subscribe((status) => {
-  console.log('[PatientArrived] Channel schedules status:', status);
-});
-```
-
-### 4. Forçar refetch da agenda ao receber evento
-Quando o profissional recebe o alerta, a agenda deve atualizar automaticamente. Atualmente o componente dispara o alerta visual mas não notifica a página de Schedule para recarregar. Solução: usar um evento customizado (`window.dispatchEvent`) que a página Schedule escuta para fazer `refetch`.
-
-### Arquivos a modificar
-- **Migration SQL**: Habilitar Realtime na tabela `appointment_notifications`
-- **`src/components/PatientArrivedNotification.tsx`**: Adicionar logs no subscribe, disparar evento customizado para refetch da agenda
-- **`src/pages/Schedule.tsx`**: Escutar evento customizado para refetch automático dos agendamentos
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 
