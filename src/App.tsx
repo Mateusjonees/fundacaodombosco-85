@@ -143,8 +143,6 @@ const App = () => {
           <Sonner />
           <AuthProvider>
             <AppContent />
-            
-            <NotificationPermissionBanner />
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
