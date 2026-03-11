@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, CheckCircle, Bell } from 'lucide-react';
+import { CheckCircle, Bell } from 'lucide-react';
 import { mostrarNotificacao } from '@/components/notifications/NotificationProvider';
 
 interface PatientPresenceButtonProps {
