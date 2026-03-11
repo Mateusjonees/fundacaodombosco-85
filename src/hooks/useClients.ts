@@ -8,6 +8,7 @@ interface ClientFilters {
   searchTerm?: string;
   limit?: number;
   offset?: number;
+  employeeId?: string; // Filtra apenas clientes vinculados ao profissional
 }
 
 // Colunas otimizadas para listagem
