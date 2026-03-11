@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -30,7 +30,7 @@ interface Schedule {
   patient_declined?: boolean;
   patient_declined_at?: string;
   email_sent_at?: string;
-  clients?: { name: string };
+  clients?: { name: string; birth_date?: string };
   profiles?: { name: string };
 }
 
@@ -166,6 +166,11 @@ export const ScheduleCard = memo(({
               <p className="text-[10px] text-muted-foreground leading-none mb-0.5">Paciente</p>
               <p className="font-medium text-xs sm:text-sm truncate uppercase leading-tight">
                 {schedule.clients?.name || 'N/A'}
+                {schedule.clients?.birth_date && (
+                  <span className="text-[10px] sm:text-xs font-normal text-muted-foreground ml-1 normal-case">
+                    ({differenceInYears(new Date(), new Date(schedule.clients.birth_date))} anos)
+                  </span>
+                )}
               </p>
             </div>
           </button>

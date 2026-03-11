@@ -39,7 +39,7 @@ interface Schedule {
   patient_arrived?: boolean;
   arrived_at?: string;
   arrived_confirmed_by?: string;
-  clients?: { name: string };
+  clients?: { name: string; birth_date?: string };
   profiles?: { name: string };
 }
 
