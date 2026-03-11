@@ -7,17 +7,25 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 export default function PatientArrivedNotification() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { permission, requestPermission, sendNotification } = usePushNotifications();
+  const { permission, isSupported, requestPermission, sendNotification } = usePushNotifications();
   const [alertedIds] = useState(() => new Set<string>());
 
-  // Pedir permissão de notificação nativa assim que o componente monta
+  // Log de montagem
   useEffect(() => {
-    if (permission === 'default') {
+    console.log('[PatientArrived] Componente montado, user:', user?.id?.slice(0, 8));
+    console.log('[PatientArrived] Notification API suportada:', isSupported);
+    console.log('[PatientArrived] Permissão atual:', permission);
+  }, [user, isSupported, permission]);
+
+  // Pedir permissão de notificação nativa
+  useEffect(() => {
+    if (permission === 'default' && isSupported) {
+      console.log('[PatientArrived] Solicitando permissão de notificação...');
       requestPermission();
     }
-  }, [permission, requestPermission]);
+  }, [permission, isSupported, requestPermission]);
 
-  // Som de notificação mais audível (2 beeps)
+  // Som de notificação audível (2 beeps)
   const playNotificationSound = useCallback(() => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -35,10 +43,15 @@ export default function PatientArrivedNotification() {
       };
       playBeep(ctx.currentTime, 880);
       playBeep(ctx.currentTime + 0.35, 1100);
-    } catch {}
+      console.log('[PatientArrived] 🔊 Som tocado');
+    } catch (e) {
+      console.warn('[PatientArrived] Erro ao tocar som:', e);
+    }
   }, []);
 
   const triggerAlert = useCallback((name: string) => {
+    console.log('[PatientArrived] 🔔 triggerAlert para:', name);
+
     // Som
     playNotificationSound();
 
@@ -58,12 +71,19 @@ export default function PatientArrivedNotification() {
   }, [toast, playNotificationSound, sendNotification]);
 
   const handlePatientArrived = useCallback((scheduleId: string, clientId: string | null) => {
-    if (!scheduleId || alertedIds.has(scheduleId)) return;
+    if (!scheduleId || alertedIds.has(scheduleId)) {
+      console.log('[PatientArrived] Schedule já alertado ou inválido:', scheduleId);
+      return;
+    }
     alertedIds.add(scheduleId);
+    console.log('[PatientArrived] Processando chegada, schedule:', scheduleId);
 
     if (clientId) {
       supabase.from('clients').select('name').eq('id', clientId).single()
-        .then(({ data }) => triggerAlert(data?.name || 'Paciente'));
+        .then(({ data, error }) => {
+          if (error) console.warn('[PatientArrived] Erro ao buscar cliente:', error);
+          triggerAlert(data?.name || 'Paciente');
+        });
     } else {
       triggerAlert('Paciente');
     }
@@ -73,6 +93,8 @@ export default function PatientArrivedNotification() {
   useEffect(() => {
     if (!user) return;
 
+    console.log('[PatientArrived] Configurando canais Realtime para user:', user.id.slice(0, 8));
+
     const channel1 = supabase
       .channel('patient-arrivals-schedules')
       .on('postgres_changes', {
@@ -80,12 +102,14 @@ export default function PatientArrivedNotification() {
         filter: `employee_id=eq.${user.id}`
       }, (payload) => {
         const rec = payload.new as any;
+        console.log('[PatientArrived] Realtime schedules UPDATE:', rec?.id, 'patient_arrived:', rec?.patient_arrived);
         if (rec?.patient_arrived) {
           handlePatientArrived(rec.id, rec.client_id);
           window.dispatchEvent(new CustomEvent('refresh-schedule'));
         }
       })
       .subscribe((status) => {
+        console.log('[PatientArrived] Canal schedules status:', status);
         if (status === 'CHANNEL_ERROR') {
           setTimeout(() => channel1.subscribe(), 3000);
         }
@@ -98,12 +122,14 @@ export default function PatientArrivedNotification() {
         filter: `employee_id=eq.${user.id}`
       }, (payload) => {
         const rec = payload.new as any;
+        console.log('[PatientArrived] Realtime notification INSERT:', rec?.notification_type, rec?.title);
         if (rec?.notification_type === 'patient_arrived' || rec?.title?.includes('Chegou') || rec?.title?.includes('chegou')) {
           handlePatientArrived(rec.schedule_id, rec.client_id);
           window.dispatchEvent(new CustomEvent('refresh-schedule'));
         }
       })
       .subscribe((status) => {
+        console.log('[PatientArrived] Canal notifications status:', status);
         if (status === 'CHANNEL_ERROR') {
           setTimeout(() => channel2.subscribe(), 3000);
         }
@@ -121,7 +147,7 @@ export default function PatientArrivedNotification() {
 
     const check = async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('appointment_notifications')
           .select('id, schedule_id, client_id, notification_type, title')
           .eq('employee_id', user.id)
@@ -129,13 +155,21 @@ export default function PatientArrivedNotification() {
           .order('created_at', { ascending: false })
           .limit(5);
 
+        if (error) {
+          console.warn('[PatientArrived] Polling erro:', error.message);
+          return;
+        }
+
         for (const n of data || []) {
           if ((n.notification_type === 'patient_arrived' || n.title?.includes('Chegou') || n.title?.includes('chegou')) && !alertedIds.has(n.schedule_id)) {
+            console.log('[PatientArrived] Polling encontrou chegada:', n.schedule_id);
             handlePatientArrived(n.schedule_id, n.client_id);
             window.dispatchEvent(new CustomEvent('refresh-schedule'));
           }
         }
-      } catch {}
+      } catch (e) {
+        console.warn('[PatientArrived] Polling exception:', e);
+      }
     };
 
     check();
