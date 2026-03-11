@@ -137,8 +137,9 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
       cached.sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
       return cached;
     },
-    staleTime: 30000,
-    refetchOnWindowFocus: false,
+    staleTime: 5000,
+    refetchInterval: 15000, // Polling de segurança: 15s como fallback do Realtime
+    refetchOnWindowFocus: true,
     refetchOnMount: true,
     enabled: !!userProfile,
   });

@@ -76,7 +76,8 @@ export const NotificationBell = () => {
       if (error) throw error;
       return (data || []) as Notification[];
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 30000,
+    refetchInterval: 30000, // Polling de segurança: 30s
     enabled: !!user?.id,
   });
 
