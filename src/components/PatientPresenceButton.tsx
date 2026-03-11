@@ -51,25 +51,40 @@ export default function PatientPresenceButton({
 
       console.log('Schedule updated successfully');
 
-      // Create notification for the assigned employee
-      const { error: notificationError } = await supabase
-        .from('internal_messages')
-        .insert({
-          sender_id: user.id,
-          recipient_id: employeeId,
-          subject: 'Paciente Chegou!',
-          message_body: `${clientName} chegou para o atendimento e está aguardando.`,
-          priority: 'high',
-          message_type: 'patient_arrival'
-        });
+      // Buscar client_id do schedule
+      const { data: scheduleData } = await supabase
+        .from('schedules')
+        .select('client_id')
+        .eq('id', scheduleId)
+        .single();
 
-      if (notificationError) {
-        console.error('Error creating notification:', notificationError);
-        // Don't throw here - the main update worked
-      } else {
-        console.log('Notification created successfully');
+      const clientId = scheduleData?.client_id;
+
+      // Criar notificação na tabela appointment_notifications (listener do profissional monitora esta tabela)
+      if (clientId) {
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const { error: notificationError } = await supabase
+          .from('appointment_notifications')
+          .insert({
+            schedule_id: scheduleId,
+            employee_id: employeeId,
+            client_id: clientId,
+            title: `🔔 ${clientName} Chegou!`,
+            message: `${clientName} chegou para o atendimento e está aguardando.`,
+            notification_type: 'patient_arrived',
+            appointment_date: today,
+            appointment_time: now,
+            created_by: user.id,
+            metadata: { patient_name: clientName, arrived_at: new Date().toISOString() }
+          });
+
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
+        } else {
+          console.log('Patient arrival notification created successfully');
+        }
       }
-
       // Play notification sound
       playNotificationSound();
 
