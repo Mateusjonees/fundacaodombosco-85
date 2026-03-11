@@ -21,6 +21,7 @@ interface Client {
 }
 interface ClientLaudoManagerProps {
   client: Client;
+  defaultServiceType?: string;
 }
 const LAUDO_TYPES = [{
   value: 'neuropsicologico',
