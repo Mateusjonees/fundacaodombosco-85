@@ -1,57 +1,61 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function PatientArrivedNotification() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { permission, requestPermission, sendNotification } = usePushNotifications();
   const [alertedIds] = useState(() => new Set<string>());
 
-  // Som simples de notificação
+  // Pedir permissão de notificação nativa assim que o componente monta
+  useEffect(() => {
+    if (permission === 'default') {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
+
+  // Som de notificação mais audível (2 beeps)
   const playNotificationSound = useCallback(() => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 800;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
+      const playBeep = (startTime: number, freq: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.5, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+        osc.start(startTime);
+        osc.stop(startTime + 0.3);
+      };
+      playBeep(ctx.currentTime, 880);
+      playBeep(ctx.currentTime + 0.35, 1100);
     } catch {}
   }, []);
 
   const triggerAlert = useCallback((name: string) => {
+    // Som
     playNotificationSound();
 
+    // Toast interno do app
     toast({
       title: `🔔 ${name} chegou!`,
       description: `${name} está na recepção aguardando atendimento.`,
       duration: 15000,
     });
 
-    // Push nativa se disponível
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification(`🔔 ${name} chegou!`, {
-          body: `${name} está na recepção aguardando atendimento.`,
-          tag: 'patient-arrived',
-          requireInteraction: true,
-        });
-      } catch {}
-    }
-  }, [toast, playNotificationSound]);
-
-  // Solicitar permissão de notificações nativas
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, []);
+    // Notificação nativa do Windows/OS (estilo WhatsApp)
+    sendNotification(`🔔 ${name} chegou!`, {
+      body: `${name} está na recepção aguardando atendimento.`,
+      tag: `patient-arrived-${Date.now()}`,
+      url: '/schedule',
+    });
+  }, [toast, playNotificationSound, sendNotification]);
 
   const handlePatientArrived = useCallback((scheduleId: string, clientId: string | null) => {
     if (!scheduleId || alertedIds.has(scheduleId)) return;
@@ -139,6 +143,5 @@ export default function PatientArrivedNotification() {
     return () => clearInterval(interval);
   }, [user?.id, alertedIds, handlePatientArrived]);
 
-  // Componente não renderiza nada visualmente - usa apenas toasts
   return null;
 }
