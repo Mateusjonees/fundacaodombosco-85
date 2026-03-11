@@ -101,6 +101,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         
         if (event === 'SIGNED_OUT') {
+          // Limpar cache offline para evitar dados residuais entre sessões
+          offlineDB.clear(STORES.clients).catch(() => {});
+          offlineDB.clear(STORES.schedules).catch(() => {});
+          offlineDB.clear(STORES.medicalRecords).catch(() => {});
+          offlineDB.clear(STORES.dashboardStats).catch(() => {});
+          
           setTimeout(() => {
             AuditService.logAction({
               entityType: 'auth',
