@@ -51,40 +51,38 @@ export default function PatientPresenceButton({
 
       console.log('Schedule updated successfully');
 
-      // Criar notificação na tabela appointment_notifications (listener do profissional monitora esta tabela)
-      const today = new Date().toISOString().split('T')[0];
-      const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const { error: notificationError } = await supabase
-        .from('appointment_notifications')
-        .insert({
-          schedule_id: scheduleId,
-          employee_id: employeeId,
-          client_id: null as any, // será preenchido abaixo
-          title: `🔔 ${clientName} Chegou!`,
-          message: `${clientName} chegou para o atendimento e está aguardando.`,
-          notification_type: 'patient_arrived',
-          appointment_date: today,
-          appointment_time: now,
-          created_by: user.id,
-          metadata: { patient_name: clientName, arrived_at: new Date().toISOString() }
-        });
+      // Buscar client_id do schedule
+      const { data: scheduleData } = await supabase
+        .from('schedules')
+        .select('client_id')
+        .eq('id', scheduleId)
+        .single();
 
-      // Buscar client_id do schedule e atualizar a notificação
-      if (!notificationError) {
-        const { data: scheduleData } = await supabase
-          .from('schedules')
-          .select('client_id')
-          .eq('id', scheduleId)
-          .single();
-        
-        if (scheduleData?.client_id) {
-          // Atualizar com client_id correto
-          await supabase
-            .from('appointment_notifications')
-            .update({ client_id: scheduleData.client_id })
-            .eq('schedule_id', scheduleId)
-            .eq('notification_type', 'patient_arrived')
-            .eq('employee_id', employeeId);
+      const clientId = scheduleData?.client_id;
+
+      // Criar notificação na tabela appointment_notifications (listener do profissional monitora esta tabela)
+      if (clientId) {
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const { error: notificationError } = await supabase
+          .from('appointment_notifications')
+          .insert({
+            schedule_id: scheduleId,
+            employee_id: employeeId,
+            client_id: clientId,
+            title: `🔔 ${clientName} Chegou!`,
+            message: `${clientName} chegou para o atendimento e está aguardando.`,
+            notification_type: 'patient_arrived',
+            appointment_date: today,
+            appointment_time: now,
+            created_by: user.id,
+            metadata: { patient_name: clientName, arrived_at: new Date().toISOString() }
+          });
+
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
+        } else {
+          console.log('Patient arrival notification created successfully');
         }
       }
 
