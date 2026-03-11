@@ -117,6 +117,7 @@ export const ClientsTable = memo(({
             <TableHead className="font-semibold w-[70px]">Status</TableHead>
             <TableHead className="font-semibold min-w-[100px]">1ª Sessão</TableHead>
             <TableHead className="font-semibold min-w-[100px]">Data Fim</TableHead>
+            <TableHead className="font-semibold min-w-[100px]">Cadastro</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -209,6 +210,8 @@ export const ClientsTable = memo(({
                 <TableCell className="text-xs text-muted-foreground">{fmtDate(client.neuro_test_start_date)}</TableCell>
                 {/* Data Fim */}
                 <TableCell className="text-xs text-muted-foreground">{fmtDate(client.neuro_report_deadline)}</TableCell>
+                {/* Cadastro */}
+                <TableCell className="text-xs text-muted-foreground">{fmtDate(client.created_at?.slice(0, 10))}</TableCell>
               </TableRow>
             );
           })}
