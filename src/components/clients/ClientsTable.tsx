@@ -97,8 +97,7 @@ export const ClientsTable = memo(({
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[10%] px-2">CONTATO</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[9%] px-2">RESPONSÁVEL</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[10%] px-2">PROFISSIONAL</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[4.5%] px-1 text-center">ANAM.</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[4.5%] px-1 text-center">LAUDO</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[5%] px-1 text-center">LAUDO</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[4.5%] px-1 text-center">STATUS</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">1ª SESSÃO</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">ÚLT. ATIV.</TableHead>
@@ -147,13 +146,6 @@ export const ClientsTable = memo(({
                 </TableCell>
                 <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5 truncate">
                   {clientProfessionals.get(client.id) || <span className="text-muted-foreground/50">—</span>}
-                </TableCell>
-                <TableCell className="px-1 py-2.5 text-center">
-                  {clientAnamnesisIds.has(client.id) ? (
-                    <ClipboardCheck className="h-4 w-4 text-emerald-500 mx-auto" />
-                  ) : (
-                    <ClipboardX className="h-4 w-4 text-amber-500/80 mx-auto" />
-                  )}
                 </TableCell>
                 <TableCell className="px-1 py-2.5 text-center">
                   {clientLaudoIds.has(client.id) ? (
