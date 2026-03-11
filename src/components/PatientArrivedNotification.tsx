@@ -103,9 +103,8 @@ export default function PatientArrivedNotification() {
 
   const dismissAlert = useCallback(() => {
     setShowFullScreenAlert(false);
-    stopRepeatingAlarm();
     if ('vibrate' in navigator) navigator.vibrate(0);
-  }, [stopRepeatingAlarm]);
+  }, []);
 
   const triggerMaxAlert = useCallback((name: string) => {
     setPatientName(name);
@@ -125,29 +124,21 @@ export default function PatientArrivedNotification() {
       url: '/schedule',
     });
 
-    // 3. Som imediato + repetição a cada 5s por 30s
+    // 3. Som único + vibração
     playAlarmSound();
-    stopRepeatingAlarm();
-    alarmIntervalRef.current = setInterval(() => {
-      playAlarmSound();
-      vibrateDevice();
-    }, 5000);
-
-    // 4. Vibrar
     vibrateDevice();
 
-    // 5. Fullscreen
+    // 4. Fullscreen
     setShowFullScreenAlert(true);
 
-    // 6. Piscar aba
+    // 5. Piscar aba
     flashBrowserTab();
 
-    // Auto-parar após 30s
+    // Auto-fechar após 30s
     alertTimeoutRef.current = setTimeout(() => {
       setShowFullScreenAlert(false);
-      stopRepeatingAlarm();
     }, 30000);
-  }, [toast, sendNotification, playAlarmSound, vibrateDevice, flashBrowserTab, stopRepeatingAlarm]);
+  }, [toast, sendNotification, playAlarmSound, vibrateDevice, flashBrowserTab]);
 
   // Solicitar permissão de notificações nativas ao montar
   useEffect(() => {
