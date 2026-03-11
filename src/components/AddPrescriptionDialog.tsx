@@ -18,6 +18,7 @@ interface AddPrescriptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientId: string;
+  defaultServiceType?: string;
 }
 
 export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: AddPrescriptionDialogProps) {
