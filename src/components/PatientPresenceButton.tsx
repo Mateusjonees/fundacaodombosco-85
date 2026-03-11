@@ -85,14 +85,6 @@ export default function PatientPresenceButton({
           console.log('Patient arrival notification created successfully');
         }
       }
-
-      if (notificationError) {
-        console.error('Error creating notification:', notificationError);
-        // Don't throw here - the main update worked
-      } else {
-        console.log('Notification created successfully');
-      }
-
       // Play notification sound
       playNotificationSound();
 
