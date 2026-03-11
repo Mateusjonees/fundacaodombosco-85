@@ -148,13 +148,6 @@ export const ClientsTable = memo(({
                   {clientProfessionals.get(client.id) || <span className="text-muted-foreground/50">—</span>}
                 </TableCell>
                 <TableCell className="px-1 py-2.5 text-center">
-                  {clientAnamnesisIds.has(client.id) ? (
-                    <ClipboardCheck className="h-4 w-4 text-emerald-500 mx-auto" />
-                  ) : (
-                    <ClipboardX className="h-4 w-4 text-amber-500/80 mx-auto" />
-                  )}
-                </TableCell>
-                <TableCell className="px-1 py-2.5 text-center">
                   {clientLaudoIds.has(client.id) ? (
                     <FileCheck className="h-4 w-4 text-emerald-500 mx-auto" />
                   ) : (
