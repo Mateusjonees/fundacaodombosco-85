@@ -137,7 +137,7 @@ export default function PatientPresenceButton({
       size="sm"
       onClick={handleConfirmPresence}
       disabled={loading}
-      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+      className="border-border text-foreground hover:bg-muted"
     >
       <Bell className="h-4 w-4 mr-1" />
       {loading ? 'Confirmando...' : 'Confirmar Presença'}
