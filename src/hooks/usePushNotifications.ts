@@ -8,19 +8,15 @@ import { useState, useEffect, useCallback } from 'react';
 export const usePushNotifications = () => {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSupported, setIsSupported] = useState(false);
-  const [isInIframe, setIsInIframe] = useState(false);
+
+  // Detectar se estamos em um iframe (preview do Lovable, etc.)
+  const isInIframe = typeof window !== 'undefined' && (() => {
+    try { return window.self !== window.top; } catch { return true; }
+  })();
 
   useEffect(() => {
     const supported = 'Notification' in window;
     setIsSupported(supported);
-
-    // Detectar se estamos em um iframe (preview do Lovable, etc.)
-    try {
-      setIsInIframe(window.self !== window.top);
-    } catch {
-      setIsInIframe(true); // Se deu erro de cross-origin, estamos em iframe
-    }
-
     if (supported) {
       setPermission(Notification.permission);
     }
