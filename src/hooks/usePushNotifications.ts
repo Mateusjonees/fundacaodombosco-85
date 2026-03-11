@@ -61,9 +61,9 @@ export const usePushNotifications = () => {
       return result === 'granted';
     } catch (err) {
       console.warn('[PushNotifications] requestPermission() bloqueado (provavelmente iframe):', err);
-      const fallbackPerm = Notification.permission;
+      const fallbackPerm = Notification.permission as NotificationPermission;
       setPermission(fallbackPerm);
-      return fallbackPerm === 'granted';
+      return (fallbackPerm as string) === 'granted';
     }
   }, [isSupported]);
 
