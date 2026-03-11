@@ -1,11 +1,8 @@
 import { memo } from 'react';
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Eye, Edit, FileText, Power, Trash2, Phone, FileCheck, FileX, ClipboardCheck, ClipboardX } from "lucide-react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Phone, ClipboardCheck, ClipboardX, FileCheck, FileX } from "lucide-react";
 
 interface Client {
   id: string;
@@ -60,22 +57,8 @@ const fmtDate = (d?: string | null): string => {
   return new Date(d + (d.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('pt-BR');
 };
 
-/** Extrai dia/horário das notas */
-const extractScheduleInfo = (notes?: string): string => {
-  if (!notes) return '—';
-  const match = notes.match(/Dia\/Horário:\s*([^\n|]+)/);
-  return match ? match[1].trim() : '—';
-};
-
-/** Extrai observações das notas */
-const extractObservations = (notes?: string): string => {
-  if (!notes) return '—';
-  const match = notes.match(/Obs planilha:\s*([^\n]+)/);
-  return match ? match[1].trim() : '—';
-};
-
 /**
- * Tabela de pacientes com todas as colunas do controle ambulatorial
+ * Tabela de pacientes — layout compacto e legível sem scroll horizontal
  */
 export const ClientsTable = memo(({
   clients,
@@ -96,30 +79,30 @@ export const ClientsTable = memo(({
   onDelete,
 }: ClientsTableProps) => {
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto rounded-lg border border-border/50">
       <Table className="w-full table-fixed">
         <TableHeader>
-          <TableRow className="bg-muted/30 hover:bg-muted/30">
+          <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/60">
             {isAdmin && (
-              <TableHead className="w-7 px-1">
+              <TableHead className="w-8 px-2">
                 <Checkbox
                   checked={selectedClients.length === clients.length && clients.length > 0}
                   onCheckedChange={onToggleSelectAll}
                 />
               </TableHead>
             )}
-            <TableHead className="font-semibold text-[10px] w-[14%] px-1">PACIENTE</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[7%] px-1">DN</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[4%] px-1 text-center">ID.</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[10%] px-1">CONTATO</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[10%] px-1">RESPONSÁVEL</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[10%] px-1">PROFISSIONAL</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[5%] px-1 text-center">ANAM.</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[5%] px-1 text-center">LAUDO</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[5%] px-1 text-center">STATUS</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[7%] px-1">1ª SESSÃO</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[7%] px-1">ÚLT. ATIV.</TableHead>
-            <TableHead className="font-semibold text-[10px] w-[7%] px-1">CADASTRO</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[15%] px-2">PACIENTE</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7%] px-2">DN</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[3.5%] px-1 text-center">ID.</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[10%] px-2">CONTATO</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[9%] px-2">RESPONSÁVEL</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[10%] px-2">PROFISSIONAL</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[4.5%] px-1 text-center">ANAM.</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[4.5%] px-1 text-center">LAUDO</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[4.5%] px-1 text-center">STATUS</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">1ª SESSÃO</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">ÚLT. ATIV.</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">CADASTRO</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -129,62 +112,62 @@ export const ClientsTable = memo(({
               <TableRow
                 key={client.id}
                 className={`
-                  transition-colors cursor-pointer group
-                  ${selectedClients.includes(client.id) ? "bg-primary/5" : "hover:bg-muted/40"}
+                  transition-colors cursor-pointer group border-b border-border/30
+                  ${selectedClients.includes(client.id) ? "bg-primary/8" : "hover:bg-muted/50"}
                   ${!client.is_active ? "opacity-50" : ""}
                 `}
                 onClick={() => onView(client)}
               >
                 {isAdmin && (
-                  <TableCell className="px-1" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="px-2 py-2.5" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedClients.includes(client.id)}
                       onCheckedChange={() => onToggleSelect(client.id)}
                     />
                   </TableCell>
                 )}
-                <TableCell className="px-1">
-                  <div className="flex items-center gap-1.5 overflow-hidden">
+                <TableCell className="px-2 py-2.5">
+                  <div className="flex items-center gap-2 overflow-hidden">
                     <UserAvatar name={client.name} size="sm" />
-                    <span className="font-semibold text-[10px] uppercase tracking-wide truncate">{client.name}</span>
+                    <span className="font-semibold text-[11px] uppercase tracking-wide truncate text-foreground">{client.name}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(client.birth_date)}</TableCell>
-                <TableCell className="text-[10px] font-medium text-center px-1">{age ?? '—'}</TableCell>
-                <TableCell className="px-1">
+                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5">{fmtDate(client.birth_date)}</TableCell>
+                <TableCell className="text-[11px] font-semibold text-center px-1 py-2.5 text-foreground">{age ?? '—'}</TableCell>
+                <TableCell className="px-2 py-2.5">
                   {client.phone ? (
-                    <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                      <Phone className="h-2.5 w-2.5 shrink-0" />
+                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Phone className="h-3 w-3 shrink-0 text-muted-foreground/70" />
                       <span className="truncate">{client.phone}</span>
                     </div>
-                  ) : <span className="text-[10px] text-muted-foreground">—</span>}
+                  ) : <span className="text-[11px] text-muted-foreground/50">—</span>}
                 </TableCell>
-                <TableCell className="text-[10px] text-muted-foreground px-1 truncate">
-                  {client.responsible_name || '—'}
+                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5 truncate">
+                  {client.responsible_name || <span className="text-muted-foreground/50">—</span>}
                 </TableCell>
-                <TableCell className="text-[10px] text-muted-foreground px-1 truncate">
-                  {clientProfessionals.get(client.id) || '—'}
+                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5 truncate">
+                  {clientProfessionals.get(client.id) || <span className="text-muted-foreground/50">—</span>}
                 </TableCell>
-                <TableCell className="px-1 text-center">
+                <TableCell className="px-1 py-2.5 text-center">
                   {clientAnamnesisIds.has(client.id) ? (
-                    <ClipboardCheck className="h-3.5 w-3.5 text-green-500 mx-auto" />
+                    <ClipboardCheck className="h-4 w-4 text-emerald-500 mx-auto" />
                   ) : (
-                    <ClipboardX className="h-3.5 w-3.5 text-amber-500 mx-auto" />
+                    <ClipboardX className="h-4 w-4 text-amber-500/80 mx-auto" />
                   )}
                 </TableCell>
-                <TableCell className="px-1 text-center">
+                <TableCell className="px-1 py-2.5 text-center">
                   {clientLaudoIds.has(client.id) ? (
-                    <FileCheck className="h-3.5 w-3.5 text-green-500 mx-auto" />
+                    <FileCheck className="h-4 w-4 text-emerald-500 mx-auto" />
                   ) : (
-                    <FileX className="h-3.5 w-3.5 text-amber-500 mx-auto" />
+                    <FileX className="h-4 w-4 text-amber-500/80 mx-auto" />
                   )}
                 </TableCell>
-                <TableCell className="px-1 text-center">
-                  <span className={`inline-block w-2 h-2 rounded-full ${client.is_active ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
+                <TableCell className="px-1 py-2.5 text-center">
+                  <span className={`inline-block w-2.5 h-2.5 rounded-full ${client.is_active ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]' : 'bg-muted-foreground/30'}`} />
                 </TableCell>
-                <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(firstAppointments.get(client.id))}</TableCell>
-                <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(lastAppointments.get(client.id))}</TableCell>
-                <TableCell className="text-[10px] text-muted-foreground px-1">{fmtDate(client.created_at?.slice(0, 10))}</TableCell>
+                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5">{fmtDate(firstAppointments.get(client.id))}</TableCell>
+                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5">{fmtDate(lastAppointments.get(client.id))}</TableCell>
+                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5">{fmtDate(client.created_at?.slice(0, 10))}</TableCell>
               </TableRow>
             );
           })}
