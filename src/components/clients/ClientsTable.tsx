@@ -38,7 +38,7 @@ export const ClientsTable = memo(({
   clients,
   selectedClients,
   lastAppointments,
-  clientLaudoIds,
+  clientLaudoIds = new Set<string>(),
   isAdmin,
   canDelete,
   onToggleSelect,
