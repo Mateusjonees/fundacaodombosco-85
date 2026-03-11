@@ -148,6 +148,11 @@ export default function PatientArrivedNotification() {
     }, 30000);
   }, [toast, sendNotification, playAlarmSound, vibrateDevice, flashBrowserTab, stopRepeatingAlarm]);
 
+  // Solicitar permissão de notificações nativas ao montar
+  useEffect(() => {
+    requestPermission();
+  }, [requestPermission]);
+
   useEffect(() => {
     if (!user) return;
 
