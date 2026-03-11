@@ -302,6 +302,52 @@ export const CreateScheduleDialog = ({
               </div>
             </div>
 
+            {/* Campos exclusivos Atendimento Floresta */}
+            {form.unit === 'atendimento_floresta' && (
+              <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+                <Label className="text-sm font-semibold">Configurações Atendimento Floresta</Label>
+                <div className="space-y-2">
+                  <Label>Tipo de Demanda</Label>
+                  <Select value={form.service_type} onValueChange={(v) => setForm(p => ({ ...p, service_type: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a demanda..." /></SelectTrigger>
+                    <SelectContent className="bg-background border shadow-md z-50">
+                      {SERVICE_TYPE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Valores financeiros - apenas coordenadores/diretores */}
+                {(isAdmin || ['coordinator_atendimento_floresta', 'coordinator_floresta', 'coordinator_madre', 'director'].includes(userProfile?.employee_role)) && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Valor Profissional (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0,00"
+                        value={form.professional_amount}
+                        onChange={(e) => setForm(p => ({ ...p, professional_amount: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Valor Fundação (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0,00"
+                        value={form.foundation_amount}
+                        onChange={(e) => setForm(p => ({ ...p, foundation_amount: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {!editingSchedule && (
               <div className="space-y-2">
                 <Label>Quantidade de Sessões</Label>
