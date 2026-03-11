@@ -120,21 +120,27 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'TRILHAS':
       return {
-        subtests: ['trilhaA', 'trilhaB'],
+        subtests: ['sequenciasA', 'sequenciasB', 'trilhaA', 'trilhaB'],
         names: {
+          sequenciasA: 'Sequências A (Bruto)',
+          sequenciasB: 'Sequências B (Bruto)',
           trilhaA: 'Trilha A (EP)',
           trilhaB: 'Trilha B (EP)'
         },
-        mainSubtest: 'trilhaA'
+        mainSubtest: 'trilhaA',
+        useRawScores: ['sequenciasA', 'sequenciasB']
       };
     case 'TRILHAS_PRE_ESCOLAR':
       return {
-        subtests: ['trilhaA', 'trilhaB'],
+        subtests: ['sequenciasA', 'sequenciasB', 'trilhaA', 'trilhaB'],
         names: {
+          sequenciasA: 'Sequências A (Bruto)',
+          sequenciasB: 'Sequências B (Bruto)',
           trilhaA: 'Trilha A (EP)',
           trilhaB: 'Trilha B (EP)'
         },
-        mainSubtest: 'trilhaA'
+        mainSubtest: 'trilhaA',
+        useRawScores: ['sequenciasA', 'sequenciasB']
       };
     case 'TMT_ADULTO':
       return {
