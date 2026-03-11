@@ -46,6 +46,13 @@ export const usePushNotifications = () => {
       return false;
     }
 
+    // Double-check: se permission atual não é default, atualizar estado
+    const currentPerm = Notification.permission;
+    if (currentPerm !== 'default') {
+      setPermission(currentPerm);
+      return currentPerm === 'granted';
+    }
+
     try {
       console.log('[PushNotifications] Solicitando permissão...');
       const result = await Notification.requestPermission();
