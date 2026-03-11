@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/UserAvatar";
 import { getUnitStyle } from "@/utils/unitUtils";
-import { CalendarDays, Phone, Stethoscope } from "lucide-react";
+import { CalendarDays, Phone, Stethoscope, CalendarPlus, CalendarCheck } from "lucide-react";
 
 interface Client {
   id: string;
@@ -24,6 +24,7 @@ interface PatientCardProps {
   showCheckbox?: boolean;
   showActions?: boolean;
   lastAppointment?: string;
+  firstAppointment?: string;
   onSelect?: () => void;
   onView?: () => void;
   onEdit?: () => void;
@@ -56,17 +57,25 @@ const calculateAge = (birthDate?: string) => {
   return age;
 };
 
+const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('pt-BR');
+
 export function PatientCard({
   client,
   isSelected = false,
   showCheckbox = false,
   lastAppointment,
+  firstAppointment,
   onSelect,
   onView,
 }: PatientCardProps) {
   const unitConfig = getUnitConfig(client.unit);
   const age = calculateAge(client.birth_date);
   const UnitIcon = unitConfig.Icon;
+
+  // Calcular dias sem atividade
+  const daysSinceLastActivity = lastAppointment
+    ? Math.floor((Date.now() - new Date(lastAppointment).getTime()) / 86400000)
+    : null;
 
   return (
     <Card 
@@ -131,7 +140,7 @@ export function PatientCard({
               )}
             </div>
 
-            {/* Info extra: telefone, diagnóstico, última consulta */}
+            {/* Info extra */}
             <div className="space-y-0.5 pt-0.5">
               {client.phone && (
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -145,10 +154,29 @@ export function PatientCard({
                   <span className="truncate line-clamp-1">{client.diagnosis}</span>
                 </div>
               )}
+
+              {/* Datas: Cadastro, Primeiro e Último Atendimento */}
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <CalendarPlus className="h-3 w-3 shrink-0" />
+                <span>Cadastro: {formatDate(client.created_at)}</span>
+              </div>
+              {firstAppointment && (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <CalendarCheck className="h-3 w-3 shrink-0" />
+                  <span>1º Atend.: {formatDate(firstAppointment)}</span>
+                </div>
+              )}
               {lastAppointment && (
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <CalendarDays className="h-3 w-3 shrink-0" />
-                  <span>Última: {new Date(lastAppointment).toLocaleDateString('pt-BR')}</span>
+                  <span>
+                    Última: {formatDate(lastAppointment)}
+                    {daysSinceLastActivity !== null && daysSinceLastActivity > 30 && (
+                      <span className="ml-1 text-amber-500 dark:text-amber-400 font-medium">
+                        ({daysSinceLastActivity}d sem atividade)
+                      </span>
+                    )}
+                  </span>
                 </div>
               )}
             </div>

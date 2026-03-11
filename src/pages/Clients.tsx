@@ -85,6 +85,7 @@ export default function Patients() {
   const [genderFilter, setGenderFilter] = useState("all");
   const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
   const [lastAppointments, setLastAppointments] = useState<Map<string, string>>(new Map());
+  const [firstAppointments, setFirstAppointments] = useState<Map<string, string>>(new Map());
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
@@ -200,9 +201,15 @@ export default function Patients() {
     };
     const loadLastAppointments = async () => {
       const { data } = await supabase.from('schedules').select('client_id, completed_at').eq('status', 'completed').not('completed_at', 'is', null).order('completed_at', { ascending: false });
-      const map = new Map<string, string>();
-      (data || []).forEach((s: any) => { if (!map.has(s.client_id)) map.set(s.client_id, s.completed_at); });
-      setLastAppointments(map);
+      const lastMap = new Map<string, string>();
+      const firstMap = new Map<string, string>();
+      (data || []).forEach((s: any) => {
+        if (!lastMap.has(s.client_id)) lastMap.set(s.client_id, s.completed_at);
+        // Para primeiro atendimento, sempre sobrescreve (dados vêm desc, último é o primeiro)
+        firstMap.set(s.client_id, s.completed_at);
+      });
+      setLastAppointments(lastMap);
+      setFirstAppointments(firstMap);
     };
     loadUserProfile();
     loadEmployees();
@@ -388,11 +395,32 @@ export default function Patients() {
           if (ageB === null) return -1;
           return sortBy === "age_asc" ? ageA - ageB : ageB - ageA;
         }
+        case "last_appointment_recent": {
+          const dateA = lastAppointments.get(a.id), dateB = lastAppointments.get(b.id);
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        }
+        case "last_appointment_oldest": {
+          const dateA = lastAppointments.get(a.id), dateB = lastAppointments.get(b.id);
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return -1;
+          if (!dateB) return 1;
+          return new Date(dateA).getTime() - new Date(dateB).getTime();
+        }
+        case "no_activity": {
+          const dateA = lastAppointments.get(a.id), dateB = lastAppointments.get(b.id);
+          const now = Date.now();
+          const daysA = dateA ? (now - new Date(dateA).getTime()) / 86400000 : 99999;
+          const daysB = dateB ? (now - new Date(dateB).getTime()) / 86400000 : 99999;
+          return daysB - daysA;
+        }
         default: return 0;
       }
     });
     return filtered;
-  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, getAge, isCoordinatorOrDirector]);
+  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, getAge, isCoordinatorOrDirector, lastAppointments]);
 
   const handleExportExcel = useCallback(() => {
     const exportData = filteredClients.map(c => ({
@@ -512,13 +540,16 @@ export default function Patients() {
           <>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[160px] h-9"><div className="flex items-center gap-1.5"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /><SelectValue placeholder="Ordenar por" /></div></SelectTrigger>
-              <SelectContent>
+               <SelectContent>
                 <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
                 <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
-                <SelectItem value="newest">Mais Recentes</SelectItem>
-                <SelectItem value="oldest">Mais Antigos</SelectItem>
+                <SelectItem value="newest">Cadastro (Recente)</SelectItem>
+                <SelectItem value="oldest">Cadastro (Antigo)</SelectItem>
                 <SelectItem value="age_asc">Idade (Menor → Maior)</SelectItem>
                 <SelectItem value="age_desc">Idade (Maior → Menor)</SelectItem>
+                <SelectItem value="last_appointment_recent">Último Atend. (Recente)</SelectItem>
+                <SelectItem value="last_appointment_oldest">Último Atend. (Antigo)</SelectItem>
+                <SelectItem value="no_activity">Mais Tempo Sem Atividade</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -638,6 +669,7 @@ export default function Patients() {
                       isSelected={selectedClients.includes(client.id)}
                       showCheckbox={isCoordinatorOrDirector()} showActions={true}
                       lastAppointment={lastAppointments.get(client.id)}
+                      firstAppointment={firstAppointments.get(client.id)}
                       onSelect={() => toggleClientSelection(client.id)}
                       onView={() => handleOpenQuickView(client.id)}
                       onEdit={isCoordinatorOrDirector() ? () => openEditDialog(client) : undefined}
