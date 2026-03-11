@@ -12,7 +12,6 @@ export default function PatientArrivedNotification() {
   const [showFullScreenAlert, setShowFullScreenAlert] = useState(false);
   const [patientName, setPatientName] = useState<string>('');
   const [alertedIds] = useState(() => new Set<string>());
-  const alarmIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const alertTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Som de alarme máximo - sirene agressiva com volume 1.0
