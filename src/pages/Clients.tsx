@@ -201,9 +201,15 @@ export default function Patients() {
     };
     const loadLastAppointments = async () => {
       const { data } = await supabase.from('schedules').select('client_id, completed_at').eq('status', 'completed').not('completed_at', 'is', null).order('completed_at', { ascending: false });
-      const map = new Map<string, string>();
-      (data || []).forEach((s: any) => { if (!map.has(s.client_id)) map.set(s.client_id, s.completed_at); });
-      setLastAppointments(map);
+      const lastMap = new Map<string, string>();
+      const firstMap = new Map<string, string>();
+      (data || []).forEach((s: any) => {
+        if (!lastMap.has(s.client_id)) lastMap.set(s.client_id, s.completed_at);
+        // Para primeiro atendimento, sempre sobrescreve (dados vêm desc, último é o primeiro)
+        firstMap.set(s.client_id, s.completed_at);
+      });
+      setLastAppointments(lastMap);
+      setFirstAppointments(firstMap);
     };
     loadUserProfile();
     loadEmployees();
