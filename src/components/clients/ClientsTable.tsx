@@ -19,6 +19,7 @@ interface ClientsTableProps {
   clients: Client[];
   selectedClients: string[];
   lastAppointments: Map<string, string>;
+  clientLaudoIds: Set<string>;
   isAdmin: boolean;
   canDelete: boolean;
   onToggleSelect: (id: string) => void;
