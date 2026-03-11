@@ -93,6 +93,9 @@ export const CreateScheduleDialog = ({
         unit: editingSchedule.unit || 'madre',
         sessionCount: 1,
         sendConfirmationEmail: false,
+        service_type: (editingSchedule as any).service_type || '',
+        professional_amount: (editingSchedule as any).professional_amount?.toString() || '',
+        foundation_amount: (editingSchedule as any).foundation_amount?.toString() || '',
       });
     } else {
       setForm({
@@ -105,6 +108,9 @@ export const CreateScheduleDialog = ({
         unit: userProfile?.unit || 'madre',
         sessionCount: 1,
         sendConfirmationEmail: false,
+        service_type: '',
+        professional_amount: '',
+        foundation_amount: '',
       });
     }
   }, [editingSchedule, isOpen]);
