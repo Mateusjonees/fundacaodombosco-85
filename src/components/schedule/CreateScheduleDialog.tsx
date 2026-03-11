@@ -154,7 +154,9 @@ export const CreateScheduleDialog = ({
         return;
       }
 
-      const data = {
+      const isFlorestaUnit = form.unit === 'atendimento_floresta';
+
+      const data: any = {
         client_id: form.client_id,
         employee_id: form.employee_id,
         title: form.title,
@@ -164,6 +166,13 @@ export const CreateScheduleDialog = ({
         unit: form.unit,
         created_by: user?.id,
       };
+
+      // Campos exclusivos para Atendimento Floresta
+      if (isFlorestaUnit) {
+        data.service_type = form.service_type || null;
+        data.professional_amount = form.professional_amount ? parseFloat(form.professional_amount) : null;
+        data.foundation_amount = form.foundation_amount ? parseFloat(form.foundation_amount) : null;
+      }
 
       if (editingSchedule) {
         if (await checkConflict(data.employee_id, data.start_time, data.end_time, editingSchedule.id)) {
