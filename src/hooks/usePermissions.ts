@@ -26,7 +26,7 @@ export const usePermissions = () => {
 
     const fetchPermissions = async () => {
       try {
-        const { data, error } = await supabase.rpc('get_user_permissions');
+        const { data, error } = await supabase.rpc('get_user_permissions', { user_uuid: user.id });
         
         if (error) {
           console.error('Erro ao buscar permissões:', error);
