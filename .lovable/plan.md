@@ -1,31 +1,37 @@
 
 
-# Botao de Rotacao de Tela para Mobile/Tablet
+## Plano: Corrigir Notificações e Atualizações Instantâneas
 
-## O que sera feito
-Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
+### Problema Raiz
+Múltiplos componentes criam canais Realtime separados para as mesmas tabelas (`schedules`, `appointment_notifications`), competindo por conexões. Quando um canal falha silenciosamente (sem log de erro), não há fallback — a UI só atualiza com refresh manual. Além disso, não há polling de segurança para garantir dados frescos.
 
-## Como vai funcionar
-- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
-- Ao clicar, a tela alternara entre orientacao retrato e paisagem
-- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
-- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
-- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
+### Alterações
 
-## Detalhes Tecnicos
+#### 1. `src/pages/Schedule.tsx` — Forçar invalidação + polling de segurança
 
-### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
-- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
-- Verificara suporte do navegador antes de exibir o botao
-- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
-- Icone do lucide-react: `RotateCcw` ou `Smartphone`
-- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
+- Trocar `refetchSchedules()` por `queryClient.invalidateQueries({ queryKey: ['schedules'] })` no handler Realtime, garantindo que React Query busque dados frescos
+- Adicionar polling de 15 segundos como fallback (`refetchInterval: 15000`) no `useSchedules` para quando Realtime falhar silenciosamente
+- Remover dependência de `refetchSchedules` no useEffect do Realtime (usar `queryClient` diretamente, que é estável)
 
-### 2. Integracao no `MainApp.tsx`
-- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
+#### 2. `src/hooks/useSchedules.ts` — Reduzir staleTime
 
-### 3. Tratamento de erros
-- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
-- Caso o navegador nao suporte, o botao nao sera renderizado
-- Em caso de falha ao rotacionar, exibira um toast informando o usuario
+- Reduzir `staleTime` de 30000 para 5000ms para que invalidações resultem em refetch real
+- Adicionar `refetchInterval` opcional (15s) para polling de segurança
+
+#### 3. `src/components/PatientArrivedNotification.tsx` — Polling fallback + logs
+
+- Adicionar polling de 10 segundos que consulta `appointment_notifications` não lidas com `notification_type = 'patient_arrived'` e `is_read = false`
+- Se encontrar notificação nova que não foi alertada, disparar o alerta
+- Manter Realtime como canal primário, polling como redundância
+- Adicionar logs mais claros no subscribe para diagnóstico
+
+#### 4. `src/components/NotificationBell.tsx` — Polling fallback
+
+- Adicionar `refetchInterval: 30000` na query de notificações para garantir dados frescos mesmo sem Realtime
+
+### Resultado Esperado
+- Agenda atualiza instantaneamente via Realtime, com polling de 15s como backup
+- Notificações de presença chegam via Realtime + polling de 10s como backup
+- Se Realtime falhar, o sistema continua funcionando via polling
+- Pop-up de paciente aparece mesmo se o canal Realtime estiver desconectado
 
