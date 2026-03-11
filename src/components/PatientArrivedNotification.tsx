@@ -10,6 +10,7 @@ export default function PatientArrivedNotification() {
   const { toast } = useToast();
   const { sendNotification } = usePushNotifications();
   const [showFullScreenAlert, setShowFullScreenAlert] = useState(false);
+  const [patientName, setPatientName] = useState<string>('');
   // Set para rastrear IDs já alertados nesta sessão, evitando duplicatas
   const [alertedIds] = useState(() => new Set<string>());
 
@@ -29,11 +30,20 @@ export default function PatientArrivedNotification() {
         (payload) => {
           const newRecord = payload.new as any;
           const scheduleId = newRecord?.id;
+          const clientId = newRecord?.client_id;
           
           // Checa apenas se patient_arrived é true e se ainda não alertou este ID
           if (newRecord?.patient_arrived && scheduleId && !alertedIds.has(scheduleId)) {
             alertedIds.add(scheduleId);
-            triggerMaxAlert();
+            // Buscar nome do paciente
+            if (clientId) {
+              supabase.from('clients').select('name').eq('id', clientId).single()
+                .then(({ data }) => {
+                  triggerMaxAlert(data?.name || 'Paciente');
+                });
+            } else {
+              triggerMaxAlert('Paciente');
+            }
           }
         }
       )
@@ -44,17 +54,19 @@ export default function PatientArrivedNotification() {
     };
   }, [user?.id, toast, sendNotification, alertedIds]);
 
-  const triggerMaxAlert = () => {
+  const triggerMaxAlert = (name: string) => {
+    setPatientName(name);
+    
     // 1. Toast persistente
     toast({
-      title: "🔔🔔🔔 PACIENTE CHEGOU! 🔔🔔🔔",
-      description: "Seu paciente chegou e está aguardando atendimento! Clique para fechar.",
+      title: `🔔🔔🔔 ${name.toUpperCase()} CHEGOU! 🔔🔔🔔`,
+      description: `${name} chegou e está aguardando atendimento!`,
       duration: 30000,
     });
 
     // 2. Notificação push nativa
-    sendNotification('🔔 PACIENTE CHEGOU!', {
-      body: 'Seu próximo paciente chegou e está aguardando!',
+    sendNotification(`🔔 ${name} CHEGOU!`, {
+      body: `${name} chegou e está aguardando atendimento!`,
       tag: 'patient-arrived',
       requireInteraction: true,
     });
@@ -210,10 +222,10 @@ export default function PatientArrivedNotification() {
           <Bell className="h-20 w-20 text-red-600 animate-bounce" />
         </div>
         <h1 className="text-4xl font-black text-red-600 mb-3 tracking-tight">
-          PACIENTE CHEGOU!
+          {patientName ? `${patientName.toUpperCase()} CHEGOU!` : 'PACIENTE CHEGOU!'}
         </h1>
         <p className="text-xl text-gray-700 font-semibold mb-6">
-          Seu paciente está aguardando atendimento
+          {patientName ? `${patientName} está aguardando atendimento` : 'Seu paciente está aguardando atendimento'}
         </p>
         <div className="bg-red-100 border-2 border-red-300 rounded-xl p-4 mb-6">
           <p className="text-red-700 font-bold text-lg animate-pulse">
