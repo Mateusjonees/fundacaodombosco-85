@@ -21,6 +21,7 @@ interface Client {
 }
 interface ClientLaudoManagerProps {
   client: Client;
+  defaultServiceType?: string;
 }
 const LAUDO_TYPES = [{
   value: 'neuropsicologico',
@@ -39,7 +40,8 @@ const LAUDO_TYPES = [{
   label: 'Outro'
 }];
 export default function ClientLaudoManager({
-  client
+  client,
+  defaultServiceType
 }: ClientLaudoManagerProps) {
   const {
     user

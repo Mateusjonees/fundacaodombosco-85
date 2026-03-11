@@ -1474,14 +1474,25 @@ export default function CompleteAttendanceDialog({
         onConflict: 'schedule_id'
       });
 
-      // Se for Atendimento Floresta, processar automaticamente
+      // Se for Atendimento Floresta, processar automaticamente com valores do agendamento
       if (isAtendimentoFloresta && attendanceReport?.id) {
+        // Buscar valores financeiros definidos pelo coordenador no agendamento
+        const { data: scheduleData } = await supabase
+          .from('schedules')
+          .select('professional_amount, foundation_amount')
+          .eq('id', schedule.id)
+          .maybeSingle();
+
+        const profAmount = scheduleData?.professional_amount ?? 0;
+        const foundAmount = scheduleData?.foundation_amount ?? 0;
+        const totalAmount = profAmount + foundAmount;
+
         await supabase.rpc('validate_attendance_report', {
           p_attendance_report_id: attendanceReport.id,
           p_action: 'validate',
-          p_professional_amount: 0,
-          p_foundation_amount: 0,
-          p_total_amount: 0,
+          p_professional_amount: profAmount,
+          p_foundation_amount: foundAmount,
+          p_total_amount: totalAmount,
           p_payment_method: 'dinheiro'
         });
       }

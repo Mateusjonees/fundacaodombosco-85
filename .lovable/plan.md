@@ -1,53 +1,31 @@
 
 
-## Plano: Demanda no Agendamento (Atendimento Floresta) + Valores Financeiros para Coordenadores
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-### Resumo
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
-Duas funcionalidades exclusivas para a unidade **Atendimento Floresta**:
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-1. **Tipo de Demanda no Agendamento**: Ao agendar para "Atendimento Floresta", o coordenador seleciona a demanda (Demanda Própria, SUS, Demanda Externa, Laudo). Esse valor é salvo no agendamento e propagado automaticamente para receituário, anamnese e laudo, evitando que o profissional precise escolher manualmente.
+## Detalhes Tecnicos
 
-2. **Valores financeiros no agendamento**: Coordenadores podem definir o valor do profissional e o valor da fundação ao criar o agendamento. Esses campos são visíveis **apenas para coordenadores e diretores** — profissionais nunca veem esses valores.
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
----
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-### Detalhes Técnicos
-
-#### 1. Migração SQL — Novas colunas na tabela `schedules`
-
-```sql
-ALTER TABLE schedules ADD COLUMN IF NOT EXISTS service_type text DEFAULT NULL;
-ALTER TABLE schedules ADD COLUMN IF NOT EXISTS professional_amount numeric DEFAULT NULL;
-ALTER TABLE schedules ADD COLUMN IF NOT EXISTS foundation_amount numeric DEFAULT NULL;
-```
-
-Sem alteração de RLS — a visibilidade dos campos financeiros será controlada exclusivamente no frontend.
-
-#### 2. CreateScheduleDialog.tsx — Campos condicionais
-
-- Quando `form.unit === 'atendimento_floresta'`:
-  - Exibir Select "Tipo de Demanda" com opções de `SERVICE_TYPE_OPTIONS` (do `serviceTypes.ts`)
-  - Se o usuário for coordenador/diretor, exibir dois campos numéricos: "Valor do Profissional (R$)" e "Valor da Fundação (R$)"
-- Salvar `service_type`, `professional_amount` e `foundation_amount` no insert/update do schedule
-- Profissionais (não coordenadores/diretores) NÃO veem os campos de valor
-
-#### 3. Propagação do service_type para componentes
-
-- **AddPrescriptionDialog**: Se o paciente tem um agendamento com `service_type`, pré-selecionar esse valor e opcionalmente travar a seleção
-- **AddAnamnesisDialog**: Idem — propagar o `service_type` do schedule
-- **ClientLaudoManager**: Adicionar suporte a `service_type` (atualmente não possui)
-- O `service_type` do agendamento será passado via props ou buscado do schedule associado
-
-#### 4. CompleteAttendanceDialog — Uso dos valores financeiros
-
-- Ao finalizar atendimento de "Atendimento Floresta", usar `professional_amount` e `foundation_amount` do schedule na auto-validação (já existente para essa unidade)
-- Os valores do schedule alimentam a RPC `validate_attendance_report`
-
-#### 5. Controle de visibilidade
-
-- Campos financeiros (`professional_amount`, `foundation_amount`) renderizados **apenas** quando:
-  - `isAdmin === true` OU
-  - `userProfile?.employee_role` é um dos coordenadores ou diretor
-- Na agenda e listagens, os valores financeiros nunca são exibidos para profissionais comuns
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 

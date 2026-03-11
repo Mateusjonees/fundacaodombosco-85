@@ -14,6 +14,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { SERVICE_TYPE_OPTIONS } from '@/utils/serviceTypes';
 
 interface Schedule {
   id: string;
@@ -70,6 +71,9 @@ export const CreateScheduleDialog = ({
     unit: userProfile?.unit || 'madre',
     sessionCount: 1,
     sendConfirmationEmail: false,
+    service_type: '' as string,
+    professional_amount: '' as string,
+    foundation_amount: '' as string,
   });
 
   // Sync form when editing
@@ -89,6 +93,9 @@ export const CreateScheduleDialog = ({
         unit: editingSchedule.unit || 'madre',
         sessionCount: 1,
         sendConfirmationEmail: false,
+        service_type: (editingSchedule as any).service_type || '',
+        professional_amount: (editingSchedule as any).professional_amount?.toString() || '',
+        foundation_amount: (editingSchedule as any).foundation_amount?.toString() || '',
       });
     } else {
       setForm({
@@ -101,6 +108,9 @@ export const CreateScheduleDialog = ({
         unit: userProfile?.unit || 'madre',
         sessionCount: 1,
         sendConfirmationEmail: false,
+        service_type: '',
+        professional_amount: '',
+        foundation_amount: '',
       });
     }
   }, [editingSchedule, isOpen]);
@@ -144,7 +154,9 @@ export const CreateScheduleDialog = ({
         return;
       }
 
-      const data = {
+      const isFlorestaUnit = form.unit === 'atendimento_floresta';
+
+      const data: any = {
         client_id: form.client_id,
         employee_id: form.employee_id,
         title: form.title,
@@ -154,6 +166,13 @@ export const CreateScheduleDialog = ({
         unit: form.unit,
         created_by: user?.id,
       };
+
+      // Campos exclusivos para Atendimento Floresta
+      if (isFlorestaUnit) {
+        data.service_type = form.service_type || null;
+        data.professional_amount = form.professional_amount ? parseFloat(form.professional_amount) : null;
+        data.foundation_amount = form.foundation_amount ? parseFloat(form.foundation_amount) : null;
+      }
 
       if (editingSchedule) {
         if (await checkConflict(data.employee_id, data.start_time, data.end_time, editingSchedule.id)) {
@@ -282,6 +301,52 @@ export const CreateScheduleDialog = ({
                 </Select>
               </div>
             </div>
+
+            {/* Campos exclusivos Atendimento Floresta */}
+            {form.unit === 'atendimento_floresta' && (
+              <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+                <Label className="text-sm font-semibold">Configurações Atendimento Floresta</Label>
+                <div className="space-y-2">
+                  <Label>Tipo de Demanda</Label>
+                  <Select value={form.service_type} onValueChange={(v) => setForm(p => ({ ...p, service_type: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a demanda..." /></SelectTrigger>
+                    <SelectContent className="bg-background border shadow-md z-50">
+                      {SERVICE_TYPE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Valores financeiros - apenas coordenadores/diretores */}
+                {(isAdmin || ['coordinator_atendimento_floresta', 'coordinator_floresta', 'coordinator_madre', 'director'].includes(userProfile?.employee_role)) && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Valor Profissional (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0,00"
+                        value={form.professional_amount}
+                        onChange={(e) => setForm(p => ({ ...p, professional_amount: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Valor Fundação (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0,00"
+                        value={form.foundation_amount}
+                        onChange={(e) => setForm(p => ({ ...p, foundation_amount: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {!editingSchedule && (
               <div className="space-y-2">

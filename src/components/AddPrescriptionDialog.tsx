@@ -18,16 +18,19 @@ interface AddPrescriptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clientId: string;
+  defaultServiceType?: string;
 }
 
-export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: AddPrescriptionDialogProps) {
+export default function AddPrescriptionDialog({ open, onOpenChange, clientId, defaultServiceType }: AddPrescriptionDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const createPrescription = useCreatePrescription();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [prescriptionDate, setPrescriptionDate] = useState(getTodayLocalISODate());
-  const [serviceType, setServiceType] = useState<'sus' | 'private'>('private');
+  const [serviceType, setServiceType] = useState<'sus' | 'private' | 'external' | 'laudo'>(
+    (defaultServiceType as any) || 'private'
+  );
   const [prescriptionText, setPrescriptionText] = useState('');
   const [showPrescriptionDate, setShowPrescriptionDate] = useState(true);
   const [showPrintDate, setShowPrintDate] = useState(false);

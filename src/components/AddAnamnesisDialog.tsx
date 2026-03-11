@@ -23,6 +23,7 @@ interface AddAnamnesisDialogProps {
   clientId: string;
   onSuccess: () => void;
   editingNote?: ClientNote | null;
+  defaultServiceType?: string;
 }
 
 // Helper to parse note text back into form fields
@@ -64,12 +65,13 @@ export default function AddAnamnesisDialog({
   onOpenChange, 
   clientId, 
   onSuccess,
-  editingNote 
+  editingNote,
+  defaultServiceType
 }: AddAnamnesisDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [serviceType, setServiceType] = useState<string>('private');
+  const [serviceType, setServiceType] = useState<string>(defaultServiceType || 'private');
   
   const [formData, setFormData] = useState({
     queixaPrincipal: '',
@@ -85,7 +87,7 @@ export default function AddAnamnesisDialog({
     if (editingNote) {
       const parsed = parseNoteText(editingNote.note_text);
       setFormData(parsed);
-      setServiceType(editingNote.service_type || 'private');
+      setServiceType(editingNote.service_type || defaultServiceType || 'private');
     } else {
       setFormData({
         queixaPrincipal: '',
@@ -95,9 +97,9 @@ export default function AddAnamnesisDialog({
         hd: '',
         conduta: ''
       });
-      setServiceType('private');
+      setServiceType(defaultServiceType || 'private');
     }
-  }, [editingNote, open]);
+  }, [editingNote, open, defaultServiceType]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

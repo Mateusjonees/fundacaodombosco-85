@@ -2732,6 +2732,7 @@ export type Database = {
           email_sent_at: string | null
           employee_id: string | null
           end_time: string
+          foundation_amount: number | null
           id: string
           is_online: boolean
           location: string | null
@@ -2744,7 +2745,9 @@ export type Database = {
           patient_declined: boolean | null
           patient_declined_at: string | null
           payment_method: string | null
+          professional_amount: number | null
           reminder_sent_at: string | null
+          service_type: string | null
           session_amount: number | null
           session_notes: string | null
           start_time: string
@@ -2767,6 +2770,7 @@ export type Database = {
           email_sent_at?: string | null
           employee_id?: string | null
           end_time: string
+          foundation_amount?: number | null
           id?: string
           is_online?: boolean
           location?: string | null
@@ -2779,7 +2783,9 @@ export type Database = {
           patient_declined?: boolean | null
           patient_declined_at?: string | null
           payment_method?: string | null
+          professional_amount?: number | null
           reminder_sent_at?: string | null
+          service_type?: string | null
           session_amount?: number | null
           session_notes?: string | null
           start_time: string
@@ -2802,6 +2808,7 @@ export type Database = {
           email_sent_at?: string | null
           employee_id?: string | null
           end_time?: string
+          foundation_amount?: number | null
           id?: string
           is_online?: boolean
           location?: string | null
@@ -2814,7 +2821,9 @@ export type Database = {
           patient_declined?: boolean | null
           patient_declined_at?: string | null
           payment_method?: string | null
+          professional_amount?: number | null
           reminder_sent_at?: string | null
+          service_type?: string | null
           session_amount?: number | null
           session_notes?: string | null
           start_time?: string

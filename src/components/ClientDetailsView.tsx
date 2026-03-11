@@ -143,6 +143,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
   const [currentAssignments, setCurrentAssignments] = useState<any[]>([]);
+  const [scheduleServiceType, setScheduleServiceType] = useState<string | null>(null);
   const { toast } = useToast();
   const [laudoInfo, setLaudoInfo] = useState<{file_path: string;completed_at: string;} | null>(null);
   const [loadingLaudo, setLoadingLaudo] = useState(false);
@@ -184,8 +185,23 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     loadAvailableEmployees(),
     loadCurrentAssignments(),
     loadLaudoInfo(),
-    loadNextAppointment()]
+    loadNextAppointment(),
+    loadScheduleServiceType()]
     );
+  };
+
+  // Buscar service_type do último agendamento para Atendimento Floresta
+  const loadScheduleServiceType = async () => {
+    if (client.unit !== 'atendimento_floresta') return;
+    const { data } = await supabase
+      .from('schedules')
+      .select('service_type')
+      .eq('client_id', client.id)
+      .not('service_type', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data?.service_type) setScheduleServiceType(data.service_type);
   };
 
   const loadNextAppointment = async () => {
@@ -1499,7 +1515,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                         onOpenChange={handleCloseAnamnesisDialog}
                         clientId={client.id}
                         onSuccess={loadNotes}
-                        editingNote={editingNote} />
+                        editingNote={editingNote}
+                        defaultServiceType={scheduleServiceType || undefined} />
                       
 
                       {/* Delete Confirmation Dialog */}
@@ -1593,12 +1610,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
                   {/* Prescriptions Tab */}
                   <TabsContent value="prescriptions">
-                    <PrescriptionManager client={client} />
+                    <PrescriptionManager client={client} defaultServiceType={scheduleServiceType || undefined} />
                   </TabsContent>
 
                   {/* Laudos Tab */}
                   <TabsContent value="laudos">
-                    <ClientLaudoManager client={client} />
+                    <ClientLaudoManager client={client} defaultServiceType={scheduleServiceType || undefined} />
                   </TabsContent>
 
                   {/* Financial Tab */}
