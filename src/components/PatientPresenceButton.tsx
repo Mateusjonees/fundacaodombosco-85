@@ -61,7 +61,6 @@ export default function PatientPresenceButton({
 
       const clientId = scheduleData?.client_id;
 
-      // Criar notificação na tabela appointment_notifications (listener do profissional monitora esta tabela)
       if (clientId) {
         const today = new Date().toISOString().split('T')[0];
         const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -71,7 +70,7 @@ export default function PatientPresenceButton({
             schedule_id: scheduleId,
             employee_id: employeeId,
             client_id: clientId,
-            title: `🔔 ${clientName} Chegou!`,
+            title: 'Paciente chegou',
             message: `${clientName} chegou para o atendimento e está aguardando.`,
             notification_type: 'patient_arrived',
             appointment_date: today,
@@ -86,8 +85,12 @@ export default function PatientPresenceButton({
           console.log('Patient arrival notification created successfully');
         }
       }
-      // Play notification sound
-      playNotificationSound();
+
+      mostrarNotificacao('Paciente chegou', `${clientName} chegou para atendimento`, {
+        dedupeKey: `patient-arrived-${scheduleId}`,
+        tag: `patient-arrived-${scheduleId}`,
+        url: '/schedule',
+      });
 
       toast({
         title: "Presença Confirmada!",

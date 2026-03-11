@@ -197,9 +197,51 @@ export const CreateScheduleDialog = ({
           toast({ variant: 'destructive', title: 'Conflito', description: `Conflito na sessão ${conflict.idx + 1} (${format(new Date(conflict.st), 'dd/MM/yyyy HH:mm', { locale: ptBR })}).` });
           return;
         }
-        const { data: inserted, error } = await supabase.from('schedules').insert(items).select('id, start_time');
+        const { data: inserted, error } = await supabase.from('schedules').insert(items).select('id, start_time, client_id, employee_id');
         if (error) throw error;
         toast({ title: 'Sucesso', description: count > 1 ? `${count} sessões criadas!` : 'Agendamento criado!' });
+
+        const client = clients.find((c: any) => c.id === form.client_id);
+        const firstInserted = inserted?.[0];
+
+        if (inserted?.length) {
+          const notificationRows = inserted.map((schedule: any) => ({
+            schedule_id: schedule.id,
+            employee_id: form.employee_id,
+            client_id: form.client_id,
+            title: 'Novo agendamento',
+            message: `📅 Novo agendamento criado para ${client?.name || 'Paciente'} às ${format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR })}`,
+            notification_type: 'new_appointment',
+            appointment_date: format(new Date(schedule.start_time), 'yyyy-MM-dd'),
+            appointment_time: format(new Date(schedule.start_time), 'HH:mm', { locale: ptBR }),
+            created_by: user?.id,
+            metadata: {
+              patient_name: client?.name || 'Paciente',
+              client_name: client?.name || 'Paciente',
+            },
+          }));
+
+          const { error: notificationInsertError } = await supabase
+            .from('appointment_notifications')
+            .insert(notificationRows);
+
+          if (notificationInsertError) {
+            console.error('Erro ao criar notificações de agendamento:', notificationInsertError);
+          }
+        }
+
+        if (firstInserted) {
+          mostrarNotificacao(
+            'Novo agendamento',
+            `Paciente ${client?.name || 'Paciente'} às ${format(new Date(firstInserted.start_time), 'HH:mm', { locale: ptBR })}`,
+            {
+              dedupeKey: `new-appointment-${firstInserted.id}`,
+              tag: `new-appointment-${firstInserted.id}`,
+              url: '/schedule',
+            }
+          );
+        }
+
 
         // Send email in background
         if (form.sendConfirmationEmail && selectedClientEmail && inserted) {
