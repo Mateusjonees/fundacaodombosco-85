@@ -110,26 +110,7 @@ export default function PatientPresenceButton({
     }
   };
 
-  const playNotificationSound = () => {
-    // Create audio context and play a notification beep
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const gainNode = audioContext.createGain();
-      const oscillator = audioContext.createOscillator();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = 800; // 800Hz bell-like sound
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
-    } catch (error) {
-      console.log('Could not play notification sound:', error);
-    }
-  };
+
 
   if (patientArrived) {
     return (
