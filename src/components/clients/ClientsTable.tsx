@@ -209,41 +209,6 @@ export const ClientsTable = memo(({
                 <TableCell className="text-xs text-muted-foreground">{fmtDate(client.neuro_test_start_date)}</TableCell>
                 {/* Data Fim */}
                 <TableCell className="text-xs text-muted-foreground">{fmtDate(client.neuro_report_deadline)}</TableCell>
-                {/* Dia/Horário */}
-                <TableCell className="text-xs text-muted-foreground">{extractScheduleInfo(client.notes)}</TableCell>
-                {/* Observações */}
-                <TableCell className="text-xs text-muted-foreground truncate max-w-[120px]">{extractObservations(client.notes)}</TableCell>
-                {/* Ações */}
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="sm" onClick={() => onView(client)} className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary" title="Visualizar">
-                      <Eye className="h-3.5 w-3.5" />
-                    </Button>
-                    {isAdmin && (
-                      <>
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(client)} className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary" title="Editar">
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => onReport(client)} className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary" title="Relatório">
-                          <FileText className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="sm"
-                          onClick={() => onToggleStatus(client.id, client.is_active)}
-                          className={`h-7 w-7 p-0 ${client.is_active ? "hover:bg-destructive/10 hover:text-destructive" : "hover:bg-green-500/10 hover:text-green-600"}`}
-                          title={client.is_active ? "Desativar" : "Ativar"}
-                        >
-                          <Power className="h-3.5 w-3.5" />
-                        </Button>
-                        {canDelete && (
-                          <Button variant="ghost" size="sm" onClick={() => onDelete(client)} className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive" title="Excluir">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </TableCell>
               </TableRow>
             );
           })}
