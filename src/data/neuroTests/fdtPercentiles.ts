@@ -248,15 +248,16 @@ export const lookupFDTPercentileRange = (
  * Retorna a classificação clínica baseada no percentil
  */
 export const getFDTClassification = (percentile: number): string => {
-  if (percentile < 5) return 'Inferior';
+  // <5 = Inferior | 5 = Inferior
   if (percentile <= 5) return 'Inferior';
-  if (percentile > 5 && percentile < 25) return 'Médio Inferior';
-  if (percentile === 25) return 'Médio Inferior';
-  if (percentile > 25 && percentile < 75) return 'Médio';
-  if (percentile === 75) return 'Médio Superior';
-  if (percentile > 75 && percentile < 95) return 'Médio Superior';
-  if (percentile >= 95) return 'Superior';
-  return 'Médio';
+  // 5-25 = Média Inferior | 25 = Média Inferior
+  if (percentile <= 25) return 'Média Inferior';
+  // 25-50 = Média | 50 = Média | 50-75 = Média
+  if (percentile < 75) return 'Média';
+  // 75 = Média Superior | 75-95 = Média Superior
+  if (percentile < 95) return 'Média Superior';
+  // 95 = Superior | >95 = Superior
+  return 'Superior';
 };
 
 /**
