@@ -669,6 +669,7 @@ export default function Patients() {
                       isSelected={selectedClients.includes(client.id)}
                       showCheckbox={isCoordinatorOrDirector()} showActions={true}
                       lastAppointment={lastAppointments.get(client.id)}
+                      firstAppointment={firstAppointments.get(client.id)}
                       onSelect={() => toggleClientSelection(client.id)}
                       onView={() => handleOpenQuickView(client.id)}
                       onEdit={isCoordinatorOrDirector() ? () => openEditDialog(client) : undefined}
