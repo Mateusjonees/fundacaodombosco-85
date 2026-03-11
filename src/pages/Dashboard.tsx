@@ -62,6 +62,15 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats(profile);
   const navigate = useNavigate();
 
+  // Profissionais são redirecionados para "Meus Pacientes" como página principal
+  const isAdminRole = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist', 'financeiro'].includes(userRole || '');
+  
+  useEffect(() => {
+    if (!profileLoading && userRole && !isAdminRole) {
+      navigate('/my-patients', { replace: true });
+    }
+  }, [profileLoading, userRole, isAdminRole, navigate]);
+
   const isLoading = profileLoading || statsLoading;
   const isDirectorOrCoordinator = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
   const isNeuroCoordinator = ['coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userRole || '');
