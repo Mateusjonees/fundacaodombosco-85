@@ -85,6 +85,7 @@ export default function Patients() {
   const [genderFilter, setGenderFilter] = useState("all");
   const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
   const [lastAppointments, setLastAppointments] = useState<Map<string, string>>(new Map());
+  const [firstAppointments, setFirstAppointments] = useState<Map<string, string>>(new Map());
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
