@@ -115,7 +115,7 @@ export default function PatientPresenceButton({
   if (patientArrived) {
     return (
       <div className="flex items-center gap-2">
-        <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+        <Badge variant="secondary" className="border-border bg-secondary text-secondary-foreground">
           <CheckCircle className="h-3 w-3 mr-1" />
           Chegou
         </Badge>
