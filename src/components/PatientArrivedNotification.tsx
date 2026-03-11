@@ -10,6 +10,7 @@ export default function PatientArrivedNotification() {
   const { toast } = useToast();
   const { sendNotification } = usePushNotifications();
   const [showFullScreenAlert, setShowFullScreenAlert] = useState(false);
+  const [patientName, setPatientName] = useState<string>('');
   // Set para rastrear IDs já alertados nesta sessão, evitando duplicatas
   const [alertedIds] = useState(() => new Set<string>());
 
