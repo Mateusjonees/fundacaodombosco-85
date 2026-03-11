@@ -836,6 +836,136 @@ const renderBNTBRCalculations = (calc: Record<string, number>) => {
   );
 };
 
+// Renderiza dados de entrada do Trilhas (6-14 anos)
+const renderTrilhasInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Sequências A (Bruto)</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.sequenciasA ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Sequências B (Bruto)</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.sequenciasB ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderTrilhasCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Escore Padrão = Consulta tabela normativa por idade</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">EP Trilha A</span>
+        <span className="font-mono"><strong>{calc.escorePadraoA ?? calc.trilhaA ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">EP Trilha B</span>
+        <span className="font-mono"><strong>{calc.escorePadraoB ?? calc.trilhaB ?? '-'}</strong></span>
+      </div>
+    </div>
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação (EP, M=100, DP=15):</p>
+      <div className="flex flex-wrap gap-1 text-xs">
+        <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;70: Muito Baixa</Badge>
+        <Badge variant="outline" className="text-orange-600 dark:text-orange-400">70-84: Baixa</Badge>
+        <Badge variant="outline" className="text-gray-600 dark:text-gray-400">85-114: Média</Badge>
+        <Badge variant="outline" className="text-blue-600 dark:text-blue-400">115-129: Alta</Badge>
+        <Badge variant="outline" className="text-green-600 dark:text-green-400">≥130: Muito Alta</Badge>
+      </div>
+    </div>
+  </div>
+);
+
+// Renderiza dados de entrada do TRPP
+const renderTRPPInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Palavras (Bruto)</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.palavras ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Pseudopalavras (Bruto)</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.pseudopalavras ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderTRPPCalculations = (calc: Record<string, number>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Fórmula: </span>
+      <span className="font-mono">Total = Palavras + Pseudopalavras → EP via tabela normativa</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">Total</span>
+        <span className="font-mono"><strong>{calc.total ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">Escore Padrão</span>
+        <span className="font-mono"><strong>{calc.escorePadrao ?? 'N/D'}</strong> (M=100, DP=15)</span>
+      </div>
+    </div>
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
+      <div className="flex flex-wrap gap-1 text-xs">
+        <Badge variant="outline" className="text-red-600 dark:text-red-400">&lt;70: Muito Baixa</Badge>
+        <Badge variant="outline" className="text-orange-600 dark:text-orange-400">70-84: Baixa</Badge>
+        <Badge variant="outline" className="text-gray-600 dark:text-gray-400">85-114: Média</Badge>
+        <Badge variant="outline" className="text-blue-600 dark:text-blue-400">115-129: Alta</Badge>
+        <Badge variant="outline" className="text-green-600 dark:text-green-400">≥130: Muito Alta</Badge>
+      </div>
+    </div>
+  </div>
+);
+
+// Renderiza dados de entrada do Corsi
+const renderCorsiInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Span Direto (Bruto)</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.spanDireto ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Span Inverso (Bruto)</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.spanInverso ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+const renderCorsiCalculations = (percentiles: Record<string, number | string>) => (
+  <div className="space-y-2 text-sm">
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <span className="text-muted-foreground">Referência: </span>
+      <span className="font-mono">Span Direto (média ~5, DP ~1.1) | Span Inverso (média ~4.5, DP ~1.1)</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">Percentil Direto</span>
+        <span className="font-mono"><strong>{percentiles.spanDireto ?? '-'}</strong></span>
+      </div>
+      <div className="p-2 bg-primary/10 rounded-lg flex justify-between items-center">
+        <span className="font-medium">Percentil Inverso</span>
+        <span className="font-mono"><strong>{percentiles.spanInverso ?? '-'}</strong></span>
+      </div>
+    </div>
+    <div className="p-2 bg-muted/30 rounded-lg">
+      <p className="text-xs font-medium text-muted-foreground mb-2">Classificação por Span:</p>
+      <div className="flex flex-wrap gap-1 text-xs">
+        <Badge variant="outline" className="text-red-600 dark:text-red-400">≤2: Deficitário</Badge>
+        <Badge variant="outline" className="text-orange-600 dark:text-orange-400">3: Limítrofe</Badge>
+        <Badge variant="outline" className="text-yellow-600 dark:text-yellow-400">4: Média Inferior</Badge>
+        <Badge variant="outline" className="text-gray-600 dark:text-gray-400">5: Média</Badge>
+        <Badge variant="outline" className="text-blue-600 dark:text-blue-400">6: Média Superior</Badge>
+        <Badge variant="outline" className="text-green-600 dark:text-green-400">≥7: Superior</Badge>
+      </div>
+    </div>
+  </div>
+);
+
 export default function NeuroTestResults({
   testCode,
   testName,
