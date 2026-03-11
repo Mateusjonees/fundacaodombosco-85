@@ -1,31 +1,51 @@
 
 
-# Botao de Rotacao de Tela para Mobile/Tablet
+## Plano: Realtime Instantâneo na Agenda (Sem Precisar Atualizar)
 
-## O que sera feito
-Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
+### Problema
+A página da Agenda (`Schedule.tsx`) não tem subscription Realtime própria no Supabase. Ela depende apenas de um evento customizado (`refresh-schedule`) disparado pelo `PatientArrivedNotification`. Se o canal Realtime desse componente falhar (como visto nos logs: `CHANNEL_ERROR`), o profissional não recebe nada em tempo real — nem novos agendamentos, nem confirmações de presença.
 
-## Como vai funcionar
-- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
-- Ao clicar, a tela alternara entre orientacao retrato e paisagem
-- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
-- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
-- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
+### Solução
+Adicionar uma subscription Realtime diretamente na página `Schedule.tsx` que escute mudanças na tabela `schedules` e dispare `refetchSchedules()` automaticamente.
 
-## Detalhes Tecnicos
+### Alterações
 
-### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
-- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
-- Verificara suporte do navegador antes de exibir o botao
-- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
-- Icone do lucide-react: `RotateCcw` ou `Smartphone`
-- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
+**1. `src/pages/Schedule.tsx`** — Adicionar Realtime subscription
 
-### 2. Integracao no `MainApp.tsx`
-- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
+Adicionar um novo `useEffect` com subscription Supabase Realtime na tabela `schedules`:
+- Escutar eventos `INSERT`, `UPDATE` e `DELETE`
+- Para profissionais: filtrar por `employee_id=eq.{user.id}`
+- Para admins/coordenadores: escutar todos os eventos (sem filtro)
+- Em qualquer mudança, chamar `refetchSchedules()`
+- Manter o listener existente de `refresh-schedule` como redundância
 
-### 3. Tratamento de erros
-- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
-- Caso o navegador nao suporte, o botao nao sera renderizado
-- Em caso de falha ao rotacionar, exibira um toast informando o usuario
+```typescript
+useEffect(() => {
+  if (!user || !userProfile) return;
+  
+  const filter = isAdmin ? undefined : `employee_id=eq.${user.id}`;
+  
+  const channel = supabase
+    .channel('schedule-realtime-sync')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'schedules',
+      ...(filter ? { filter } : {})
+    }, () => {
+      console.log('[Schedule] Realtime change detected, refetching...');
+      refetchSchedules();
+    })
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}, [user?.id, userProfile, isAdmin, refetchSchedules]);
+```
+
+**2. `src/components/PatientArrivedNotification.tsx`** — Melhorar resiliência
+
+- Adicionar reconexão automática se o canal entrar em `CHANNEL_ERROR`
+- Manter os dois canais existentes como redundância
+
+Isso garante que qualquer mudança (novo agendamento, presença confirmada, cancelamento) aparece instantaneamente sem recarregar a página.
 
