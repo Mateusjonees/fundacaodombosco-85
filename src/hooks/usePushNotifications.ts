@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 
 /**
- * Hook para gerenciar notificações push do navegador.
+ * Hook para gerenciar notificações push nativas do navegador.
  * Compatível com Chrome, Edge, Opera, Firefox e Safari.
- * Detecta contexto de iframe onde requestPermission é bloqueado.
+ * Funciona no Windows como popup nativo estilo WhatsApp.
  */
 export const usePushNotifications = () => {
   const [permission, setPermission] = useState<NotificationPermission>('default');
@@ -17,49 +17,101 @@ export const usePushNotifications = () => {
   useEffect(() => {
     const supported = 'Notification' in window;
     setIsSupported(supported);
+    console.log('[PushNotifications] Suporte a Notification API:', supported);
+    console.log('[PushNotifications] Em iframe:', isInIframe);
     if (supported) {
-      setPermission(Notification.permission);
+      const currentPerm = Notification.permission;
+      setPermission(currentPerm);
+      console.log('[PushNotifications] Permissão atual:', currentPerm);
     }
   }, []);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
-    if (!isSupported) return false;
+    if (!isSupported) {
+      console.warn('[PushNotifications] Notification API não suportada neste navegador');
+      return false;
+    }
 
-    // Em iframe, requestPermission é bloqueado silenciosamente
-    // Tentamos mesmo assim, mas com tratamento de erro
+    // Se já está granted, não precisa pedir novamente
+    if (Notification.permission === 'granted') {
+      console.log('[PushNotifications] Permissão já concedida');
+      setPermission('granted');
+      return true;
+    }
+
+    // Se foi negada, não adianta pedir novamente
+    if (Notification.permission === 'denied') {
+      console.warn('[PushNotifications] Permissão NEGADA pelo usuário. Precisa resetar nas configurações do navegador.');
+      setPermission('denied');
+      return false;
+    }
+
     try {
+      console.log('[PushNotifications] Solicitando permissão...');
       const result = await Notification.requestPermission();
       setPermission(result);
+      console.log('[PushNotifications] Resultado da solicitação:', result);
       return result === 'granted';
     } catch (err) {
-      console.warn('Notification.requestPermission() bloqueado:', err);
-      // Atualiza o estado para refletir o que o browser realmente tem
+      console.warn('[PushNotifications] requestPermission() bloqueado (provavelmente iframe):', err);
       setPermission(Notification.permission);
       return Notification.permission === 'granted';
     }
   }, [isSupported]);
 
   const sendNotification = useCallback((title: string, options?: NotificationOptions & { url?: string }) => {
-    if (permission !== 'granted') return;
+    console.log('[PushNotifications] sendNotification chamado:', title, 'permissão:', permission);
+    
+    if (!isSupported) {
+      console.warn('[PushNotifications] Notification API não suportada');
+      return;
+    }
+
+    if (permission !== 'granted') {
+      console.warn('[PushNotifications] Permissão não concedida, status:', permission);
+      // Tentar verificar diretamente (pode ter mudado)
+      if (Notification.permission === 'granted') {
+        console.log('[PushNotifications] Permissão mudou para granted! Atualizando estado...');
+        setPermission('granted');
+      } else {
+        return;
+      }
+    }
     
     const { url, ...notifOptions } = options || {};
     
-    // Envia SEMPRE - pop-up nativo aparece mesmo com Word/outro programa aberto
-    const notification = new Notification(title, {
-      icon: '/pwa-192x192.png',
-      badge: '/pwa-192x192.png',
-      requireInteraction: true,
-      ...notifOptions,
-    });
+    try {
+      // Notificação nativa do Windows - aparece como popup do sistema
+      const notification = new Notification(title, {
+        icon: '/pwa-192x192.png',
+        badge: '/pwa-192x192.png',
+        requireInteraction: true, // Não fecha sozinha no Windows
+        silent: false, // Toca som do sistema
+        ...notifOptions,
+      });
 
-    notification.onclick = () => {
-      window.focus();
-      if (url) {
-        window.location.href = url;
-      }
-      notification.close();
-    };
-  }, [permission]);
+      console.log('[PushNotifications] ✅ Notificação nativa criada com sucesso!');
+
+      notification.onclick = () => {
+        console.log('[PushNotifications] Notificação clicada');
+        window.focus();
+        if (url) {
+          window.location.href = url;
+        }
+        notification.close();
+      };
+
+      notification.onerror = (e) => {
+        console.error('[PushNotifications] Erro na notificação:', e);
+      };
+
+      notification.onshow = () => {
+        console.log('[PushNotifications] ✅ Notificação exibida no sistema!');
+      };
+    } catch (err) {
+      console.error('[PushNotifications] Erro ao criar Notification:', err);
+    }
+  }, [permission, isSupported]);
 
   return { permission, isSupported, isInIframe, requestPermission, sendNotification };
 };
