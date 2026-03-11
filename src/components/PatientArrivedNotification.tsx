@@ -204,9 +204,9 @@ export default function PatientArrivedNotification() {
     return () => {
       supabase.removeChannel(channel1);
       supabase.removeChannel(channel2);
-      stopRepeatingAlarm();
+      if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
     };
-  }, [user?.id, alertedIds, triggerMaxAlert, stopRepeatingAlarm]);
+  }, [user?.id, alertedIds, triggerMaxAlert]);
 
   if (!showFullScreenAlert) return null;
 
