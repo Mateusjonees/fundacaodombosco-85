@@ -88,17 +88,7 @@ export default function PatientArrivedNotification() {
     window.addEventListener('focus', onFocus);
   }, []);
 
-  // Parar alarme repetido
-  const stopRepeatingAlarm = useCallback(() => {
-    if (alarmIntervalRef.current) {
-      clearInterval(alarmIntervalRef.current);
-      alarmIntervalRef.current = null;
-    }
-    if (alertTimeoutRef.current) {
-      clearTimeout(alertTimeoutRef.current);
-      alertTimeoutRef.current = null;
-    }
-  }, []);
+  // Limpar timeout ao desmontar
 
   const dismissAlert = useCallback(() => {
     setShowFullScreenAlert(false);
