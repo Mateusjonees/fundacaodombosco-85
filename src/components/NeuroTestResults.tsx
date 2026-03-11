@@ -1182,6 +1182,33 @@ export default function NeuroTestResults({
       lines.push('');
       lines.push('CLASSIFICAÇÃO:');
       lines.push('- ≤5: Inferior | 6-25: Média Inferior | 26-74: Média | 75-94: Média Superior | ≥95: Superior');
+    } else if (testCode === 'TRILHAS' || testCode === 'TRILHAS_PRE_ESCOLAR') {
+      lines.push(`- Sequências A (Bruto): ${rawScores.sequenciasA ?? '-'}`);
+      lines.push(`- Sequências B (Bruto): ${rawScores.sequenciasB ?? '-'}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Escore Padrão A: ${calculatedScores.escorePadraoA ?? calculatedScores.trilhaA ?? '-'} (M=100, DP=15)`);
+      lines.push(`- Escore Padrão B: ${calculatedScores.escorePadraoB ?? calculatedScores.trilhaB ?? '-'} (M=100, DP=15)`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');
+    } else if (testCode === 'TRPP') {
+      lines.push(`- Palavras (Bruto): ${rawScores.palavras ?? '-'}`);
+      lines.push(`- Pseudopalavras (Bruto): ${rawScores.pseudopalavras ?? '-'}`);
+      lines.push('');
+      lines.push('CÁLCULOS:');
+      lines.push(`- Total: ${calculatedScores.total ?? '-'}`);
+      lines.push(`- Escore Padrão: ${calculatedScores.escorePadrao ?? 'N/D'} (M=100, DP=15)`);
+      lines.push('');
+      lines.push('CLASSIFICAÇÃO:');
+      lines.push('- <70: Muito Baixa | 70-84: Baixa | 85-114: Média | 115-129: Alta | ≥130: Muito Alta');
+    } else if (testCode === 'CORSI') {
+      lines.push(`- Span Direto (Bruto): ${rawScores.spanDireto ?? '-'}`);
+      lines.push(`- Span Inverso (Bruto): ${rawScores.spanInverso ?? '-'}`);
+      lines.push('');
+      lines.push('PERCENTIS:');
+      lines.push(`- Span Direto: Percentil ${results.percentiles.spanDireto ?? '-'}`);
+      lines.push(`- Span Inverso: Percentil ${results.percentiles.spanInverso ?? '-'}`);
     }
 
     lines.push('');
