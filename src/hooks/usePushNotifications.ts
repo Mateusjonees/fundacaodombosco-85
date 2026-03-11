@@ -20,19 +20,24 @@ export const usePushNotifications = () => {
     return result === 'granted';
   }, [isSupported]);
 
-  const sendNotification = useCallback((title: string, options?: NotificationOptions) => {
+  const sendNotification = useCallback((title: string, options?: NotificationOptions & { url?: string }) => {
     if (permission !== 'granted') return;
+    
+    const { url, ...notifOptions } = options || {};
     
     // Envia SEMPRE - pop-up nativo aparece mesmo com Word/outro programa aberto
     const notification = new Notification(title, {
       icon: '/pwa-192x192.png',
       badge: '/pwa-192x192.png',
       requireInteraction: true,
-      ...options,
+      ...notifOptions,
     });
 
     notification.onclick = () => {
       window.focus();
+      if (url) {
+        window.location.href = url;
+      }
       notification.close();
     };
   }, [permission]);
