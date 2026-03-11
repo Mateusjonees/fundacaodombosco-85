@@ -71,6 +71,9 @@ export const CreateScheduleDialog = ({
     unit: userProfile?.unit || 'madre',
     sessionCount: 1,
     sendConfirmationEmail: false,
+    service_type: '' as string,
+    professional_amount: '' as string,
+    foundation_amount: '' as string,
   });
 
   // Sync form when editing
