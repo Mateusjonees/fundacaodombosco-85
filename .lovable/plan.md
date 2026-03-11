@@ -1,31 +1,27 @@
 
 
-# Botao de Rotacao de Tela para Mobile/Tablet
+## Notificação Push Nativa (Pop-up do Sistema Operacional)
 
-## O que sera feito
-Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
+Sim, é possível! O navegador suporta **Notifications API** que exibe pop-ups nativos do sistema operacional, visíveis mesmo quando o usuário está no Word ou qualquer outro programa.
 
-## Como vai funcionar
-- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
-- Ao clicar, a tela alternara entre orientacao retrato e paisagem
-- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
-- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
-- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
+### O que já existe
+- O hook `usePushNotifications` já usa `new Notification()` e já é chamado no `triggerMaxAlert`
+- **Problema**: a notificação só é enviada se `document.hidden` (aba em background). Se a aba estiver ativa mas o usuário estiver em outro programa (Word), `document.hidden` pode ser `true` ou `false` dependendo do estado da aba
 
-## Detalhes Tecnicos
+### Correções necessárias
 
-### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
-- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
-- Verificara suporte do navegador antes de exibir o botao
-- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
-- Icone do lucide-react: `RotateCcw` ou `Smartphone`
-- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
+**1. Remover a restrição `document.hidden`** no `usePushNotifications.ts`
+- A push notification nativa deve ser enviada **sempre**, independente do foco. É ela que aparece como pop-up do Windows/Mac mesmo com o Word aberto.
 
-### 2. Integracao no `MainApp.tsx`
-- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
+**2. Solicitar permissão automaticamente** 
+- No `PatientArrivedNotification`, chamar `requestPermission()` ao montar o componente, para garantir que o browser tem permissão de exibir notificações nativas
 
-### 3. Tratamento de erros
-- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
-- Caso o navegador nao suporte, o botao nao sera renderizado
-- Em caso de falha ao rotacionar, exibira um toast informando o usuario
+**3. Adicionar `requireInteraction: true`** (já está) para que a notificação não desapareça sozinha
+
+### Arquivos alterados
+- `src/hooks/usePushNotifications.ts` — remover condição `document.hidden`
+- `src/components/PatientArrivedNotification.tsx` — solicitar permissão ao montar
+
+### Limitação importante
+O pop-up nativo funciona **somente se o usuário permitiu notificações no navegador**. A primeira vez que abrir o sistema, aparecerá o pedido de permissão do browser. Após aceitar, as notificações aparecerão sobre qualquer programa.
 
