@@ -18,7 +18,7 @@ import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import { DeleteAppointmentDialog } from '@/components/DeleteAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
-import PatientArrivedNotification from '@/components/PatientArrivedNotification';
+
 import { ScheduleCard } from '@/components/ScheduleCard';
 import { CreateScheduleDialog } from '@/components/schedule/CreateScheduleDialog';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -202,7 +202,6 @@ export default function SchedulePage() {
 
   return (
     <div className="w-full p-2 sm:p-4 space-y-4 animate-fade-in">
-      <PatientArrivedNotification />
       <ScheduleAlerts />
 
       {/* Header */}

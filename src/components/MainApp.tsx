@@ -29,6 +29,7 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ScreenOrientationToggle } from '@/components/ScreenOrientationToggle';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
 import { PageTransition } from '@/components/ui/page-transition';
+import PatientArrivedNotification from '@/components/PatientArrivedNotification';
 
 // Lazy load header components - melhor LCP
 const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
@@ -150,6 +151,7 @@ export const MainApp = () => {
       <SidebarProvider defaultOpen={false}>
         <div className="min-h-screen w-full flex">
           <AppSidebar />
+          <PatientArrivedNotification />
           
           <div className="flex-1 flex flex-col min-w-0 transition-all duration-150 ease-out">
             {/* Header — clean & modern */}
