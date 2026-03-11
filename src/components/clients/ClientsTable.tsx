@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Eye, Edit, FileText, Power, Trash2, Phone } from "lucide-react";
+import { Eye, Edit, FileText, Power, Trash2, Phone, FileCheck, FileX } from "lucide-react";
 
 interface Client {
   id: string;
@@ -19,6 +19,7 @@ interface ClientsTableProps {
   clients: Client[];
   selectedClients: string[];
   lastAppointments: Map<string, string>;
+  clientLaudoIds: Set<string>;
   isAdmin: boolean;
   canDelete: boolean;
   onToggleSelect: (id: string) => void;
@@ -37,6 +38,7 @@ export const ClientsTable = memo(({
   clients,
   selectedClients,
   lastAppointments,
+  clientLaudoIds,
   isAdmin,
   canDelete,
   onToggleSelect,
@@ -64,6 +66,7 @@ export const ClientsTable = memo(({
             <TableHead className="font-semibold">Contato</TableHead>
             <TableHead className="font-semibold">Área</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold">Laudo</TableHead>
             <TableHead className="font-semibold">Última Consulta</TableHead>
             <TableHead className="font-semibold">Cadastro</TableHead>
             <TableHead className="font-semibold">Ações</TableHead>
@@ -128,6 +131,19 @@ export const ClientsTable = memo(({
                     {client.is_active ? "Ativo" : "Inativo"}
                   </span>
                 </div>
+              </TableCell>
+              <TableCell>
+                {clientLaudoIds.has(client.id) ? (
+                  <div className="flex items-center gap-1.5">
+                    <FileCheck className="h-3.5 w-3.5 text-green-500" />
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">Entregue</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <FileX className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Pendente</span>
+                  </div>
+                )}
               </TableCell>
               <TableCell>
                 {lastAppointments.get(client.id)
