@@ -40,7 +40,8 @@ const LAUDO_TYPES = [{
   label: 'Outro'
 }];
 export default function ClientLaudoManager({
-  client
+  client,
+  defaultServiceType
 }: ClientLaudoManagerProps) {
   const {
     user
