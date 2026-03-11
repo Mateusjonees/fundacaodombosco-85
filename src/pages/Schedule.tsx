@@ -18,7 +18,7 @@ import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import { DeleteAppointmentDialog } from '@/components/DeleteAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
-import PatientArrivedNotification from '@/components/PatientArrivedNotification';
+
 import { ScheduleCard } from '@/components/ScheduleCard';
 import { CreateScheduleDialog } from '@/components/schedule/CreateScheduleDialog';
 import { useUserProfile } from '@/hooks/useUserProfile';
