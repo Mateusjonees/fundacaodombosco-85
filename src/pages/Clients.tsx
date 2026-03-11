@@ -62,6 +62,9 @@ interface Client {
   is_active: boolean;
   created_at: string;
   neuro_test_start_date?: string;
+  neuro_report_deadline?: string;
+  neuro_evaluation_status?: string;
+  notes?: string;
 }
 
 interface UserProfile {
