@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Phone, ClipboardCheck, ClipboardX, FileCheck, FileX } from "lucide-react";
+import { Phone, FileCheck, FileX, Calendar } from "lucide-react";
 
 interface Client {
   id: string;
@@ -58,7 +58,7 @@ const fmtDate = (d?: string | null): string => {
 };
 
 /**
- * Tabela de pacientes — layout compacto e legível sem scroll horizontal
+ * Tabela de pacientes — layout limpo, legível e moderno
  */
 export const ClientsTable = memo(({
   clients,
@@ -79,28 +79,28 @@ export const ClientsTable = memo(({
   onDelete,
 }: ClientsTableProps) => {
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-border/50">
-      <Table className="w-full table-fixed">
+    <div className="w-full rounded-xl border border-border/40 overflow-hidden">
+      <Table className="w-full">
         <TableHeader>
-          <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/60">
+          <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/50">
             {isAdmin && (
-              <TableHead className="w-8 px-2">
+              <TableHead className="w-10 px-3">
                 <Checkbox
                   checked={selectedClients.length === clients.length && clients.length > 0}
                   onCheckedChange={onToggleSelectAll}
                 />
               </TableHead>
             )}
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[15%] px-2">PACIENTE</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7%] px-2">DN</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[3.5%] px-1 text-center">ID.</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[10%] px-2">CONTATO</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[12%] px-2">PROFISSIONAL</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[5%] px-1 text-center">LAUDO</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[4.5%] px-1 text-center">STATUS</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">1ª SESSÃO</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">ÚLT. ATIV.</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">CADASTRO</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground min-w-[200px] px-3">PACIENTE</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground min-w-[90px] px-3">NASCIMENTO</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground w-[50px] px-2 text-center">IDADE</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground min-w-[120px] px-3">CONTATO</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground min-w-[150px] px-3">PROFISSIONAL</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground w-[60px] px-2 text-center">LAUDO</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground w-[60px] px-2 text-center">STATUS</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground min-w-[90px] px-3">1ª SESSÃO</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground min-w-[90px] px-3">ÚLT. ATIV.</TableHead>
+            <TableHead className="font-semibold text-xs tracking-wide text-muted-foreground min-w-[90px] px-3">CADASTRO</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -110,52 +110,86 @@ export const ClientsTable = memo(({
               <TableRow
                 key={client.id}
                 className={`
-                  transition-colors cursor-pointer group border-b border-border/30
-                  ${selectedClients.includes(client.id) ? "bg-primary/8" : "hover:bg-muted/50"}
-                  ${!client.is_active ? "opacity-50" : ""}
+                  transition-all duration-150 cursor-pointer group
+                  ${selectedClients.includes(client.id) ? "bg-primary/5" : "hover:bg-muted/40"}
+                  ${!client.is_active ? "opacity-40" : ""}
                 `}
                 onClick={() => onView(client)}
               >
                 {isAdmin && (
-                  <TableCell className="px-2 py-2.5" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="px-3 py-3.5" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedClients.includes(client.id)}
                       onCheckedChange={() => onToggleSelect(client.id)}
                     />
                   </TableCell>
                 )}
-                <TableCell className="px-2 py-2.5">
-                  <div className="flex items-center gap-2 overflow-hidden">
+
+                {/* Paciente */}
+                <TableCell className="px-3 py-3.5">
+                  <div className="flex items-center gap-2.5 overflow-hidden">
                     <UserAvatar name={client.name} size="sm" />
-                    <span className="font-semibold text-[11px] uppercase tracking-wide truncate text-foreground">{client.name}</span>
+                    <span className="font-semibold text-[13px] uppercase tracking-wide truncate text-foreground">
+                      {client.name}
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5">{fmtDate(client.birth_date)}</TableCell>
-                <TableCell className="text-[11px] font-semibold text-center px-1 py-2.5 text-foreground">{age ?? '—'}</TableCell>
-                <TableCell className="px-2 py-2.5">
+
+                {/* Nascimento */}
+                <TableCell className="text-[13px] text-muted-foreground px-3 py-3.5">
+                  {fmtDate(client.birth_date)}
+                </TableCell>
+
+                {/* Idade */}
+                <TableCell className="text-center px-2 py-3.5">
+                  <span className="text-[13px] font-bold text-foreground">
+                    {age ?? '—'}
+                  </span>
+                </TableCell>
+
+                {/* Contato */}
+                <TableCell className="px-3 py-3.5">
                   {client.phone ? (
-                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <Phone className="h-3 w-3 shrink-0 text-muted-foreground/70" />
+                    <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
                       <span className="truncate">{client.phone}</span>
                     </div>
-                  ) : <span className="text-[11px] text-muted-foreground/50">—</span>}
+                  ) : <span className="text-[13px] text-muted-foreground/40">—</span>}
                 </TableCell>
-                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5 truncate">
-                  {clientProfessionals.get(client.id) || <span className="text-muted-foreground/50">—</span>}
+
+                {/* Profissional */}
+                <TableCell className="text-[13px] text-muted-foreground px-3 py-3.5 truncate">
+                  {clientProfessionals.get(client.id) || <span className="text-muted-foreground/40">—</span>}
                 </TableCell>
-                <TableCell className="px-1 py-2.5 text-center">
+
+                {/* Laudo */}
+                <TableCell className="px-2 py-3.5 text-center">
                   {clientLaudoIds.has(client.id) ? (
-                    <FileCheck className="h-4 w-4 text-emerald-500 mx-auto" />
+                    <FileCheck className="h-4.5 w-4.5 text-emerald-500 mx-auto" />
                   ) : (
-                    <FileX className="h-4 w-4 text-amber-500/80 mx-auto" />
+                    <FileX className="h-4.5 w-4.5 text-muted-foreground/30 mx-auto" />
                   )}
                 </TableCell>
-                <TableCell className="px-1 py-2.5 text-center">
-                  <span className={`inline-block w-2.5 h-2.5 rounded-full ${client.is_active ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]' : 'bg-muted-foreground/30'}`} />
+
+                {/* Status */}
+                <TableCell className="px-2 py-3.5 text-center">
+                  <span className={`inline-flex items-center justify-center w-3 h-3 rounded-full ${client.is_active ? 'bg-emerald-500' : 'bg-muted-foreground/25'}`} />
                 </TableCell>
-                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5">{fmtDate(firstAppointments.get(client.id))}</TableCell>
-                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5">{fmtDate(lastAppointments.get(client.id))}</TableCell>
-                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5">{fmtDate(client.created_at?.slice(0, 10))}</TableCell>
+
+                {/* 1ª Sessão */}
+                <TableCell className="text-[13px] text-muted-foreground px-3 py-3.5">
+                  {fmtDate(firstAppointments.get(client.id))}
+                </TableCell>
+
+                {/* Última Atividade */}
+                <TableCell className="text-[13px] text-muted-foreground px-3 py-3.5">
+                  {fmtDate(lastAppointments.get(client.id))}
+                </TableCell>
+
+                {/* Cadastro */}
+                <TableCell className="text-[13px] text-muted-foreground px-3 py-3.5">
+                  {fmtDate(client.created_at?.slice(0, 10))}
+                </TableCell>
               </TableRow>
             );
           })}
