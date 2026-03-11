@@ -1038,6 +1038,19 @@ export default function NeuroTestResults({
         inputSection = renderBNTBRInputs(rawScores);
         calculationsSection = renderBNTBRCalculations(calculatedScores);
         break;
+      case 'TRILHAS':
+      case 'TRILHAS_PRE_ESCOLAR':
+        inputSection = renderTrilhasInputs(rawScores);
+        calculationsSection = renderTrilhasCalculations(calculatedScores);
+        break;
+      case 'TRPP':
+        inputSection = renderTRPPInputs(rawScores);
+        calculationsSection = renderTRPPCalculations(calculatedScores);
+        break;
+      case 'CORSI':
+        inputSection = renderCorsiInputs(rawScores);
+        calculationsSection = renderCorsiCalculations(results.percentiles);
+        break;
     }
 
     return (
