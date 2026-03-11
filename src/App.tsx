@@ -143,7 +143,9 @@ const App = () => {
           <Toaster />
           <Sonner />
           <AuthProvider>
-            <AppContent />
+            <NotificationProvider>
+              <AppContent />
+            </NotificationProvider>
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>

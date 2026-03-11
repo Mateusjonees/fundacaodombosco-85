@@ -178,6 +178,7 @@ export const MainApp = () => {
                     <NotificationBell />
                   </Suspense>
                   <NotificationPermissionButton />
+                  <NotificationTestButton />
                   <Button
                     variant="ghost"
                     size="icon"
