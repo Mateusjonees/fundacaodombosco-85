@@ -117,11 +117,12 @@ export default function PatientArrivedNotification() {
       duration: 30000,
     });
 
-    // 2. Push nativa
-    sendNotification(`🔔 ${name} CHEGOU!`, {
-      body: `${name} chegou e está aguardando atendimento!`,
+    // 2. Push nativa - clique abre a agenda
+    sendNotification(`🚨 PACIENTE CHEGOU: ${name}`, {
+      body: `${name} acabou de chegar e está aguardando atendimento.\nClique aqui para abrir a agenda.`,
       tag: 'patient-arrived',
       requireInteraction: true,
+      url: '/schedule',
     });
 
     // 3. Som imediato + repetição a cada 5s por 30s
