@@ -119,11 +119,11 @@ export async function updateClientsFromSpreadsheet(): Promise<{ updated: number;
         // Montar objeto de atualização apenas com campos faltantes
         const updateData: Record<string, any> = {};
 
-        // Datas de sessão: sempre atualizar se tiver na planilha
-        if (row.first_session_date && !existing.neuro_test_start_date) {
+        // Datas de sessão: sempre sobrescrever com dados da planilha
+        if (row.first_session_date) {
           updateData.neuro_test_start_date = row.first_session_date;
         }
-        if (row.end_date && !existing.neuro_report_deadline) {
+        if (row.end_date) {
           updateData.neuro_report_deadline = row.end_date;
         }
 
