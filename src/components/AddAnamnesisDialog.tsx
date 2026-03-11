@@ -23,6 +23,7 @@ interface AddAnamnesisDialogProps {
   clientId: string;
   onSuccess: () => void;
   editingNote?: ClientNote | null;
+  defaultServiceType?: string;
 }
 
 // Helper to parse note text back into form fields
