@@ -24,6 +24,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { useClients } from "@/hooks/useClients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { ROLE_GROUPS } from "@/hooks/useRolePermissions";
 import { useDebouncedValue } from "@/hooks/useDebounce";
 import ClientDetailsView from "@/components/ClientDetailsView";
 import { BulkImportClientsDialog } from "@/components/BulkImportClientsDialog";

@@ -25,6 +25,39 @@ export const useClients = (filters?: ClientFilters) => {
       // Tenta buscar online
       if (navigator.onLine) {
         try {
+          // Se employeeId fornecido, buscar apenas clientes vinculados ativamente
+          if (filters?.employeeId) {
+            const { data: assignments, error: assignError } = await supabase
+              .from('client_assignments')
+              .select('client_id')
+              .eq('employee_id', filters.employeeId)
+              .eq('is_active', true);
+            
+            if (assignError) throw assignError;
+            
+            const assignedIds = (assignments || []).map(a => a.client_id).filter(Boolean) as string[];
+            
+            if (assignedIds.length === 0) return [];
+            
+            let query = supabase
+              .from('clients')
+              .select(LIST_COLUMNS)
+              .in('id', assignedIds)
+              .order('name');
+            
+            if (filters?.unit) query = query.eq('unit', filters.unit);
+            if (filters?.isActive !== undefined) query = query.eq('is_active', filters.isActive);
+            if (filters?.searchTerm) {
+              query = query.or(
+                `name.ilike.%${filters.searchTerm}%,cpf.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%`
+              );
+            }
+            
+            const { data, error } = await query;
+            if (error) throw error;
+            return data || [];
+          }
+
           let query = supabase
             .from('clients')
             .select(LIST_COLUMNS)
