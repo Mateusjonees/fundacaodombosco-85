@@ -227,49 +227,113 @@ export default function PatientArrivedNotification() {
       style={{
         animation: 'flashAlert 0.4s ease-in-out infinite alternate',
       }}
+      className="cursor-pointer"
+      onClick={dismissAlert}
     >
       <style>{`
         @keyframes flashAlert {
-          0% { background: rgba(220, 38, 38, 0.95); }
-          50% { background: rgba(234, 179, 8, 0.95); }
-          100% { background: rgba(220, 38, 38, 0.95); }
+          0%, 100% { background: rgba(220, 38, 38, 0.97); }
+          25% { background: rgba(234, 179, 8, 0.97); }
+          50% { background: rgba(220, 38, 38, 0.97); }
+          75% { background: rgba(255, 100, 0, 0.97); }
         }
         @keyframes bounceIn {
-          0% { transform: scale(0.5); opacity: 0; }
-          50% { transform: scale(1.1); }
+          0% { transform: scale(0.3); opacity: 0; }
+          50% { transform: scale(1.08); }
           100% { transform: scale(1); opacity: 1; }
         }
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-          20%, 40%, 60%, 80% { transform: translateX(10px); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-12px); }
+          20%, 40%, 60%, 80% { transform: translateX(12px); }
+        }
+        @keyframes pulseRing {
+          0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
+          70% { box-shadow: 0 0 0 30px rgba(255,255,255,0); }
+          100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
+        @keyframes bellSwing {
+          0%, 100% { transform: rotate(0deg); }
+          15% { transform: rotate(25deg); }
+          30% { transform: rotate(-20deg); }
+          45% { transform: rotate(15deg); }
+          60% { transform: rotate(-10deg); }
+          75% { transform: rotate(5deg); }
+        }
+        @keyframes textGlow {
+          0%, 100% { text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(255,200,0,0.6); }
+          50% { text-shadow: 0 0 40px rgba(255,255,255,1), 0 0 80px rgba(255,200,0,0.9); }
         }
       `}</style>
 
+      {/* Borda pulsante nas laterais */}
+      <div className="absolute inset-0 border-[8px] border-white/40 animate-pulse rounded-none pointer-events-none" />
+
       <div
-        className="text-center p-8 rounded-2xl max-w-lg mx-4"
+        className="text-center p-10 rounded-3xl max-w-xl mx-4 relative"
         style={{
-          background: 'rgba(255, 255, 255, 0.97)',
-          animation: 'bounceIn 0.5s ease-out, shake 0.8s ease-in-out 0.5s 3',
-          boxShadow: '0 0 80px rgba(255, 255, 255, 0.6)',
+          background: 'rgba(255, 255, 255, 0.98)',
+          animation: 'bounceIn 0.4s ease-out, shake 0.7s ease-in-out 0.4s 3',
+          boxShadow: '0 0 100px rgba(255, 255, 255, 0.7), 0 0 200px rgba(255, 200, 0, 0.3)',
         }}
       >
-        <div className="flex justify-center mb-4">
-          <Bell className="h-24 w-24 text-red-600 animate-bounce" />
+        {/* Ícone do sino gigante */}
+        <div 
+          className="flex justify-center mb-6"
+          style={{ animation: 'bellSwing 0.6s ease-in-out infinite' }}
+        >
+          <div 
+            className="relative rounded-full bg-red-600 p-6"
+            style={{ animation: 'pulseRing 1.2s ease-out infinite' }}
+          >
+            <Bell className="h-20 w-20 text-white" strokeWidth={2.5} />
+          </div>
         </div>
-        <h1 className="text-4xl font-black text-red-600 mb-3 tracking-tight">
-          {patientName ? `${patientName.toUpperCase()} CHEGOU!` : 'PACIENTE CHEGOU!'}
-        </h1>
-        <p className="text-xl text-gray-700 font-semibold mb-6">
-          {patientName ? `${patientName} está aguardando atendimento` : 'Seu paciente está aguardando atendimento'}
+
+        {/* Título principal - enorme */}
+        <div className="mb-2">
+          <p className="text-base font-bold uppercase tracking-[0.3em] text-red-500 mb-2">
+            🚨 ATENÇÃO 🚨
+          </p>
+          <h1 
+            className="text-5xl sm:text-6xl font-black text-red-600 leading-tight tracking-tight"
+            style={{ animation: 'textGlow 1.5s ease-in-out infinite' }}
+          >
+            {patientName ? patientName.toUpperCase() : 'PACIENTE'}
+          </h1>
+          <h2 className="text-4xl sm:text-5xl font-black text-red-600 mt-1">
+            CHEGOU!
+          </h2>
+        </div>
+
+        {/* Subtítulo */}
+        <p className="text-lg text-gray-700 font-semibold mt-4 mb-6">
+          {patientName 
+            ? `${patientName} está na recepção aguardando atendimento` 
+            : 'Seu paciente está na recepção aguardando'}
         </p>
-        <div className="bg-red-100 border-2 border-red-300 rounded-xl p-4 mb-6">
-          <p className="text-red-700 font-bold text-lg animate-pulse">
-            ⚠️ ATENÇÃO IMEDIATA NECESSÁRIA ⚠️
+
+        {/* Box de urgência */}
+        <div className="bg-red-600 rounded-2xl p-5 mb-6 animate-pulse">
+          <p className="text-white font-black text-xl tracking-wide">
+            ⚡ ATENDIMENTO IMEDIATO ⚡
           </p>
         </div>
-        <p className="text-sm text-gray-500">
-          Clique em qualquer lugar para fechar este alerta
+
+        {/* Botão para abrir agenda */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            dismissAlert();
+            window.location.href = '/schedule';
+          }}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg py-4 px-8 rounded-xl mb-4 transition-colors shadow-lg"
+        >
+          📅 Abrir Agenda
+        </button>
+
+        <p className="text-xs text-gray-400 font-medium">
+          Toque em qualquer lugar para fechar
         </p>
       </div>
     </div>
