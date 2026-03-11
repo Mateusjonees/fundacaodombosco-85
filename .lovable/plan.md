@@ -1,31 +1,27 @@
 
 
-# Botao de Rotacao de Tela para Mobile/Tablet
+## Plano: Remover modal de permissão e manter apenas notificação nativa estilo WhatsApp
 
-## O que sera feito
-Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
+### Problema
+O `NotificationPermissionBanner` exibe um diálogo modal que cobre a tela pedindo permissão de notificações. O usuário quer apenas a notificação nativa do navegador (estilo WhatsApp — aparece no canto da tela mesmo fora do app).
 
-## Como vai funcionar
-- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
-- Ao clicar, a tela alternara entre orientacao retrato e paisagem
-- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
-- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
-- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
+### O que já funciona
+O `PatientArrivedNotification.tsx` já está correto: usa toast interno + `new Notification()` nativa do navegador. A notificação nativa é exatamente o comportamento "estilo WhatsApp" desejado.
 
-## Detalhes Tecnicos
+### Alterações
 
-### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
-- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
-- Verificara suporte do navegador antes de exibir o botao
-- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
-- Icone do lucide-react: `RotateCcw` ou `Smartphone`
-- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
+#### 1. Remover `NotificationPermissionBanner` do App
+- Em `src/App.tsx`: remover o import e o componente `<NotificationPermissionBanner />`.
+- O arquivo `src/components/NotificationPermissionBanner.tsx` pode ser mantido mas não será mais usado.
 
-### 2. Integracao no `MainApp.tsx`
-- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
+#### 2. Solicitar permissão silenciosamente
+- Em `PatientArrivedNotification.tsx`, já existe `Notification.requestPermission()` no `useEffect` — isso pede permissão automaticamente via popup nativo do browser (pequena barra no topo, não um modal fullscreen). Isso é suficiente.
 
-### 3. Tratamento de erros
-- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
-- Caso o navegador nao suporte, o botao nao sera renderizado
-- Em caso de falha ao rotacionar, exibira um toast informando o usuario
+#### 3. Manter botão manual no header (opcional)
+- O `NotificationPermissionButton.tsx` (ícone de sino no header) pode continuar existindo para quem negou inicialmente — sem modal, apenas instrução via toast.
+
+### Resultado
+- Sem modal cobrindo a tela
+- Permissão pedida via popup nativo do browser (discreto)
+- Notificação de chegada aparece como push nativa do OS (canto da tela, mesmo com outro app aberto) + toast dentro do sistema
 
