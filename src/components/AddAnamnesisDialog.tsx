@@ -65,12 +65,13 @@ export default function AddAnamnesisDialog({
   onOpenChange, 
   clientId, 
   onSuccess,
-  editingNote 
+  editingNote,
+  defaultServiceType
 }: AddAnamnesisDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [serviceType, setServiceType] = useState<string>('private');
+  const [serviceType, setServiceType] = useState<string>(defaultServiceType || 'private');
   
   const [formData, setFormData] = useState({
     queixaPrincipal: '',

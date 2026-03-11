@@ -28,7 +28,9 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId, de
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [prescriptionDate, setPrescriptionDate] = useState(getTodayLocalISODate());
-  const [serviceType, setServiceType] = useState<'sus' | 'private'>('private');
+  const [serviceType, setServiceType] = useState<'sus' | 'private' | 'external' | 'laudo'>(
+    (defaultServiceType as any) || 'private'
+  );
   const [prescriptionText, setPrescriptionText] = useState('');
   const [showPrescriptionDate, setShowPrescriptionDate] = useState(true);
   const [showPrintDate, setShowPrintDate] = useState(false);
