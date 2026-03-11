@@ -1615,7 +1615,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
                   {/* Laudos Tab */}
                   <TabsContent value="laudos">
-                    <ClientLaudoManager client={client} />
+                    <ClientLaudoManager client={client} defaultServiceType={scheduleServiceType || undefined} />
                   </TabsContent>
 
                   {/* Financial Tab */}
