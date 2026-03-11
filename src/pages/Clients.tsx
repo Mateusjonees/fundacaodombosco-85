@@ -196,8 +196,15 @@ export default function Patients() {
       setClientAssignments(data || []);
     };
     const loadClientLaudos = async () => {
-      const { data } = await supabase.from('client_laudos').select('client_id');
-      setClientLaudoIds(new Set((data || []).map(l => l.client_id)));
+      // Buscar laudos de AMBAS as tabelas: client_laudos e client_feedback_control
+      const [laudosRes, feedbackRes] = await Promise.all([
+        supabase.from('client_laudos').select('client_id'),
+        supabase.from('client_feedback_control').select('client_id').or('laudo_file_path.not.is.null,status.eq.completed'),
+      ]);
+      const ids = new Set<string>();
+      (laudosRes.data || []).forEach(l => ids.add(l.client_id));
+      (feedbackRes.data || []).forEach(l => ids.add(l.client_id));
+      setClientLaudoIds(ids);
     };
     const loadLastAppointments = async () => {
       const { data } = await supabase.from('schedules').select('client_id, completed_at').eq('status', 'completed').not('completed_at', 'is', null).order('completed_at', { ascending: false });
