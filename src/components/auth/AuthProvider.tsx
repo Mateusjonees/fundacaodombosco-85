@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
 import { useAppPreload } from '@/hooks/useAppPreload';
+import { offlineDB, STORES } from '@/utils/offlineDB';
 
 interface AuthContextType {
   user: User | null;
@@ -100,6 +101,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         
         if (event === 'SIGNED_OUT') {
+          // Limpar cache offline para evitar dados residuais entre sessões
+          offlineDB.clear(STORES.clients).catch(() => {});
+          offlineDB.clear(STORES.schedules).catch(() => {});
+          offlineDB.clear(STORES.medicalRecords).catch(() => {});
+          offlineDB.clear(STORES.dashboardStats).catch(() => {});
+          
           setTimeout(() => {
             AuditService.logAction({
               entityType: 'auth',

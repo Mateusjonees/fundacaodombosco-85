@@ -24,6 +24,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { useClients } from "@/hooks/useClients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { ROLE_GROUPS } from "@/hooks/useRolePermissions";
 import { useDebouncedValue } from "@/hooks/useDebounce";
 import ClientDetailsView from "@/components/ClientDetailsView";
 import { BulkImportClientsDialog } from "@/components/BulkImportClientsDialog";
@@ -77,6 +79,7 @@ export default function Patients() {
   const queryClient = useQueryClient();
   const { canViewAllClients, canCreateClients, canEditClients, canDeleteClients, isGodMode } = useRolePermissions();
   const customPermissions = useCustomPermissions();
+  const { userRole } = useCurrentUser();
   const [employees, setEmployees] = useState<any[]>([]);
   const [clientAssignments, setClientAssignments] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -96,7 +99,15 @@ export default function Patients() {
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
-  const { data: clients = [], isLoading } = useClients({ searchTerm: debouncedSearch || undefined });
+  
+  // Profissionais veem apenas clientes vinculados ativamente a eles
+  const isRestrictedRole = userRole && !ROLE_GROUPS.ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES.includes(userRole);
+  const employeeIdFilter = isRestrictedRole ? user?.id : undefined;
+  
+  const { data: clients = [], isLoading } = useClients({ 
+    searchTerm: debouncedSearch || undefined,
+    employeeId: employeeIdFilter,
+  });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [openTabIds, setOpenTabIds] = useState<string[]>(() => {
