@@ -185,8 +185,23 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     loadAvailableEmployees(),
     loadCurrentAssignments(),
     loadLaudoInfo(),
-    loadNextAppointment()]
+    loadNextAppointment(),
+    loadScheduleServiceType()]
     );
+  };
+
+  // Buscar service_type do último agendamento para Atendimento Floresta
+  const loadScheduleServiceType = async () => {
+    if (client.unit !== 'atendimento_floresta') return;
+    const { data } = await supabase
+      .from('schedules')
+      .select('service_type')
+      .eq('client_id', client.id)
+      .not('service_type', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data?.service_type) setScheduleServiceType(data.service_type);
   };
 
   const loadNextAppointment = async () => {
