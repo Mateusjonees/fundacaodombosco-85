@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -82,6 +83,8 @@ export default function SchedulePage() {
   }, [refetchSchedules]);
 
   // Realtime subscription direto na tabela schedules para atualizações instantâneas
+  // Usa queryClient.invalidateQueries (estável) em vez de refetchSchedules (instável)
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (!user || !userProfile) return;
 
@@ -92,7 +95,6 @@ export default function SchedulePage() {
       schema: 'public',
       table: 'schedules',
     };
-    // Profissionais veem só os próprios; admins veem todos
     if (!isAdminUser) {
       channelConfig.filter = `employee_id=eq.${user.id}`;
     }
@@ -101,16 +103,21 @@ export default function SchedulePage() {
       .channel('schedule-realtime-sync')
       .on('postgres_changes', channelConfig, (payload) => {
         console.log('[Schedule] Realtime change detected:', payload.eventType);
-        refetchSchedules();
+        // Forçar invalidação via queryClient (estável, sem re-render loop)
+        queryClient.invalidateQueries({ queryKey: ['schedules'] });
       })
       .subscribe((status) => {
         console.log('[Schedule] Realtime channel status:', status);
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('[Schedule] Realtime channel error, retrying in 3s...');
+          setTimeout(() => channel.subscribe(), 3000);
+        }
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, userProfile, refetchSchedules]);
+  }, [user?.id, userProfile, queryClient]);
 
   const userRole = userProfile?.employee_role;
   const isAdmin = useMemo(() => ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist'].includes(userRole || ''), [userRole]);

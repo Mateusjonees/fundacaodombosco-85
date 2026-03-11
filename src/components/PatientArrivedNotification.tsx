@@ -134,21 +134,22 @@ export default function PatientArrivedNotification() {
     requestPermission();
   }, [requestPermission]);
 
+  // Handler compartilhado para processar chegada
+  const handlePatientArrived = useCallback((scheduleId: string, clientId: string | null) => {
+    if (!scheduleId || alertedIds.has(scheduleId)) return;
+    alertedIds.add(scheduleId);
+
+    if (clientId) {
+      supabase.from('clients').select('name').eq('id', clientId).single()
+        .then(({ data }) => triggerMaxAlert(data?.name || 'Paciente'));
+    } else {
+      triggerMaxAlert('Paciente');
+    }
+  }, [alertedIds, triggerMaxAlert]);
+
+  // Realtime channels
   useEffect(() => {
     if (!user) return;
-
-    // Handler compartilhado para processar chegada
-    const handlePatientArrived = (scheduleId: string, clientId: string | null) => {
-      if (!scheduleId || alertedIds.has(scheduleId)) return;
-      alertedIds.add(scheduleId);
-
-      if (clientId) {
-        supabase.from('clients').select('name').eq('id', clientId).single()
-          .then(({ data }) => triggerMaxAlert(data?.name || 'Paciente'));
-      } else {
-        triggerMaxAlert('Paciente');
-      }
-    };
 
     // CANAL 1: Listener em schedules (UPDATE patient_arrived)
     const channel1 = supabase
@@ -166,7 +167,6 @@ export default function PatientArrivedNotification() {
           console.log('[PatientArrived] Schedule UPDATE received:', rec?.id, 'patient_arrived:', rec?.patient_arrived);
           if (rec?.patient_arrived) {
             handlePatientArrived(rec.id, rec.client_id);
-            // Disparar evento para refetch da agenda
             window.dispatchEvent(new CustomEvent('refresh-schedule'));
           }
         }
@@ -212,7 +212,44 @@ export default function PatientArrivedNotification() {
       supabase.removeChannel(channel2);
       if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
     };
-  }, [user?.id, alertedIds, triggerMaxAlert]);
+  }, [user?.id, handlePatientArrived]);
+
+  // POLLING FALLBACK: Verificar notificações não lidas a cada 10 segundos
+  useEffect(() => {
+    if (!user) return;
+
+    const checkUnreadNotifications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('appointment_notifications')
+          .select('id, schedule_id, client_id, notification_type, title')
+          .eq('employee_id', user.id)
+          .eq('is_read', false)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error || !data) return;
+
+        for (const notif of data) {
+          if (
+            (notif.notification_type === 'patient_arrived' || notif.title?.includes('Chegou') || notif.title?.includes('chegou')) &&
+            !alertedIds.has(notif.schedule_id)
+          ) {
+            console.log('[PatientArrived] Polling found unread arrival:', notif.schedule_id);
+            handlePatientArrived(notif.schedule_id, notif.client_id);
+            window.dispatchEvent(new CustomEvent('refresh-schedule'));
+          }
+        }
+      } catch (err) {
+        // Silencioso - polling é fallback
+      }
+    };
+
+    // Verificar imediatamente e depois a cada 10s
+    checkUnreadNotifications();
+    const interval = setInterval(checkUnreadNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [user?.id, alertedIds, handlePatientArrived]);
 
   if (!showFullScreenAlert) return null;
 
