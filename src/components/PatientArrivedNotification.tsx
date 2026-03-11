@@ -8,7 +8,7 @@ import { Bell } from 'lucide-react';
 export default function PatientArrivedNotification() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { sendNotification } = usePushNotifications();
+  const { sendNotification, requestPermission } = usePushNotifications();
   const [showFullScreenAlert, setShowFullScreenAlert] = useState(false);
   const [patientName, setPatientName] = useState<string>('');
   const [alertedIds] = useState(() => new Set<string>());
@@ -147,6 +147,11 @@ export default function PatientArrivedNotification() {
       stopRepeatingAlarm();
     }, 30000);
   }, [toast, sendNotification, playAlarmSound, vibrateDevice, flashBrowserTab, stopRepeatingAlarm]);
+
+  // Solicitar permissão de notificações nativas ao montar
+  useEffect(() => {
+    requestPermission();
+  }, [requestPermission]);
 
   useEffect(() => {
     if (!user) return;
