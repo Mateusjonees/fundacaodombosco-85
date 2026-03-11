@@ -87,7 +87,7 @@ export default function AddAnamnesisDialog({
     if (editingNote) {
       const parsed = parseNoteText(editingNote.note_text);
       setFormData(parsed);
-      setServiceType(editingNote.service_type || 'private');
+      setServiceType(editingNote.service_type || defaultServiceType || 'private');
     } else {
       setFormData({
         queixaPrincipal: '',
@@ -97,9 +97,9 @@ export default function AddAnamnesisDialog({
         hd: '',
         conduta: ''
       });
-      setServiceType('private');
+      setServiceType(defaultServiceType || 'private');
     }
-  }, [editingNote, open]);
+  }, [editingNote, open, defaultServiceType]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
