@@ -72,19 +72,24 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'TIN':
       return {
-        subtests: ['escorePadrao'],
+        subtests: ['acertos', 'escorePadrao'],
         names: {
+          acertos: 'Escore Bruto (Acertos)',
           escorePadrao: 'Escore Padrão'
         },
-        mainSubtest: 'escorePadrao'
+        mainSubtest: 'escorePadrao',
+        useRawScores: ['acertos']
       };
     case 'PCFO':
       return {
-        subtests: ['escorePadrao'],
+        subtests: ['acertos', 'pontuacao', 'escorePadrao'],
         names: {
+          acertos: 'Escore Bruto (Acertos)',
+          pontuacao: 'Pontuação',
           escorePadrao: 'Escore Padrão'
         },
-        mainSubtest: 'escorePadrao'
+        mainSubtest: 'escorePadrao',
+        useRawScores: ['acertos']
       };
     case 'TSBC':
       return {
