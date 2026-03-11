@@ -8,7 +8,7 @@ import { Bell } from 'lucide-react';
 export default function PatientArrivedNotification() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { sendNotification } = usePushNotifications();
+  const { sendNotification, requestPermission } = usePushNotifications();
   const [showFullScreenAlert, setShowFullScreenAlert] = useState(false);
   const [patientName, setPatientName] = useState<string>('');
   const [alertedIds] = useState(() => new Set<string>());
