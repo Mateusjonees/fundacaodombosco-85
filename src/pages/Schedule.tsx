@@ -71,6 +71,16 @@ export default function SchedulePage() {
     selectedDate, userProfile, { employeeId: filterEmployee !== 'all' ? filterEmployee : undefined, viewMode }
   );
 
+  // Escutar evento de refresh disparado pelo PatientArrivedNotification
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('[Schedule] Auto-refetch triggered by patient arrival');
+      refetchSchedules();
+    };
+    window.addEventListener('refresh-schedule', handleRefresh);
+    return () => window.removeEventListener('refresh-schedule', handleRefresh);
+  }, [refetchSchedules]);
+
   const userRole = userProfile?.employee_role;
   const isAdmin = useMemo(() => ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist'].includes(userRole || ''), [userRole]);
   const canCancelSchedules = isAdmin;

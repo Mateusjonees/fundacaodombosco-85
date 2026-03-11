@@ -163,12 +163,17 @@ export default function PatientArrivedNotification() {
         },
         (payload) => {
           const rec = payload.new as any;
+          console.log('[PatientArrived] Schedule UPDATE received:', rec?.id, 'patient_arrived:', rec?.patient_arrived);
           if (rec?.patient_arrived) {
             handlePatientArrived(rec.id, rec.client_id);
+            // Disparar evento para refetch da agenda
+            window.dispatchEvent(new CustomEvent('refresh-schedule'));
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[PatientArrived] Channel schedules status:', status);
+      });
 
     // CANAL 2: Listener em appointment_notifications (INSERT)
     const channel2 = supabase
@@ -183,13 +188,18 @@ export default function PatientArrivedNotification() {
         },
         (payload) => {
           const rec = payload.new as any;
+          console.log('[PatientArrived] Notification INSERT received:', rec?.notification_type, rec?.title);
           // Detectar notificações de chegada pelo tipo ou título
           if (rec?.notification_type === 'patient_arrived' || rec?.title?.includes('Chegou') || rec?.title?.includes('chegou')) {
             handlePatientArrived(rec.schedule_id, rec.client_id);
+            // Disparar evento para refetch da agenda
+            window.dispatchEvent(new CustomEvent('refresh-schedule'));
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[PatientArrived] Channel notifications status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel1);
