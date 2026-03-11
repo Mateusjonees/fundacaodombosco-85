@@ -12,7 +12,6 @@ export default function PatientArrivedNotification() {
   const [showFullScreenAlert, setShowFullScreenAlert] = useState(false);
   const [patientName, setPatientName] = useState<string>('');
   const [alertedIds] = useState(() => new Set<string>());
-  const alarmIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const alertTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Som de alarme máximo - sirene agressiva com volume 1.0
@@ -89,23 +88,12 @@ export default function PatientArrivedNotification() {
     window.addEventListener('focus', onFocus);
   }, []);
 
-  // Parar alarme repetido
-  const stopRepeatingAlarm = useCallback(() => {
-    if (alarmIntervalRef.current) {
-      clearInterval(alarmIntervalRef.current);
-      alarmIntervalRef.current = null;
-    }
-    if (alertTimeoutRef.current) {
-      clearTimeout(alertTimeoutRef.current);
-      alertTimeoutRef.current = null;
-    }
-  }, []);
+  // Limpar timeout ao desmontar
 
   const dismissAlert = useCallback(() => {
     setShowFullScreenAlert(false);
-    stopRepeatingAlarm();
     if ('vibrate' in navigator) navigator.vibrate(0);
-  }, [stopRepeatingAlarm]);
+  }, []);
 
   const triggerMaxAlert = useCallback((name: string) => {
     setPatientName(name);
@@ -125,29 +113,21 @@ export default function PatientArrivedNotification() {
       url: '/schedule',
     });
 
-    // 3. Som imediato + repetição a cada 5s por 30s
+    // 3. Som único + vibração
     playAlarmSound();
-    stopRepeatingAlarm();
-    alarmIntervalRef.current = setInterval(() => {
-      playAlarmSound();
-      vibrateDevice();
-    }, 5000);
-
-    // 4. Vibrar
     vibrateDevice();
 
-    // 5. Fullscreen
+    // 4. Fullscreen
     setShowFullScreenAlert(true);
 
-    // 6. Piscar aba
+    // 5. Piscar aba
     flashBrowserTab();
 
-    // Auto-parar após 30s
+    // Auto-fechar após 30s
     alertTimeoutRef.current = setTimeout(() => {
       setShowFullScreenAlert(false);
-      stopRepeatingAlarm();
     }, 30000);
-  }, [toast, sendNotification, playAlarmSound, vibrateDevice, flashBrowserTab, stopRepeatingAlarm]);
+  }, [toast, sendNotification, playAlarmSound, vibrateDevice, flashBrowserTab]);
 
   // Solicitar permissão de notificações nativas ao montar
   useEffect(() => {
@@ -214,9 +194,9 @@ export default function PatientArrivedNotification() {
     return () => {
       supabase.removeChannel(channel1);
       supabase.removeChannel(channel2);
-      stopRepeatingAlarm();
+      if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
     };
-  }, [user?.id, alertedIds, triggerMaxAlert, stopRepeatingAlarm]);
+  }, [user?.id, alertedIds, triggerMaxAlert]);
 
   if (!showFullScreenAlert) return null;
 
