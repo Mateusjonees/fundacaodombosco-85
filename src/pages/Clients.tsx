@@ -37,6 +37,7 @@ import { executeDirectImport } from "@/utils/directImport";
 import { ClientFormDialog } from "@/components/clients/ClientFormDialog";
 import { ClientsTable } from "@/components/clients/ClientsTable";
 import { DeleteClientDialog } from "@/components/clients/DeleteClientDialog";
+import { updateClientsFromSpreadsheet } from "@/utils/updateClientsFromSpreadsheet";
 
 interface Client {
   id: string;
@@ -612,6 +613,21 @@ export default function Patients() {
             <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-9 gap-2">
               <Download className="h-4 w-4" /> Exportar Excel
             </Button>
+            {isGodMode() && (
+              <Button variant="outline" size="sm" className="h-9 gap-2" onClick={async () => {
+                toast({ title: "Atualizando pacientes...", description: "Processando planilha de controle ambulatorial" });
+                const result = await updateClientsFromSpreadsheet();
+                toast({
+                  title: `Atualização concluída`,
+                  description: `${result.updated} atualizados, ${result.skipped} sem alteração${result.errors.length > 0 ? `, ${result.errors.length} erros` : ''}`,
+                  variant: result.errors.length > 0 ? "destructive" : "default",
+                });
+                if (result.errors.length > 0) console.warn('Erros:', result.errors);
+                refreshClients();
+              }}>
+                <Database className="h-4 w-4" /> Atualizar Planilha
+              </Button>
+            )}
           </>
         }
       />
