@@ -143,6 +143,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
   const [currentAssignments, setCurrentAssignments] = useState<any[]>([]);
+  const [scheduleServiceType, setScheduleServiceType] = useState<string | null>(null);
   const { toast } = useToast();
   const [laudoInfo, setLaudoInfo] = useState<{file_path: string;completed_at: string;} | null>(null);
   const [loadingLaudo, setLoadingLaudo] = useState(false);
