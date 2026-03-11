@@ -10,12 +10,14 @@ export default function PatientArrivedNotification() {
   const { toast } = useToast();
   const { sendNotification } = usePushNotifications();
   const [showFullScreenAlert, setShowFullScreenAlert] = useState(false);
+  // Set para rastrear IDs já alertados nesta sessão, evitando duplicatas
+  const [alertedIds] = useState(() => new Set<string>());
 
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel('patient-arrivals')
+      .channel('patient-arrivals-global')
       .on(
         'postgres_changes',
         {
@@ -26,10 +28,11 @@ export default function PatientArrivedNotification() {
         },
         (payload) => {
           const newRecord = payload.new as any;
-          const oldRecord = payload.old as any;
+          const scheduleId = newRecord?.id;
           
-          if (!oldRecord?.patient_arrived && newRecord?.patient_arrived) {            
-            // MÁXIMO ESCÂNDALO!
+          // Checa apenas se patient_arrived é true e se ainda não alertou este ID
+          if (newRecord?.patient_arrived && scheduleId && !alertedIds.has(scheduleId)) {
+            alertedIds.add(scheduleId);
             triggerMaxAlert();
           }
         }
@@ -39,7 +42,7 @@ export default function PatientArrivedNotification() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, toast, sendNotification]);
+  }, [user?.id, toast, sendNotification, alertedIds]);
 
   const triggerMaxAlert = () => {
     // 1. Toast persistente
