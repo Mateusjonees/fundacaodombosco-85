@@ -207,9 +207,15 @@ const getTestConfig = (testCode: string): TestConfig | null => {
       };
     case 'TRPP':
       return {
-        subtests: ['total'],
-        names: { total: 'Total (EP)' },
-        mainSubtest: 'total'
+        subtests: ['palavras', 'pseudopalavras', 'total', 'escorePadrao'],
+        names: { 
+          palavras: 'Repetição de Palavras (Bruto)',
+          pseudopalavras: 'Repetição de Pseudopalavras (Bruto)',
+          total: 'Total (Palavras + Pseudopalavras)',
+          escorePadrao: 'Escore Padrão'
+        },
+        mainSubtest: 'total',
+        useRawScores: ['palavras', 'pseudopalavras']
       };
     case 'FPT_INFANTIL':
       return {
