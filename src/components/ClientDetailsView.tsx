@@ -1048,7 +1048,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                 </div>
                 
                 {/* Quick Info - Grid compacto */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
                   {client.unit &&
                   <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${unitColors.bg} ${unitColors.border} border`}>
                       <Activity className={`h-3.5 w-3.5 ${unitColors.text} shrink-0`} />
@@ -1073,6 +1073,10 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                       <span className="font-medium text-xs">{client.cpf}</span>
                     </div>
                   }
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-xs">{new Date(client.created_at).toLocaleDateString('pt-BR')}</span>
+                  </div>
                 </div>
               </div>
 
