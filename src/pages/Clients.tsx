@@ -395,6 +395,27 @@ export default function Patients() {
           if (ageB === null) return -1;
           return sortBy === "age_asc" ? ageA - ageB : ageB - ageA;
         }
+        case "last_appointment_recent": {
+          const dateA = lastAppointments.get(a.id), dateB = lastAppointments.get(b.id);
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        }
+        case "last_appointment_oldest": {
+          const dateA = lastAppointments.get(a.id), dateB = lastAppointments.get(b.id);
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return -1;
+          if (!dateB) return 1;
+          return new Date(dateA).getTime() - new Date(dateB).getTime();
+        }
+        case "no_activity": {
+          const dateA = lastAppointments.get(a.id), dateB = lastAppointments.get(b.id);
+          const now = Date.now();
+          const daysA = dateA ? (now - new Date(dateA).getTime()) / 86400000 : 99999;
+          const daysB = dateB ? (now - new Date(dateB).getTime()) / 86400000 : 99999;
+          return daysB - daysA;
+        }
         default: return 0;
       }
     });
