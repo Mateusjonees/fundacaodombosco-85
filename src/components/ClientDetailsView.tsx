@@ -1610,7 +1610,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
                   {/* Prescriptions Tab */}
                   <TabsContent value="prescriptions">
-                    <PrescriptionManager client={client} />
+                    <PrescriptionManager client={client} defaultServiceType={scheduleServiceType || undefined} />
                   </TabsContent>
 
                   {/* Laudos Tab */}
