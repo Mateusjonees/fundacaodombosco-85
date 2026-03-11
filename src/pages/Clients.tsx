@@ -540,13 +540,16 @@ export default function Patients() {
           <>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[160px] h-9"><div className="flex items-center gap-1.5"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /><SelectValue placeholder="Ordenar por" /></div></SelectTrigger>
-              <SelectContent>
+               <SelectContent>
                 <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
                 <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
-                <SelectItem value="newest">Mais Recentes</SelectItem>
-                <SelectItem value="oldest">Mais Antigos</SelectItem>
+                <SelectItem value="newest">Cadastro (Recente)</SelectItem>
+                <SelectItem value="oldest">Cadastro (Antigo)</SelectItem>
                 <SelectItem value="age_asc">Idade (Menor → Maior)</SelectItem>
                 <SelectItem value="age_desc">Idade (Maior → Menor)</SelectItem>
+                <SelectItem value="last_appointment_recent">Último Atend. (Recente)</SelectItem>
+                <SelectItem value="last_appointment_oldest">Último Atend. (Antigo)</SelectItem>
+                <SelectItem value="no_activity">Mais Tempo Sem Atividade</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
