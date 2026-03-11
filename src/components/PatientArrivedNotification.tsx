@@ -227,8 +227,6 @@ export default function PatientArrivedNotification() {
       style={{
         animation: 'flashAlert 0.4s ease-in-out infinite alternate',
       }}
-      className="cursor-pointer"
-      onClick={dismissAlert}
     >
       <style>{`
         @keyframes flashAlert {
