@@ -29,6 +29,7 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ScreenOrientationToggle } from '@/components/ScreenOrientationToggle';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
 import { PageTransition } from '@/components/ui/page-transition';
+import PatientArrivedNotification from '@/components/PatientArrivedNotification';
 
 // Lazy load header components - melhor LCP
 const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
