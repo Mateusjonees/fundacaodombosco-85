@@ -736,6 +736,8 @@ export default function Patients() {
                   selectedClients={selectedClients}
                   lastAppointments={lastAppointments}
                   clientLaudoIds={clientLaudoIds}
+                  clientAnamnesisIds={clientAnamnesisIds}
+                  clientProfessionals={clientProfessionals}
                   isAdmin={isCoordinatorOrDirector()}
                   canDelete={canDeleteClients()}
                   onToggleSelect={toggleClientSelection}
