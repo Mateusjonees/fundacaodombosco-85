@@ -95,8 +95,7 @@ export const ClientsTable = memo(({
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7%] px-2">DN</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[3.5%] px-1 text-center">ID.</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[10%] px-2">CONTATO</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[9%] px-2">RESPONSÁVEL</TableHead>
-            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[10%] px-2">PROFISSIONAL</TableHead>
+            <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[12%] px-2">PROFISSIONAL</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[5%] px-1 text-center">LAUDO</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[4.5%] px-1 text-center">STATUS</TableHead>
             <TableHead className="font-bold text-[11px] tracking-wider text-foreground/80 w-[7.5%] px-2">1ª SESSÃO</TableHead>
@@ -140,9 +139,6 @@ export const ClientsTable = memo(({
                       <span className="truncate">{client.phone}</span>
                     </div>
                   ) : <span className="text-[11px] text-muted-foreground/50">—</span>}
-                </TableCell>
-                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5 truncate">
-                  {client.responsible_name || <span className="text-muted-foreground/50">—</span>}
                 </TableCell>
                 <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5 truncate">
                   {clientProfessionals.get(client.id) || <span className="text-muted-foreground/50">—</span>}
