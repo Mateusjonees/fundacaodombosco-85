@@ -266,6 +266,7 @@ export const MainApp = () => {
               </div>
             </header>
 
+             <NotificationPermissionBanner />
              <main className="flex-1 p-3 sm:p-4 lg:p-6 pb-20 md:pb-6 landscape-main">
                <PageBreadcrumb />
                <AppRoutes />
