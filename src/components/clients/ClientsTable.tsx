@@ -117,9 +117,6 @@ export const ClientsTable = memo(({
             <TableHead className="font-semibold w-[70px]">Status</TableHead>
             <TableHead className="font-semibold min-w-[100px]">1ª Sessão</TableHead>
             <TableHead className="font-semibold min-w-[100px]">Data Fim</TableHead>
-            <TableHead className="font-semibold min-w-[90px]">Dia/Horário</TableHead>
-            <TableHead className="font-semibold min-w-[120px]">Observações</TableHead>
-            <TableHead className="font-semibold">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
