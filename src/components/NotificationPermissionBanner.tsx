@@ -2,82 +2,72 @@ import { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useAuth } from '@/components/auth/AuthProvider';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+
+// Versão do pedido - incrementar para forçar novo pedido a todos
+const PERMISSION_VERSION = 'v2';
+const STORAGE_KEY = `notification_permission_asked_${PERMISSION_VERSION}`;
 
 export const NotificationPermissionBanner = () => {
   const { permission, isSupported, requestPermission } = usePushNotifications();
-  const [dismissed, setDismissed] = useState(false);
-  const [show, setShow] = useState(false);
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Mostra o banner após 5 segundos se ainda não pediu permissão
-    if (isSupported && permission === 'default') {
-      const alreadyAsked = localStorage.getItem('notification_banner_dismissed');
-      if (!alreadyAsked) {
-        const timer = setTimeout(() => setShow(true), 5000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [isSupported, permission]);
+    // Só mostra se: usuário logado, browser suporta, e ainda não pediu nesta versão
+    if (!user || !isSupported || permission !== 'default') return;
 
-  if (!show || dismissed || permission !== 'default') return null;
+    const alreadyAsked = localStorage.getItem(STORAGE_KEY);
+    if (alreadyAsked) return;
 
-  const handleDismiss = () => {
-    setDismissed(true);
-    localStorage.setItem('notification_banner_dismissed', 'true');
-  };
+    // Mostra imediatamente após login
+    const timer = setTimeout(() => setOpen(true), 1500);
+    return () => clearTimeout(timer);
+  }, [user, isSupported, permission]);
+
+  if (!open || permission !== 'default') return null;
 
   const handleAllow = async () => {
     await requestPermission();
-    setDismissed(true);
+    localStorage.setItem(STORAGE_KEY, 'true');
+    setOpen(false);
+  };
+
+  const handleDismiss = () => {
+    localStorage.setItem(STORAGE_KEY, 'true');
+    setOpen(false);
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-sm animate-in slide-in-from-top-4 duration-500">
-      <div className="relative overflow-hidden rounded-2xl border bg-card shadow-xl">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
-        
-        <div className="p-4">
-          <button
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-              <Bell className="h-5 w-5 text-amber-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">
-                Ativar Notificações
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Receba alertas de pacientes, agenda e mensagens mesmo fora do sistema
-              </p>
-            </div>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleDismiss(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader className="text-center items-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 mb-2">
+            <Bell className="h-7 w-7 text-amber-600" />
           </div>
+          <DialogTitle className="text-lg">Ativar Notificações</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Para receber alertas de pacientes, agenda e mensagens em tempo real, precisamos da sua permissão de notificações.
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="flex gap-2 mt-3">
-            <Button 
-              onClick={handleDismiss} 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-            >
-              Depois
-            </Button>
-            <Button 
-              onClick={handleAllow} 
-              size="sm" 
-              className="flex-1 gap-2"
-            >
-              <Bell className="h-3.5 w-3.5" />
-              Permitir
-            </Button>
-          </div>
+        <div className="flex flex-col gap-2 mt-4">
+          <Button onClick={handleAllow} className="w-full gap-2">
+            <Bell className="h-4 w-4" />
+            Permitir Notificações
+          </Button>
+          <Button onClick={handleDismiss} variant="ghost" size="sm" className="text-muted-foreground">
+            Agora não
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
