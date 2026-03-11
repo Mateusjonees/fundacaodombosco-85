@@ -62,6 +62,9 @@ interface Client {
   is_active: boolean;
   created_at: string;
   neuro_test_start_date?: string;
+  neuro_report_deadline?: string;
+  neuro_evaluation_status?: string;
+  notes?: string;
 }
 
 interface UserProfile {
@@ -86,8 +89,10 @@ export default function Patients() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
+  const [clientAnamnesisIds, setClientAnamnesisIds] = useState<Set<string>>(new Set());
   const [lastAppointments, setLastAppointments] = useState<Map<string, string>>(new Map());
   const [firstAppointments, setFirstAppointments] = useState<Map<string, string>>(new Map());
+  const [clientProfessionals, setClientProfessionals] = useState<Map<string, string>>(new Map());
   const [viewMode, setViewMode] = useState<"list" | "cards">("cards");
 
   const debouncedSearch = useDebouncedValue(searchTerm, 400);
@@ -208,23 +213,45 @@ export default function Patients() {
       (feedbackRes.data || []).forEach(l => ids.add(l.client_id));
       setClientLaudoIds(ids);
     };
+    const loadAnamnesisIds = async () => {
+      const { data } = await supabase.from('anamnesis_records').select('client_id');
+      const ids = new Set<string>();
+      (data || []).forEach((r: any) => ids.add(r.client_id));
+      setClientAnamnesisIds(ids);
+    };
     const loadLastAppointments = async () => {
       const { data } = await supabase.from('schedules').select('client_id, completed_at').eq('status', 'completed').not('completed_at', 'is', null).order('completed_at', { ascending: false });
       const lastMap = new Map<string, string>();
       const firstMap = new Map<string, string>();
       (data || []).forEach((s: any) => {
         if (!lastMap.has(s.client_id)) lastMap.set(s.client_id, s.completed_at);
-        // Para primeiro atendimento, sempre sobrescreve (dados vêm desc, último é o primeiro)
         firstMap.set(s.client_id, s.completed_at);
       });
       setLastAppointments(lastMap);
       setFirstAppointments(firstMap);
     };
+    const loadClientProfessionals = async () => {
+      const { data } = await supabase
+        .from('client_assignments')
+        .select('client_id, profiles!client_assignments_employee_id_fkey (name)')
+        .eq('is_active', true);
+      const profMap = new Map<string, string>();
+      (data || []).forEach((a: any) => {
+        const name = a.profiles?.name;
+        if (name && a.client_id) {
+          const existing = profMap.get(a.client_id);
+          profMap.set(a.client_id, existing ? `${existing}, ${name}` : name);
+        }
+      });
+      setClientProfessionals(profMap);
+    };
     loadUserProfile();
     loadEmployees();
     loadClientAssignments();
     loadClientLaudos();
+    loadAnamnesisIds();
     loadLastAppointments();
+    loadClientProfessionals();
   }, [user]);
 
   // Auto-set unit based on coordinator role
@@ -709,6 +736,8 @@ export default function Patients() {
                   selectedClients={selectedClients}
                   lastAppointments={lastAppointments}
                   clientLaudoIds={clientLaudoIds}
+                  clientAnamnesisIds={clientAnamnesisIds}
+                  clientProfessionals={clientProfessionals}
                   isAdmin={isCoordinatorOrDirector()}
                   canDelete={canDeleteClients()}
                   onToggleSelect={toggleClientSelection}

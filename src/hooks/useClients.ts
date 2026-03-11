@@ -11,7 +11,7 @@ interface ClientFilters {
 }
 
 // Colunas otimizadas para listagem
-const LIST_COLUMNS = 'id, name, cpf, phone, email, unit, is_active, birth_date, gender, created_at, neuro_test_start_date';
+const LIST_COLUMNS = 'id, name, cpf, phone, email, unit, is_active, birth_date, gender, created_at, neuro_test_start_date, neuro_report_deadline, responsible_name, responsible_cpf, notes, neuro_evaluation_status';
 const DETAIL_COLUMNS = '*';
 
 /**
