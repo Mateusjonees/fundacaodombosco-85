@@ -23,19 +23,18 @@ export const usePushNotifications = () => {
   const sendNotification = useCallback((title: string, options?: NotificationOptions) => {
     if (permission !== 'granted') return;
     
-    // Só envia se o app não estiver em foco
-    if (document.hidden) {
-      const notification = new Notification(title, {
-        icon: '/pwa-192x192.png',
-        badge: '/pwa-192x192.png',
-        ...options,
-      });
+    // Envia SEMPRE - pop-up nativo aparece mesmo com Word/outro programa aberto
+    const notification = new Notification(title, {
+      icon: '/pwa-192x192.png',
+      badge: '/pwa-192x192.png',
+      requireInteraction: true,
+      ...options,
+    });
 
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-    }
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
   }, [permission]);
 
   return { permission, isSupported, requestPermission, sendNotification };
