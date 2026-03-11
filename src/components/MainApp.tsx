@@ -175,6 +175,7 @@ export const MainApp = () => {
                   <Suspense fallback={<div className="h-8 w-8 bg-muted rounded-md animate-pulse" />}>
                     <NotificationBell />
                   </Suspense>
+                  <NotificationPermissionButton />
                   <Button
                     variant="ghost"
                     size="icon"
