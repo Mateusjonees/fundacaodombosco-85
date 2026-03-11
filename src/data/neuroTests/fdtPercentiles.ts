@@ -267,11 +267,11 @@ export const getFDTClassificationColor = (classification: string): string => {
   switch (classification) {
     case 'Superior':
       return 'text-green-600 dark:text-green-400';
-    case 'Médio Superior':
+    case 'Média Superior':
       return 'text-blue-600 dark:text-blue-400';
-    case 'Médio':
+    case 'Média':
       return 'text-gray-600 dark:text-gray-400';
-    case 'Médio Inferior':
+    case 'Média Inferior':
       return 'text-orange-600 dark:text-orange-400';
     case 'Inferior':
       return 'text-red-600 dark:text-red-400';
