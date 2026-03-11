@@ -84,7 +84,7 @@ export default function SchedulePage() {
 
   // Realtime subscription direto na tabela schedules para atualizações instantâneas
   // Usa queryClient.invalidateQueries (estável) em vez de refetchSchedules (instável)
-  const queryClient = __useQueryClient();
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (!user || !userProfile) return;
 
