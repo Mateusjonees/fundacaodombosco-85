@@ -81,6 +81,7 @@ export const ClientsTable = memo(({
   clients,
   selectedClients,
   lastAppointments,
+  firstAppointments = new Map<string, string>(),
   clientLaudoIds = new Set<string>(),
   clientAnamnesisIds = new Set<string>(),
   clientProfessionals = new Map<string, string>(),
