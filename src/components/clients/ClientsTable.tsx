@@ -142,9 +142,6 @@ export const ClientsTable = memo(({
                   ) : <span className="text-[11px] text-muted-foreground/50">—</span>}
                 </TableCell>
                 <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5 truncate">
-                  {client.responsible_name || <span className="text-muted-foreground/50">—</span>}
-                </TableCell>
-                <TableCell className="text-[11px] text-muted-foreground px-2 py-2.5 truncate">
                   {clientProfessionals.get(client.id) || <span className="text-muted-foreground/50">—</span>}
                 </TableCell>
                 <TableCell className="px-1 py-2.5 text-center">
