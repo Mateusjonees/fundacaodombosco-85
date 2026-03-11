@@ -35,6 +35,7 @@ import PatientArrivedNotification from '@/components/PatientArrivedNotification'
 const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
 const QuickHelpCenter = lazy(() => import('@/components/QuickHelpCenter').then(m => ({ default: m.QuickHelpCenter })));
 const NotificationBell = lazy(() => import('@/components/NotificationBell').then(m => ({ default: m.NotificationBell })));
+import { NotificationPermissionButton } from '@/components/NotificationPermissionButton';
 const UserProfileDialog = lazy(() => import('@/components/UserProfileDialog').then(m => ({ default: m.UserProfileDialog })));
 
 // Lazy load page components
@@ -175,6 +176,7 @@ export const MainApp = () => {
                   <Suspense fallback={<div className="h-8 w-8 bg-muted rounded-md animate-pulse" />}>
                     <NotificationBell />
                   </Suspense>
+                  <NotificationPermissionButton />
                   <Button
                     variant="ghost"
                     size="icon"
