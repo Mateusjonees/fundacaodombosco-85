@@ -81,6 +81,37 @@ export default function SchedulePage() {
     return () => window.removeEventListener('refresh-schedule', handleRefresh);
   }, [refetchSchedules]);
 
+  // Realtime subscription direto na tabela schedules para atualizações instantâneas
+  useEffect(() => {
+    if (!user || !userProfile) return;
+
+    const isAdminUser = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist'].includes(userProfile.employee_role || '');
+
+    const channelConfig: any = {
+      event: '*',
+      schema: 'public',
+      table: 'schedules',
+    };
+    // Profissionais veem só os próprios; admins veem todos
+    if (!isAdminUser) {
+      channelConfig.filter = `employee_id=eq.${user.id}`;
+    }
+
+    const channel = supabase
+      .channel('schedule-realtime-sync')
+      .on('postgres_changes', channelConfig, (payload) => {
+        console.log('[Schedule] Realtime change detected:', payload.eventType);
+        refetchSchedules();
+      })
+      .subscribe((status) => {
+        console.log('[Schedule] Realtime channel status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, userProfile, refetchSchedules]);
+
   const userRole = userProfile?.employee_role;
   const isAdmin = useMemo(() => ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'receptionist'].includes(userRole || ''), [userRole]);
   const canCancelSchedules = isAdmin;

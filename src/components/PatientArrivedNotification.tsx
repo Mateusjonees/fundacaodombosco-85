@@ -173,6 +173,10 @@ export default function PatientArrivedNotification() {
       )
       .subscribe((status) => {
         console.log('[PatientArrived] Channel schedules status:', status);
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('[PatientArrived] Channel 1 error, retrying in 3s...');
+          setTimeout(() => channel1.subscribe(), 3000);
+        }
       });
 
     // CANAL 2: Listener em appointment_notifications (INSERT)
@@ -189,16 +193,18 @@ export default function PatientArrivedNotification() {
         (payload) => {
           const rec = payload.new as any;
           console.log('[PatientArrived] Notification INSERT received:', rec?.notification_type, rec?.title);
-          // Detectar notificações de chegada pelo tipo ou título
           if (rec?.notification_type === 'patient_arrived' || rec?.title?.includes('Chegou') || rec?.title?.includes('chegou')) {
             handlePatientArrived(rec.schedule_id, rec.client_id);
-            // Disparar evento para refetch da agenda
             window.dispatchEvent(new CustomEvent('refresh-schedule'));
           }
         }
       )
       .subscribe((status) => {
         console.log('[PatientArrived] Channel notifications status:', status);
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('[PatientArrived] Channel 2 error, retrying in 3s...');
+          setTimeout(() => channel2.subscribe(), 3000);
+        }
       });
 
     return () => {
