@@ -166,6 +166,11 @@ export const ScheduleCard = memo(({
               <p className="text-[10px] text-muted-foreground leading-none mb-0.5">Paciente</p>
               <p className="font-medium text-xs sm:text-sm truncate uppercase leading-tight">
                 {schedule.clients?.name || 'N/A'}
+                {schedule.clients?.birth_date && (
+                  <span className="text-[10px] sm:text-xs font-normal text-muted-foreground ml-1 normal-case">
+                    ({differenceInYears(new Date(), new Date(schedule.clients.birth_date))} anos)
+                  </span>
+                )}
               </p>
             </div>
           </button>

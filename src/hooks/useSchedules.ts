@@ -48,7 +48,7 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
               arrived_confirmed_by,
               patient_declined,
               patient_declined_at,
-              clients (id, name, phone, cpf, email, unit),
+              clients (id, name, phone, cpf, email, unit, birth_date),
               profiles (id, name, employee_role, unit)
             `)
             .gte('start_time', startDate.toISOString())
