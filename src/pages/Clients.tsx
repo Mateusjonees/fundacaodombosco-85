@@ -195,7 +195,7 @@ export default function Patients() {
       setClientAssignments(data || []);
     };
     const loadClientLaudos = async () => {
-      const { data } = await supabase.from('client_laudos').select('client_id').eq('status', 'active');
+      const { data } = await supabase.from('client_laudos').select('client_id');
       setClientLaudoIds(new Set((data || []).map(l => l.client_id)));
     };
     const loadLastAppointments = async () => {
