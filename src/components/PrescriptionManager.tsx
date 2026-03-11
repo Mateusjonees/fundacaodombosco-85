@@ -17,9 +17,11 @@ interface Client {
 }
 interface PrescriptionManagerProps {
   client: Client;
+  defaultServiceType?: string;
 }
 export default function PrescriptionManager({
-  client
+  client,
+  defaultServiceType
 }: PrescriptionManagerProps) {
   const {
     data: prescriptions,
