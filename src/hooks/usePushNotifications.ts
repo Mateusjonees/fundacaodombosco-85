@@ -1,23 +1,46 @@
 import { useState, useEffect, useCallback } from 'react';
 
+/**
+ * Hook para gerenciar notificações push do navegador.
+ * Compatível com Chrome, Edge, Opera, Firefox e Safari.
+ * Detecta contexto de iframe onde requestPermission é bloqueado.
+ */
 export const usePushNotifications = () => {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSupported, setIsSupported] = useState(false);
+  const [isInIframe, setIsInIframe] = useState(false);
 
   useEffect(() => {
     const supported = 'Notification' in window;
     setIsSupported(supported);
+
+    // Detectar se estamos em um iframe (preview do Lovable, etc.)
+    try {
+      setIsInIframe(window.self !== window.top);
+    } catch {
+      setIsInIframe(true); // Se deu erro de cross-origin, estamos em iframe
+    }
+
     if (supported) {
       setPermission(Notification.permission);
     }
   }, []);
 
-  const requestPermission = useCallback(async () => {
+  const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!isSupported) return false;
-    
-    const result = await Notification.requestPermission();
-    setPermission(result);
-    return result === 'granted';
+
+    // Em iframe, requestPermission é bloqueado silenciosamente
+    // Tentamos mesmo assim, mas com tratamento de erro
+    try {
+      const result = await Notification.requestPermission();
+      setPermission(result);
+      return result === 'granted';
+    } catch (err) {
+      console.warn('Notification.requestPermission() bloqueado:', err);
+      // Atualiza o estado para refletir o que o browser realmente tem
+      setPermission(Notification.permission);
+      return Notification.permission === 'granted';
+    }
   }, [isSupported]);
 
   const sendNotification = useCallback((title: string, options?: NotificationOptions & { url?: string }) => {
@@ -42,5 +65,5 @@ export const usePushNotifications = () => {
     };
   }, [permission]);
 
-  return { permission, isSupported, requestPermission, sendNotification };
+  return { permission, isSupported, isInIframe, requestPermission, sendNotification };
 };
