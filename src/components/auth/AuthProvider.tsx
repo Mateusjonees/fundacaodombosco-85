@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
 import { useAppPreload } from '@/hooks/useAppPreload';
+import { offlineDB, STORES } from '@/utils/offlineDB';
 
 interface AuthContextType {
   user: User | null;
