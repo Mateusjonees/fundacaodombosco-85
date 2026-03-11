@@ -166,7 +166,7 @@ export default function PrescriptionManager({
         </div>}
 
       {/* Add Dialog */}
-      <AddPrescriptionDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} clientId={client.id} />
+      <AddPrescriptionDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} clientId={client.id} defaultServiceType={defaultServiceType} />
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
