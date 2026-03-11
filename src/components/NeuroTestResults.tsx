@@ -344,8 +344,9 @@ const getTestConfig = (testCode: string): TestConfig | null => {
     case 'CORSI':
       return {
         subtests: ['spanDireto', 'spanInverso'],
-        names: { spanDireto: 'Span Direto', spanInverso: 'Span Inverso' },
-        mainSubtest: 'spanDireto'
+        names: { spanDireto: 'Span Direto (Bruto)', spanInverso: 'Span Inverso (Bruto)' },
+        mainSubtest: 'spanDireto',
+        useRawScores: ['spanDireto', 'spanInverso']
       };
     case 'CONNERS':
       return {
