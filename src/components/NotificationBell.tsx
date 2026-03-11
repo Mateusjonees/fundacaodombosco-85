@@ -118,7 +118,8 @@ export const NotificationBell = () => {
       if (error) throw error;
       return (data || []) as AppointmentNotification[];
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 30000,
+    refetchInterval: 30000,
     enabled: !!user?.id,
   });
 
