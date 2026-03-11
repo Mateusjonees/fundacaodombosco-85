@@ -30,7 +30,7 @@ interface Schedule {
   patient_declined?: boolean;
   patient_declined_at?: string;
   email_sent_at?: string;
-  clients?: { name: string };
+  clients?: { name: string; birth_date?: string };
   profiles?: { name: string };
 }
 
