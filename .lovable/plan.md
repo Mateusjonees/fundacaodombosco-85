@@ -1,31 +1,29 @@
 
 
-# Botao de Rotacao de Tela para Mobile/Tablet
+## Problema Identificado
 
-## O que sera feito
-Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
+O sistema de alerta "escandaloso" para o profissional tem dois problemas:
 
-## Como vai funcionar
-- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
-- Ao clicar, a tela alternara entre orientacao retrato e paisagem
-- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
-- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
-- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
+1. **Notificação não chega instantaneamente**: O listener Realtime do Supabase (`postgres_changes`) pode ter latência ou não estar configurado corretamente. Além disso, o canal usa o nome `patient-arrivals-global` mas filtra por `employee_id` do usuário logado -- se o profissional não estiver com o sistema aberto ou o Realtime não estiver habilitado na tabela `schedules`, nada acontece.
 
-## Detalhes Tecnicos
+2. **Volume do áudio não está no máximo**: O volume do alarme está configurado em `0.5-0.6` (50-60%) ao invés de `1.0` (100%).
 
-### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
-- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
-- Verificara suporte do navegador antes de exibir o botao
-- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
-- Icone do lucide-react: `RotateCcw` ou `Smartphone`
-- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
+## Plano de Correção
 
-### 2. Integracao no `MainApp.tsx`
-- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
+### 1. Aumentar volume do áudio para o máximo
+- Alterar todos os valores de `volume` no `playAlarmSound()` de `0.5/0.6` para `1.0`
+- Aumentar duração da sirene (mais ciclos, de 3 para 5)
+- Tornar os tons mais agressivos e longos
 
-### 3. Tratamento de erros
-- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
-- Caso o navegador nao suporte, o botao nao sera renderizado
-- Em caso de falha ao rotacionar, exibira um toast informando o usuario
+### 2. Garantir entrega instantânea com fallback duplo
+- Manter o listener Realtime em `schedules` (via `postgres_changes`)
+- **Adicionar** um segundo listener na tabela `internal_messages` (que já recebe insert quando a presença é confirmada) como fallback -- se o Realtime de `schedules` falhar, o de `internal_messages` pega
+- Isso cria redundância: dois canais independentes monitorando o mesmo evento
+
+### 3. Repetir o alarme se não for dispensado
+- Se o profissional não clicar para fechar, repetir o som de alarme a cada 5 segundos por até 30 segundos (ao invés de tocar uma vez só)
+- Aumentar o timeout do fullscreen alert de 15s para 30s
+
+### Arquivos Alterados
+- `src/components/PatientArrivedNotification.tsx` -- volume máximo, repetição do alarme, listener duplo (schedules + internal_messages)
 
