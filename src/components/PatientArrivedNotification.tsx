@@ -54,17 +54,19 @@ export default function PatientArrivedNotification() {
     };
   }, [user?.id, toast, sendNotification, alertedIds]);
 
-  const triggerMaxAlert = () => {
+  const triggerMaxAlert = (name: string) => {
+    setPatientName(name);
+    
     // 1. Toast persistente
     toast({
-      title: "🔔🔔🔔 PACIENTE CHEGOU! 🔔🔔🔔",
-      description: "Seu paciente chegou e está aguardando atendimento! Clique para fechar.",
+      title: `🔔🔔🔔 ${name.toUpperCase()} CHEGOU! 🔔🔔🔔`,
+      description: `${name} chegou e está aguardando atendimento!`,
       duration: 30000,
     });
 
     // 2. Notificação push nativa
-    sendNotification('🔔 PACIENTE CHEGOU!', {
-      body: 'Seu próximo paciente chegou e está aguardando!',
+    sendNotification(`🔔 ${name} CHEGOU!`, {
+      body: `${name} chegou e está aguardando atendimento!`,
       tag: 'patient-arrived',
       requireInteraction: true,
     });
