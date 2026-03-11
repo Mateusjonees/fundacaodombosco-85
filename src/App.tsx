@@ -9,7 +9,7 @@ import { ThemeProvider } from 'next-themes';
 import { supabase } from "@/integrations/supabase/client";
 import { checkForUpdates } from "@/utils/cacheControl";
 
-import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
+
 
 // Lazy load components para reduzir bundle inicial
 const LoginForm = lazy(() => import("@/components/auth/LoginForm").then(m => ({ default: m.LoginForm })));
@@ -143,8 +143,6 @@ const App = () => {
           <Sonner />
           <AuthProvider>
             <AppContent />
-            
-            <NotificationPermissionBanner />
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
