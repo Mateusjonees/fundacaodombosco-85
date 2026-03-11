@@ -133,6 +133,19 @@ export const ClientsTable = memo(({
                 </div>
               </TableCell>
               <TableCell>
+                {clientLaudoIds.has(client.id) ? (
+                  <div className="flex items-center gap-1.5">
+                    <FileCheck className="h-3.5 w-3.5 text-green-500" />
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">Entregue</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <FileX className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Pendente</span>
+                  </div>
+                )}
+              </TableCell>
+              <TableCell>
                 {lastAppointments.get(client.id)
                   ? <span className="text-sm">{new Date(lastAppointments.get(client.id)!).toLocaleDateString("pt-BR")}</span>
                   : <span className="text-xs text-muted-foreground italic">Sem registro</span>
