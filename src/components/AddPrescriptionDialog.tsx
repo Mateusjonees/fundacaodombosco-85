@@ -21,7 +21,7 @@ interface AddPrescriptionDialogProps {
   defaultServiceType?: string;
 }
 
-export default function AddPrescriptionDialog({ open, onOpenChange, clientId }: AddPrescriptionDialogProps) {
+export default function AddPrescriptionDialog({ open, onOpenChange, clientId, defaultServiceType }: AddPrescriptionDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const createPrescription = useCreatePrescription();
