@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
 import { UserAvatar } from '@/components/UserAvatar';
