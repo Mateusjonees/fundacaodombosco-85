@@ -1,81 +1,84 @@
 import { useState, useEffect } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell, ShieldAlert, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export const NotificationPermissionBanner = () => {
   const { permission, isSupported, requestPermission } = usePushNotifications();
-  const [dismissed, setDismissed] = useState(false);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Mostra o banner após 5 segundos se ainda não pediu permissão
+    // Mostrar imediatamente se permissão ainda não foi concedida
     if (isSupported && permission === 'default') {
-      const alreadyAsked = localStorage.getItem('notification_banner_dismissed');
-      if (!alreadyAsked) {
-        const timer = setTimeout(() => setShow(true), 5000);
-        return () => clearTimeout(timer);
-      }
+      // Sempre exibir - sem verificar localStorage para garantir que todos vejam
+      const timer = setTimeout(() => setShow(true), 1500);
+      return () => clearTimeout(timer);
     }
   }, [isSupported, permission]);
 
-  if (!show || dismissed || permission !== 'default') return null;
-
-  const handleDismiss = () => {
-    setDismissed(true);
-    localStorage.setItem('notification_banner_dismissed', 'true');
-  };
+  // Não mostrar se já concedeu ou negou, ou se não suporta
+  if (!show || !isSupported || permission !== 'default') return null;
 
   const handleAllow = async () => {
     await requestPermission();
-    setDismissed(true);
+    setShow(false);
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-sm animate-in slide-in-from-top-4 duration-500">
-      <div className="relative overflow-hidden rounded-2xl border bg-card shadow-xl">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
-        
-        <div className="p-4">
-          <button
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="relative w-full max-w-md mx-4 overflow-hidden rounded-2xl border-2 border-amber-500/50 bg-card shadow-2xl animate-in zoom-in-95 duration-400">
+        {/* Barra superior */}
+        <div className="h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500" />
+
+        <div className="p-6 text-center">
+          {/* Ícone principal */}
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10 ring-4 ring-amber-500/20">
+            <Bell className="h-10 w-10 text-amber-500 animate-bounce" />
+          </div>
+
+          <h2 className="text-xl font-bold text-foreground mb-2">
+            🔔 Ativar Notificações
+          </h2>
+          
+          <p className="text-sm text-muted-foreground mb-4">
+            Para o sistema funcionar corretamente, precisamos da sua permissão para enviar notificações importantes:
+          </p>
+
+          {/* Lista de benefícios */}
+          <div className="bg-muted/50 rounded-xl p-4 mb-5 text-left space-y-2.5">
+            <div className="flex items-center gap-2.5">
+              <ShieldAlert className="h-4 w-4 text-red-500 shrink-0" />
+              <span className="text-sm text-foreground">
+                <strong>Alerta de chegada</strong> — saiba quando seu paciente chegar
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <Volume2 className="h-4 w-4 text-blue-500 shrink-0" />
+              <span className="text-sm text-foreground">
+                <strong>Avisos de agenda</strong> — lembretes de consultas e reuniões
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <Bell className="h-4 w-4 text-amber-500 shrink-0" />
+              <span className="text-sm text-foreground">
+                <strong>Mensagens internas</strong> — receba mensagens em tempo real
+              </span>
+            </div>
+          </div>
+
+          {/* Botão principal */}
+          <Button 
+            onClick={handleAllow} 
+            size="lg" 
+            className="w-full gap-2 text-base font-semibold h-12"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <Bell className="h-5 w-5" />
+            Permitir Notificações
+          </Button>
 
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-              <Bell className="h-5 w-5 text-amber-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">
-                Ativar Notificações
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Receba alertas de pacientes, agenda e mensagens mesmo fora do sistema
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-2 mt-3">
-            <Button 
-              onClick={handleDismiss} 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-            >
-              Depois
-            </Button>
-            <Button 
-              onClick={handleAllow} 
-              size="sm" 
-              className="flex-1 gap-2"
-            >
-              <Bell className="h-3.5 w-3.5" />
-              Permitir
-            </Button>
-          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Você pode alterar essa configuração a qualquer momento no seu navegador.
+          </p>
         </div>
       </div>
     </div>
