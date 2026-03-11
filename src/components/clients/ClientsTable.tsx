@@ -13,6 +13,7 @@ interface Client {
   unit?: string;
   is_active: boolean;
   created_at: string;
+  neuro_test_start_date?: string;
 }
 
 interface ClientsTableProps {
@@ -68,7 +69,7 @@ export const ClientsTable = memo(({
             <TableHead className="font-semibold">Status</TableHead>
             <TableHead className="font-semibold">Laudo</TableHead>
             <TableHead className="font-semibold">Última Consulta</TableHead>
-            <TableHead className="font-semibold">Cadastro</TableHead>
+            <TableHead className="font-semibold">1ª Sessão</TableHead>
             <TableHead className="font-semibold">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -151,7 +152,12 @@ export const ClientsTable = memo(({
                   : <span className="text-xs text-muted-foreground italic">Sem registro</span>
                 }
               </TableCell>
-              <TableCell className="text-sm text-muted-foreground">{new Date(client.created_at).toLocaleDateString("pt-BR")}</TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {client.neuro_test_start_date 
+                  ? new Date(client.neuro_test_start_date + 'T12:00:00').toLocaleDateString("pt-BR")
+                  : <span className="text-muted-foreground/50 italic">Sem registro</span>
+                }
+              </TableCell>
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <div className="flex gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
                   <Button variant="ghost" size="sm" onClick={() => onView(client)} className="h-8 w-8 p-0 hover:bg-blue-500/10 hover:text-blue-600" title="Visualizar">
