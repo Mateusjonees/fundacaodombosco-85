@@ -420,7 +420,7 @@ export default function Patients() {
       }
     });
     return filtered;
-  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, getAge, isCoordinatorOrDirector]);
+  }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, getAge, isCoordinatorOrDirector, lastAppointments]);
 
   const handleExportExcel = useCallback(() => {
     const exportData = filteredClients.map(c => ({
