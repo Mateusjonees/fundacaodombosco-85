@@ -218,7 +218,7 @@ export default function AddAnamnesisDialog({
           {/* Tipo de Atendimento */}
           <div className="space-y-2">
             <Label htmlFor="serviceType">Tipo de Atendimento</Label>
-            <Select value={serviceType} onValueChange={setServiceType}>
+            <Select value={serviceType} onValueChange={setServiceType} disabled={!!defaultServiceType}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
@@ -229,6 +229,9 @@ export default function AddAnamnesisDialog({
                 <SelectItem value="laudo">Laudo</SelectItem>
               </SelectContent>
             </Select>
+            {defaultServiceType && (
+              <p className="text-xs text-muted-foreground">Tipo definido pelo agendamento</p>
+            )}
           </div>
 
           <p className="text-sm text-muted-foreground">

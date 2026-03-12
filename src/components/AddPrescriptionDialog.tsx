@@ -167,7 +167,7 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId, de
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="service-type" className="text-sm font-medium">Tipo de Atendimento</Label>
-              <Select value={serviceType} onValueChange={(v: string) => setServiceType(v as any)}>
+              <Select value={serviceType} onValueChange={(v: string) => setServiceType(v as any)} disabled={!!defaultServiceType}>
                 <SelectTrigger className="h-11 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
@@ -178,6 +178,9 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId, de
                   <SelectItem value="laudo">Laudo</SelectItem>
                 </SelectContent>
               </Select>
+              {defaultServiceType && (
+                <p className="text-xs text-muted-foreground">Tipo definido pelo agendamento</p>
+              )}
             </div>
           </div>
 

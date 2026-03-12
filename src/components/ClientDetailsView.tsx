@@ -190,9 +190,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     );
   };
 
-  // Buscar service_type do último agendamento para Atendimento Floresta
+  // Buscar service_type do último agendamento (todas as unidades)
   const loadScheduleServiceType = async () => {
-    if (client.unit !== 'atendimento_floresta') return;
     const { data } = await supabase
       .from('schedules')
       .select('service_type')
