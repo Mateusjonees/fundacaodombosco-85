@@ -36,7 +36,7 @@ const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({
 const QuickHelpCenter = lazy(() => import('@/components/QuickHelpCenter').then(m => ({ default: m.QuickHelpCenter })));
 const NotificationBell = lazy(() => import('@/components/NotificationBell').then(m => ({ default: m.NotificationBell })));
 import { NotificationPermissionButton } from '@/components/NotificationPermissionButton';
-import { NotificationPermissionBanner } from '@/components/NotificationPermissionBanner';
+
 const UserProfileDialog = lazy(() => import('@/components/UserProfileDialog').then(m => ({ default: m.UserProfileDialog })));
 
 // Lazy load page components
