@@ -30,14 +30,13 @@ import { ScreenOrientationToggle } from '@/components/ScreenOrientationToggle';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
 import { PageTransition } from '@/components/ui/page-transition';
 import { NotificationEventsBridge } from '@/components/notifications/NotificationEventsBridge';
-import { NotificationTestButton } from '@/components/notifications/NotificationTestButton';
 
 // Lazy load header components - melhor LCP
 const GlobalSearch = lazy(() => import('@/components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
 const QuickHelpCenter = lazy(() => import('@/components/QuickHelpCenter').then(m => ({ default: m.QuickHelpCenter })));
 const NotificationBell = lazy(() => import('@/components/NotificationBell').then(m => ({ default: m.NotificationBell })));
 import { NotificationPermissionButton } from '@/components/NotificationPermissionButton';
-import { NotificationPermissionBanner } from '@/components/NotificationPermissionBanner';
+
 const UserProfileDialog = lazy(() => import('@/components/UserProfileDialog').then(m => ({ default: m.UserProfileDialog })));
 
 // Lazy load page components
@@ -179,7 +178,6 @@ export const MainApp = () => {
                     <NotificationBell />
                   </Suspense>
                   <NotificationPermissionButton />
-                  <NotificationTestButton />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -266,7 +264,7 @@ export const MainApp = () => {
               </div>
             </header>
 
-             <NotificationPermissionBanner />
+             
              <main className="flex-1 p-3 sm:p-4 lg:p-6 pb-20 md:pb-6 landscape-main">
                <PageBreadcrumb />
                <AppRoutes />
