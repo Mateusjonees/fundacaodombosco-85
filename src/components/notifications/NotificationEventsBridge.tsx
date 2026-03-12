@@ -11,6 +11,7 @@ interface AppointmentNotificationRow {
   created_at: string;
   schedule_id: string;
   appointment_time: string;
+  is_read: boolean;
   metadata?: {
     patient_name?: string;
     client_name?: string;
@@ -40,16 +41,30 @@ const getNotificationContent = (notification: AppointmentNotificationRow) => {
   };
 };
 
+/**
+ * Bridge centralizado de notificações.
+ * Usa Realtime + polling com deduplicação rigorosa por ID.
+ * Cada notificação é exibida no máximo UMA vez.
+ */
 export const NotificationEventsBridge = () => {
   const { user } = useAuth();
+  const shownIdsRef = useRef(new Set<string>());
   const sessionStartedAtRef = useRef(Date.now());
 
   useEffect(() => {
     if (!user) return;
 
     const processNotification = (notification: AppointmentNotificationRow) => {
+      // Ignorar notificações anteriores à sessão
       const notificationTime = new Date(notification.created_at).getTime();
       if (notificationTime < sessionStartedAtRef.current - 15000) return;
+
+      // Ignorar já exibidas (deduplicação rigorosa)
+      if (shownIdsRef.current.has(notification.id)) return;
+      shownIdsRef.current.add(notification.id);
+
+      // Ignorar já lidas (polling pode trazer antigas)
+      if (notification.is_read) return;
 
       const { titulo, mensagem } = getNotificationContent(notification);
       mostrarNotificacao(titulo, mensagem, {
@@ -57,8 +72,12 @@ export const NotificationEventsBridge = () => {
         tag: notification.id,
         url: '/schedule',
       });
+
+      // Disparar refresh da agenda
+      window.dispatchEvent(new CustomEvent('refresh-schedule'));
     };
 
+    // Canal Realtime
     const channel = supabase
       .channel(`global-appointment-notifications-${user.id}`)
       .on('postgres_changes', {
@@ -70,23 +89,25 @@ export const NotificationEventsBridge = () => {
         processNotification(payload.new as AppointmentNotificationRow);
       })
       .subscribe((status) => {
-        console.log('[NotificationBridge] Canal appointment_notifications:', status);
+        console.log('[NotificationBridge] Canal:', status);
       });
 
+    // Polling apenas para notificações não lidas recentes
     const pollNotifications = async () => {
       const { data, error } = await supabase
         .from('appointment_notifications')
-        .select('id, title, message, notification_type, created_at, schedule_id, appointment_time, metadata')
+        .select('id, title, message, notification_type, created_at, schedule_id, appointment_time, metadata, is_read')
         .eq('employee_id', user.id)
+        .eq('is_read', false)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(5);
 
       if (error) {
-        console.warn('[NotificationBridge] Erro no polling:', error.message);
+        console.warn('[NotificationBridge] Polling erro:', error.message);
         return;
       }
 
-      (data || []).forEach((notification) => processNotification(notification as AppointmentNotificationRow));
+      (data || []).forEach((n) => processNotification(n as AppointmentNotificationRow));
     };
 
     pollNotifications();
