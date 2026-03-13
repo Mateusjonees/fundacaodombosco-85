@@ -15,7 +15,7 @@ interface Client {
   created_at: string;
   neuro_test_start_date?: string;
   neuro_report_deadline?: string;
-  neuro_evaluation_status?: string;
+  
   responsible_name?: string;
   responsible_cpf?: string;
   notes?: string;
