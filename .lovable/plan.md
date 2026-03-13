@@ -1,48 +1,31 @@
 
 
-## Plano: Corrigir visibilidade de pacientes e acesso de agendamento multi-unidade
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-### Problemas identificados
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
-1. **Diretores não veem pacientes**: A RLS na tabela `clients` parece correta (tem `director_has_god_mode()` e checagem de director na "View clients policy"). Preciso verificar se há conflito de políticas ou se o `useCurrentUser` não carrega o perfil corretamente. Vou garantir que a RLS funcione e que o código não filtre indevidamente.
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-2. **Coordenador Atendimento Floresta sem acesso a agendamentos**: A política "View schedules with unit access control" NÃO inclui `coordinator_atendimento_floresta`. Também a função `is_coordinator()` não inclui esse cargo.
+## Detalhes Tecnicos
 
-3. **Gabriel (receptionist)**: Tem `units: [atendimento_floresta]`, mas precisa agendar para TODAS as unidades. Precisa `units: [madre, floresta, atendimento_floresta]`.
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
-4. **Felipe (receptionist)**: Tem `units: [floresta, atendimento_floresta]`, mas precisa agendar para TODAS as unidades. Precisa `units: [madre, floresta, atendimento_floresta]`.
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-### Alterações
-
-#### 1. Migração SQL - Corrigir RLS e função `is_coordinator`
-
-- **Atualizar `is_coordinator()`** para incluir `coordinator_atendimento_floresta`
-- **Atualizar RLS de schedules** "View schedules with unit access control" para incluir `coordinator_atendimento_floresta` (unit = 'atendimento_floresta')
-- **Atualizar RLS de schedules** "Update schedules with unit access control" - mesma correção
-- **Atualizar RLS de schedules** "Delete schedules with unit access control" - mesma correção
-
-#### 2. Atualizar unidades de Gabriel e Felipe (INSERT tool)
-
-```sql
-UPDATE profiles SET units = ARRAY['madre','floresta','atendimento_floresta']
-WHERE user_id IN (
-  '72c334c0-97a3-4b9c-a78b-751ceefa8cc9',  -- Gabriel
-  '7571f0eb-e676-4650-a510-f4e6ed7bbe5b'   -- Felipe
-);
-```
-
-#### 3. Código - `useSchedules.ts`
-
-Sem alteração necessária: o hook já usa o array `units` do perfil para receptionists (linhas 73-87), e com `units` atualizado para todos, Gabriel e Felipe verão todos os agendamentos.
-
-#### 4. Código - `useClients.ts`
-
-Sem alteração necessária: para directors, `isRestrictedRole` é `false`, então não filtra por `employeeId`. A RLS deve permitir acesso total.
-
-### Arquivos impactados
-
-| Arquivo | Mudança |
-|---------|---------|
-| Nova migração SQL | Recriar `is_coordinator()`, atualizar RLS de schedules |
-| Dados (via insert tool) | Atualizar `units` de Gabriel e Felipe |
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 
