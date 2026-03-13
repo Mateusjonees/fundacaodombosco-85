@@ -3604,11 +3604,19 @@ export type Database = {
         Args: { start_date: string }
         Returns: string
       }
+      can_access_client_unit: {
+        Args: { target_unit: string }
+        Returns: boolean
+      }
       can_access_financial: { Args: never; Returns: boolean }
       can_access_reports: { Args: never; Returns: boolean }
       can_configure_reports: { Args: never; Returns: boolean }
       can_manage_employees: { Args: never; Returns: boolean }
       can_manage_stock: { Args: never; Returns: boolean }
+      can_update_client_unit: {
+        Args: { target_unit: string }
+        Returns: boolean
+      }
       can_view_all_clients: { Args: never; Returns: boolean }
       create_appointment_notification: {
         Args: {
