@@ -1,0 +1,1 @@
+UPDATE profiles SET units = ARRAY['madre','floresta','atendimento_floresta'] WHERE user_id = 'e99472e0-91c6-4982-8efb-e9eb4dcb1c26';
