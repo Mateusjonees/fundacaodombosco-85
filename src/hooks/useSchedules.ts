@@ -58,34 +58,43 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
 
           // Filtros de permissão
           if (userProfile) {
-            if (userProfile.employee_role === 'coordinator_madre') {
-              const { data: clientsInUnit } = await supabase.from('clients').select('id').or('unit.eq.madre,unit.is.null');
-              const clientIds = clientsInUnit?.map(c => c.id) || [];
-              if (clientIds.length > 0) query = query.in('client_id', clientIds);
-            } else if (userProfile.employee_role === 'coordinator_floresta') {
-              const { data: clientsInUnit } = await supabase.from('clients').select('id').eq('unit', 'floresta');
-              const clientIds = clientsInUnit?.map(c => c.id) || [];
-              if (clientIds.length > 0) query = query.in('client_id', clientIds);
-            } else if (userProfile.employee_role === 'coordinator_atendimento_floresta') {
-              const { data: clientsInUnit } = await supabase.from('clients').select('id').eq('unit', 'atendimento_floresta');
-              const clientIds = clientsInUnit?.map(c => c.id) || [];
-              if (clientIds.length > 0) query = query.in('client_id', clientIds);
-            } else if (userProfile.employee_role === 'receptionist') {
-              // Usar array de unidades se disponível, senão fallback para unit singular
+            const isCoordinator = ['coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userProfile.employee_role);
+            const isReceptionist = userProfile.employee_role === 'receptionist';
+            const isDirector = userProfile.employee_role === 'director';
+
+            if (isDirector) {
+              // Diretores veem tudo - sem filtro
+            } else if (isCoordinator || isReceptionist) {
+              // Coordenadores e recepcionistas: usar array units se disponível
               const userUnits: string[] = Array.isArray(userProfile.units) && userProfile.units.length > 0
                 ? userProfile.units
-                : userProfile.unit ? [userProfile.unit] : ['madre'];
-              
-              let clientsQuery = supabase.from('clients').select('id');
-              if (userUnits.length === 1) {
-                clientsQuery = clientsQuery.eq('unit', userUnits[0]);
-              } else {
-                clientsQuery = clientsQuery.in('unit', userUnits);
+                : userProfile.unit ? [userProfile.unit] : [];
+
+              // Fallback por cargo se nenhuma unidade definida
+              if (userUnits.length === 0 && isCoordinator) {
+                if (userProfile.employee_role === 'coordinator_madre') userUnits.push('madre');
+                else if (userProfile.employee_role === 'coordinator_floresta') userUnits.push('floresta');
+                else if (userProfile.employee_role === 'coordinator_atendimento_floresta') userUnits.push('atendimento_floresta');
               }
-              const { data: clientsInUnit } = await clientsQuery;
-              const clientIds = clientsInUnit?.map(c => c.id) || [];
-              if (clientIds.length > 0) query = query.in('client_id', clientIds);
-            } else if (userProfile.employee_role !== 'director') {
+
+              if (userUnits.length > 0) {
+                let clientsQuery = supabase.from('clients').select('id');
+                if (userUnits.length === 1) {
+                  // Para madre, incluir pacientes sem unidade
+                  if (userUnits[0] === 'madre') {
+                    clientsQuery = clientsQuery.or('unit.eq.madre,unit.is.null');
+                  } else {
+                    clientsQuery = clientsQuery.eq('unit', userUnits[0]);
+                  }
+                } else {
+                  clientsQuery = clientsQuery.in('unit', userUnits);
+                }
+                const { data: clientsInUnit } = await clientsQuery;
+                const clientIds = clientsInUnit?.map(c => c.id) || [];
+                if (clientIds.length > 0) query = query.in('client_id', clientIds);
+              }
+            } else {
+              // Profissionais: só seus agendamentos
               query = query.eq('employee_id', userProfile.user_id);
             }
           }
