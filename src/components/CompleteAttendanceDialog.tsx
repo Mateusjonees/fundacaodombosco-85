@@ -791,8 +791,8 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(fvaResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(fvaResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify(fvaResults.percentiles || {})),
-            classifications: JSON.parse(JSON.stringify(fvaResults.classifications || {})),
+            percentiles: JSON.parse(JSON.stringify({ percentilAnimais: fvaResults.calculatedScores?.percentilAnimais ?? '-', percentilFrutas: fvaResults.calculatedScores?.percentilFrutas ?? '-', percentilPares: fvaResults.calculatedScores?.percentilPares ?? '-' })),
+            classifications: JSON.parse(JSON.stringify({ percentilAnimais: fvaResults.classifications?.classificacaoAnimais ?? '-', percentilFrutas: fvaResults.classifications?.classificacaoFrutas ?? '-', percentilPares: fvaResults.classifications?.classificacaoPares ?? '-' })),
             applied_by: user.id,
             applied_at: now,
             notes: fvaResults.notes || null
