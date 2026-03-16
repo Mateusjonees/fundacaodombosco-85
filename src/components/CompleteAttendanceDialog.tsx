@@ -627,8 +627,8 @@ export default function CompleteAttendanceDialog({
         .select('id')
         .maybeSingle();
 
-      // Salvar resultados dos testes neuro (se houver)
-      if (isNeuroUnit) {
+      // Salvar resultados dos testes neuro (se houver testes selecionados)
+      if (selectedTests.length > 0) {
         const testsToSave = [];
 
         // BPA-2
