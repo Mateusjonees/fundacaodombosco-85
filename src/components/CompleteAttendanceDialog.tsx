@@ -1566,7 +1566,7 @@ export default function CompleteAttendanceDialog({
           </div>
           <p className="text-sm text-muted-foreground">
             {schedule.clients?.name} • {new Date(schedule.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            {isNeuroUnit && patientAge > 0 && (
+            {isNeuroUnit && (
               <span className="ml-2 text-primary font-medium">• {patientAge} anos</span>
             )}
           </p>
@@ -1575,7 +1575,7 @@ export default function CompleteAttendanceDialog({
         <ScrollArea className="flex-1 min-h-0">
           <div className="space-y-4 p-4 sm:p-6">
             {/* Seção de Testes Neuropsicológicos - Apenas para unidade Floresta (Neuro) */}
-            {isNeuroUnit && patientAge > 0 && (
+            {isNeuroUnit && (
               <div className="space-y-3">
                 <NeuroTestSelector
                   patientAge={patientAge}
