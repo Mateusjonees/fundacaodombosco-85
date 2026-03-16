@@ -52,7 +52,7 @@ export default function NeuroTestTINForm({
       calculatedScores: {
         escorePadrao
       },
-      percentiles: {}, // TIN não usa percentil, usa escore padrão
+      percentiles: escorePadrao !== null ? { escorePadrao: epToPercentile(escorePadrao) } : {},
       classifications: {
         escorePadrao: escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado'
       },
