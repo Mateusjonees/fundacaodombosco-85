@@ -16,6 +16,7 @@ import {
   lookupTrilhasPreEscolarBStandardScore,
   getTrilhasPreEscolarAgeGroupName,
 } from '@/data/neuroTests/trilhasPreEscolarStandardScores';
+import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 
 interface NeuroTestTrilhasPreEscolarFormProps {
   patientAge: number;
