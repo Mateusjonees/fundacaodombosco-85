@@ -1566,7 +1566,7 @@ export default function CompleteAttendanceDialog({
           </div>
           <p className="text-sm text-muted-foreground">
             {schedule.clients?.name} • {new Date(schedule.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            {isNeuroUnit && patientAge > 0 && (
+            {isNeuroUnit && (
               <span className="ml-2 text-primary font-medium">• {patientAge} anos</span>
             )}
           </p>
