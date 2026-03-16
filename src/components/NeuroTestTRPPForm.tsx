@@ -12,6 +12,7 @@ import {
   isAgeValidForTRPP,
   getTRPPClassificationColor
 } from '@/data/neuroTests/trpp';
+import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 
 interface NeuroTestTRPPFormProps {
   patientAge: number;
