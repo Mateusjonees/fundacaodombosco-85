@@ -829,8 +829,8 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(trilhasResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(trilhasResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify({ trilhaA: trilhasResults.calculatedScores?.escorePadraoA ?? null, trilhaB: trilhasResults.calculatedScores?.escorePadraoB ?? null })),
-            classifications: JSON.parse(JSON.stringify({ trilhaA: trilhasResults.classifications?.sequenciasA ?? '-', trilhaB: trilhasResults.classifications?.sequenciasB ?? '-' })),
+            percentiles: JSON.parse(JSON.stringify(trilhasResults.percentiles || {})),
+            classifications: JSON.parse(JSON.stringify(trilhasResults.classifications || {})),
             applied_by: user.id,
             applied_at: now,
             notes: trilhasResults.notes || null
