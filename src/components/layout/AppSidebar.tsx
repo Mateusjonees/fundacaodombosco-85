@@ -456,6 +456,14 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
             Atualizar Sistema
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive cursor-pointer gap-2">
+            <LogOut className="h-4 w-4" />
+            Sair
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
   return (
     <DropdownMenu>
@@ -480,6 +488,10 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
         <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="cursor-pointer gap-2">
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleForceUpdate} className="cursor-pointer gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Atualizar Sistema
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive cursor-pointer gap-2">
