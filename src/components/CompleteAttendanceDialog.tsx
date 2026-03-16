@@ -1452,7 +1452,15 @@ export default function CompleteAttendanceDialog({
         }
 
         if (testsToSave.length > 0) {
-          await supabase.from('neuro_test_results').insert(testsToSave);
+          console.log('[Neuro] Salvando', testsToSave.length, 'testes:', testsToSave.map(t => t.test_code));
+          const { error: neuroError } = await supabase.from('neuro_test_results').insert(testsToSave);
+          if (neuroError) {
+            console.error('[Neuro] Erro ao salvar testes:', neuroError);
+          } else {
+            console.log('[Neuro] Testes salvos com sucesso');
+          }
+        } else {
+          console.log('[Neuro] Nenhum teste para salvar. selectedTests:', selectedTests);
         }
       }
 
