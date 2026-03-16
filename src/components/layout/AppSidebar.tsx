@@ -108,7 +108,7 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   if (permissions.canViewAllSchedules() || permissions.isProfessional() || customPermissions.hasPermission('view_schedules')) {
     items.push({ id: 'schedule', title: 'Agenda', url: '/schedule', icon: 'Calendar', category: 'AGENDA', order_index: 6 });
   }
-  if (permissions.isDirector() || permissions.isCoordinator()) {
+  if (permissions.isDirector() || permissions.isCoordinator() || permissions.hasRole('receptionist')) {
     items.push({ id: 'schedule-control', title: 'Controle de Agendamentos', url: '/schedule-control', icon: 'ClipboardList', category: 'AGENDA', order_index: 7 });
   }
   items.push({ id: 'meeting-alerts', title: 'Alertas de Reunião', url: '/meeting-alerts', icon: 'Bell', category: 'AGENDA', order_index: 8 });
