@@ -810,7 +810,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(bntbrResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(bntbrResults.calculatedScores)),
-            percentiles: { percentil: bntbrResults.calculatedScores.percentil },
+            percentiles: JSON.parse(JSON.stringify(bntbrResults.percentiles || {})),
             classifications: JSON.parse(JSON.stringify(bntbrResults.classifications)),
             applied_by: user.id,
             applied_at: now,
