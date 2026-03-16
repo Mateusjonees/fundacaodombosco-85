@@ -1,60 +1,31 @@
 
 
-## Plano: Adicionar Card de Percentil com Formula nos Testes Neuropsicologicos
+# Botao de Rotacao de Tela para Mobile/Tablet
 
-### Problema
-6 testes calculam o Escore Padrao (EP) mas nao mostram o percentil correspondente nem a formula usada para calcula-lo:
-- TIN
-- PCFO
-- Trilhas A e B (6-14 anos)
-- Trilhas Pre-Escolares (4-6 anos)
-- TRPP
-- Cubos de Corsi (ja calcula percentil mas nao mostra a formula)
+## O que sera feito
+Adicionar um botao flutuante visivel apenas em dispositivos moveis e tablets que permite ao usuario alternar a orientacao da tela entre retrato (portrait) e paisagem (landscape) usando a Screen Orientation API do navegador.
 
-### Solucao
-Usar a utilidade ja existente `epToPercentile` e `getPercentileFormula` de `src/utils/neuroPercentile.ts` para converter EP em percentil e exibir a formula. Para Corsi, que usa tabela fixa (nao EP), mostrar a formula descritiva.
+## Como vai funcionar
+- Um botao flutuante aparecera no canto inferior direito da tela, acima da barra de navegacao inferior
+- Ao clicar, a tela alternara entre orientacao retrato e paisagem
+- O icone do botao mudara conforme a orientacao atual (smartphone vertical ou horizontal)
+- O botao so aparecera em dispositivos moveis e tablets (telas menores que 1024px)
+- Em navegadores que nao suportam a API de orientacao, o botao nao sera exibido
 
-### Implementacao
+## Detalhes Tecnicos
 
-**Cada formulario recebera um novo Card "Percentil" na secao de resultados, mostrando:**
-1. O valor do percentil calculado
-2. A formula usada: `Z = (EP - 100) / 15 = X → Percentil Y`
+### 1. Novo componente: `src/components/ScreenOrientationToggle.tsx`
+- Utilizara a API `screen.orientation.lock()` para alternar entre `portrait` e `landscape`
+- Verificara suporte do navegador antes de exibir o botao
+- Usara o hook `useIsMobile` existente e uma verificacao de largura maxima (1024px) para incluir tablets
+- Icone do lucide-react: `RotateCcw` ou `Smartphone`
+- Estilo: botao circular flutuante com `fixed`, posicionado acima da nav inferior (`bottom-20`)
 
-#### Arquivo 1: `src/components/NeuroTestTINForm.tsx`
-- Importar `epToPercentile`, `getPercentileFormula` de `neuroPercentile.ts`
-- Apos o card de Classificacao (linha ~148-156), adicionar um 4o card com Percentil e formula
-- Atualizar `percentiles` no resultado para incluir o valor calculado
+### 2. Integracao no `MainApp.tsx`
+- Importar e renderizar o componente `ScreenOrientationToggle` ao lado do `MobileBottomNav`
 
-#### Arquivo 2: `src/components/NeuroTestPCFOForm.tsx`
-- Importar utilitarios de percentil
-- Na secao "Resultados Calculados" (linha ~149-183), adicionar linha com Percentil e formula
-
-#### Arquivo 3: `src/components/NeuroTestTrilhasForm.tsx`
-- Importar utilitarios de percentil
-- Para cada subteste (A, B, B-A), adicionar uma 4a coluna com Percentil + formula abaixo da tabela
-
-#### Arquivo 4: `src/components/NeuroTestTrilhasPreEscolarForm.tsx`
-- Importar utilitarios de percentil
-- Para cada subteste (A, B), adicionar Percentil com formula nos cards de resultado
-
-#### Arquivo 5: `src/components/NeuroTestTRPPForm.tsx`
-- Importar utilitarios de percentil
-- Adicionar coluna "Percentil" na tabela de resultados para o Total
-
-#### Arquivo 6: `src/components/NeuroTestCorsiForm.tsx`
-- Ja calcula percentil via tabela fixa, mas nao exibe no UI
-- Adicionar card mostrando os percentis calculados com descricao: "Percentil baseado em tabela normativa (M~5, DP~1.1)"
-
-### Nota sobre "Digitos (4-5 anos)"
-Este teste nao existe no sistema. Sera necessario criar o formulario separadamente se desejado.
-
-### Padrao visual do card de percentil
-```
-┌─────────────────────────────────┐
-│ Percentil                       │
-│        75                       │
-│ Z = (110 - 100) / 15 = 0.67    │
-│ → Percentil 75                  │
-└─────────────────────────────────┘
-```
+### 3. Tratamento de erros
+- Nem todos os navegadores suportam `screen.orientation.lock()` (Safari iOS tem suporte limitado)
+- Caso o navegador nao suporte, o botao nao sera renderizado
+- Em caso de falha ao rotacionar, exibira um toast informando o usuario
 

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { getPCFOStandardScore, suggestSchoolingLevel, type PCFOSchoolingLevel } from '@/data/neuroTests/pcfoStandardScores';
 import { getPCFOClassification, getPCFOClassificationColor } from '@/data/neuroTests/pcfo';
+import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 
 interface NeuroTestPCFOFormProps {
   patientAge: number;
@@ -173,6 +174,18 @@ const NeuroTestPCFOForm = ({ patientAge, onResultsChange }: NeuroTestPCFOFormPro
                   </span>
                 </div>
               </div>
+
+              {escorePadrao !== null && (
+                <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Percentil:</span>
+                    <span className="text-lg font-bold text-primary">{epToPercentile(escorePadrao)}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 font-mono">
+                    {getPercentileFormula('ep', escorePadrao)}
+                  </p>
+                </div>
+              )}
 
               {escorePadrao === null && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">

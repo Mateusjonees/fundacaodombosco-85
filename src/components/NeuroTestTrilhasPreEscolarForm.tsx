@@ -16,6 +16,7 @@ import {
   lookupTrilhasPreEscolarBStandardScore,
   getTrilhasPreEscolarAgeGroupName,
 } from '@/data/neuroTests/trilhasPreEscolarStandardScores';
+import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 
 interface NeuroTestTrilhasPreEscolarFormProps {
   patientAge: number;
@@ -166,6 +167,17 @@ const NeuroTestTrilhasPreEscolarForm: React.FC<NeuroTestTrilhasPreEscolarFormPro
                     </Badge>
                   </div>
                 </div>
+                {results.standardScoreA !== null && (
+                  <div className="mt-2 p-2 bg-primary/5 rounded border border-primary/20">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Percentil:</span>
+                      <span className="font-bold text-primary">{epToPercentile(results.standardScoreA)}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      {getPercentileFormula('ep', results.standardScoreA)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Sequências B */}
@@ -191,6 +203,17 @@ const NeuroTestTrilhasPreEscolarForm: React.FC<NeuroTestTrilhasPreEscolarFormPro
                     </Badge>
                   </div>
                 </div>
+                {results.standardScoreB !== null && (
+                  <div className="mt-2 p-2 bg-primary/5 rounded border border-primary/20">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Percentil:</span>
+                      <span className="font-bold text-primary">{epToPercentile(results.standardScoreB)}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      {getPercentileFormula('ep', results.standardScoreB)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

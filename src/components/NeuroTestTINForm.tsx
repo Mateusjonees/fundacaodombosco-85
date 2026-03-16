@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Brain, Calculator, Trash2, AlertCircle } from 'lucide-react';
 import { TIN_TEST, getTINClassification, getTINClassificationColor } from '@/data/neuroTests/tin';
 import { lookupTINStandardScore, getTINAgeGroupName, isAgeValidForTIN } from '@/data/neuroTests/tinStandardScores';
+import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export interface TINResults {
@@ -51,7 +52,7 @@ export default function NeuroTestTINForm({
       calculatedScores: {
         escorePadrao
       },
-      percentiles: {}, // TIN não usa percentil, usa escore padrão
+      percentiles: escorePadrao !== null ? { escorePadrao: epToPercentile(escorePadrao) } : {},
       classifications: {
         escorePadrao: escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado'
       },
@@ -129,7 +130,7 @@ export default function NeuroTestTINForm({
             Resultados
           </h4>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-background rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">Escore Bruto</p>
               <p className="text-2xl font-bold">{acertos}</p>
@@ -153,6 +154,18 @@ export default function NeuroTestTINForm({
               >
                 {classification}
               </Badge>
+            </div>
+
+            <div className="text-center p-3 bg-background rounded-lg border border-primary/30">
+              <p className="text-xs text-muted-foreground mb-1">Percentil</p>
+              <p className="text-2xl font-bold text-primary">
+                {escorePadrao !== null ? epToPercentile(escorePadrao) : '-'}
+              </p>
+              {escorePadrao !== null && (
+                <p className="text-[10px] text-muted-foreground mt-1 font-mono">
+                  {getPercentileFormula('ep', escorePadrao)}
+                </p>
+              )}
             </div>
           </div>
 

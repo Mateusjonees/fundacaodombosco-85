@@ -96,6 +96,25 @@ export default function NeuroTestCorsiForm({ patientAge, onResultsChange, onRemo
           </div>
         </div>
 
+        {/* Percentis */}
+        {spanDireto && spanInverso && !isNaN(parseInt(spanDireto)) && !isNaN(parseInt(spanInverso)) && (
+          <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Percentis</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Span Direto</p>
+                <p className="text-lg font-bold text-primary">P{calculateCorsiResults(parseInt(spanDireto), parseInt(spanInverso)).percentiles.spanDireto}</p>
+                <p className="text-[10px] text-muted-foreground font-mono">Tabela normativa (M≈5, DP≈1.1)</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Span Inverso</p>
+                <p className="text-lg font-bold text-primary">P{calculateCorsiResults(parseInt(spanDireto), parseInt(spanInverso)).percentiles.spanInverso}</p>
+                <p className="text-[10px] text-muted-foreground font-mono">Tabela normativa (M≈4.5, DP≈1.1)</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="text-xs text-muted-foreground">≥7: Superior | 6: Média Superior | 5: Média | 4: Média Inferior | 3: Limítrofe | ≤2: Deficitário</div>
       </CardContent>
     </Card>

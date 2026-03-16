@@ -12,6 +12,7 @@ import {
   isAgeValidForTRPP,
   getTRPPClassificationColor
 } from '@/data/neuroTests/trpp';
+import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 
 interface NeuroTestTRPPFormProps {
   patientAge: number;
@@ -115,6 +116,7 @@ export default function NeuroTestTRPPForm({ patientAge, onResultsChange }: Neuro
                   <TableHead className="text-center">Pontuação</TableHead>
                   <TableHead className="text-center">Escore Padrão</TableHead>
                   <TableHead className="text-center">Classificação</TableHead>
+                  <TableHead className="text-center">Percentil</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -123,10 +125,12 @@ export default function NeuroTestTRPPForm({ patientAge, onResultsChange }: Neuro
                   <TableCell className="text-center">{results.rawScores.palavras}</TableCell>
                   <TableCell className="text-center text-muted-foreground">-</TableCell>
                   <TableCell className="text-center text-muted-foreground">-</TableCell>
+                  <TableCell className="text-center text-muted-foreground">-</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Repetição de Pseudopalavras</TableCell>
                   <TableCell className="text-center">{results.rawScores.pseudopalavras}</TableCell>
+                  <TableCell className="text-center text-muted-foreground">-</TableCell>
                   <TableCell className="text-center text-muted-foreground">-</TableCell>
                   <TableCell className="text-center text-muted-foreground">-</TableCell>
                 </TableRow>
@@ -141,9 +145,25 @@ export default function NeuroTestTRPPForm({ patientAge, onResultsChange }: Neuro
                   <TableCell className="text-center">
                     {getClassificationBadge(results.classifications.total)}
                   </TableCell>
+                  <TableCell className="text-center">
+                    {results.calculatedScores.escorePadrao !== null ? (
+                      <div>
+                        <span className="font-bold text-primary">{epToPercentile(results.calculatedScores.escorePadrao)}</span>
+                      </div>
+                    ) : '-'}
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
+
+            {results.calculatedScores.escorePadrao !== null && (
+              <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Fórmula do Percentil:</p>
+                <p className="text-xs font-mono text-muted-foreground">
+                  {getPercentileFormula('ep', results.calculatedScores.escorePadrao)}
+                </p>
+              </div>
+            )}
 
             {results.calculatedScores.escorePadrao === null && (
               <Alert>
