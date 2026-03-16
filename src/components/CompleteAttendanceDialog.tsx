@@ -1075,7 +1075,7 @@ export default function CompleteAttendanceDialog({
               total: trppResults.calculatedScores.total,
               escorePadrao: trppResults.calculatedScores.escorePadrao
             })),
-            percentiles: JSON.parse(JSON.stringify({ total: trppResults.calculatedScores?.escorePadrao ?? null })),
+            percentiles: JSON.parse(JSON.stringify({ total: trppResults.calculatedScores?.escorePadrao != null ? epToPercentile(trppResults.calculatedScores.escorePadrao) : null })),
             classifications: JSON.parse(JSON.stringify({
               total: trppResults.classifications.total
             })),
