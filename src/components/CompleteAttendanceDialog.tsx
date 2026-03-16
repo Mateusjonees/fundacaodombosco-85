@@ -545,7 +545,8 @@ export default function CompleteAttendanceDialog({
     try {
       const isNutritionist = professionalRole === 'nutritionist';
       const isAtendimentoFloresta = clientUnit === 'atendimento_floresta';
-      const isNeuroUnit = clientUnit === 'floresta';
+      const isNeuroSchedule = schedule.title?.toLowerCase().includes('neuro');
+      const isNeuroUnit = clientUnit === 'floresta' || isNeuroSchedule;
 
       // Buscar profissional
       const { data: professionalProfile } = await supabase
