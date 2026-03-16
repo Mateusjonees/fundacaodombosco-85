@@ -156,6 +156,15 @@ export default function NeuroTestTRPPForm({ patientAge, onResultsChange }: Neuro
               </TableBody>
             </Table>
 
+            {results.calculatedScores.escorePadrao !== null && (
+              <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Fórmula do Percentil:</p>
+                <p className="text-xs font-mono text-muted-foreground">
+                  {getPercentileFormula('ep', results.calculatedScores.escorePadrao)}
+                </p>
+              </div>
+            )}
+
             {results.calculatedScores.escorePadrao === null && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />

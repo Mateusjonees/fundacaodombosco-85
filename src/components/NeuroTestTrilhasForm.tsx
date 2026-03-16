@@ -192,7 +192,7 @@ export default function NeuroTestTrilhasForm({
           
           {/* Sequências A */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-background rounded-lg border">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-background rounded-lg border">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">Sequências A (Bruto)</p>
                 <p className="text-xl font-bold">{sequenciasA}</p>
@@ -212,10 +212,19 @@ export default function NeuroTestTrilhasForm({
                   {classificationA}
                 </Badge>
               </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Percentil A</p>
+                <p className="text-xl font-bold text-primary">
+                  {escorePadraoA !== null ? epToPercentile(escorePadraoA) : '-'}
+                </p>
+                {escorePadraoA !== null && (
+                  <p className="text-[10px] text-muted-foreground font-mono">{getPercentileFormula('ep', escorePadraoA)}</p>
+                )}
+              </div>
             </div>
 
             {/* Sequências B */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-background rounded-lg border">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-background rounded-lg border">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">Sequências B (Bruto)</p>
                 <p className="text-xl font-bold">{sequenciasB}</p>
@@ -235,10 +244,19 @@ export default function NeuroTestTrilhasForm({
                   {classificationB}
                 </Badge>
               </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Percentil B</p>
+                <p className="text-xl font-bold text-primary">
+                  {escorePadraoB !== null ? epToPercentile(escorePadraoB) : '-'}
+                </p>
+                {escorePadraoB !== null && (
+                  <p className="text-[10px] text-muted-foreground font-mono">{getPercentileFormula('ep', escorePadraoB)}</p>
+                )}
+              </div>
             </div>
 
             {/* Diferença B-A */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-background rounded-lg border border-primary/30">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-background rounded-lg border border-primary/30">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">B-A (Diferença)</p>
                 <p className="text-xl font-bold">{diferencaBA}</p>
@@ -257,6 +275,15 @@ export default function NeuroTestTrilhasForm({
                 >
                   {classificationBA}
                 </Badge>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Percentil B-A</p>
+                <p className="text-xl font-bold text-primary">
+                  {escorePadraoBA !== null ? epToPercentile(escorePadraoBA) : '-'}
+                </p>
+                {escorePadraoBA !== null && (
+                  <p className="text-[10px] text-muted-foreground font-mono">{getPercentileFormula('ep', escorePadraoBA)}</p>
+                )}
               </div>
             </div>
           </div>

@@ -175,6 +175,18 @@ const NeuroTestPCFOForm = ({ patientAge, onResultsChange }: NeuroTestPCFOFormPro
                 </div>
               </div>
 
+              {escorePadrao !== null && (
+                <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Percentil:</span>
+                    <span className="text-lg font-bold text-primary">{epToPercentile(escorePadrao)}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 font-mono">
+                    {getPercentileFormula('ep', escorePadrao)}
+                  </p>
+                </div>
+              )}
+
               {escorePadrao === null && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">
                   ⚠️ Escore padrão não disponível para esta combinação de idade/pontuação/nível escolar.
