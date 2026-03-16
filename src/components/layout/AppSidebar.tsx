@@ -1,7 +1,7 @@
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { useNeuroStats } from '@/hooks/useNeuroStats';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronRight, Moon, Sun, MoreHorizontal, ChevronsUpDown } from 'lucide-react';
+import { Users, Calendar, DollarSign, UserPlus, Package, BarChart3, UserCheck, Home, FolderOpen, LogOut, Settings, Archive, CheckSquare, Shield, Heart, ClipboardList, MessageSquare, FileCheck, FileText, Folder, Clock, Bell, Brain, LucideIcon, ChevronRight, Moon, Sun, MoreHorizontal, ChevronsUpDown, RefreshCw } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
@@ -414,6 +414,25 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
   const { userName, userRole, avatarUrl } = useCurrentUser();
   const { theme, setTheme } = useTheme();
 
+  const handleForceUpdate = async () => {
+    try {
+      // Limpa caches do navegador
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      // Remove service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(r => r.unregister()));
+      }
+      localStorage.removeItem('app_version');
+      window.location.reload();
+    } catch {
+      window.location.reload();
+    }
+  };
+
   if (collapsed) {
     return (
       <DropdownMenu>
@@ -431,6 +450,10 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
           <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="cursor-pointer gap-2">
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleForceUpdate} className="cursor-pointer gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Atualizar Sistema
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive cursor-pointer gap-2">
@@ -465,6 +488,10 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
         <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="cursor-pointer gap-2">
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleForceUpdate} className="cursor-pointer gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Atualizar Sistema
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onLogout} className="text-destructive focus:text-destructive cursor-pointer gap-2">
