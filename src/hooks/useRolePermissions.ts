@@ -169,7 +169,7 @@ export const useRolePermissions = () => {
   };
 
   const canViewMyPatients = (): boolean => {
-    return isGodMode() || hasAnyRole([...ROLE_GROUPS.PROFESSIONAL_ROLES, 'director']);
+    return isGodMode() || hasAnyRole([...ROLE_GROUPS.PROFESSIONAL_ROLES, 'director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']);
   };
 
   const canCreateClients = (): boolean => {
