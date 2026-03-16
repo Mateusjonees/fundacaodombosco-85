@@ -772,8 +772,8 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(tsbcResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(tsbcResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify({ escorePadraoOD: tsbcResults.calculatedScores?.escorePadraoOD ?? null, escorePadraoOI: tsbcResults.calculatedScores?.escorePadraoOI ?? null })),
-            classifications: JSON.parse(JSON.stringify({ escorePadraoOD: tsbcResults.classifications?.classificacaoOD ?? 'Não classificado', escorePadraoOI: tsbcResults.classifications?.classificacaoOI ?? 'Não classificado' })),
+            percentiles: JSON.parse(JSON.stringify(tsbcResults.percentiles || {})),
+            classifications: JSON.parse(JSON.stringify(tsbcResults.classifications || {})),
             applied_by: user.id,
             applied_at: now,
             notes: tsbcResults.notes || null
