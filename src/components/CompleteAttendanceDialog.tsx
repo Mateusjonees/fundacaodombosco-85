@@ -1575,7 +1575,7 @@ export default function CompleteAttendanceDialog({
         <ScrollArea className="flex-1 min-h-0">
           <div className="space-y-4 p-4 sm:p-6">
             {/* Seção de Testes Neuropsicológicos - Apenas para unidade Floresta (Neuro) */}
-            {isNeuroUnit && patientAge > 0 && (
+            {isNeuroUnit && (
               <div className="space-y-3">
                 <NeuroTestSelector
                   patientAge={patientAge}
