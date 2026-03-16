@@ -414,6 +414,25 @@ const UserAvatarFooter = memo(({ collapsed, onLogout }: { collapsed: boolean; on
   const { userName, userRole, avatarUrl } = useCurrentUser();
   const { theme, setTheme } = useTheme();
 
+  const handleForceUpdate = async () => {
+    try {
+      // Limpa caches do navegador
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      // Remove service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(r => r.unregister()));
+      }
+      localStorage.removeItem('app_version');
+      window.location.reload();
+    } catch {
+      window.location.reload();
+    }
+  };
+
   if (collapsed) {
     return (
       <DropdownMenu>
