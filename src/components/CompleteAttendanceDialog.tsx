@@ -541,6 +541,36 @@ export default function CompleteAttendanceDialog({
       return;
     }
 
+    // Verificar testes neuro selecionados mas não preenchidos
+    if (selectedTests.length > 0) {
+      const testResultsMap: Record<string, any> = {
+        'BPA2': bpa2Results, 'FDT': fdtResults, 'RAVLT': ravltResults, 'TIN': tinResults,
+        'PCFO': pcfoResults, 'TSBC': tsbcResults, 'FVA': fvaResults, 'BNTBR': bntbrResults,
+        'TRILHAS': trilhasResults, 'TMT_ADULTO': tmtAdultoResults, 'TRILHAS_PRE_ESCOLAR': trilhasPreEscolarResults,
+        'FAS': fasResults, 'HAYLING_ADULTO': haylingAdultoResults, 'HAYLING_INFANTIL': haylingInfantilResults,
+        'TFV': tfvResults, 'TOM': tomResults, 'TAYLOR': taylorResults, 'TRPP': trppResults,
+        'FPT_INFANTIL': fptInfantilResults, 'FPT_ADULTO': fptAdultoResults, 'REY': reyResults,
+        'STROOP': stroopResults, 'WCST': wcstResults, 'WECHSLER': wechslerResults,
+        'TOL': tolResults, 'D2': d2Results, 'BDI': bdiResults, 'BAI': baiResults,
+        'SNAPIV': snapivResults, 'MCHAT': mchatResults, 'RAVEN': ravenResults,
+        'WMS': wmsResults, 'MOCA': mocaResults, 'MEEM': meemResults,
+        'BRIEF2': brief2Results, 'CORSI': corsiResults, 'CONNERS': connersResults,
+        'VINELAND': vinelandResults, 'ACE3': ace3Results, 'CBCL': cbclResults,
+        'SDQ': sdqResults, 'GDS': gdsResults, 'TDE2': tde2Results,
+        'NEUPSILIN': neupsilinResults, 'CANCELAMENTO': cancelamentoResults,
+      };
+      
+      const testsWithoutResults = selectedTests.filter(code => !testResultsMap[code]);
+      if (testsWithoutResults.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Testes incompletos",
+          description: `Os seguintes testes foram selecionados mas não foram preenchidos corretamente: ${testsWithoutResults.join(', ')}. Preencha todos os campos obrigatórios ou remova os testes não utilizados.`
+        });
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const isNutritionist = professionalRole === 'nutritionist';
