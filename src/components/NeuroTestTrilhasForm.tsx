@@ -74,7 +74,11 @@ export default function NeuroTestTrilhasForm({
         escorePadraoB,
         escorePadraoBA
       },
-      percentiles: {},
+      percentiles: {
+        ...(escorePadraoA !== null ? { sequenciasA: epToPercentile(escorePadraoA) } : {}),
+        ...(escorePadraoB !== null ? { sequenciasB: epToPercentile(escorePadraoB) } : {}),
+        ...(escorePadraoBA !== null ? { diferencaBA: epToPercentile(escorePadraoBA) } : {}),
+      },
       classifications: {
         sequenciasA: escorePadraoA !== null ? getTrilhasClassification(escorePadraoA) : 'Não classificado',
         sequenciasB: escorePadraoB !== null ? getTrilhasClassification(escorePadraoB) : 'Não classificado',
