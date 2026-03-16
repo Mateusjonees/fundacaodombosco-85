@@ -99,22 +99,61 @@ export default function AttendanceValidationManager() {
   // Carregar testes neuro quando um atendimento for selecionado
   useEffect(() => {
     if (selectedAttendance) {
-      loadNeuroTests(selectedAttendance.id);
+      loadNeuroTests(selectedAttendance);
     } else {
       setNeuroTests([]);
     }
   }, [selectedAttendance]);
 
-  const loadNeuroTests = async (attendanceReportId: string) => {
+  const loadNeuroTests = async (attendance: PendingAttendance) => {
     try {
       setLoadingNeuroTests(true);
-      const { data, error } = await supabase
+      
+      // Tentar buscar por attendance_report_id primeiro
+      let { data, error } = await supabase
         .from('neuro_test_results')
         .select('*')
-        .eq('attendance_report_id', attendanceReportId)
+        .eq('attendance_report_id', attendance.id)
         .order('created_at');
       
       if (error) throw error;
+      
+      // Se não encontrou, buscar por schedule_id como fallback
+      if ((!data || data.length === 0) && attendance.schedule_id) {
+        const { data: dataBySchedule, error: scheduleError } = await supabase
+          .from('neuro_test_results')
+          .select('*')
+          .eq('schedule_id', attendance.schedule_id)
+          .order('created_at');
+        
+        if (!scheduleError && dataBySchedule && dataBySchedule.length > 0) {
+          data = dataBySchedule;
+          
+          // Atualizar os registros para vincular ao attendance_report_id
+          await supabase
+            .from('neuro_test_results')
+            .update({ attendance_report_id: attendance.id })
+            .eq('schedule_id', attendance.schedule_id)
+            .is('attendance_report_id', null);
+        }
+      }
+      
+      // Se ainda não encontrou, buscar por client_id na data do atendimento
+      if ((!data || data.length === 0) && attendance.client_id) {
+        const attendanceDate = new Date(attendance.start_time).toISOString().split('T')[0];
+        const { data: dataByClient, error: clientError } = await supabase
+          .from('neuro_test_results')
+          .select('*')
+          .eq('client_id', attendance.client_id)
+          .gte('applied_at', attendanceDate + 'T00:00:00')
+          .lte('applied_at', attendanceDate + 'T23:59:59')
+          .order('created_at');
+        
+        if (!clientError && dataByClient && dataByClient.length > 0) {
+          data = dataByClient;
+        }
+      }
+      
       setNeuroTests(data || []);
     } catch (error) {
       console.error('Error loading neuro tests:', error);
@@ -747,6 +786,44 @@ export default function AttendanceValidationManager() {
             <p>
               {validationAction === 'validate' ? 'Confirme os valores e valide este atendimento. Os dados serão processados no sistema (estoque, financeiro, histórico).' : 'Tem certeza que deseja rejeitar este atendimento? O profissional precisará revisar e reenviar.'}
             </p>
+
+            {/* Resumo dos testes neuro aplicados na confirmação */}
+            {neuroTests.length > 0 && (
+              <div className="border rounded-lg p-3 bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800">
+                <Label className="text-sm font-semibold flex items-center gap-2 mb-2">
+                  <Brain className="h-4 w-4 text-purple-600" />
+                  Testes Neuropsicológicos ({neuroTests.length})
+                </Label>
+                <div className="space-y-2">
+                  {neuroTests.map((test) => (
+                    <div key={test.id} className="text-sm p-2 bg-background rounded border">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{test.test_name}</span>
+                        <Badge variant="outline" className="text-xs">{test.test_code}</Badge>
+                      </div>
+                      {test.classifications && Object.keys(test.classifications).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Object.entries(test.classifications).map(([key, value]) => (
+                            <Badge 
+                              key={key} 
+                              variant="secondary" 
+                              className="text-xs"
+                            >
+                              {key.replace(/_/g, ' ')}: {String(value)}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {test.raw_scores && Object.keys(test.raw_scores).length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Escores: {Object.entries(test.raw_scores).map(([k, v]) => `${k.replace(/_/g, ' ')}=${v}`).join(' | ')}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {validationAction === 'validate' && <>
                 {selectedAttendance?.unit === 'madre' ? <>
