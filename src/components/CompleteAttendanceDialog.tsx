@@ -734,7 +734,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(tinResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(tinResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify({ escorePadrao: tinResults.calculatedScores?.escorePadrao ?? null })),
+            percentiles: JSON.parse(JSON.stringify(tinResults.percentiles || {})),
             classifications: JSON.parse(JSON.stringify(tinResults.classifications)),
             applied_by: user.id,
             applied_at: now,
