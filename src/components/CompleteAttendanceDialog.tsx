@@ -10,6 +10,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2, Brain, Maximize2, Minimize2 } from 'lucide-react';
 import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
+import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
@@ -734,7 +735,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(tinResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(tinResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify({ escorePadrao: tinResults.calculatedScores?.escorePadrao ?? null })),
+            percentiles: JSON.parse(JSON.stringify(tinResults.percentiles || {})),
             classifications: JSON.parse(JSON.stringify(tinResults.classifications)),
             applied_by: user.id,
             applied_at: now,
@@ -753,7 +754,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(pcfoResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(pcfoResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify({ escorePadrao: pcfoResults.calculatedScores?.escorePadrao ?? null })),
+            percentiles: JSON.parse(JSON.stringify({ escorePadrao: pcfoResults.calculatedScores?.escorePadrao != null ? epToPercentile(pcfoResults.calculatedScores.escorePadrao) : null })),
             classifications: JSON.parse(JSON.stringify({ escorePadrao: pcfoResults.classifications?.geral ?? 'Não classificado' })),
             applied_by: user.id,
             applied_at: now,
@@ -772,7 +773,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(tsbcResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(tsbcResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify({ escorePadraoOD: tsbcResults.calculatedScores?.escorePadraoOD ?? null, escorePadraoOI: tsbcResults.calculatedScores?.escorePadraoOI ?? null })),
+            percentiles: JSON.parse(JSON.stringify({ escorePadraoOD: tsbcResults.calculatedScores?.escorePadraoOD != null ? epToPercentile(tsbcResults.calculatedScores.escorePadraoOD) : null, escorePadraoOI: tsbcResults.calculatedScores?.escorePadraoOI != null ? epToPercentile(tsbcResults.calculatedScores.escorePadraoOI) : null })),
             classifications: JSON.parse(JSON.stringify({ escorePadraoOD: tsbcResults.classifications?.classificacaoOD ?? 'Não classificado', escorePadraoOI: tsbcResults.classifications?.classificacaoOI ?? 'Não classificado' })),
             applied_by: user.id,
             applied_at: now,
@@ -791,7 +792,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(fvaResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(fvaResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify({ percentilAnimais: fvaResults.calculatedScores?.percentilAnimais, percentilFrutas: fvaResults.calculatedScores?.percentilFrutas, percentilPares: fvaResults.calculatedScores?.percentilPares })),
+            percentiles: JSON.parse(JSON.stringify({ percentilAnimais: fvaResults.calculatedScores?.percentilAnimais ?? '-', percentilFrutas: fvaResults.calculatedScores?.percentilFrutas ?? '-', percentilPares: fvaResults.calculatedScores?.percentilPares ?? '-' })),
             classifications: JSON.parse(JSON.stringify({ percentilAnimais: fvaResults.classifications?.classificacaoAnimais ?? '-', percentilFrutas: fvaResults.classifications?.classificacaoFrutas ?? '-', percentilPares: fvaResults.classifications?.classificacaoPares ?? '-' })),
             applied_by: user.id,
             applied_at: now,
@@ -810,7 +811,7 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(bntbrResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(bntbrResults.calculatedScores)),
-            percentiles: { percentil: bntbrResults.calculatedScores.percentil },
+            percentiles: JSON.parse(JSON.stringify({ percentil: bntbrResults.calculatedScores?.percentil ?? null })),
             classifications: JSON.parse(JSON.stringify(bntbrResults.classifications)),
             applied_by: user.id,
             applied_at: now,
@@ -829,8 +830,8 @@ export default function CompleteAttendanceDialog({
             patient_age: patientAge,
             raw_scores: JSON.parse(JSON.stringify(trilhasResults.rawScores)),
             calculated_scores: JSON.parse(JSON.stringify(trilhasResults.calculatedScores)),
-            percentiles: JSON.parse(JSON.stringify({ trilhaA: trilhasResults.calculatedScores?.escorePadraoA ?? null, trilhaB: trilhasResults.calculatedScores?.escorePadraoB ?? null })),
-            classifications: JSON.parse(JSON.stringify({ trilhaA: trilhasResults.classifications?.sequenciasA ?? '-', trilhaB: trilhasResults.classifications?.sequenciasB ?? '-' })),
+            percentiles: JSON.parse(JSON.stringify(trilhasResults.percentiles || {})),
+            classifications: JSON.parse(JSON.stringify(trilhasResults.classifications || {})),
             applied_by: user.id,
             applied_at: now,
             notes: trilhasResults.notes || null
@@ -1074,7 +1075,7 @@ export default function CompleteAttendanceDialog({
               total: trppResults.calculatedScores.total,
               escorePadrao: trppResults.calculatedScores.escorePadrao
             })),
-            percentiles: JSON.parse(JSON.stringify({ total: trppResults.calculatedScores?.escorePadrao ?? null })),
+            percentiles: JSON.parse(JSON.stringify({ total: trppResults.calculatedScores?.escorePadrao != null ? epToPercentile(trppResults.calculatedScores.escorePadrao) : null })),
             classifications: JSON.parse(JSON.stringify({
               total: trppResults.classifications.total
             })),
