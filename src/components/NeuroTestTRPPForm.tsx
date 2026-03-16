@@ -116,6 +116,7 @@ export default function NeuroTestTRPPForm({ patientAge, onResultsChange }: Neuro
                   <TableHead className="text-center">Pontuação</TableHead>
                   <TableHead className="text-center">Escore Padrão</TableHead>
                   <TableHead className="text-center">Classificação</TableHead>
+                  <TableHead className="text-center">Percentil</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -124,10 +125,12 @@ export default function NeuroTestTRPPForm({ patientAge, onResultsChange }: Neuro
                   <TableCell className="text-center">{results.rawScores.palavras}</TableCell>
                   <TableCell className="text-center text-muted-foreground">-</TableCell>
                   <TableCell className="text-center text-muted-foreground">-</TableCell>
+                  <TableCell className="text-center text-muted-foreground">-</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Repetição de Pseudopalavras</TableCell>
                   <TableCell className="text-center">{results.rawScores.pseudopalavras}</TableCell>
+                  <TableCell className="text-center text-muted-foreground">-</TableCell>
                   <TableCell className="text-center text-muted-foreground">-</TableCell>
                   <TableCell className="text-center text-muted-foreground">-</TableCell>
                 </TableRow>
@@ -141,6 +144,13 @@ export default function NeuroTestTRPPForm({ patientAge, onResultsChange }: Neuro
                   </TableCell>
                   <TableCell className="text-center">
                     {getClassificationBadge(results.classifications.total)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {results.calculatedScores.escorePadrao !== null ? (
+                      <div>
+                        <span className="font-bold text-primary">{epToPercentile(results.calculatedScores.escorePadrao)}</span>
+                      </div>
+                    ) : '-'}
                   </TableCell>
                 </TableRow>
               </TableBody>
