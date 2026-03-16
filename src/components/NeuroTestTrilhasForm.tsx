@@ -15,6 +15,7 @@ import {
   isAgeValidForTrilhas 
 } from '@/data/neuroTests/trilhasStandardScores';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 
 export interface TrilhasResults {
   rawScores: {
