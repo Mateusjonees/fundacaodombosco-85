@@ -627,8 +627,8 @@ export default function CompleteAttendanceDialog({
         .select('id')
         .maybeSingle();
 
-      // Salvar resultados dos testes neuro (se houver)
-      if (isNeuroUnit) {
+      // Salvar resultados dos testes neuro (se houver testes selecionados)
+      if (selectedTests.length > 0) {
         const testsToSave = [];
 
         // BPA-2
@@ -1452,7 +1452,15 @@ export default function CompleteAttendanceDialog({
         }
 
         if (testsToSave.length > 0) {
-          await supabase.from('neuro_test_results').insert(testsToSave);
+          console.log('[Neuro] Salvando', testsToSave.length, 'testes:', testsToSave.map(t => t.test_code));
+          const { error: neuroError } = await supabase.from('neuro_test_results').insert(testsToSave);
+          if (neuroError) {
+            console.error('[Neuro] Erro ao salvar testes:', neuroError);
+          } else {
+            console.log('[Neuro] Testes salvos com sucesso');
+          }
+        } else {
+          console.log('[Neuro] Nenhum teste para salvar. selectedTests:', selectedTests);
         }
       }
 
