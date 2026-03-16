@@ -825,6 +825,7 @@ export default function AttendanceValidationManager() {
               </div>
             )}
 
+            {validationAction === 'validate' && <>
                 {selectedAttendance?.unit === 'madre' ? <>
                     <div className="grid grid-cols-1 gap-4">
                       <div>
