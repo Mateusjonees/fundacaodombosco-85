@@ -222,7 +222,7 @@ export const ScheduleCard = memo(({
         <div className="flex items-center justify-between gap-1.5 pt-2 sm:pt-3 border-t border-border/50">
           {/* Botão de presença para recepcionistas */}
           <div>
-            {(userProfile?.employee_role === 'receptionist' || isAdmin) && ['scheduled', 'confirmed'].includes(schedule.status) && (
+            {(userProfile?.employee_role === 'receptionist' || isAdmin || userProfile?.employee_role?.startsWith('coordinator')) && ['scheduled', 'confirmed'].includes(schedule.status) && (
               <PatientPresenceButton
                 scheduleId={schedule.id}
                 clientName={schedule.clients?.name || 'Cliente'}
