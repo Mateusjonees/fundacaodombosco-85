@@ -787,7 +787,44 @@ export default function AttendanceValidationManager() {
               {validationAction === 'validate' ? 'Confirme os valores e valide este atendimento. Os dados serão processados no sistema (estoque, financeiro, histórico).' : 'Tem certeza que deseja rejeitar este atendimento? O profissional precisará revisar e reenviar.'}
             </p>
 
-            {validationAction === 'validate' && <>
+            {/* Resumo dos testes neuro aplicados na confirmação */}
+            {neuroTests.length > 0 && (
+              <div className="border rounded-lg p-3 bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800">
+                <Label className="text-sm font-semibold flex items-center gap-2 mb-2">
+                  <Brain className="h-4 w-4 text-purple-600" />
+                  Testes Neuropsicológicos ({neuroTests.length})
+                </Label>
+                <div className="space-y-2">
+                  {neuroTests.map((test) => (
+                    <div key={test.id} className="text-sm p-2 bg-background rounded border">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{test.test_name}</span>
+                        <Badge variant="outline" className="text-xs">{test.test_code}</Badge>
+                      </div>
+                      {test.classifications && Object.keys(test.classifications).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Object.entries(test.classifications).map(([key, value]) => (
+                            <Badge 
+                              key={key} 
+                              variant="secondary" 
+                              className="text-xs"
+                            >
+                              {key.replace(/_/g, ' ')}: {String(value)}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {test.raw_scores && Object.keys(test.raw_scores).length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Escores: {Object.entries(test.raw_scores).map(([k, v]) => `${k.replace(/_/g, ' ')}=${v}`).join(' | ')}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
                 {selectedAttendance?.unit === 'madre' ? <>
                     <div className="grid grid-cols-1 gap-4">
                       <div>
