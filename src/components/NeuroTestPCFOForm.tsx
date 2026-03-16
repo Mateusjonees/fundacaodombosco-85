@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { getPCFOStandardScore, suggestSchoolingLevel, type PCFOSchoolingLevel } from '@/data/neuroTests/pcfoStandardScores';
 import { getPCFOClassification, getPCFOClassificationColor } from '@/data/neuroTests/pcfo';
+import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 
 interface NeuroTestPCFOFormProps {
   patientAge: number;
