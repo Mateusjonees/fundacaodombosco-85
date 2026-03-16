@@ -1533,7 +1533,8 @@ export default function CompleteAttendanceDialog({
 
   if (!schedule) return null;
 
-  const isNeuroUnit = clientUnit === 'floresta';
+  const isNeuroSchedule = schedule.title?.toLowerCase().includes('neuro');
+  const isNeuroUnit = clientUnit === 'floresta' || isNeuroSchedule;
   const isNutritionistProfessional = professionalRole === 'nutritionist';
 
   return (
