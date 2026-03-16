@@ -99,22 +99,61 @@ export default function AttendanceValidationManager() {
   // Carregar testes neuro quando um atendimento for selecionado
   useEffect(() => {
     if (selectedAttendance) {
-      loadNeuroTests(selectedAttendance.id);
+      loadNeuroTests(selectedAttendance);
     } else {
       setNeuroTests([]);
     }
   }, [selectedAttendance]);
 
-  const loadNeuroTests = async (attendanceReportId: string) => {
+  const loadNeuroTests = async (attendance: PendingAttendance) => {
     try {
       setLoadingNeuroTests(true);
-      const { data, error } = await supabase
+      
+      // Tentar buscar por attendance_report_id primeiro
+      let { data, error } = await supabase
         .from('neuro_test_results')
         .select('*')
-        .eq('attendance_report_id', attendanceReportId)
+        .eq('attendance_report_id', attendance.id)
         .order('created_at');
       
       if (error) throw error;
+      
+      // Se não encontrou, buscar por schedule_id como fallback
+      if ((!data || data.length === 0) && attendance.schedule_id) {
+        const { data: dataBySchedule, error: scheduleError } = await supabase
+          .from('neuro_test_results')
+          .select('*')
+          .eq('schedule_id', attendance.schedule_id)
+          .order('created_at');
+        
+        if (!scheduleError && dataBySchedule && dataBySchedule.length > 0) {
+          data = dataBySchedule;
+          
+          // Atualizar os registros para vincular ao attendance_report_id
+          await supabase
+            .from('neuro_test_results')
+            .update({ attendance_report_id: attendance.id })
+            .eq('schedule_id', attendance.schedule_id)
+            .is('attendance_report_id', null);
+        }
+      }
+      
+      // Se ainda não encontrou, buscar por client_id na data do atendimento
+      if ((!data || data.length === 0) && attendance.client_id) {
+        const attendanceDate = new Date(attendance.start_time).toISOString().split('T')[0];
+        const { data: dataByClient, error: clientError } = await supabase
+          .from('neuro_test_results')
+          .select('*')
+          .eq('client_id', attendance.client_id)
+          .gte('applied_at', attendanceDate + 'T00:00:00')
+          .lte('applied_at', attendanceDate + 'T23:59:59')
+          .order('created_at');
+        
+        if (!clientError && dataByClient && dataByClient.length > 0) {
+          data = dataByClient;
+        }
+      }
+      
       setNeuroTests(data || []);
     } catch (error) {
       console.error('Error loading neuro tests:', error);
