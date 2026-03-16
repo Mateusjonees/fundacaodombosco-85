@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Brain, Calendar, ChevronDown, ClipboardCopy, Calculator, FileInput, User, Sparkles } from 'lucide-react';
 import NeuroTestEvolutionChart from './NeuroTestEvolutionChart';
+import NeuroTestSummaryTable from './NeuroTestSummaryTable';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
@@ -1538,6 +1539,9 @@ export default function PatientNeuroTestHistory({
         onSaved={fetchTests}
       />
       
+      {/* Tabela Resumo */}
+      <NeuroTestSummaryTable tests={tests} clientName={clientName} />
+
       {/* Gráfico de Evolução */}
       <NeuroTestEvolutionChart tests={tests} />
 
