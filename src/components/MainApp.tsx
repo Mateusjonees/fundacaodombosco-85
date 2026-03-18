@@ -90,7 +90,7 @@ const AppRoutes = memo(() => (
         <Route path="/my-files" element={<ProtectedRoute requiredPermission="view_files"><MyFiles /></ProtectedRoute>} />
         <Route path="/timesheet" element={<ProtectedRoute requiredPermission="view_timesheet"><Timesheet /></ProtectedRoute>} />
         <Route path="/meeting-alerts" element={<MeetingAlerts />} />
-        <Route path="/neuroassessment" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'psychologist', 'psychopedagogue']}><Neuroassessment /></ProtectedRoute>} />
+        <Route path="/neuroassessment" element={<ProtectedRoute allowedRoles={['director']}><Neuroassessment /></ProtectedRoute>} />
         <Route path="/contract-templates" element={<ProtectedRoute allowedRoles={['director']}><ContractTemplates /></ProtectedRoute>} />
         <Route path="/custom-roles" element={<ProtectedRoute allowedRoles={['director']}><CustomRoles /></ProtectedRoute>} />
         <Route path="/anamnesis" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist', 'musictherapist', 'terapeuta_ocupacional', 'terapeuta_ocupacional_integracao']}><Anamnesis /></ProtectedRoute>} />

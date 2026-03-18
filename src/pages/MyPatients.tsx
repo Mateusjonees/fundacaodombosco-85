@@ -601,7 +601,7 @@ const MyPatients: React.FC = () => {
                           {daySchedules.length === 0 ? (
                             <div className="text-[10px] sm:text-xs text-muted-foreground text-center py-2 sm:py-4 bg-muted/30 rounded-lg">Sem agenda</div>
                           ) : (
-                            daySchedules.slice(0, 2).map((schedule) => (
+                            daySchedules.slice(0, 3).map((schedule) => (
                               <div key={schedule.id} className="p-2 sm:p-3 bg-card border rounded-lg text-xs hover:shadow-md transition-all duration-200">
                                 <div className="font-bold text-xs sm:text-sm text-primary flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
@@ -613,13 +613,28 @@ const MyPatients: React.FC = () => {
                                 >
                                   {schedule.clients?.name || 'Cliente N/A'}
                                 </div>
-                                <div className="text-[9px] text-muted-foreground mt-0.5 truncate">{schedule.title}</div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <Badge variant={getStatusColor(schedule.status)} className="text-[9px] px-1 py-0">
+                                    {getStatusLabel(schedule.status)}
+                                  </Badge>
+                                  {['scheduled', 'confirmed'].includes(schedule.status) && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost" 
+                                      onClick={(e) => { e.stopPropagation(); setCompleteSchedule(schedule); }}
+                                      className="h-5 px-1.5 text-[9px] text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
+                                    >
+                                      <CheckCircle className="h-3 w-3 mr-0.5" />
+                                      Finalizar
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             ))
                           )}
-                          {daySchedules.length > 2 && (
+                          {daySchedules.length > 3 && (
                             <div className="text-[10px] sm:text-xs text-center text-primary font-medium">
-                              +{daySchedules.length - 2} mais
+                              +{daySchedules.length - 3} mais
                             </div>
                           )}
                         </div>
