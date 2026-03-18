@@ -98,7 +98,7 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   if (permissions.isProfessional() || permissions.isCoordinator() || permissions.isDirector()) {
     items.push({ id: 'anamnesis', title: 'Anamnese', url: '/anamnesis', icon: 'ClipboardList', category: 'GESTÃO CLÍNICA', order_index: 5.5 });
   }
-  if (permissions.isDirector() || permissions.isCoordinator() || permissions.hasAnyRole(['psychologist', 'psychopedagogue'])) {
+  if (permissions.isDirector()) {
     items.push({ id: 'neuroassessment', title: 'Neuroavaliação', url: '/neuroassessment', icon: 'Brain', category: 'GESTÃO CLÍNICA', order_index: 5.6 });
   }
   if (permissions.isDirector() || permissions.isCoordinator() || permissions.hasAnyRole(['receptionist'])) {
