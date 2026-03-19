@@ -557,52 +557,95 @@ export default function Reports() {
 
   const loadAllLaudos = async () => {
     try {
-      let query = supabase
+      let directLaudosQuery = supabase
         .from('client_laudos')
-        .select('*')
-        .order('laudo_date', { ascending: false })
-        .limit(100);
+        .select('id, client_id, employee_id, laudo_date, laudo_type, title, description, status, file_path, created_at, updated_at');
+
+      let feedbackLaudosQuery = supabase
+        .from('client_feedback_control')
+        .select('id, client_id, assigned_to, completed_by, completed_at, created_at, updated_at, notes, status, laudo_file_path')
+        .or('laudo_file_path.not.is.null,status.eq.completed');
 
       if (selectedMonth && !dateFrom && !dateTo) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
-        query = query.gte('laudo_date', format(monthStart, 'yyyy-MM-dd'))
-                    .lte('laudo_date', format(monthEnd, 'yyyy-MM-dd'));
+        const monthStartDate = format(monthStart, 'yyyy-MM-dd');
+        const monthEndDate = format(monthEnd, 'yyyy-MM-dd');
+
+        directLaudosQuery = directLaudosQuery
+          .gte('laudo_date', monthStartDate)
+          .lte('laudo_date', monthEndDate);
+
+        feedbackLaudosQuery = feedbackLaudosQuery
+          .gte('completed_at', `${monthStartDate}T00:00:00`)
+          .lte('completed_at', `${monthEndDate}T23:59:59`);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
+      const [directRes, feedbackRes] = await Promise.all([directLaudosQuery, feedbackLaudosQuery]);
+      if (directRes.error) throw directRes.error;
+      if (feedbackRes.error) throw feedbackRes.error;
 
-      if (data && data.length > 0) {
-        const clientIds = [...new Set(data.map(l => l.client_id))];
-        const employeeIds = [...new Set(data.map(l => l.employee_id))];
+      const feedbackMapped = (feedbackRes.data || []).map((item) => ({
+        id: `feedback-${item.id}`,
+        client_id: item.client_id,
+        employee_id: item.completed_by || item.assigned_to,
+        laudo_date: item.completed_at || item.created_at,
+        laudo_type: 'neuropsicologico',
+        title: 'Laudo de devolutiva',
+        description: item.notes,
+        status: item.status || 'completed',
+        file_path: item.laudo_file_path,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        source: 'feedback_control' as const
+      }));
 
-        const { data: clientsData } = await supabase
+      const mergedLaudos = [
+        ...((directRes.data || []).map((item) => ({ ...item, source: 'client_laudos' as const }))),
+        ...feedbackMapped
+      ];
+
+      if (mergedLaudos.length === 0) {
+        setAllLaudos([]);
+        return;
+      }
+
+      const clientIds = [...new Set(mergedLaudos.map((item) => item.client_id).filter(Boolean))];
+      const employeeIds = [...new Set(mergedLaudos.map((item) => item.employee_id).filter(Boolean))];
+
+      const [clientsRes, profilesRes] = await Promise.all([
+        supabase
           .from('clients')
           .select('id, name, unit')
-          .in('id', clientIds);
+          .in('id', clientIds),
+        employeeIds.length > 0
+          ? supabase.from('profiles').select('user_id, name').in('user_id', employeeIds)
+          : Promise.resolve({ data: [], error: null } as any)
+      ]);
 
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('user_id, name')
-          .in('user_id', employeeIds);
+      if (clientsRes.error) throw clientsRes.error;
+      if (profilesRes.error) throw profilesRes.error;
 
-        let filteredData = data.map(l => ({
-          ...l,
-          client: clientsData?.find(c => c.id === l.client_id),
-          employee: profilesData?.find(e => e.user_id === l.employee_id)
-        }));
+      let filteredData = mergedLaudos.map((item) => ({
+        ...item,
+        client: clientsRes.data?.find((client) => client.id === item.client_id),
+        employee: profilesRes.data?.find((profile: any) => profile.user_id === item.employee_id)
+      }));
 
-        if (coordinatorUnit) {
-          filteredData = filteredData.filter(l => l.client?.unit === coordinatorUnit);
-        } else if (selectedUnit !== 'all') {
-          filteredData = filteredData.filter(l => l.client?.unit === selectedUnit);
-        }
-
-        setAllLaudos(filteredData);
-      } else {
-        setAllLaudos([]);
+      if (coordinatorUnit) {
+        filteredData = filteredData.filter((item) => item.client?.unit === coordinatorUnit);
+      } else if (selectedUnit !== 'all') {
+        filteredData = filteredData.filter((item) => item.client?.unit === selectedUnit);
       }
+
+      filteredData.sort((a, b) => {
+        const unitA = a.client?.unit || '';
+        const unitB = b.client?.unit || '';
+        if (unitA !== unitB) return unitA.localeCompare(unitB);
+        return new Date(b.laudo_date).getTime() - new Date(a.laudo_date).getTime();
+      });
+
+      setAllLaudos(filteredData);
     } catch (error) {
       console.error('Error loading laudos:', error);
       setAllLaudos([]);

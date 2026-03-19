@@ -337,6 +337,9 @@ export default function ClientLaudoManager({
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-medium">{laudo.title}</span>
                         <Badge variant="outline">{getLaudoTypeLabel(laudo.laudo_type)}</Badge>
+                        {laudo.source === 'feedback_control' && (
+                          <Badge variant="secondary">Devolutiva</Badge>
+                        )}
                         {laudo.file_path && <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
                             Arquivo anexado
                           </Badge>}
@@ -385,12 +388,15 @@ export default function ClientLaudoManager({
                         </Button>
                       </>
                     )}
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => {
-                      setSelectedLaudo(laudo);
-                      setDeleteDialogOpen(true);
-                    }} title="Excluir">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {laudo.source !== 'feedback_control' && (
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => {
+                        setSelectedLaudo(laudo);
+                        setDeleteDialogOpen(true);
+                      }} title="Excluir">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                   </div>
                 </div>
               </CardContent>
