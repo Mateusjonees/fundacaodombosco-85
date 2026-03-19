@@ -92,7 +92,7 @@ const getTestConfig = (testCode: string): TestConfig | null => {
     case 'HAYLING_ADULTO':
       return { subtests: ['tempoB', 'errosB'], names: { tempoB: 'Tempo Parte B', errosB: 'Erros Parte B' }, mainSubtest: 'errosB' };
     case 'HAYLING_INFANTIL':
-      return { subtests: ['parteATempo', 'parteBTempo', 'parteBErros', 'inibicaoBA'], names: { parteATempo: 'Parte A (Tempo)', parteBTempo: 'Parte B (Tempo)', parteBErros: 'Parte B (Erros)', inibicaoBA: 'Inibição (B-A)' }, mainSubtest: 'inibicaoBA' };
+      return { subtests: ['parteATempo', 'parteBTempo', 'parteBErros', 'inibicaoBA'], names: { parteATempo: 'Parte A (Tempo)', parteBTempo: 'Parte B (Tempo)', parteBErros: 'Parte B (Erros)', inibicaoBA: 'Inibição (B-A)' }, mainSubtest: 'inibicaoBA', useRawScores: ['parteATempo', 'parteBTempo', 'parteBErros'] };
     case 'TFV':
       return { subtests: ['percentilFonemica', 'percentilSemantica'], names: { percentilFonemica: 'Fonêmica', percentilSemantica: 'Semântica' }, mainSubtest: 'percentilFonemica' };
     case 'CANCELAMENTO':
