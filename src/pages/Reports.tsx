@@ -2257,6 +2257,7 @@ export default function Reports() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Unidade</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Paciente</TableHead>
                       <TableHead>Profissional</TableHead>
@@ -2268,6 +2269,9 @@ export default function Reports() {
                   <TableBody>
                     {allLaudos.slice(0, 50).map((laudo) => (
                       <TableRow key={laudo.id}>
+                        <TableCell>
+                          <Badge variant="secondary">{laudo.client?.unit || 'Sem unidade'}</Badge>
+                        </TableCell>
                         <TableCell>
                           {format(new Date(laudo.laudo_date), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
@@ -2288,8 +2292,8 @@ export default function Reports() {
                           </p>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={laudo.status === 'active' ? 'default' : 'secondary'}>
-                            {laudo.status === 'active' ? 'Ativo' : laudo.status || 'N/A'}
+                          <Badge variant={laudo.status === 'active' || laudo.status === 'completed' ? 'default' : 'secondary'}>
+                            {laudo.status === 'active' ? 'Ativo' : laudo.status === 'completed' ? 'Entregue' : laudo.status || 'N/A'}
                           </Badge>
                         </TableCell>
                       </TableRow>
