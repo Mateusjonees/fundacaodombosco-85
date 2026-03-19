@@ -145,7 +145,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const [currentAssignments, setCurrentAssignments] = useState<any[]>([]);
   const [scheduleServiceType, setScheduleServiceType] = useState<string | null>(null);
   const { toast } = useToast();
-  const [laudoInfo, setLaudoInfo] = useState<{file_path: string;completed_at: string;} | null>(null);
+  const [laudoInfo, setLaudoInfo] = useState<{file_path: string;completed_at: string;source: 'client_laudos' | 'feedback_control';} | null>(null);
   const [loadingLaudo, setLoadingLaudo] = useState(false);
   const [nextAppointment, setNextAppointment] = useState<{date: string;time: string;} | null>(null);
   const [showReportGenerator, setShowReportGenerator] = useState(false);
