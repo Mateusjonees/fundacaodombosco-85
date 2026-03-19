@@ -366,7 +366,6 @@ export default function ClientLaudoManager({
                       <Eye className="h-4 w-4 mr-1" />
                       Ver
                     </Button>
-                    {/* Botões para laudo com conteúdo texto */}
                     {laudo.description && (
                       <>
                         <Button variant="ghost" size="sm" onClick={() => handlePrintLaudo(laudo)} title="Imprimir PDF">
@@ -377,7 +376,6 @@ export default function ClientLaudoManager({
                         </Button>
                       </>
                     )}
-                    {/* Botões para laudo com arquivo anexado */}
                     {laudo.file_path && (
                       <>
                         <Button variant="ghost" size="sm" onClick={() => handleViewFile(laudo)} title="Ver arquivo">
@@ -388,15 +386,12 @@ export default function ClientLaudoManager({
                         </Button>
                       </>
                     )}
-                    {laudo.source !== 'feedback_control' && (
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => {
-                        setSelectedLaudo(laudo);
-                        setDeleteDialogOpen(true);
-                      }} title="Excluir">
+                    {laudo.source !== 'feedback_control' && <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => {
+                      setSelectedLaudo(laudo);
+                      setDeleteDialogOpen(true);
+                    }} title="Excluir">
                         <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                      </Button>}
                   </div>
                 </div>
               </CardContent>
