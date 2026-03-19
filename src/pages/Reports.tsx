@@ -153,29 +153,31 @@ export default function Reports() {
       const clientId = selectedReport.client_id;
       
       try {
-        const [anamnesisRes, laudosRes, prescriptionsRes, documentsRes, formalAnamnesisRes] = await Promise.all([
-          // Anamneses (client_notes - evoluções)
+        const [anamnesisRes, laudosRes, feedbackLaudosRes, prescriptionsRes, documentsRes, formalAnamnesisRes] = await Promise.all([
           supabase
             .from('client_notes')
             .select('*')
             .eq('client_id', clientId)
             .order('created_at', { ascending: false })
             .limit(50),
-          // Laudos
           supabase
             .from('client_laudos')
             .select('*')
             .eq('client_id', clientId)
             .order('laudo_date', { ascending: false })
             .limit(50),
-          // Receitas
+          supabase
+            .from('client_feedback_control')
+            .select('id, client_id, assigned_to, completed_by, completed_at, created_at, updated_at, notes, status, laudo_file_path')
+            .eq('client_id', clientId)
+            .or('laudo_file_path.not.is.null,status.eq.completed')
+            .limit(50),
           supabase
             .from('prescriptions')
             .select('*')
             .eq('client_id', clientId)
             .order('prescription_date', { ascending: false })
             .limit(50),
-          // Documentos
           supabase
             .from('client_documents')
             .select('*')
@@ -183,7 +185,6 @@ export default function Reports() {
             .eq('is_active', true)
             .order('uploaded_at', { ascending: false })
             .limit(50),
-          // Anamneses formais (anamnesis_records)
           supabase
             .from('anamnesis_records')
             .select('*, anamnesis_types(name)')
@@ -192,7 +193,6 @@ export default function Reports() {
             .limit(50),
         ]);
 
-        // Enrich anamnesis with creator names
         const allNotes: any[] = [];
         if (anamnesisRes.data && anamnesisRes.data.length > 0) {
           const creatorIds = [...new Set(anamnesisRes.data.map(a => a.created_by).filter(Boolean))];
@@ -203,7 +203,6 @@ export default function Reports() {
           const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
           allNotes.push(...anamnesisRes.data.map(a => ({ ...a, creator_name: profileMap.get(a.created_by) || 'N/A', source: 'notes' })));
         }
-        // Add formal anamnesis records
         if (formalAnamnesisRes.data && formalAnamnesisRes.data.length > 0) {
           const fillerIds = [...new Set(formalAnamnesisRes.data.map(a => a.filled_by).filter(Boolean))];
           const { data: profiles } = await supabase
@@ -224,15 +223,31 @@ export default function Reports() {
         }
         setDetailAnamnesis(allNotes);
 
-        // Enrich laudos with employee names
-        if (laudosRes.data && laudosRes.data.length > 0) {
-          const empIds = [...new Set(laudosRes.data.map(l => l.employee_id))];
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('user_id, name')
-            .in('user_id', empIds);
+        const mergedLaudos = [
+          ...(laudosRes.data || []),
+          ...((feedbackLaudosRes.data || []).map((item) => ({
+            id: `feedback-${item.id}`,
+            client_id: item.client_id,
+            employee_id: item.completed_by || item.assigned_to,
+            laudo_date: item.completed_at || item.created_at,
+            laudo_type: 'neuropsicologico',
+            title: 'Laudo de devolutiva',
+            description: item.notes,
+            status: item.status || 'completed',
+            file_path: item.laudo_file_path,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            source: 'feedback_control'
+          })))
+        ].sort((a, b) => new Date(b.laudo_date).getTime() - new Date(a.laudo_date).getTime());
+
+        if (mergedLaudos.length > 0) {
+          const empIds = [...new Set(mergedLaudos.map(l => l.employee_id).filter(Boolean))];
+          const { data: profiles } = empIds.length > 0
+            ? await supabase.from('profiles').select('user_id, name').in('user_id', empIds)
+            : { data: [] };
           const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
-          setDetailLaudos(laudosRes.data.map(l => ({ ...l, employee_name: profileMap.get(l.employee_id) || 'N/A' })));
+          setDetailLaudos(mergedLaudos.map(l => ({ ...l, employee_name: profileMap.get(l.employee_id) || 'N/A' })));
         } else {
           setDetailLaudos([]);
         }
