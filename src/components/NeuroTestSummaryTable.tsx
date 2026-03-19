@@ -104,9 +104,9 @@ const getTestConfig = (testCode: string): TestConfig | null => {
     case 'NEUPSILIN':
       return { subtests: ['orientacao', 'atencao', 'percepcao', 'memoria', 'aritmetica', 'linguagem', 'praxias', 'funcoesExecutivas'], names: { orientacao: 'Orientação', atencao: 'Atenção', percepcao: 'Percepção', memoria: 'Memória', aritmetica: 'Aritmética', linguagem: 'Linguagem', praxias: 'Praxias', funcoesExecutivas: 'Funções Exec.' }, mainSubtest: 'memoria' };
     case 'FPT_INFANTIL':
-      return { subtests: ['desenhosUnicos'], names: { desenhosUnicos: 'desenhosUnicos' }, mainSubtest: 'desenhosUnicos' };
+      return { subtests: ['desenhosUnicos'], names: { desenhosUnicos: 'desenhosUnicos' }, mainSubtest: 'desenhosUnicos', useRawScores: ['desenhosUnicos'] };
     case 'FPT_ADULTO':
-      return { subtests: ['desenhosUnicos'], names: { desenhosUnicos: 'desenhosUnicos' }, mainSubtest: 'desenhosUnicos' };
+      return { subtests: ['desenhosUnicos'], names: { desenhosUnicos: 'desenhosUnicos' }, mainSubtest: 'desenhosUnicos', useRawScores: ['desenhosUnicos'] };
     default:
       return null;
   }
