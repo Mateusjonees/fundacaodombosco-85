@@ -291,24 +291,46 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
         setScheduleHistory([]);
       }
 
-      // Carregar laudos do cliente
-      const { data: laudosData, error: laudosError } = await supabase
-        .from('client_laudos')
-        .select('id, laudo_date, laudo_type, title, description, status, file_path, employee_id')
-        .eq('client_id', client.id)
-        .order('laudo_date', { ascending: false });
+      // Carregar laudos do cliente (cadastros diretos + devolutivas entregues)
+      const [laudosRes, feedbackRes] = await Promise.all([
+        supabase
+          .from('client_laudos')
+          .select('id, laudo_date, laudo_type, title, description, status, file_path, employee_id')
+          .eq('client_id', client.id),
+        supabase
+          .from('client_feedback_control')
+          .select('id, completed_at, notes, status, laudo_file_path, completed_by, assigned_to')
+          .eq('client_id', client.id)
+          .or('laudo_file_path.not.is.null,status.eq.completed')
+      ]);
 
-      if (laudosError) throw laudosError;
+      if (laudosRes.error) throw laudosRes.error;
+      if (feedbackRes.error) throw feedbackRes.error;
+
+      const feedbackLaudos = (feedbackRes.data || []).map((item) => ({
+        id: `feedback-${item.id}`,
+        laudo_date: item.completed_at,
+        laudo_type: 'neuropsicologico',
+        title: 'Laudo de devolutiva',
+        description: item.notes,
+        status: item.status || 'completed',
+        file_path: item.laudo_file_path,
+        employee_id: item.completed_by || item.assigned_to
+      }));
+
+      const mergedLaudos = [...(laudosRes.data || []), ...feedbackLaudos].sort(
+        (a, b) => new Date(b.laudo_date).getTime() - new Date(a.laudo_date).getTime()
+      );
 
       // Buscar nomes dos profissionais dos laudos
-      if (laudosData && laudosData.length > 0) {
-        const laudoEmployeeIds = [...new Set(laudosData.map(l => l.employee_id).filter(Boolean))];
+      if (mergedLaudos.length > 0) {
+        const laudoEmployeeIds = [...new Set(mergedLaudos.map(l => l.employee_id).filter(Boolean))];
         const { data: laudoProfiles } = await supabase
           .from('profiles')
           .select('user_id, name')
           .in('user_id', laudoEmployeeIds);
         
-        const laudosEnriched = laudosData.map(l => ({
+        const laudosEnriched = mergedLaudos.map(l => ({
           ...l,
           professional_name: laudoProfiles?.find(p => p.user_id === l.employee_id)?.name || 'Profissional'
         }));

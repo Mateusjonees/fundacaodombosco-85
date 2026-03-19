@@ -14,6 +14,7 @@ export interface Laudo {
   status: string;
   created_at: string;
   updated_at: string;
+  source?: 'client_laudos' | 'feedback_control';
   employee?: { name: string; employee_role: string };
 }
 
@@ -23,29 +24,64 @@ export const useLaudos = (clientId: string | null) => {
     queryFn: async () => {
       if (!clientId) return [];
 
-      const { data, error } = await supabase
-        .from('client_laudos')
-        .select('*')
-        .eq('client_id', clientId)
-        .order('laudo_date', { ascending: false });
+      const [laudosResponse, feedbackResponse] = await Promise.all([
+        supabase
+          .from('client_laudos')
+          .select('*')
+          .eq('client_id', clientId),
+        supabase
+          .from('client_feedback_control')
+          .select('id, client_id, assigned_to, completed_by, completed_at, created_at, updated_at, notes, status, laudo_file_path')
+          .eq('client_id', clientId)
+          .or('laudo_file_path.not.is.null,status.eq.completed')
+      ]);
 
-      if (error) throw error;
+      if (laudosResponse.error) throw laudosResponse.error;
+      if (feedbackResponse.error) throw feedbackResponse.error;
 
-      // Fetch employee profiles
-      if (data && data.length > 0) {
-        const employeeIds = [...new Set(data.map(l => l.employee_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, name, employee_role')
-          .in('user_id', employeeIds);
+      const feedbackLaudos: Laudo[] = (feedbackResponse.data || []).map((feedback) => ({
+        id: `feedback-${feedback.id}`,
+        client_id: feedback.client_id,
+        employee_id: feedback.completed_by || feedback.assigned_to || '',
+        laudo_date: feedback.completed_at || feedback.created_at,
+        laudo_type: 'neuropsicologico',
+        title: 'Laudo de devolutiva',
+        description: feedback.notes || undefined,
+        file_path: feedback.laudo_file_path || undefined,
+        status: feedback.status || 'completed',
+        created_at: feedback.created_at,
+        updated_at: feedback.updated_at,
+        source: 'feedback_control'
+      }));
 
-        return data.map(laudo => ({
+      const mergedLaudos: Laudo[] = [
+        ...((laudosResponse.data || []).map((laudo) => ({
           ...laudo,
-          employee: profiles?.find(p => p.user_id === laudo.employee_id)
-        })) as Laudo[];
+          status: laudo.status || 'active',
+          source: 'client_laudos' as const
+        })) as Laudo[]),
+        ...feedbackLaudos
+      ].sort((a, b) => new Date(b.laudo_date).getTime() - new Date(a.laudo_date).getTime());
+
+      if (mergedLaudos.length === 0) {
+        return [] as Laudo[];
       }
 
-      return [] as Laudo[];
+      const employeeIds = [...new Set(mergedLaudos.map((laudo) => laudo.employee_id).filter(Boolean))];
+
+      if (employeeIds.length === 0) {
+        return mergedLaudos;
+      }
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name, employee_role')
+        .in('user_id', employeeIds);
+
+      return mergedLaudos.map((laudo) => ({
+        ...laudo,
+        employee: profiles?.find((profile) => profile.user_id === laudo.employee_id)
+      })) as Laudo[];
     },
     enabled: !!clientId
   });
