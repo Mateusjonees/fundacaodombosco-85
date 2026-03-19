@@ -252,22 +252,45 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const loadLaudoInfo = async () => {
     try {
       setLoadingLaudo(true);
-      const { data, error } = await supabase.
-      from('client_feedback_control').
-      select('laudo_file_path, completed_at').
-      eq('client_id', client.id).
-      not('laudo_file_path', 'is', null).
-      order('completed_at', { ascending: false }).
-      limit(1).
-      maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      const [feedbackRes, laudoRes] = await Promise.all([
+        supabase
+          .from('client_feedback_control')
+          .select('laudo_file_path, completed_at')
+          .eq('client_id', client.id)
+          .not('laudo_file_path', 'is', null)
+          .order('completed_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('client_laudos')
+          .select('file_path, laudo_date')
+          .eq('client_id', client.id)
+          .not('file_path', 'is', null)
+          .order('laudo_date', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ]);
 
-      if (data) {
-        setLaudoInfo({
-          file_path: data.laudo_file_path,
-          completed_at: data.completed_at
-        });
+      if (feedbackRes.error && feedbackRes.error.code !== 'PGRST116') throw feedbackRes.error;
+      if (laudoRes.error && laudoRes.error.code !== 'PGRST116') throw laudoRes.error;
+
+      const candidates = [
+        feedbackRes.data ? {
+          file_path: feedbackRes.data.laudo_file_path,
+          completed_at: feedbackRes.data.completed_at,
+          source: 'feedback_control' as const
+        } : null,
+        laudoRes.data ? {
+          file_path: laudoRes.data.file_path,
+          completed_at: laudoRes.data.laudo_date,
+          source: 'client_laudos' as const
+        } : null
+      ].filter(Boolean) as Array<{ file_path: string; completed_at: string; source: 'client_laudos' | 'feedback_control' }>;
+
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+        setLaudoInfo(candidates[0]);
       } else {
         setLaudoInfo(null);
       }
