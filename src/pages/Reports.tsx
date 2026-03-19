@@ -828,21 +828,39 @@ export default function Reports() {
     const uniqueClientIds = [...new Set(attendanceReports.map(r => r.client_id).filter(Boolean))];
     
     // Fetch all clinical data in parallel
-    const [notesRes, laudosRes, prescriptionsRes, documentsRes, anamnesisRes] = await Promise.all([
+    const [notesRes, laudosRes, feedbackLaudosRes, prescriptionsRes, documentsRes, anamnesisRes] = await Promise.all([
       supabase.from('client_notes').select('*').in('client_id', uniqueClientIds).order('created_at', { ascending: false }),
       supabase.from('client_laudos').select('*').in('client_id', uniqueClientIds).order('laudo_date', { ascending: false }),
+      supabase.from('client_feedback_control').select('id, client_id, assigned_to, completed_by, completed_at, created_at, updated_at, notes, status, laudo_file_path').in('client_id', uniqueClientIds).or('laudo_file_path.not.is.null,status.eq.completed'),
       supabase.from('prescriptions').select('*').in('client_id', uniqueClientIds).order('prescription_date', { ascending: false }),
       supabase.from('client_documents').select('*').in('client_id', uniqueClientIds).eq('is_active', true),
       supabase.from('anamnesis_records').select('*, anamnesis_types(name)').in('client_id', uniqueClientIds).order('created_at', { ascending: false }),
     ]);
 
-    // Group by client_id
     const clinicalDataByClient: Record<string, { notes: any[], laudos: any[], prescriptions: any[], documents: any[], anamnesis: any[] }> = {};
     uniqueClientIds.forEach(id => {
       clinicalDataByClient[id] = { notes: [], laudos: [], prescriptions: [], documents: [], anamnesis: [] };
     });
     (notesRes.data || []).forEach(n => { if (clinicalDataByClient[n.client_id]) clinicalDataByClient[n.client_id].notes.push(n); });
     (laudosRes.data || []).forEach(l => { if (clinicalDataByClient[l.client_id]) clinicalDataByClient[l.client_id].laudos.push(l); });
+    (feedbackLaudosRes.data || []).forEach(item => {
+      if (clinicalDataByClient[item.client_id]) {
+        clinicalDataByClient[item.client_id].laudos.push({
+          id: `feedback-${item.id}`,
+          client_id: item.client_id,
+          employee_id: item.completed_by || item.assigned_to,
+          laudo_date: item.completed_at || item.created_at,
+          laudo_type: 'neuropsicologico',
+          title: 'Laudo de devolutiva',
+          description: item.notes,
+          status: item.status || 'completed',
+          file_path: item.laudo_file_path,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          source: 'feedback_control'
+        });
+      }
+    });
     (prescriptionsRes.data || []).forEach(p => { if (clinicalDataByClient[p.client_id]) clinicalDataByClient[p.client_id].prescriptions.push(p); });
     (documentsRes.data || []).forEach(d => { if (d.client_id && clinicalDataByClient[d.client_id]) clinicalDataByClient[d.client_id].documents.push(d); });
     (anamnesisRes.data || []).forEach(a => { if (clinicalDataByClient[a.client_id]) clinicalDataByClient[a.client_id].anamnesis.push(a); });
