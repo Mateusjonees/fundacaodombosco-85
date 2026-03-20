@@ -603,7 +603,7 @@ export default function Reports() {
         .select('id, client_id, assigned_to, completed_by, completed_at, created_at, updated_at, notes, status, laudo_file_path')
         .or('laudo_file_path.not.is.null,status.eq.completed');
 
-      if (selectedMonth && !dateFrom && !dateTo) {
+      if (selectedMonth && !debouncedDateFrom && !debouncedDateTo) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
         const monthStartDate = format(monthStart, 'yyyy-MM-dd');
