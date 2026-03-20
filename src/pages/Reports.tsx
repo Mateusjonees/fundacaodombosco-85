@@ -490,7 +490,7 @@ export default function Reports() {
         .order('prescription_date', { ascending: false })
         .limit(100);
 
-      if (selectedMonth && !dateFrom && !dateTo) {
+      if (selectedMonth && !debouncedDateFrom && !debouncedDateTo) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
         query = query.gte('prescription_date', format(monthStart, 'yyyy-MM-dd'))
