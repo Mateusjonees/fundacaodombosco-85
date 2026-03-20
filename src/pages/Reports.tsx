@@ -211,7 +211,7 @@ export default function Reports() {
             .from('profiles')
             .select('user_id, name')
             .in('user_id', fillerIds);
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           allNotes.push(...formalAnamnesisRes.data.map(a => ({
             id: a.id,
             note_type: 'anamnesis_formal',
