@@ -248,7 +248,7 @@ export default function Reports() {
           const { data: profiles } = empIds.length > 0
             ? await supabase.from('profiles').select('user_id, name').in('user_id', empIds)
             : { data: [] };
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           setDetailLaudos(mergedLaudos.map(l => ({ ...l, employee_name: profileMap.get(l.employee_id) || 'N/A' })));
         } else {
           setDetailLaudos([]);
