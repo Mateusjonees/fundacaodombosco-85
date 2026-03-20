@@ -1811,14 +1811,14 @@ export default function Reports() {
                           <Badge variant="outline">{report.attendance_type}</Badge>
                         </TableCell>
                         <TableCell>
+                          <Badge className={getServiceTypeBadgeClasses(report.service_type)}>
+                            {getServiceTypeLabel(report.service_type)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {report.session_duration ? `${report.session_duration} min` : '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs truncate" title={report.techniques_used || ''}>
-                            {report.techniques_used || '-'}
                           </div>
                         </TableCell>
                         <TableCell>
