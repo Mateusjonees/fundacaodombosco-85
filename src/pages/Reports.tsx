@@ -147,7 +147,7 @@ export default function Reports() {
     };
 
     loadData();
-  }, [selectedEmployee, selectedClient, selectedUnit, dateFrom, dateTo, selectedMonth, sessionType, selectedDemand, roleLoading, userRole, customPermissions.loading]);
+  }, [selectedEmployee, selectedClient, selectedUnit, debouncedDateFrom, debouncedDateTo, selectedMonth, sessionType, selectedDemand, roleLoading, userRole, customPermissions.loading]);
 
   // Carregar dados complementares do paciente quando um relatório é selecionado
   useEffect(() => {
