@@ -325,15 +325,15 @@ export default function Reports() {
         query = query.eq('client_id', selectedClient);
       }
       
-      if (dateFrom) {
-        query = query.gte('start_time', dateFrom);
+      if (debouncedDateFrom) {
+        query = query.gte('start_time', debouncedDateFrom);
       }
       
-      if (dateTo) {
-        query = query.lte('start_time', dateTo + 'T23:59:59');
+      if (debouncedDateTo) {
+        query = query.lte('start_time', debouncedDateTo + 'T23:59:59');
       }
       
-      if (selectedMonth && !dateFrom && !dateTo) {
+      if (selectedMonth && !debouncedDateFrom && !debouncedDateTo) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
         query = query.gte('start_time', format(monthStart, 'yyyy-MM-dd'))
