@@ -202,7 +202,7 @@ export default function Reports() {
             .from('profiles')
             .select('user_id, name')
             .in('user_id', creatorIds);
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           allNotes.push(...anamnesisRes.data.map(a => ({ ...a, creator_name: profileMap.get(a.created_by) || 'N/A', source: 'notes' })));
         }
         if (formalAnamnesisRes.data && formalAnamnesisRes.data.length > 0) {
