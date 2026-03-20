@@ -65,6 +65,8 @@ export default function Reports() {
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const debouncedDateFrom = useDebouncedValue(dateFrom, 800);
+  const debouncedDateTo = useDebouncedValue(dateTo, 800);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
   const [selectedDemand, setSelectedDemand] = useState<string>('all');
