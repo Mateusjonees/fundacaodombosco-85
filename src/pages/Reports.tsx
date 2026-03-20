@@ -1622,9 +1622,9 @@ export default function Reports() {
           </div>
           
           {/* Resumo dos filtros */}
-          {(selectedEmployee !== 'all' || selectedClient !== 'all' || selectedUnit !== 'all' || dateFrom || dateTo || sessionType !== 'all') && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800 mb-2">Filtros aplicados:</p>
+          {(selectedEmployee !== 'all' || selectedClient !== 'all' || selectedUnit !== 'all' || dateFrom || dateTo || sessionType !== 'all' || selectedDemand !== 'all') && (
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Filtros aplicados:</p>
               <div className="flex flex-wrap gap-2">
                 {selectedEmployee !== 'all' && (
                   <Badge variant="outline">
@@ -1646,6 +1646,11 @@ export default function Reports() {
                 )}
                 {sessionType !== 'all' && (
                   <Badge variant="outline">Tipo: {sessionType}</Badge>
+                )}
+                {selectedDemand !== 'all' && (
+                  <Badge className={getServiceTypeBadgeClasses(selectedDemand)}>
+                    Demanda: {getServiceTypeLabel(selectedDemand)}
+                  </Badge>
                 )}
                 {dateFrom && (
                   <Badge variant="outline">De: {format(new Date(dateFrom), 'dd/MM/yyyy')}</Badge>
