@@ -1343,7 +1343,9 @@ export default function Reports() {
   // Verificar se tem permissão para acessar
   const canAccessReports = userRole === 'director' || 
                           userRole === 'coordinator_madre' || 
-                          userRole === 'coordinator_floresta';
+                          userRole === 'coordinator_floresta' ||
+                          userRole === 'coordinator_atendimento_floresta' ||
+                          customPermissions.hasPermission('view_reports');
   
   if (!canAccessReports) {
     return (
