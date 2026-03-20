@@ -66,6 +66,7 @@ export default function Reports() {
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
+  const [selectedDemand, setSelectedDemand] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
