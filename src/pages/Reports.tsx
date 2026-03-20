@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebounce';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,6 +65,8 @@ export default function Reports() {
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const debouncedDateFrom = useDebouncedValue(dateFrom, 800);
+  const debouncedDateTo = useDebouncedValue(dateTo, 800);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
   const [selectedDemand, setSelectedDemand] = useState<string>('all');
@@ -144,7 +147,7 @@ export default function Reports() {
     };
 
     loadData();
-  }, [selectedEmployee, selectedClient, selectedUnit, dateFrom, dateTo, selectedMonth, sessionType, selectedDemand, roleLoading, userRole, customPermissions.loading]);
+  }, [selectedEmployee, selectedClient, selectedUnit, debouncedDateFrom, debouncedDateTo, selectedMonth, sessionType, selectedDemand, roleLoading, userRole, customPermissions.loading]);
 
   // Carregar dados complementares do paciente quando um relatório é selecionado
   useEffect(() => {
@@ -322,15 +325,15 @@ export default function Reports() {
         query = query.eq('client_id', selectedClient);
       }
       
-      if (dateFrom) {
-        query = query.gte('start_time', dateFrom);
+      if (debouncedDateFrom) {
+        query = query.gte('start_time', debouncedDateFrom);
       }
       
-      if (dateTo) {
-        query = query.lte('start_time', dateTo + 'T23:59:59');
+      if (debouncedDateTo) {
+        query = query.lte('start_time', debouncedDateTo + 'T23:59:59');
       }
       
-      if (selectedMonth && !dateFrom && !dateTo) {
+      if (selectedMonth && !debouncedDateFrom && !debouncedDateTo) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
         query = query.gte('start_time', format(monthStart, 'yyyy-MM-dd'))
@@ -487,7 +490,7 @@ export default function Reports() {
         .order('prescription_date', { ascending: false })
         .limit(100);
 
-      if (selectedMonth && !dateFrom && !dateTo) {
+      if (selectedMonth && !debouncedDateFrom && !debouncedDateTo) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
         query = query.gte('prescription_date', format(monthStart, 'yyyy-MM-dd'))
@@ -543,7 +546,7 @@ export default function Reports() {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (selectedMonth && !dateFrom && !dateTo) {
+      if (selectedMonth && !debouncedDateFrom && !debouncedDateTo) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
         query = query.gte('created_at', format(monthStart, 'yyyy-MM-dd'))
@@ -600,7 +603,7 @@ export default function Reports() {
         .select('id, client_id, assigned_to, completed_by, completed_at, created_at, updated_at, notes, status, laudo_file_path')
         .or('laudo_file_path.not.is.null,status.eq.completed');
 
-      if (selectedMonth && !dateFrom && !dateTo) {
+      if (selectedMonth && !debouncedDateFrom && !debouncedDateTo) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
         const monthStartDate = format(monthStart, 'yyyy-MM-dd');
@@ -818,13 +821,13 @@ export default function Reports() {
     if (sessionType !== 'all') {
       filterInfo.push(`Tipo: ${sessionType}`);
     }
-    if (dateFrom) {
-      filterInfo.push(`De: ${format(new Date(dateFrom), 'dd/MM/yyyy')}`);
+    if (debouncedDateFrom) {
+      filterInfo.push(`De: ${format(new Date(debouncedDateFrom), 'dd/MM/yyyy')}`);
     }
-    if (dateTo) {
-      filterInfo.push(`Até: ${format(new Date(dateTo), 'dd/MM/yyyy')}`);
+    if (debouncedDateTo) {
+      filterInfo.push(`Até: ${format(new Date(debouncedDateTo), 'dd/MM/yyyy')}`);
     }
-    if (!dateFrom && !dateTo && selectedMonth) {
+    if (!debouncedDateFrom && !debouncedDateTo && selectedMonth) {
       filterInfo.push(`Mês: ${format(parseISO(selectedMonth + '-01'), 'MMMM/yyyy', { locale: ptBR })}`);
     }
 
