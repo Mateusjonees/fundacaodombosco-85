@@ -1771,8 +1771,8 @@ export default function Reports() {
                       <TableHead>Funcionário</TableHead>
                       <TableHead>Paciente</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Demanda</TableHead>
                       <TableHead>Duração</TableHead>
-                      <TableHead>Técnicas/Objetivos</TableHead>
                       <TableHead>Valor</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
