@@ -1552,8 +1552,8 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Segunda linha: Tipo de Atendimento e Período */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Segunda linha: Tipo de Atendimento, Demanda e Período */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Tipo de Atendimento</Label>
                 <Select value={sessionType} onValueChange={setSessionType}>
@@ -1570,6 +1570,24 @@ export default function Reports() {
                     <SelectItem value="Musicoterapia">Musicoterapia</SelectItem>
                     <SelectItem value="Fisioterapia">Fisioterapia</SelectItem>
                     <SelectItem value="Nutrição">Nutrição</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  Demanda
+                </Label>
+                <Select value={selectedDemand} onValueChange={setSelectedDemand}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as demandas</SelectItem>
+                    {SERVICE_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
