@@ -821,13 +821,13 @@ export default function Reports() {
     if (sessionType !== 'all') {
       filterInfo.push(`Tipo: ${sessionType}`);
     }
-    if (dateFrom) {
-      filterInfo.push(`De: ${format(new Date(dateFrom), 'dd/MM/yyyy')}`);
+    if (debouncedDateFrom) {
+      filterInfo.push(`De: ${format(new Date(debouncedDateFrom), 'dd/MM/yyyy')}`);
     }
-    if (dateTo) {
-      filterInfo.push(`Até: ${format(new Date(dateTo), 'dd/MM/yyyy')}`);
+    if (debouncedDateTo) {
+      filterInfo.push(`Até: ${format(new Date(debouncedDateTo), 'dd/MM/yyyy')}`);
     }
-    if (!dateFrom && !dateTo && selectedMonth) {
+    if (!debouncedDateFrom && !debouncedDateTo && selectedMonth) {
       filterInfo.push(`Mês: ${format(parseISO(selectedMonth + '-01'), 'MMMM/yyyy', { locale: ptBR })}`);
     }
 
