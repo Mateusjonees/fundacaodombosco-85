@@ -363,13 +363,30 @@ export default function Reports() {
         .select('user_id, name')
         .in('user_id', employeeIds);
       
-      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.name]) || []);
+      const profilesMap = new Map((profilesData?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
       
-      const reportsWithNames = filteredData.map(report => ({
+      // Buscar service_type dos schedules vinculados
+      const scheduleIds = [...new Set(filteredData.map(r => r.schedule_id).filter(Boolean))];
+      let scheduleServiceMap = new Map<string, string>();
+      if (scheduleIds.length > 0) {
+        const { data: schedulesData } = await supabase
+          .from('schedules')
+          .select('id, service_type')
+          .in('id', scheduleIds);
+        scheduleServiceMap = new Map((schedulesData?.map(s => [s.id, s.service_type || 'private']) || []) as [string, string][]);
+      }
+      
+      let reportsWithNames = filteredData.map(report => ({
         ...report,
         profiles: { name: profilesMap.get(report.employee_id) || report.professional_name || 'Nome não encontrado' },
-        clients: { name: report.patient_name || report.clients?.name }
+        clients: { name: report.patient_name || report.clients?.name },
+        service_type: scheduleServiceMap.get(report.schedule_id) || 'private'
       }));
+      
+      // Filtrar por demanda se selecionado
+      if (selectedDemand !== 'all') {
+        reportsWithNames = reportsWithNames.filter(r => r.service_type === selectedDemand);
+      }
       
       setAttendanceReports(reportsWithNames);
     } catch (error) {
