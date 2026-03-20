@@ -261,7 +261,7 @@ export default function Reports() {
             .from('profiles')
             .select('user_id, name')
             .in('user_id', empIds);
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           setDetailPrescriptions(prescriptionsRes.data.map(p => ({ ...p, employee_name: profileMap.get(p.employee_id) || 'N/A' })));
         } else {
           setDetailPrescriptions([]);
