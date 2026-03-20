@@ -12,7 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
-import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown, Pill, ClipboardList, FileCheck2, Timer } from 'lucide-react';
+import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown, Pill, ClipboardList, FileCheck2, Timer, Tag } from 'lucide-react';
+import { getServiceTypeLabel, getServiceTypeBadgeClasses, SERVICE_TYPE_OPTIONS } from '@/utils/serviceTypes';
 import TimeReportsTab from '@/components/TimeReportsTab';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -65,6 +66,7 @@ export default function Reports() {
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
+  const [selectedDemand, setSelectedDemand] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
@@ -142,7 +144,7 @@ export default function Reports() {
     };
 
     loadData();
-  }, [selectedEmployee, selectedClient, selectedUnit, dateFrom, dateTo, selectedMonth, sessionType, roleLoading, userRole, customPermissions.loading]);
+  }, [selectedEmployee, selectedClient, selectedUnit, dateFrom, dateTo, selectedMonth, sessionType, selectedDemand, roleLoading, userRole, customPermissions.loading]);
 
   // Carregar dados complementares do paciente quando um relatório é selecionado
   useEffect(() => {
@@ -200,7 +202,7 @@ export default function Reports() {
             .from('profiles')
             .select('user_id, name')
             .in('user_id', creatorIds);
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           allNotes.push(...anamnesisRes.data.map(a => ({ ...a, creator_name: profileMap.get(a.created_by) || 'N/A', source: 'notes' })));
         }
         if (formalAnamnesisRes.data && formalAnamnesisRes.data.length > 0) {
@@ -209,7 +211,7 @@ export default function Reports() {
             .from('profiles')
             .select('user_id, name')
             .in('user_id', fillerIds);
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           allNotes.push(...formalAnamnesisRes.data.map(a => ({
             id: a.id,
             note_type: 'anamnesis_formal',
@@ -246,7 +248,7 @@ export default function Reports() {
           const { data: profiles } = empIds.length > 0
             ? await supabase.from('profiles').select('user_id, name').in('user_id', empIds)
             : { data: [] };
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           setDetailLaudos(mergedLaudos.map(l => ({ ...l, employee_name: profileMap.get(l.employee_id) || 'N/A' })));
         } else {
           setDetailLaudos([]);
@@ -259,7 +261,7 @@ export default function Reports() {
             .from('profiles')
             .select('user_id, name')
             .in('user_id', empIds);
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+          const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           setDetailPrescriptions(prescriptionsRes.data.map(p => ({ ...p, employee_name: profileMap.get(p.employee_id) || 'N/A' })));
         } else {
           setDetailPrescriptions([]);
@@ -361,13 +363,30 @@ export default function Reports() {
         .select('user_id, name')
         .in('user_id', employeeIds);
       
-      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.name]) || []);
+      const profilesMap = new Map((profilesData?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
       
-      const reportsWithNames = filteredData.map(report => ({
+      // Buscar service_type dos schedules vinculados
+      const scheduleIds = [...new Set(filteredData.map(r => r.schedule_id).filter(Boolean))];
+      let scheduleServiceMap = new Map<string, string>();
+      if (scheduleIds.length > 0) {
+        const { data: schedulesData } = await supabase
+          .from('schedules')
+          .select('id, service_type')
+          .in('id', scheduleIds);
+        scheduleServiceMap = new Map((schedulesData?.map(s => [s.id, s.service_type || 'private']) || []) as [string, string][]);
+      }
+      
+      let reportsWithNames = filteredData.map(report => ({
         ...report,
         profiles: { name: profilesMap.get(report.employee_id) || report.professional_name || 'Nome não encontrado' },
-        clients: { name: report.patient_name || report.clients?.name }
+        clients: { name: report.patient_name || report.clients?.name },
+        service_type: scheduleServiceMap.get(report.schedule_id) || 'private'
       }));
+      
+      // Filtrar por demanda se selecionado
+      if (selectedDemand !== 'all') {
+        reportsWithNames = reportsWithNames.filter(r => r.service_type === selectedDemand);
+      }
       
       setAttendanceReports(reportsWithNames);
     } catch (error) {
@@ -441,7 +460,7 @@ export default function Reports() {
         .select('user_id, name')
         .in('user_id', employeeIds);
       
-      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.name]) || []);
+      const profilesMap = new Map((profilesData?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
       
       const reportsWithNames = filteredData.map(report => ({
         ...report,
@@ -1283,6 +1302,7 @@ export default function Reports() {
     setDateTo('');
     setSelectedMonth(format(new Date(), 'yyyy-MM'));
     setSessionType('all');
+    setSelectedDemand('all');
   };
 
   const getTotalSessions = () => attendanceReports.length;
@@ -1324,7 +1344,9 @@ export default function Reports() {
   // Verificar se tem permissão para acessar
   const canAccessReports = userRole === 'director' || 
                           userRole === 'coordinator_madre' || 
-                          userRole === 'coordinator_floresta';
+                          userRole === 'coordinator_floresta' ||
+                          userRole === 'coordinator_atendimento_floresta' ||
+                          customPermissions.hasPermission('view_reports');
   
   if (!canAccessReports) {
     return (
@@ -1531,8 +1553,8 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Segunda linha: Tipo de Atendimento e Período */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Segunda linha: Tipo de Atendimento, Demanda e Período */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Tipo de Atendimento</Label>
                 <Select value={sessionType} onValueChange={setSessionType}>
@@ -1549,6 +1571,24 @@ export default function Reports() {
                     <SelectItem value="Musicoterapia">Musicoterapia</SelectItem>
                     <SelectItem value="Fisioterapia">Fisioterapia</SelectItem>
                     <SelectItem value="Nutrição">Nutrição</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  Demanda
+                </Label>
+                <Select value={selectedDemand} onValueChange={setSelectedDemand}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as demandas</SelectItem>
+                    {SERVICE_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1583,9 +1623,9 @@ export default function Reports() {
           </div>
           
           {/* Resumo dos filtros */}
-          {(selectedEmployee !== 'all' || selectedClient !== 'all' || selectedUnit !== 'all' || dateFrom || dateTo || sessionType !== 'all') && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800 mb-2">Filtros aplicados:</p>
+          {(selectedEmployee !== 'all' || selectedClient !== 'all' || selectedUnit !== 'all' || dateFrom || dateTo || sessionType !== 'all' || selectedDemand !== 'all') && (
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Filtros aplicados:</p>
               <div className="flex flex-wrap gap-2">
                 {selectedEmployee !== 'all' && (
                   <Badge variant="outline">
@@ -1607,6 +1647,11 @@ export default function Reports() {
                 )}
                 {sessionType !== 'all' && (
                   <Badge variant="outline">Tipo: {sessionType}</Badge>
+                )}
+                {selectedDemand !== 'all' && (
+                  <Badge className={getServiceTypeBadgeClasses(selectedDemand)}>
+                    Demanda: {getServiceTypeLabel(selectedDemand)}
+                  </Badge>
                 )}
                 {dateFrom && (
                   <Badge variant="outline">De: {format(new Date(dateFrom), 'dd/MM/yyyy')}</Badge>
@@ -1727,8 +1772,8 @@ export default function Reports() {
                       <TableHead>Funcionário</TableHead>
                       <TableHead>Paciente</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Demanda</TableHead>
                       <TableHead>Duração</TableHead>
-                      <TableHead>Técnicas/Objetivos</TableHead>
                       <TableHead>Valor</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
@@ -1767,14 +1812,14 @@ export default function Reports() {
                           <Badge variant="outline">{report.attendance_type}</Badge>
                         </TableCell>
                         <TableCell>
+                          <Badge className={getServiceTypeBadgeClasses(report.service_type)}>
+                            {getServiceTypeLabel(report.service_type)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {report.session_duration ? `${report.session_duration} min` : '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs truncate" title={report.techniques_used || ''}>
-                            {report.techniques_used || '-'}
                           </div>
                         </TableCell>
                         <TableCell>
