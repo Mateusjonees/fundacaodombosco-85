@@ -1302,6 +1302,7 @@ export default function Reports() {
     setDateTo('');
     setSelectedMonth(format(new Date(), 'yyyy-MM'));
     setSessionType('all');
+    setSelectedDemand('all');
   };
 
   const getTotalSessions = () => attendanceReports.length;
