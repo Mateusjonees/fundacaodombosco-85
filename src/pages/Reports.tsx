@@ -460,7 +460,7 @@ export default function Reports() {
         .select('user_id, name')
         .in('user_id', employeeIds);
       
-      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.name]) || []);
+      const profilesMap = new Map((profilesData?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
       
       const reportsWithNames = filteredData.map(report => ({
         ...report,
