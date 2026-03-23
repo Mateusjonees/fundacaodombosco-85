@@ -1478,6 +1478,85 @@ export default function Reports() {
         </Card>
       </div>
 
+      {/* Card de Total de Horas por Mês */}
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-amber-500/10 via-card to-orange-500/10">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="p-2 bg-amber-500/20 rounded-lg">
+              <Timer className="h-5 w-5 text-amber-600" />
+            </div>
+            <span className="bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent font-bold">
+              Total de Horas Calculadas
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const totalMinutes = attendanceReports.reduce((sum, r) => sum + (r.session_duration || 0), 0);
+            const totalHours = Math.floor(totalMinutes / 60);
+            const remainingMinutes = totalMinutes % 60;
+            
+            // Group by employee
+            const hoursByEmployee = new Map<string, { name: string; minutes: number; count: number }>();
+            attendanceReports.forEach(r => {
+              const key = r.employee_id;
+              const existing = hoursByEmployee.get(key) || { name: r.profiles?.name || 'N/A', minutes: 0, count: 0 };
+              existing.minutes += (r.session_duration || 0);
+              existing.count += 1;
+              hoursByEmployee.set(key, existing);
+            });
+            
+            const sortedEmployees = [...hoursByEmployee.entries()].sort((a, b) => b[1].minutes - a[1].minutes);
+            
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                    <p className="text-3xl font-extrabold text-amber-600">{totalHours}h{remainingMinutes > 0 ? ` ${remainingMinutes}min` : ''}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total de Horas</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                    <p className="text-3xl font-extrabold text-amber-600">{totalMinutes}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total em Minutos</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                    <p className="text-3xl font-extrabold text-amber-600">{attendanceReports.length}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Atendimentos</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                    <p className="text-3xl font-extrabold text-amber-600">
+                      {attendanceReports.length > 0 ? Math.round(totalMinutes / attendanceReports.length) : 0} min
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Média por Atendimento</p>
+                  </div>
+                </div>
+                
+                {sortedEmployees.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground mb-2">Horas por Profissional:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {sortedEmployees.map(([id, data]) => {
+                        const h = Math.floor(data.minutes / 60);
+                        const m = data.minutes % 60;
+                        return (
+                          <div key={id} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
+                            <span className="text-sm font-medium truncate mr-2">{data.name}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge variant="outline" className="text-xs">{data.count} atend.</Badge>
+                              <span className="text-sm font-bold text-amber-600">{h}h{m > 0 ? `${m}m` : ''}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
       {/* Aviso sobre geração automática de relatórios */}
       <Card className="border-0 shadow-lg bg-gradient-to-r from-indigo-500/10 via-card to-blue-500/10">
         <CardContent className="p-4">
@@ -2114,33 +2193,68 @@ export default function Reports() {
                       <TableHead>Paciente</TableHead>
                       <TableHead>Profissional</TableHead>
                       <TableHead>Tipo</TableHead>
-                      <TableHead>Conteúdo</TableHead>
+                      <TableHead>Demanda</TableHead>
+                      <TableHead className="min-w-[300px]">Conteúdo</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {allAnamnesis.slice(0, 50).map((anamnese) => (
-                      <TableRow key={anamnese.id}>
-                        <TableCell>
-                          {format(new Date(anamnese.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {anamnese.client?.name || 'N/A'}
-                        </TableCell>
-                        <TableCell>{anamnese.creator?.name || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {anamnese.note_type === 'evolution' ? 'Evolução' :
-                             anamnese.note_type === 'anamnesis' ? 'Anamnese' :
-                             anamnese.note_type || 'Nota'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-md">
-                          <p className="truncate text-sm" title={anamnese.note_text}>
-                            {anamnese.note_text}
-                          </p>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {allAnamnesis.slice(0, 50).map((anamnese) => {
+                      // Limpar markdown e formatar conteúdo
+                      const rawText = anamnese.note_text || '';
+                      const cleanText = rawText
+                        .replace(/\*\*/g, '')
+                        .replace(/\*/g, '')
+                        .replace(/#{1,6}\s/g, '')
+                        .replace(/---/g, '')
+                        .trim();
+                      
+                      return (
+                        <TableRow key={anamnese.id}>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(anamnese.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {anamnese.client?.name || 'N/A'}
+                          </TableCell>
+                          <TableCell>{anamnese.creator?.name || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {anamnese.note_type === 'evolution' ? 'Evolução' :
+                               anamnese.note_type === 'anamnesis' ? 'Anamnese' :
+                               anamnese.note_type || 'Nota'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {anamnese.service_type ? (
+                              <Badge className={getServiceTypeBadgeClasses(anamnese.service_type)}>
+                                {getServiceTypeLabel(anamnese.service_type)}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-lg">
+                            <div className="text-sm space-y-1">
+                              <p className="line-clamp-3 whitespace-pre-wrap text-foreground leading-relaxed">
+                                {cleanText.length > 250 ? cleanText.substring(0, 250) + '...' : cleanText}
+                              </p>
+                              {cleanText.length > 250 && (
+                                <Dialog>
+                                  <button
+                                    className="text-xs text-primary hover:underline font-medium"
+                                    onClick={() => {
+                                      setSelectedReport({ ...anamnese, _expandedContent: cleanText });
+                                    }}
+                                  >
+                                    Ver conteúdo completo
+                                  </button>
+                                </Dialog>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
