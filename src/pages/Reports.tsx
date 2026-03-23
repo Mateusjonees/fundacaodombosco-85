@@ -1478,6 +1478,84 @@ export default function Reports() {
         </Card>
       </div>
 
+      {/* Card de Total de Horas por Mês */}
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-amber-500/10 via-card to-orange-500/10">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="p-2 bg-amber-500/20 rounded-lg">
+              <Timer className="h-5 w-5 text-amber-600" />
+            </div>
+            <span className="bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent font-bold">
+              Total de Horas Calculadas
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const totalMinutes = attendanceReports.reduce((sum, r) => sum + (r.session_duration || 0), 0);
+            const totalHours = Math.floor(totalMinutes / 60);
+            const remainingMinutes = totalMinutes % 60;
+            
+            // Group by employee
+            const hoursByEmployee = new Map<string, { name: string; minutes: number; count: number }>();
+            attendanceReports.forEach(r => {
+              const key = r.employee_id;
+              const existing = hoursByEmployee.get(key) || { name: r.profiles?.name || 'N/A', minutes: 0, count: 0 };
+              existing.minutes += (r.session_duration || 0);
+              existing.count += 1;
+              hoursByEmployee.set(key, existing);
+            });
+            
+            const sortedEmployees = [...hoursByEmployee.entries()].sort((a, b) => b[1].minutes - a[1].minutes);
+            
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                    <p className="text-3xl font-extrabold text-amber-600">{totalHours}h{remainingMinutes > 0 ? ` ${remainingMinutes}min` : ''}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total de Horas</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                    <p className="text-3xl font-extrabold text-amber-600">{totalMinutes}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total em Minutos</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                    <p className="text-3xl font-extrabold text-amber-600">{attendanceReports.length}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Atendimentos</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                    <p className="text-3xl font-extrabold text-amber-600">
+                      {attendanceReports.length > 0 ? Math.round(totalMinutes / attendanceReports.length) : 0} min
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Média por Atendimento</p>
+                  </div>
+                </div>
+                
+                {sortedEmployees.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground mb-2">Horas por Profissional:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {sortedEmployees.map(([id, data]) => {
+                        const h = Math.floor(data.minutes / 60);
+                        const m = data.minutes % 60;
+                        return (
+                          <div key={id} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
+                            <span className="text-sm font-medium truncate mr-2">{data.name}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge variant="outline" className="text-xs">{data.count} atend.</Badge>
+                              <span className="text-sm font-bold text-amber-600">{h}h{m > 0 ? `${m}m` : ''}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+      </div>
+
       {/* Aviso sobre geração automática de relatórios */}
       <Card className="border-0 shadow-lg bg-gradient-to-r from-indigo-500/10 via-card to-blue-500/10">
         <CardContent className="p-4">
