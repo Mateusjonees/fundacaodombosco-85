@@ -2192,33 +2192,68 @@ export default function Reports() {
                       <TableHead>Paciente</TableHead>
                       <TableHead>Profissional</TableHead>
                       <TableHead>Tipo</TableHead>
-                      <TableHead>Conteúdo</TableHead>
+                      <TableHead>Demanda</TableHead>
+                      <TableHead className="min-w-[300px]">Conteúdo</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {allAnamnesis.slice(0, 50).map((anamnese) => (
-                      <TableRow key={anamnese.id}>
-                        <TableCell>
-                          {format(new Date(anamnese.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {anamnese.client?.name || 'N/A'}
-                        </TableCell>
-                        <TableCell>{anamnese.creator?.name || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {anamnese.note_type === 'evolution' ? 'Evolução' :
-                             anamnese.note_type === 'anamnesis' ? 'Anamnese' :
-                             anamnese.note_type || 'Nota'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-md">
-                          <p className="truncate text-sm" title={anamnese.note_text}>
-                            {anamnese.note_text}
-                          </p>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {allAnamnesis.slice(0, 50).map((anamnese) => {
+                      // Limpar markdown e formatar conteúdo
+                      const rawText = anamnese.note_text || '';
+                      const cleanText = rawText
+                        .replace(/\*\*/g, '')
+                        .replace(/\*/g, '')
+                        .replace(/#{1,6}\s/g, '')
+                        .replace(/---/g, '')
+                        .trim();
+                      
+                      return (
+                        <TableRow key={anamnese.id}>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(anamnese.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {anamnese.client?.name || 'N/A'}
+                          </TableCell>
+                          <TableCell>{anamnese.creator?.name || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {anamnese.note_type === 'evolution' ? 'Evolução' :
+                               anamnese.note_type === 'anamnesis' ? 'Anamnese' :
+                               anamnese.note_type || 'Nota'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {anamnese.service_type ? (
+                              <Badge className={getServiceTypeBadgeClasses(anamnese.service_type)}>
+                                {getServiceTypeLabel(anamnese.service_type)}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-lg">
+                            <div className="text-sm space-y-1">
+                              <p className="line-clamp-3 whitespace-pre-wrap text-foreground leading-relaxed">
+                                {cleanText.length > 250 ? cleanText.substring(0, 250) + '...' : cleanText}
+                              </p>
+                              {cleanText.length > 250 && (
+                                <Dialog>
+                                  <button
+                                    className="text-xs text-primary hover:underline font-medium"
+                                    onClick={() => {
+                                      setSelectedReport({ ...anamnese, _expandedContent: cleanText });
+                                    }}
+                                  >
+                                    Ver conteúdo completo
+                                  </button>
+                                </Dialog>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
