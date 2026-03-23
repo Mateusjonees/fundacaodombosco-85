@@ -1590,6 +1590,7 @@ export default function Reports() {
                 <Label className="text-sm font-medium flex items-center gap-1">
                   <Tag className="h-3 w-3" />
                   Demanda
+                  <span className="text-xs text-muted-foreground font-normal">(só Atend. Floresta)</span>
                 </Label>
                 <Select value={selectedDemand} onValueChange={setSelectedDemand}>
                   <SelectTrigger>
