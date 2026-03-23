@@ -1554,7 +1554,8 @@ export default function Reports() {
               </div>
             );
           })()}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Aviso sobre geração automática de relatórios */}
       <Card className="border-0 shadow-lg bg-gradient-to-r from-indigo-500/10 via-card to-blue-500/10">
