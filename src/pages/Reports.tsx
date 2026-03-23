@@ -1824,9 +1824,13 @@ export default function Reports() {
                           <Badge variant="outline">{report.attendance_type}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getServiceTypeBadgeClasses(report.service_type)}>
-                            {getServiceTypeLabel(report.service_type)}
-                          </Badge>
+                          {report.service_type ? (
+                            <Badge className={getServiceTypeBadgeClasses(report.service_type)}>
+                              {getServiceTypeLabel(report.service_type)}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
