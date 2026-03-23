@@ -379,14 +379,22 @@ export default function Reports() {
         scheduleServiceMap = new Map((schedulesData?.map(s => [s.id, s.service_type || 'private']) || []) as [string, string][]);
       }
       
-      let reportsWithNames = filteredData.map(report => ({
-        ...report,
-        profiles: { name: profilesMap.get(report.employee_id) || report.professional_name || 'Nome não encontrado' },
-        clients: { name: report.patient_name || report.clients?.name },
-        service_type: scheduleServiceMap.get(report.schedule_id) || 'private'
-      }));
+      let reportsWithNames = filteredData.map(report => {
+        const clientUnit = report.clients?.unit;
+        const isFlorestaAtendimento = clientUnit === 'atendimento_floresta';
+        const rawServiceType = scheduleServiceMap.get(report.schedule_id);
+        // Demanda só se aplica a Atendimento Floresta
+        const serviceType = isFlorestaAtendimento ? (rawServiceType || 'private') : null;
+        
+        return {
+          ...report,
+          profiles: { name: profilesMap.get(report.employee_id) || report.professional_name || 'Nome não encontrado' },
+          clients: { name: report.patient_name || report.clients?.name, unit: clientUnit },
+          service_type: serviceType
+        };
+      });
       
-      // Filtrar por demanda se selecionado
+      // Filtrar por demanda se selecionado (só relevante para Atendimento Floresta)
       if (selectedDemand !== 'all') {
         reportsWithNames = reportsWithNames.filter(r => r.service_type === selectedDemand);
       }
