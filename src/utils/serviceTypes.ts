@@ -50,7 +50,8 @@ export const getServiceTypeLabel = (type?: string | null): string => {
  * Retorna as classes CSS do badge por tipo de atendimento
  */
 export const getServiceTypeBadgeClasses = (type?: string | null): string => {
-  switch (type) {
+  const normalized = normalizeServiceType(type);
+  switch (normalized) {
     case 'sus': 
       return 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30';
     case 'external': 
@@ -58,7 +59,8 @@ export const getServiceTypeBadgeClasses = (type?: string | null): string => {
     case 'laudo': 
       return 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30';
     case 'private':
-    default: 
       return 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30';
+    default: 
+      return 'bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-500/30';
   }
 };
