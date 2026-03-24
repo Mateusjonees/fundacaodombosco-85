@@ -2227,7 +2227,7 @@ export default function Reports() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {anamnese.service_type ? (
+                            {normalizeServiceType(anamnese.service_type) ? (
                               <Badge className={getServiceTypeBadgeClasses(anamnese.service_type)}>
                                 {getServiceTypeLabel(anamnese.service_type)}
                               </Badge>
