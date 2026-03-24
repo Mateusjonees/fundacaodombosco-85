@@ -2287,7 +2287,7 @@ export default function Reports() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-blue-600">
-                      {allPrescriptions.filter(p => p.service_type === 'sus').length}
+                      {allPrescriptions.filter(p => normalizeServiceType(p.service_type) === 'sus').length}
                     </p>
                     <p className="text-xs text-muted-foreground">SUS</p>
                   </CardContent>
@@ -2295,7 +2295,7 @@ export default function Reports() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-green-600">
-                      {allPrescriptions.filter(p => p.service_type === 'private' || !p.service_type).length}
+                      {allPrescriptions.filter(p => normalizeServiceType(p.service_type) === 'private' || !normalizeServiceType(p.service_type)).length}
                     </p>
                     <p className="text-xs text-muted-foreground">Demanda Própria</p>
                   </CardContent>
