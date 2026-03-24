@@ -14,7 +14,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown, Pill, ClipboardList, FileCheck2, Timer, Tag } from 'lucide-react';
-import { getServiceTypeLabel, getServiceTypeBadgeClasses, SERVICE_TYPE_OPTIONS } from '@/utils/serviceTypes';
+import { getServiceTypeLabel, getServiceTypeBadgeClasses, SERVICE_TYPE_OPTIONS, normalizeServiceType } from '@/utils/serviceTypes';
 import TimeReportsTab from '@/components/TimeReportsTab';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
