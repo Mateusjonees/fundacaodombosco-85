@@ -14,7 +14,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
 import { FileText, Users, Calendar, Star, TrendingUp, Download, Filter, Search, BarChart3, Clock, Shield, Trash2, Eye, X, FileDown, Pill, ClipboardList, FileCheck2, Timer, Tag } from 'lucide-react';
-import { getServiceTypeLabel, getServiceTypeBadgeClasses, SERVICE_TYPE_OPTIONS } from '@/utils/serviceTypes';
+import { getServiceTypeLabel, getServiceTypeBadgeClasses, SERVICE_TYPE_OPTIONS, normalizeServiceType } from '@/utils/serviceTypes';
 import TimeReportsTab from '@/components/TimeReportsTab';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -383,8 +383,10 @@ export default function Reports() {
         const clientUnit = report.clients?.unit;
         const isFlorestaAtendimento = clientUnit === 'atendimento_floresta';
         const rawServiceType = scheduleServiceMap.get(report.schedule_id);
+        // Normalizar o service_type para valores válidos (sus/private/external/laudo)
+        const normalized = normalizeServiceType(rawServiceType);
         // Demanda só se aplica a Atendimento Floresta
-        const serviceType = isFlorestaAtendimento ? (rawServiceType || 'private') : null;
+        const serviceType = isFlorestaAtendimento ? normalized : null;
         
         return {
           ...report,
@@ -2225,7 +2227,7 @@ export default function Reports() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {anamnese.service_type ? (
+                            {normalizeServiceType(anamnese.service_type) ? (
                               <Badge className={getServiceTypeBadgeClasses(anamnese.service_type)}>
                                 {getServiceTypeLabel(anamnese.service_type)}
                               </Badge>
@@ -2285,7 +2287,7 @@ export default function Reports() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-blue-600">
-                      {allPrescriptions.filter(p => p.service_type === 'sus').length}
+                      {allPrescriptions.filter(p => normalizeServiceType(p.service_type) === 'sus').length}
                     </p>
                     <p className="text-xs text-muted-foreground">SUS</p>
                   </CardContent>
@@ -2293,7 +2295,7 @@ export default function Reports() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-green-600">
-                      {allPrescriptions.filter(p => p.service_type === 'private' || !p.service_type).length}
+                      {allPrescriptions.filter(p => normalizeServiceType(p.service_type) === 'private' || !normalizeServiceType(p.service_type)).length}
                     </p>
                     <p className="text-xs text-muted-foreground">Demanda Própria</p>
                   </CardContent>
@@ -2301,7 +2303,7 @@ export default function Reports() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-orange-600">
-                      {allPrescriptions.filter(p => p.service_type === 'external').length}
+                      {allPrescriptions.filter(p => normalizeServiceType(p.service_type) === 'external').length}
                     </p>
                     <p className="text-xs text-muted-foreground">Demanda Externa</p>
                   </CardContent>
@@ -2309,7 +2311,7 @@ export default function Reports() {
                 <Card className="bg-muted/50">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-indigo-600">
-                      {allPrescriptions.filter(p => p.service_type === 'laudo').length}
+                      {allPrescriptions.filter(p => normalizeServiceType(p.service_type) === 'laudo').length}
                     </p>
                     <p className="text-xs text-muted-foreground">Laudo</p>
                   </CardContent>

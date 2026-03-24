@@ -17,13 +17,32 @@ export const SERVICE_TYPE_OPTIONS: { value: ServiceType; label: string }[] = [
 /**
  * Retorna o label do tipo de atendimento
  */
+/**
+ * Normaliza valores legados de service_type para o padrão atual
+ * Valores antigos como "Consulta Psiquiatria" eram tipo de sessão, não demanda
+ */
+export const normalizeServiceType = (type?: string | null): ServiceType | null => {
+  if (!type) return null;
+  const lower = type.toLowerCase().trim();
+  if (lower === 'sus') return 'sus';
+  if (lower === 'private') return 'private';
+  if (lower === 'external') return 'external';
+  if (lower === 'laudo') return 'laudo';
+  // Valores legados não são demanda válida — retorna null
+  return null;
+};
+
+/**
+ * Retorna o label do tipo de atendimento
+ */
 export const getServiceTypeLabel = (type?: string | null): string => {
-  switch (type) {
+  const normalized = normalizeServiceType(type);
+  switch (normalized) {
     case 'sus': return 'SUS';
     case 'private': return 'Demanda Própria';
     case 'external': return 'Demanda Externa';
     case 'laudo': return 'Laudo';
-    default: return 'Demanda Própria';
+    default: return '—';
   }
 };
 
@@ -31,7 +50,8 @@ export const getServiceTypeLabel = (type?: string | null): string => {
  * Retorna as classes CSS do badge por tipo de atendimento
  */
 export const getServiceTypeBadgeClasses = (type?: string | null): string => {
-  switch (type) {
+  const normalized = normalizeServiceType(type);
+  switch (normalized) {
     case 'sus': 
       return 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30';
     case 'external': 
@@ -39,7 +59,8 @@ export const getServiceTypeBadgeClasses = (type?: string | null): string => {
     case 'laudo': 
       return 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30';
     case 'private':
-    default: 
       return 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30';
+    default: 
+      return 'bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-500/30';
   }
 };
