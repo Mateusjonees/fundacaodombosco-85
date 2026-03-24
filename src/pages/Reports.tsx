@@ -383,8 +383,10 @@ export default function Reports() {
         const clientUnit = report.clients?.unit;
         const isFlorestaAtendimento = clientUnit === 'atendimento_floresta';
         const rawServiceType = scheduleServiceMap.get(report.schedule_id);
+        // Normalizar o service_type para valores válidos (sus/private/external/laudo)
+        const normalized = normalizeServiceType(rawServiceType);
         // Demanda só se aplica a Atendimento Floresta
-        const serviceType = isFlorestaAtendimento ? (rawServiceType || 'private') : null;
+        const serviceType = isFlorestaAtendimento ? normalized : null;
         
         return {
           ...report,
