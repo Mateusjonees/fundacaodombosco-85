@@ -2471,10 +2471,16 @@ export default function Reports() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {allLaudos.slice(0, 50).map((laudo) => (
+                    {allLaudos.map((laudo) => (
                       <TableRow key={laudo.id}>
                         <TableCell>
-                          <Badge variant="secondary">{laudo.client?.unit || 'Sem unidade'}</Badge>
+                          <Badge variant="secondary">
+                            {laudo.client?.unit === 'madre' ? 'Madre' : 
+                             laudo.client?.unit === 'floresta' ? 'Floresta' : 
+                             laudo.client?.unit === 'atendimento_floresta' ? 'At. Floresta' : 
+                             laudo.client?.unit || 'Sem unidade'}
+                          </Badge>
+                        </TableCell>
                         </TableCell>
                         <TableCell>
                           {format(new Date(laudo.laudo_date), 'dd/MM/yyyy', { locale: ptBR })}
