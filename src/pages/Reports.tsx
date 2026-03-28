@@ -2481,7 +2481,6 @@ export default function Reports() {
                              laudo.client?.unit || 'Sem unidade'}
                           </Badge>
                         </TableCell>
-                        </TableCell>
                         <TableCell>
                           {format(new Date(laudo.laudo_date), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
