@@ -613,7 +613,21 @@ export default function Reports() {
         .select('id, client_id, assigned_to, completed_by, completed_at, created_at, updated_at, notes, status, laudo_file_path')
         .or('laudo_file_path.not.is.null,status.eq.completed');
 
-      if (selectedMonth && !debouncedDateFrom && !debouncedDateTo) {
+      // Apply date filters
+      if (debouncedDateFrom && debouncedDateTo) {
+        directLaudosQuery = directLaudosQuery
+          .gte('laudo_date', debouncedDateFrom)
+          .lte('laudo_date', debouncedDateTo);
+        feedbackLaudosQuery = feedbackLaudosQuery
+          .gte('completed_at', `${debouncedDateFrom}T00:00:00`)
+          .lte('completed_at', `${debouncedDateTo}T23:59:59`);
+      } else if (debouncedDateFrom) {
+        directLaudosQuery = directLaudosQuery.gte('laudo_date', debouncedDateFrom);
+        feedbackLaudosQuery = feedbackLaudosQuery.gte('completed_at', `${debouncedDateFrom}T00:00:00`);
+      } else if (debouncedDateTo) {
+        directLaudosQuery = directLaudosQuery.lte('laudo_date', debouncedDateTo);
+        feedbackLaudosQuery = feedbackLaudosQuery.lte('completed_at', `${debouncedDateTo}T23:59:59`);
+      } else if (selectedMonth) {
         const monthStart = startOfMonth(parseISO(selectedMonth + '-01'));
         const monthEnd = endOfMonth(parseISO(selectedMonth + '-01'));
         const monthStartDate = format(monthStart, 'yyyy-MM-dd');
@@ -626,6 +640,18 @@ export default function Reports() {
         feedbackLaudosQuery = feedbackLaudosQuery
           .gte('completed_at', `${monthStartDate}T00:00:00`)
           .lte('completed_at', `${monthEndDate}T23:59:59`);
+      }
+
+      // Apply employee filter to direct laudos
+      if (selectedEmployee !== 'all') {
+        directLaudosQuery = directLaudosQuery.eq('employee_id', selectedEmployee);
+        feedbackLaudosQuery = feedbackLaudosQuery.or(`assigned_to.eq.${selectedEmployee},completed_by.eq.${selectedEmployee}`);
+      }
+
+      // Apply client filter
+      if (selectedClient !== 'all') {
+        directLaudosQuery = directLaudosQuery.eq('client_id', selectedClient);
+        feedbackLaudosQuery = feedbackLaudosQuery.eq('client_id', selectedClient);
       }
 
       const [directRes, feedbackRes] = await Promise.all([directLaudosQuery, feedbackLaudosQuery]);
@@ -679,6 +705,7 @@ export default function Reports() {
         employee: profilesRes.data?.find((profile: any) => profile.user_id === item.employee_id)
       }));
 
+      // Unit filter
       if (coordinatorUnit) {
         filteredData = filteredData.filter((item) => item.client?.unit === coordinatorUnit);
       } else if (selectedUnit !== 'all') {
@@ -2444,10 +2471,15 @@ export default function Reports() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {allLaudos.slice(0, 50).map((laudo) => (
+                    {allLaudos.map((laudo) => (
                       <TableRow key={laudo.id}>
                         <TableCell>
-                          <Badge variant="secondary">{laudo.client?.unit || 'Sem unidade'}</Badge>
+                          <Badge variant="secondary">
+                            {laudo.client?.unit === 'madre' ? 'Madre' : 
+                             laudo.client?.unit === 'floresta' ? 'Floresta' : 
+                             laudo.client?.unit === 'atendimento_floresta' ? 'At. Floresta' : 
+                             laudo.client?.unit || 'Sem unidade'}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {format(new Date(laudo.laudo_date), 'dd/MM/yyyy', { locale: ptBR })}
