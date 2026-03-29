@@ -54,7 +54,7 @@ export const ClientFormDialog = ({
     onFormChange({ ...formData, [field]: value });
   };
 
-  const isUnitLocked = userRole === "coordinator_madre" || userRole === "coordinator_floresta";
+  const isUnitLocked = userRole === "coordinator_madre" || userRole === "coordinator_floresta" || userRole === "coordinator_atendimento_floresta";
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -103,6 +103,7 @@ export const ClientFormDialog = ({
                 )}
                 {userRole === "coordinator_madre" && <SelectItem value="madre">MADRE</SelectItem>}
                 {userRole === "coordinator_floresta" && <SelectItem value="floresta">Neuro (Floresta)</SelectItem>}
+                {userRole === "coordinator_atendimento_floresta" && <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>}
               </SelectContent>
             </Select>
             {isUnitLocked && (
