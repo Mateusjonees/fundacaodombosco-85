@@ -268,7 +268,9 @@ export default function Patients() {
   // Auto-set unit based on coordinator role
   useEffect(() => {
     if (userProfile) {
-      const defaultUnit = userProfile.employee_role === "coordinator_floresta" ? "floresta" : "madre";
+      const defaultUnit = userProfile.employee_role === "coordinator_floresta" ? "floresta" 
+        : userProfile.employee_role === "coordinator_atendimento_floresta" ? "atendimento_floresta" 
+        : "madre";
       setNewClient(prev => ({ ...prev, unit: defaultUnit }));
     }
   }, [userProfile]);
@@ -289,7 +291,9 @@ export default function Patients() {
 
   // === CRUD handlers ===
   const resetForm = useCallback(() => {
-    const defaultUnit = userProfile?.employee_role === "coordinator_floresta" ? "floresta" : "madre";
+    const defaultUnit = userProfile?.employee_role === "coordinator_floresta" ? "floresta" 
+      : userProfile?.employee_role === "coordinator_atendimento_floresta" ? "atendimento_floresta" 
+      : "madre";
     setNewClient({
       name: "", phone: "", email: "", birth_date: "", address: "",
       emergency_contact: "", emergency_phone: "", medical_history: "",
