@@ -145,9 +145,8 @@ export default function NeuroTestSummaryTable({ tests, clientName }: NeuroTestSu
 
     if (config) {
       config.subtests.forEach(code => {
-        const score = config.useRawScores?.includes(code)
-          ? (rawScores[code] ?? '-')
-          : (calculatedScores[code] ?? '-');
+        // Buscar score: prioriza calculatedScores, depois rawScores
+        const score = calculatedScores[code] ?? rawScores[code] ?? '-';
         const percentile = percentiles[code] ?? '-';
         const classification = classifications[code] ?? '-';
 
