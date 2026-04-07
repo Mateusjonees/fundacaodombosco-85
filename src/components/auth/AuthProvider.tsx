@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean;
   mustChangePassword: boolean;
   setMustChangePassword: (value: boolean) => void;
+  isOfflineSession: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   mustChangePassword: false,
   setMustChangePassword: () => {},
+  isOfflineSession: false,
 });
 
 export const useAuth = () => {
@@ -33,11 +35,42 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+/**
+ * Tenta recuperar sessão do localStorage quando offline
+ * O Supabase salva a sessão em "sb-<ref>-auth-token"
+ */
+const getOfflineSession = (): { user: User; session: Session } | null => {
+  try {
+    const storageKey = 'sb-vqphtzkdhfzdwbumexhe-auth-token';
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    // Supabase armazena como { currentSession: { ... } } ou diretamente
+    const session = parsed?.currentSession || parsed;
+    if (!session?.user || !session?.access_token) return null;
+
+    // Verificar se o token não expirou (com margem de 24h para offline)
+    const expiresAt = session.expires_at;
+    if (expiresAt) {
+      const now = Math.floor(Date.now() / 1000);
+      // Permitir até 7 dias após expiração para uso offline
+      const offlineGrace = 7 * 24 * 60 * 60;
+      if (now > expiresAt + offlineGrace) return null;
+    }
+
+    return { user: session.user, session };
+  } catch {
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [isOfflineSession, setIsOfflineSession] = useState(false);
   const { preloadCriticalData } = useAppPreload();
 
   useEffect(() => {
@@ -46,6 +79,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setIsOfflineSession(false);
         
         // Check if user is active when logging in
         if (event === 'SIGNED_IN' && session?.user) {
@@ -65,7 +99,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               // If user is inactive, sign them out immediately
               if (profile && !profile.is_active) {
                 await supabase.auth.signOut();
-                // Don't log audit event here as signOut will trigger its own event
                 return;
               }
               
@@ -75,6 +108,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               } else {
                 setMustChangePassword(false);
               }
+
+              // Salvar perfil no IndexedDB para uso offline
+              await offlineDB.put(STORES.userSession, {
+                key: 'profile',
+                data: {
+                  user_id: session.user.id,
+                  employee_role: profile.employee_role,
+                  is_active: profile.is_active,
+                },
+                timestamp: Date.now(),
+              }).catch(() => {});
 
               // Pré-carregar dados críticos para performance
               if (profile?.employee_role) {
@@ -95,9 +139,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               console.error('AuthProvider: Error in login validation', error);
             }
           }, 0);
-          
-          // SECURITY: Never sync user_metadata to profiles client-side
-          // Roles are assigned only via server-side admin operations (create-users edge function)
         }
         
         if (event === 'SIGNED_OUT') {
@@ -106,6 +147,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           offlineDB.clear(STORES.schedules).catch(() => {});
           offlineDB.clear(STORES.medicalRecords).catch(() => {});
           offlineDB.clear(STORES.dashboardStats).catch(() => {});
+          offlineDB.clear(STORES.userSession).catch(() => {});
           
           setTimeout(() => {
             AuditService.logAction({
@@ -120,8 +162,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    // Get initial session - use cached session first for faster LCP
-    const cachedSession = (supabase.auth as any)._storageKey ? null : null;
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -143,6 +184,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(false);
     }).catch((error) => {
       console.error('AuthProvider: Error getting initial session', error);
+      
+      // OFFLINE FALLBACK: Se não conseguiu buscar sessão online,
+      // tentar usar sessão cached do localStorage
+      if (!navigator.onLine) {
+        console.log('AuthProvider: Offline - tentando sessão cached');
+        const cached = getOfflineSession();
+        if (cached) {
+          setUser(cached.user);
+          setSession(cached.session);
+          setIsOfflineSession(true);
+          setMustChangePassword(false); // Não forçar troca de senha offline
+          console.log('AuthProvider: Sessão offline restaurada com sucesso');
+        }
+      }
+      
       setLoading(false);
     });
 
@@ -152,7 +208,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, mustChangePassword, setMustChangePassword }}>
+    <AuthContext.Provider value={{ user, session, loading, mustChangePassword, setMustChangePassword, isOfflineSession }}>
       {children}
     </AuthContext.Provider>
   );
