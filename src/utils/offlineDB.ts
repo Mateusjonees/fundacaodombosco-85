@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'clinica_offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Stores disponíveis
 const STORES = {
@@ -14,6 +14,7 @@ const STORES = {
   dashboardStats: 'dashboard_stats',
   syncQueue: 'sync_queue',
   metadata: 'metadata',
+  userSession: 'user_session',
 } as const;
 
 type StoreName = typeof STORES[keyof typeof STORES];
@@ -53,6 +54,11 @@ const openDB = (): Promise<IDBDatabase> => {
       // Metadata (timestamps de última sync)
       if (!db.objectStoreNames.contains(STORES.metadata)) {
         db.createObjectStore(STORES.metadata, { keyPath: 'key' });
+      }
+
+      // Sessão do usuário (perfil, role, permissões) para offline auth
+      if (!db.objectStoreNames.contains(STORES.userSession)) {
+        db.createObjectStore(STORES.userSession, { keyPath: 'key' });
       }
     };
 

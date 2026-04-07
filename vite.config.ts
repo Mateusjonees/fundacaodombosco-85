@@ -48,15 +48,29 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
+      devOptions: {
+        enabled: false,
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/vqphtzkdhfzdwbumexhe\.supabase\.co/,
+            urlPattern: /^https:\/\/vqphtzkdhfzdwbumexhe\.supabase\.co\/rest/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api',
-              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+              expiration: { maxEntries: 100, maxAgeSeconds: 86400 },
+              networkTimeoutSeconds: 5,
+            },
+          },
+          {
+            urlPattern: /^https:\/\/vqphtzkdhfzdwbumexhe\.supabase\.co\/auth/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-auth',
+              expiration: { maxEntries: 10, maxAgeSeconds: 3600 },
+              networkTimeoutSeconds: 3,
             },
           },
         ],

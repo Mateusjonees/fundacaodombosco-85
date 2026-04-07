@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { offlineDB, STORES } from '@/utils/offlineDB';
 import type { EmployeeRole } from './useRolePermissions';
 
 interface UserProfile {
@@ -27,8 +28,7 @@ interface UserProfile {
 
 /**
  * Hook centralizado para carregar perfil do usuário atual
- * Usa React Query para cache automático e compartilhamento entre componentes
- * staleTime: 5 minutos - evita re-fetches desnecessários
+ * Com fallback offline via IndexedDB
  */
 export const useCurrentUser = () => {
   const { user } = useAuth();
@@ -38,14 +38,39 @@ export const useCurrentUser = () => {
     queryFn: async () => {
       if (!user?.id) return null;
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Tentar buscar online primeiro
+      if (navigator.onLine) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-      if (error) throw error;
-      return data as UserProfile | null;
+          if (error) throw error;
+
+          // Salvar no IndexedDB para uso offline
+          if (data) {
+            await offlineDB.put(STORES.userSession, {
+              key: `profile_${user.id}`,
+              data,
+              timestamp: Date.now(),
+            }).catch(() => {});
+          }
+
+          return data as UserProfile | null;
+        } catch (err) {
+          console.warn('[useCurrentUser] Erro online, tentando cache:', err);
+        }
+      }
+
+      // Fallback offline: buscar do IndexedDB
+      console.log('[useCurrentUser] Carregando perfil do cache offline');
+      const cached = await offlineDB.get<{ key: string; data: UserProfile; timestamp: number }>(
+        STORES.userSession,
+        `profile_${user.id}`
+      );
+      return cached?.data || null;
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

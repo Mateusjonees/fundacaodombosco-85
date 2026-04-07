@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { offlineDB, STORES } from '@/utils/offlineDB';
 
 /**
  * Hook para pré-carregar dados críticos do sistema após login
- * Isso melhora significativamente a performance da navegação
+ * Persiste dados no IndexedDB para funcionamento offline
  */
 export const useAppPreload = () => {
   const queryClient = useQueryClient();
@@ -18,10 +19,9 @@ export const useAppPreload = () => {
     const isCoordinator = userRole?.startsWith('coordinator');
     const isManager = isDirector || isCoordinator;
 
-    // Execute all prefetch operations in parallel for maximum speed
     const prefetchPromises: Promise<void>[] = [];
 
-    // 1. Perfil do usuário (crítico - compartilhado por useCurrentUser e useRolePermissions)
+    // 1. Perfil do usuário
     prefetchPromises.push(
       queryClient.prefetchQuery({
         queryKey: ['user-profile', userId],
@@ -31,6 +31,14 @@ export const useAppPreload = () => {
             .select('*')
             .eq('user_id', userId)
             .single();
+          // Persistir no IndexedDB
+          if (data) {
+            await offlineDB.put(STORES.userSession, {
+              key: `profile_${userId}`,
+              data,
+              timestamp: Date.now(),
+            }).catch(() => {});
+          }
           return data;
         },
         staleTime: 5 * 60 * 1000,
@@ -54,11 +62,12 @@ export const useAppPreload = () => {
       })
     );
 
-    // 3. Pacientes vinculados (seleção otimizada)
+    // 3. Pacientes vinculados - persiste no IndexedDB
     prefetchPromises.push(
       queryClient.prefetchQuery({
         queryKey: ['my-clients', userId],
         queryFn: async () => {
+          let clients: any[] = [];
           if (isManager) {
             const { data } = await supabase
               .from('clients')
@@ -66,49 +75,60 @@ export const useAppPreload = () => {
               .eq('is_active', true)
               .order('name')
               .limit(50);
-            return data || [];
+            clients = data || [];
+          } else {
+            const { data: assignments } = await supabase
+              .from('client_assignments')
+              .select('client_id')
+              .eq('employee_id', userId)
+              .eq('is_active', true);
+            
+            if (assignments?.length) {
+              const clientIds = assignments.map(a => a.client_id).filter(Boolean);
+              const { data } = await supabase
+                .from('clients')
+                .select('id, name, cpf, phone, unit, is_active, birth_date')
+                .in('id', clientIds)
+                .eq('is_active', true)
+                .order('name');
+              clients = data || [];
+            }
           }
-          
-          const { data: assignments } = await supabase
-            .from('client_assignments')
-            .select('client_id')
-            .eq('employee_id', userId)
-            .eq('is_active', true);
-          
-          if (!assignments?.length) return [];
-          
-          const clientIds = assignments.map(a => a.client_id).filter(Boolean);
-          const { data: clients } = await supabase
-            .from('clients')
-            .select('id, name, cpf, phone, unit, is_active, birth_date')
-            .in('id', clientIds)
-            .eq('is_active', true)
-            .order('name');
-          
-          return clients || [];
+          // Persistir clientes no IndexedDB
+          if (clients.length > 0) {
+            await offlineDB.putMany(STORES.clients, clients).catch(() => {});
+            await offlineDB.setLastSync('clients').catch(() => {});
+          }
+          return clients;
         },
         staleTime: 2 * 60 * 1000,
       })
     );
 
-    // 4. Agendamentos da semana (seleção otimizada)
+    // 4. Agendamentos da semana - persiste no IndexedDB
     prefetchPromises.push(
       queryClient.prefetchQuery({
         queryKey: ['schedules-week', weekStart, weekEnd, userId],
         queryFn: async () => {
-        let query = supabase
-          .from('schedules')
-          .select('id, client_id, employee_id, start_time, end_time, status, unit')
-          .gte('start_time', `${weekStart}T00:00:00`)
-          .lte('start_time', `${weekEnd}T23:59:59`)
-          .order('start_time');
+          let query = supabase
+            .from('schedules')
+            .select('id, client_id, employee_id, start_time, end_time, status, unit')
+            .gte('start_time', `${weekStart}T00:00:00`)
+            .lte('start_time', `${weekEnd}T23:59:59`)
+            .order('start_time');
 
           if (!isManager) {
             query = query.eq('employee_id', userId);
           }
 
           const { data } = await query.limit(100);
-          return data || [];
+          const schedules = data || [];
+          // Persistir agendamentos no IndexedDB
+          if (schedules.length > 0) {
+            await offlineDB.putMany(STORES.schedules, schedules).catch(() => {});
+            await offlineDB.setLastSync('schedules').catch(() => {});
+          }
+          return schedules;
         },
         staleTime: 60 * 1000,
       })
@@ -134,7 +154,6 @@ export const useAppPreload = () => {
 
     // 6. Dados para coordenadores e diretores
     if (isManager) {
-      // Lista de funcionários
       prefetchPromises.push(
         queryClient.prefetchQuery({
           queryKey: ['employees-list'],
@@ -152,7 +171,6 @@ export const useAppPreload = () => {
         })
       );
 
-      // Atendimentos pendentes de validação
       prefetchPromises.push(
         queryClient.prefetchQuery({
           queryKey: ['pending-validations'],
@@ -187,7 +205,7 @@ export const useAppPreload = () => {
     // Execute all prefetches in parallel
     try {
       await Promise.allSettled(prefetchPromises);
-      console.log('✅ Dados críticos pré-carregados com sucesso');
+      console.log('✅ Dados críticos pré-carregados e persistidos no IndexedDB');
     } catch (error) {
       console.warn('⚠️ Alguns dados não puderam ser pré-carregados:', error);
     }
