@@ -1,41 +1,74 @@
 
 
-## Plano: Corrigir Relatórios - Build Error, Filtros de Data e Separação por Demanda
+## Plano: Funcionamento Offline Completo do PWA
 
-### Problemas Identificados
+### Problema Principal
 
-1. **Build error (linha 249)**: `new Map(profiles?.map(...) || [])` — quando `profiles` vem de `{ data: [] }`, o TypeScript infere `any[][]` ao invés de `[string, string][]`. Precisa de type assertion.
+O app tem a infraestrutura offline (IndexedDB, syncQueue, Service Worker), mas **não funciona offline** por 3 razões críticas:
 
-2. **Filtros de data não funcionando**: Os inputs `type="date"` e `type="month"` estão corretos mas o `coordinator_atendimento_floresta` é bloqueado na verificação de acesso (linha 1325-1327) — falta esse role na checagem final.
+1. **Autenticação bloqueia tudo**: O `AuthProvider` chama `supabase.auth.getSession()` que falha sem internet. Resultado: tela de loading infinita ou tela de login.
+2. **Sessão não sobrevive ao reload offline**: Supabase guarda sessão no localStorage, mas o `onAuthStateChange` tenta validar online e falha.
+3. **Dados pré-carregados não vão para IndexedDB**: O `useAppPreload` salva apenas no React Query (memória), que se perde ao reabrir o app.
 
-3. **Falta separação por tipo de demanda (SUS, Demanda Externa, Demanda Própria)**: A tabela `attendance_reports` não tem `service_type`, mas o `schedule` vinculado sim. Precisa fazer join com schedules para trazer o `service_type` e depois agrupar/filtrar por ele.
+### Solução em 4 Etapas
 
-4. **Filtro de "Tipo de Atendimento"** mistura tipo de sessão (Consulta, Terapia) com demanda (SUS, Própria, Externa). Precisa de um filtro separado para "Demanda".
+#### 1. Auth offline-resilient
+Modificar `AuthProvider.tsx` para:
+- Quando offline, ler sessão do `localStorage` diretamente (Supabase já salva lá)
+- Pular validação de perfil (`is_active`, `must_change_password`) quando offline
+- Permitir que o app carregue com sessão cached mesmo sem internet
 
-### Mudanças Técnicas
+#### 2. Salvar dados críticos no IndexedDB após login
+Modificar `useAppPreload.ts` para persistir no IndexedDB:
+- Perfil do usuário + permissões
+- Lista de clientes vinculados
+- Agendamentos da semana
+- Dados de funcionários (para coordenadores)
 
-**Arquivo: `src/pages/Reports.tsx`**
+Criar novo store `userSession` no IndexedDB para guardar perfil e role.
 
-1. **Fix build error** (linha 249): Adicionar type assertion `as [string, string][]` em todas as ocorrências de `new Map(profiles?.map(p => [p.user_id, p.name]) || [])`.
+#### 3. Hooks com fallback offline real
+Garantir que `useClients`, `useSchedules`, `useMedicalRecords` e `useCurrentUser` carreguem do IndexedDB quando offline, sem tentar Supabase primeiro.
 
-2. **Fix acesso coordenador_atendimento_floresta** (linha 1325-1327): Adicionar `userRole === 'coordinator_atendimento_floresta'` à checagem.
+#### 4. Ajustar Service Worker / Workbox
+- Aumentar cache do Supabase API de 300s para 24h (para dados estáticos como perfil)
+- Adicionar `navigateFallbackDenylist: [/^\/~oauth/]`
+- Garantir que `devOptions: { enabled: false }` está configurado
 
-3. **Novo estado `selectedDemand`**: Adicionar filtro de demanda (SUS / Demanda Própria / Demanda Externa / Laudo / Todos).
+### Arquivos Modificados
 
-4. **Buscar `service_type` do schedule**: No `loadAttendanceReports`, fazer join com `schedules` para trazer o `service_type`, ou buscar separadamente e mapear. Como o attendance_report já tem `schedule_id`, buscar os schedules correspondentes e enriquecer cada report com o `service_type`.
+| Arquivo | Mudança |
+|---------|---------|
+| `src/components/auth/AuthProvider.tsx` | Fallback offline para sessão cached |
+| `src/hooks/useAppPreload.ts` | Persistir dados no IndexedDB |
+| `src/utils/offlineDB.ts` | Adicionar store `userSession` (bump DB_VERSION) |
+| `src/hooks/useCurrentUser.ts` | Fallback IndexedDB quando offline |
+| `src/hooks/useClients.ts` | Já tem fallback, verificar consistência |
+| `vite.config.ts` | Ajustar workbox config, adicionar denylist |
+| `src/main.tsx` | Guard para não registrar SW em iframe/preview |
 
-5. **UI de filtro de demanda**: Adicionar Select de "Demanda" na seção de filtros, com as opções: SUS, Demanda Própria, Demanda Externa, Laudo.
+### Detalhes Técnicos
 
-6. **Coluna "Demanda" na tabela**: Adicionar coluna com badge colorido mostrando o tipo de demanda em cada atendimento.
+**AuthProvider offline**:
+```text
+getSession() falha?
+  → Ler localStorage "sb-vqphtzkdhfzdwbumexhe-auth-token"
+  → Se tem sessão válida (não expirada), usar como user
+  → Pular check de is_active / must_change_password
+  → Marcar flag "offlineSession = true"
+```
 
-7. **Separação visual por demanda**: Nos stats cards, adicionar breakdown por demanda. Na tabela de atendimentos, mostrar a demanda com badges coloridos (verde=SUS, azul=Própria, laranja=Externa, indigo=Laudo).
+**IndexedDB novo store**:
+```text
+DB_VERSION: 1 → 2
+Novo store: "user_session" (keyPath: "key")
+Conteúdo: { key: "profile", data: { user_id, name, role, permissions, unit } }
+```
 
-8. **Filtro aplicado**: Quando `selectedDemand !== 'all'`, filtrar os `attendanceReports` pelo `service_type` do schedule vinculado.
-
-### Resumo
-- 1 fix de build (type assertion)
-- 1 fix de permissão (coordinator_atendimento_floresta)
-- Novo filtro de demanda + coluna na tabela
-- Join com schedules para trazer service_type nos relatórios
-- Cards de resumo por demanda na aba de atendimentos
+**Workbox ajustado**:
+```text
+- Supabase API cache: maxAgeSeconds 86400 (24h) 
+- navigateFallbackDenylist: [/^\/~oauth/]
+- devOptions: { enabled: false }
+```
 
