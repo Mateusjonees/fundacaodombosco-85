@@ -70,15 +70,42 @@ const AppContent = () => {
     }
   }, [user]);
 
-  // Loading spinner minimalista
-  const LoadingSpinner = () => (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Carregando...</p>
+  // Loading spinner minimalista com fallback de auto-recuperação se demorar > 8s
+  const LoadingSpinner = () => {
+    const [showRecovery, setShowRecovery] = useState(false);
+    useEffect(() => {
+      const t = setTimeout(() => setShowRecovery(true), 8000);
+      return () => clearTimeout(t);
+    }, []);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Carregando...</p>
+          {showRecovery && (
+            <div className="mt-2 space-y-2">
+              <p className="text-xs text-muted-foreground/70 max-w-xs">
+                Está demorando mais que o normal. Se você instalou o aplicativo, talvez seja necessário atualizar o sistema.
+              </p>
+              <a
+                href="/limpar-cache"
+                className="inline-block text-xs text-primary underline hover:opacity-80"
+              >
+                Atualizar sistema agora
+              </a>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  // Marca app como pronto assim que sair do loading inicial (login ou dashboard).
+  useEffect(() => {
+    if (!loading) {
+      window.__APP_READY__ = true;
+    }
+  }, [loading]);
 
   if (loading) {
     return <LoadingSpinner />;
