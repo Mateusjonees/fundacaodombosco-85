@@ -1,74 +1,63 @@
 
+User wants a split-screen login: left side = current login form, right side = something visual about Fundação Dom Bosco referente ao sistema.
 
-## Plano: Funcionamento Offline Completo do PWA
+Current LoginForm is centered with bubbles background. I'll restructure to a 50/50 split on desktop, keeping mobile as the current centered layout.
 
-### Problema Principal
+## Plano: Login com Layout Dividido (Split-Screen)
 
-O app tem a infraestrutura offline (IndexedDB, syncQueue, Service Worker), mas **não funciona offline** por 3 razões críticas:
+### Visão Geral
+Transformar a tela de login em layout dividido 50/50 no desktop. Lado esquerdo mantém o formulário de login (atual). Lado direito ganha um painel visual institucional da Fundação Dom Bosco referente ao sistema clínico.
 
-1. **Autenticação bloqueia tudo**: O `AuthProvider` chama `supabase.auth.getSession()` que falha sem internet. Resultado: tela de loading infinita ou tela de login.
-2. **Sessão não sobrevive ao reload offline**: Supabase guarda sessão no localStorage, mas o `onAuthStateChange` tenta validar online e falha.
-3. **Dados pré-carregados não vão para IndexedDB**: O `useAppPreload` salva apenas no React Query (memória), que se perde ao reabrir o app.
+### Layout Desktop (≥1024px)
 
-### Solução em 4 Etapas
-
-#### 1. Auth offline-resilient
-Modificar `AuthProvider.tsx` para:
-- Quando offline, ler sessão do `localStorage` diretamente (Supabase já salva lá)
-- Pular validação de perfil (`is_active`, `must_change_password`) quando offline
-- Permitir que o app carregue com sessão cached mesmo sem internet
-
-#### 2. Salvar dados críticos no IndexedDB após login
-Modificar `useAppPreload.ts` para persistir no IndexedDB:
-- Perfil do usuário + permissões
-- Lista de clientes vinculados
-- Agendamentos da semana
-- Dados de funcionários (para coordenadores)
-
-Criar novo store `userSession` no IndexedDB para guardar perfil e role.
-
-#### 3. Hooks com fallback offline real
-Garantir que `useClients`, `useSchedules`, `useMedicalRecords` e `useCurrentUser` carreguem do IndexedDB quando offline, sem tentar Supabase primeiro.
-
-#### 4. Ajustar Service Worker / Workbox
-- Aumentar cache do Supabase API de 300s para 24h (para dados estáticos como perfil)
-- Adicionar `navigateFallbackDenylist: [/^\/~oauth/]`
-- Garantir que `devOptions: { enabled: false }` está configurado
-
-### Arquivos Modificados
-
-| Arquivo | Mudança |
-|---------|---------|
-| `src/components/auth/AuthProvider.tsx` | Fallback offline para sessão cached |
-| `src/hooks/useAppPreload.ts` | Persistir dados no IndexedDB |
-| `src/utils/offlineDB.ts` | Adicionar store `userSession` (bump DB_VERSION) |
-| `src/hooks/useCurrentUser.ts` | Fallback IndexedDB quando offline |
-| `src/hooks/useClients.ts` | Já tem fallback, verificar consistência |
-| `vite.config.ts` | Ajustar workbox config, adicionar denylist |
-| `src/main.tsx` | Guard para não registrar SW em iframe/preview |
-
-### Detalhes Técnicos
-
-**AuthProvider offline**:
 ```text
-getSession() falha?
-  → Ler localStorage "sb-vqphtzkdhfzdwbumexhe-auth-token"
-  → Se tem sessão válida (não expirada), usar como user
-  → Pular check de is_active / must_change_password
-  → Marcar flag "offlineSession = true"
+┌────────────────────────┬────────────────────────┐
+│                        │  ░░░ Gradiente azul ░░ │
+│   [Logo FDB]           │                        │
+│                        │   "Cuidado clínico     │
+│   Bem-vindo de volta   │    que transforma      │
+│                        │    vidas."             │
+│   [Email]              │                        │
+│   [Senha]              │   ✓ Gestão de Pacientes│
+│   [Entrar →]           │   ✓ Agenda Inteligente │
+│                        │   ✓ Prontuário Digital │
+│   Instalar app         │   ✓ Avaliação Neuropsi │
+│                        │                        │
+│                        │   "Há mais de 60 anos  │
+│                        │   transformando vidas" │
+│                        │                        │
+│                        │   [Selo MADRE/Floresta]│
+└────────────────────────┴────────────────────────┘
 ```
 
-**IndexedDB novo store**:
-```text
-DB_VERSION: 1 → 2
-Novo store: "user_session" (keyPath: "key")
-Conteúdo: { key: "profile", data: { user_id, name, role, permissions, unit } }
-```
+### Lado Direito — Conteúdo
 
-**Workbox ajustado**:
-```text
-- Supabase API cache: maxAgeSeconds 86400 (24h) 
-- navigateFallbackDenylist: [/^\/~oauth/]
-- devOptions: { enabled: false }
-```
+- **Background**: gradiente sutil usando as cores institucionais (azul MADRE → verde Floresta) com bolhas decorativas suaves (reaproveitando estilo atual).
+- **Headline**: "Cuidado clínico que transforma vidas."
+- **Subtítulo**: "Sistema integrado de gestão da Fundação Dom Bosco — Clínica Social, Neuropsicologia e Atendimento Floresta."
+- **Lista de recursos** (4 ícones lucide-react com check):
+  - Gestão completa de pacientes
+  - Agenda e prontuário digital
+  - Avaliação neuropsicológica (45+ testes)
+  - Relatórios e laudos clínicos
+- **Citação institucional**: "Há mais de 60 anos transformando vidas com dignidade e cuidado."
+- **Badges de unidades** no rodapé: três pílulas coloridas (MADRE azul, Floresta verde, Atendimento Floresta roxo) — alinhadas com `mem://style/padronizacao-cores-unidades`.
 
+### Mobile (<1024px)
+Mantém o layout atual (formulário centralizado com bolhas). O painel direito fica oculto (`hidden lg:flex`) para preservar a UX mobile e o foco no login.
+
+### Mudanças Técnicas
+
+**Arquivo único alterado**: `src/components/auth/LoginForm.tsx`
+
+- Wrapper externo vira `flex` com duas colunas no desktop:
+  - Esquerda: `w-full lg:w-1/2` — conteúdo atual do form
+  - Direita: `hidden lg:flex lg:w-1/2` — novo painel institucional
+- Reaproveita classes existentes (`login-bubble`, paleta de tokens).
+- Sem alteração em `index.css`, `App.tsx` ou rotas.
+- Sem novas dependências (ícones já vêm do lucide-react).
+
+### Considerações
+- Acessibilidade: imagens decorativas com `aria-hidden`, headline como `<h2>`.
+- Performance: nenhuma imagem nova pesada; tudo CSS + ícones SVG inline.
+- Consistência: cores e tipografia seguem os tokens do design system já definidos.
