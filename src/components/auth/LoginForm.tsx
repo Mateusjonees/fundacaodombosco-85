@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
-import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Eye, EyeOff, Users, Calendar, FileText, Brain, Heart } from 'lucide-react';
 
 interface LoginFormProps {
   onSuccess: () => void;
