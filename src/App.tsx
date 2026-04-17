@@ -18,6 +18,7 @@ const SignUpForm = lazy(() => import("@/components/auth/SignUpForm").then(m => (
 const MainApp = lazy(() => import("@/components/MainApp").then(m => ({ default: m.MainApp })));
 const ChangeOwnPasswordDialog = lazy(() => import("@/components/ChangeOwnPasswordDialog").then(m => ({ default: m.ChangeOwnPasswordDialog })));
 const Install = lazy(() => import("@/pages/Install"));
+const ClearCache = lazy(() => import("@/pages/ClearCache"));
 
 // QueryClient otimizado com cache agressivo e deduplicação
 const queryClient = new QueryClient({
@@ -88,6 +89,15 @@ const AppContent = () => {
     return (
       <Suspense fallback={<LoadingSpinner />}>
         <Install />
+      </Suspense>
+    );
+  }
+
+  // Página pública de auto-recuperação (limpa SW/cache para destravar login)
+  if (window.location.pathname === '/limpar-cache' || window.location.pathname === '/clear-cache') {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <ClearCache />
       </Suspense>
     );
   }
