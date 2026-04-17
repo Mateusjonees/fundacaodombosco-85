@@ -190,20 +190,13 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
         </div>
 
         {/* Auto-recover link: para usuários presos em "Carregando..." */}
-        <div className="text-center mt-2 space-y-1">
+        <div className="text-center mt-2">
           <a
             href="/limpar-cache"
             className="block text-[11px] text-white/50 hover:text-white/80 transition-colors"
             title="Use se o sistema travar em 'Carregando...'"
           >
             Aplicativo instalado e não entra? Atualizar sistema
-          </a>
-          <a
-            href="/limpar-cache?hard=1"
-            className="block text-[10px] text-white/30 hover:text-white/60 transition-colors"
-            title="Reset completo: vai exigir novo login"
-          >
-            Reset completo (último recurso)
           </a>
         </div>
 
