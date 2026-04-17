@@ -53,8 +53,18 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallbackDenylist: [/^\/~oauth/],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/auth/, /supabase\.co/],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
+          {
+            // NUNCA cachear requisições de autenticação - sempre rede
+            urlPattern: ({ url }) =>
+              url.origin === 'https://vqphtzkdhfzdwbumexhe.supabase.co' &&
+              (url.pathname.startsWith('/auth') || url.pathname.startsWith('/functions')),
+            handler: 'NetworkOnly',
+          },
           {
             urlPattern: /^https:\/\/vqphtzkdhfzdwbumexhe\.supabase\.co\/rest/,
             handler: 'NetworkFirst',
@@ -62,15 +72,6 @@ export default defineConfig(({ mode }) => ({
               cacheName: 'supabase-api',
               expiration: { maxEntries: 100, maxAgeSeconds: 86400 },
               networkTimeoutSeconds: 5,
-            },
-          },
-          {
-            urlPattern: /^https:\/\/vqphtzkdhfzdwbumexhe\.supabase\.co\/auth/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-auth',
-              expiration: { maxEntries: 10, maxAgeSeconds: 3600 },
-              networkTimeoutSeconds: 3,
             },
           },
         ],
