@@ -189,6 +189,17 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
           </a>
         </div>
 
+        {/* Auto-recover link: para usuários presos em "Carregando..." */}
+        <div className="text-center mt-2">
+          <a
+            href="/limpar-cache"
+            className="inline-flex items-center gap-1.5 text-[11px] text-white/40 hover:text-white/70 transition-colors"
+            title="Use se o sistema travar em 'Carregando...'"
+          >
+            Problemas para entrar? Atualizar sistema
+          </a>
+        </div>
+
         {/* Footer text */}
         <p className="text-center text-xs text-white/30 mt-2">
           Fundação Dom Bosco · Clínica
