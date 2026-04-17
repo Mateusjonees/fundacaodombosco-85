@@ -61,6 +61,32 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // KILL SWITCH: limpa Service Worker antigo que causava falha de login no Chrome/Edge.
+      // Executa apenas uma vez por navegador. Depois o novo SW (v2) é instalado normalmente.
+      (function () {
+        try {
+          var KEY = 'sw-reset-v2-auth-fix';
+          if (!localStorage.getItem(KEY) && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              var hadOld = regs.length > 0;
+              Promise.all(regs.map(function (r) { return r.unregister(); }))
+                .then(function () {
+                  if ('caches' in window) {
+                    return caches.keys().then(function (keys) {
+                      return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                    });
+                  }
+                })
+                .then(function () {
+                  localStorage.setItem(KEY, '1');
+                  if (hadOld) window.location.reload();
+                });
+            });
+          }
+        } catch (e) { /* noop */ }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
