@@ -179,8 +179,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    // Get initial session
+    // Get initial session — com timeout para nunca travar em "loading" infinito.
+    const sessionTimeout = window.setTimeout(() => {
+      if (isMounted) {
+        console.warn('[AuthProvider] getSession demorou demais — liberando UI sem sessão');
+        setLoading(false);
+      }
+    }, 8000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      window.clearTimeout(sessionTimeout);
+      console.log('[AuthProvider] getSession ok, session?', !!session);
       syncAuthState(session, false);
 
       if (session?.user) {
@@ -191,8 +200,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setLoading(false);
       }
     }).catch((error) => {
+      window.clearTimeout(sessionTimeout);
       console.error('AuthProvider: Error getting initial session', error);
-      
+
       // OFFLINE FALLBACK: Se não conseguiu buscar sessão online,
       // tentar usar sessão cached do localStorage
       if (!navigator.onLine) {
@@ -200,7 +210,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const cached = getOfflineSession();
         if (cached) {
           syncAuthState(cached.session, true);
-          setMustChangePassword(false); // Não forçar troca de senha offline
+          setMustChangePassword(false);
           console.log('AuthProvider: Sessão offline restaurada com sucesso');
         }
       }
@@ -211,6 +221,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     return () => {
+      window.clearTimeout(sessionTimeout);
       isMounted = false;
       subscription.unsubscribe();
     };

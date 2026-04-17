@@ -53,26 +53,18 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/auth/, /supabase\.co/],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/auth/, /^\/limpar-cache/, /supabase\.co/],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [
           {
-            // NUNCA cachear requisições de autenticação - sempre rede
+            // NUNCA cachear nada do Supabase no Service Worker.
+            // Auth, REST, RPC e Functions sempre vão pela rede.
+            // Cache offline é responsabilidade do IndexedDB (offlineDB).
             urlPattern: ({ url }) =>
-              url.origin === 'https://vqphtzkdhfzdwbumexhe.supabase.co' &&
-              (url.pathname.startsWith('/auth') || url.pathname.startsWith('/functions')),
+              url.origin === 'https://vqphtzkdhfzdwbumexhe.supabase.co',
             handler: 'NetworkOnly',
-          },
-          {
-            urlPattern: /^https:\/\/vqphtzkdhfzdwbumexhe\.supabase\.co\/rest/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api',
-              expiration: { maxEntries: 100, maxAgeSeconds: 86400 },
-              networkTimeoutSeconds: 5,
-            },
           },
         ],
       },

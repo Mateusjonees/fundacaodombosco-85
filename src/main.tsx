@@ -3,6 +3,15 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
+// Marcador global de boot bem-sucedido. Quando o app realmente fica utilizável
+// (login renderizado OU dashboard renderizado), setamos window.__APP_READY__ = true.
+// Veja App.tsx / LoginForm: o watchdog abaixo monitora esse flag.
+declare global {
+  interface Window {
+    __APP_READY__?: boolean;
+  }
+}
+
 // Guard: não registrar Service Worker em iframes ou preview do Lovable
 const isInIframe = (() => {
   try {
@@ -22,14 +31,13 @@ if (isPreviewHost || isInIframe) {
   });
 }
 
-// AUTO-HEAL: detecta Service Worker preso/desatualizado e força limpeza.
-// Sintoma: login fica em "Carregando..." infinito no Chrome/Edge porque o SW
-// antigo serve um bundle quebrado e impede a inicialização do app.
+// AUTO-HEAL agressivo: detecta SW preso/desatualizado E "boot parcial"
+// (React montou mas app não ficou utilizável em X segundos) e força limpeza total.
 if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
-  const HEAL_FLAG = 'sw_heal_v2';
+  const HEAL_FLAG = 'sw_heal_v3';
   const APP_BOOT_TIMEOUT_MS = 12000;
 
-  // 1) Quando um novo SW assume o controle, recarrega UMA vez.
+  // Quando um novo SW assume o controle, recarrega UMA vez.
   let reloadedAfterControllerChange = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (reloadedAfterControllerChange) return;
@@ -37,35 +45,57 @@ if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
     window.location.reload();
   });
 
-  // 2) Watchdog: se em 12s o app React ainda não montou (root vazio),
-  //    assume que o SW está servindo algo quebrado → desregistra tudo,
-  //    limpa caches e recarrega forçando rede.
+  const performHardHeal = async (reason: string) => {
+    if (sessionStorage.getItem(HEAL_FLAG)) {
+      console.warn(`[SW heal] Já tentou curar nesta sessão (${reason}), abortando para evitar loop.`);
+      return;
+    }
+    sessionStorage.setItem(HEAL_FLAG, '1');
+    console.warn(`[SW heal] Disparando limpeza forçada. Motivo: ${reason}`);
+
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      }
+    } catch (e) {
+      console.warn('[SW heal] erro ao limpar caches:', e);
+    }
+    window.location.reload();
+  };
+
+  // Watchdog principal: se em 12s o app não estiver utilizável, cura.
+  // "Utilizável" = window.__APP_READY__ ou root tem mais de 1 filho real.
   window.addEventListener('load', () => {
-    setTimeout(async () => {
+    setTimeout(() => {
+      if (window.__APP_READY__) return;
+
       const root = document.getElementById('root');
       const appBooted = !!root && root.childElementCount > 0;
-      if (appBooted) return;
 
-      if (sessionStorage.getItem(HEAL_FLAG)) return; // evita loop
-      sessionStorage.setItem(HEAL_FLAG, '1');
+      // Heurística: se mostra apenas spinner/"Carregando" sem ter sinalizado pronto,
+      // tratamos como travado.
+      const text = root?.innerText?.toLowerCase() ?? '';
+      const looksStuck =
+        !appBooted ||
+        text.includes('carregando') ||
+        text.includes('verificando permiss');
 
-      try {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.unregister()));
-        if ('caches' in window) {
-          const names = await caches.keys();
-          await Promise.all(names.map((n) => caches.delete(n)));
-        }
-      } catch (e) {
-        console.warn('[SW heal] erro ao limpar caches:', e);
+      if (looksStuck) {
+        void performHardHeal(appBooted ? 'boot-parcial' : 'root-vazio');
       }
-      window.location.reload();
     }, APP_BOOT_TIMEOUT_MS);
   });
 
-  // Limpa flag de heal quando app monta com sucesso (rodada seguinte fica livre).
+  // Limpa flag de heal quando app monta com sucesso de verdade.
   window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => sessionStorage.removeItem(HEAL_FLAG), 5000);
+    setTimeout(() => {
+      if (window.__APP_READY__) {
+        sessionStorage.removeItem(HEAL_FLAG);
+      }
+    }, 6000);
   });
 }
 
