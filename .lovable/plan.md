@@ -1,63 +1,93 @@
 
-User wants a split-screen login: left side = current login form, right side = something visual about Fundação Dom Bosco referente ao sistema.
+Diagnóstico provável
 
-Current LoginForm is centered with bubbles background. I'll restructure to a 50/50 split on desktop, keeping mobile as the current centered layout.
+Pelo código e pelos logs, o problema parece ser majoritariamente no cliente/PWA, não no Supabase:
 
-## Plano: Login com Layout Dividido (Split-Screen)
+- Os logs de auth mostram `POST /token` e `GET /user` com status `200`, então o login no backend está acontecendo.
+- O perfil do usuário Christopher existe, está ativo e com cargo válido.
+- O app instalado usa `vite-plugin-pwa` e ainda faz cache de chamadas `rest` do Supabase por até 24h.
+- O `main.tsx` já tenta “auto-heal”, mas só quando o React nem monta. Se o app monta e fica preso em “Carregando...” ou “Verificando permissões...”, essa cura nunca dispara.
+- A página `/limpar-cache` preserva o token do Supabase no `localStorage`, então em alguns casos ela pode manter justamente a sessão/token corrompidos do app instalado.
 
-### Visão Geral
-Transformar a tela de login em layout dividido 50/50 no desktop. Lado esquerdo mantém o formulário de login (atual). Lado direito ganha um painel visual institucional da Fundação Dom Bosco referente ao sistema clínico.
+Isso combina exatamente com o relato: máquinas que têm ou tiveram o app instalado ficam com versão/cache/session state velho e não conseguem concluir a entrada.
 
-### Layout Desktop (≥1024px)
+Plano de correção
 
-```text
-┌────────────────────────┬────────────────────────┐
-│                        │  ░░░ Gradiente azul ░░ │
-│   [Logo FDB]           │                        │
-│                        │   "Cuidado clínico     │
-│   Bem-vindo de volta   │    que transforma      │
-│                        │    vidas."             │
-│   [Email]              │                        │
-│   [Senha]              │   ✓ Gestão de Pacientes│
-│   [Entrar →]           │   ✓ Agenda Inteligente │
-│                        │   ✓ Prontuário Digital │
-│   Instalar app         │   ✓ Avaliação Neuropsi │
-│                        │                        │
-│                        │   "Há mais de 60 anos  │
-│                        │   transformando vidas" │
-│                        │                        │
-│                        │   [Selo MADRE/Floresta]│
-└────────────────────────┴────────────────────────┘
-```
+1. Endurecer a inicialização do app
+- Ajustar `src/main.tsx` para considerar “boot travado” não só quando o root está vazio, mas também quando o app não sai do estado de loading/permissões após um tempo.
+- Criar um marcador explícito de boot concluído para diferenciar “React montou” de “app ficou utilizável”.
+- Se travar, limpar SW/cache/IndexedDB e recarregar automaticamente.
 
-### Lado Direito — Conteúdo
+2. Remover o cache perigoso do Supabase no PWA
+- Ajustar `vite.config.ts`.
+- Parar de cachear respostas `rest` do Supabase no Service Worker, especialmente dados de bootstrap como:
+  - `profiles`
+  - `get_user_permissions`
+  - permissões/roles
+- Manter offline via IndexedDB já existente, em vez de depender de cache HTTP do Workbox para auth/perfis.
 
-- **Background**: gradiente sutil usando as cores institucionais (azul MADRE → verde Floresta) com bolhas decorativas suaves (reaproveitando estilo atual).
-- **Headline**: "Cuidado clínico que transforma vidas."
-- **Subtítulo**: "Sistema integrado de gestão da Fundação Dom Bosco — Clínica Social, Neuropsicologia e Atendimento Floresta."
-- **Lista de recursos** (4 ícones lucide-react com check):
-  - Gestão completa de pacientes
-  - Agenda e prontuário digital
-  - Avaliação neuropsicológica (45+ testes)
-  - Relatórios e laudos clínicos
-- **Citação institucional**: "Há mais de 60 anos transformando vidas com dignidade e cuidado."
-- **Badges de unidades** no rodapé: três pílulas coloridas (MADRE azul, Floresta verde, Atendimento Floresta roxo) — alinhadas com `mem://style/padronizacao-cores-unidades`.
+3. Fortalecer a recuperação manual
+- Atualizar `src/pages/ClearCache.tsx` para ter limpeza realmente completa em caso de app instalado:
+  - remover Service Workers
+  - remover caches
+  - limpar IndexedDB
+  - limpar também token/session do Supabase quando for modo “hard reset”
+- Manter opção de limpeza “leve” e adicionar limpeza “completa” para casos de login quebrado.
+- Melhorar o link da tela de login para deixar claro: “Se o app foi instalado e não entra, toque aqui”.
 
-### Mobile (<1024px)
-Mantém o layout atual (formulário centralizado com bolhas). O painel direito fica oculto (`hidden lg:flex`) para preservar a UX mobile e o foco no login.
+4. Evitar spinner infinito pós-login
+- Revisar `src/components/auth/AuthProvider.tsx`, `src/hooks/useCurrentUser.ts`, `src/hooks/useCustomPermissions.ts` e `src/hooks/useRolePermissions.ts`.
+- Adicionar timeout e fallback visual quando profile/permissões demorarem demais.
+- Se a sessão já autenticou mas perfil/permissões falharem, mostrar ação de recuperação em vez de deixar só “Carregando...”.
 
-### Mudanças Técnicas
+5. Adicionar instrumentação de diagnóstico
+- Inserir logs claros nos pontos críticos:
+  - início do `getSession`
+  - retorno do `onAuthStateChange`
+  - carregamento de `profiles`
+  - RPC `get_user_permissions`
+  - fallback offline
+  - detecção de SW antigo
+- Isso ajuda a confirmar em qual etapa cada usuário trava se ainda houver casos residuais.
 
-**Arquivo único alterado**: `src/components/auth/LoginForm.tsx`
+6. Ajuste de UX emergencial
+- Na tela de login e no menu do usuário, manter “Atualizar Sistema”.
+- Na rota `/install`, incluir aviso para quem já tinha o app instalado antes:
+  “Se o aplicativo antigo não estiver entrando, atualize o sistema antes de tentar novamente.”
 
-- Wrapper externo vira `flex` com duas colunas no desktop:
-  - Esquerda: `w-full lg:w-1/2` — conteúdo atual do form
-  - Direita: `hidden lg:flex lg:w-1/2` — novo painel institucional
-- Reaproveita classes existentes (`login-bubble`, paleta de tokens).
-- Sem alteração em `index.css`, `App.tsx` ou rotas.
-- Sem novas dependências (ícones já vêm do lucide-react).
+7. Validação após implementação
+- Testar no site publicado, não só no preview.
+- Cenários:
+  1. navegador normal sem app instalado
+  2. app já instalado
+  3. app instalado com versão antiga
+  4. logout/login após atualização
+  5. uso do `/limpar-cache`
+  6. Chrome/Edge em Windows
+- Confirmar que o usuário autenticado sai da tela de loading e chega ao app.
 
-### Considerações
-- Acessibilidade: imagens decorativas com `aria-hidden`, headline como `<h2>`.
-- Performance: nenhuma imagem nova pesada; tudo CSS + ícones SVG inline.
-- Consistência: cores e tipografia seguem os tokens do design system já definidos.
+Arquivos que pretendo alterar
+- `vite.config.ts`
+- `src/main.tsx`
+- `src/utils/cacheControl.ts`
+- `src/pages/ClearCache.tsx`
+- `src/components/auth/LoginForm.tsx`
+- `src/components/layout/AppSidebar.tsx`
+- `src/components/auth/AuthProvider.tsx`
+- `src/hooks/useCurrentUser.ts`
+- `src/hooks/useCustomPermissions.ts`
+- `src/hooks/useRolePermissions.ts`
+
+Observações técnicas
+- Não vejo, neste momento, necessidade de migration no banco para resolver este problema.
+- O maior suspeito é a combinação de:
+  1. Service Worker antigo
+  2. cache de `/rest` do Supabase
+  3. lógica de boot que não detecta travamento parcial
+  4. limpeza que preserva token antigo
+- Se você quiser uma contenção imediata, eu também posso incluir um modo mais conservador: desativar temporariamente o uso de cache de dados do Supabase no PWA e deixar o app instalado funcionar como “shell instalável + dados sempre online”, usando o IndexedDB só como apoio offline local.
+
+Resultado esperado
+- Usuários com app instalado deixam de ficar presos no login/carregamento.
+- Máquinas com instalação antiga se auto-recuperam com muito mais frequência.
+- Quando houver sessão quebrada, o próprio sistema oferece recuperação clara, em vez de parecer que “não faz login”.
