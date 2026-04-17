@@ -194,6 +194,86 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
           Fundação Dom Bosco · Clínica
         </p>
       </div>
+      </div>
+
+      {/* RIGHT: Institutional panel (desktop only) */}
+      <div
+        className="hidden lg:flex relative z-10 lg:w-1/2 items-center justify-center overflow-hidden"
+        style={{
+          background:
+            'linear-gradient(135deg, hsl(212 85% 35%) 0%, hsl(190 70% 40%) 50%, hsl(155 60% 38%) 100%)',
+        }}
+        aria-hidden="false"
+      >
+        {/* Decorative bubbles */}
+        <div
+          className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: 'hsl(0 0% 100%)' }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-32 -left-20 w-[28rem] h-[28rem] rounded-full opacity-15 blur-3xl"
+          style={{ background: 'hsl(155 80% 60%)' }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full opacity-10 blur-2xl"
+          style={{ background: 'hsl(280 70% 70%)' }}
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 max-w-lg px-12 text-white">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-8">
+            <Heart className="h-3.5 w-3.5" />
+            <span className="text-xs font-semibold tracking-wide uppercase">
+              Fundação Dom Bosco
+            </span>
+          </div>
+
+          <h2 className="text-4xl xl:text-5xl font-bold leading-tight tracking-tight mb-5">
+            Cuidado clínico que transforma vidas.
+          </h2>
+
+          <p className="text-base text-white/80 leading-relaxed mb-10">
+            Sistema integrado de gestão da Fundação Dom Bosco — Clínica Social,
+            Neuropsicologia e Atendimento Floresta.
+          </p>
+
+          <ul className="space-y-4 mb-10">
+            {[
+              { icon: Users, label: 'Gestão completa de pacientes' },
+              { icon: Calendar, label: 'Agenda e prontuário digital' },
+              { icon: Brain, label: 'Avaliação neuropsicológica (45+ testes)' },
+              { icon: FileText, label: 'Relatórios e laudos clínicos' },
+            ].map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-3">
+                <span className="flex items-center justify-center h-9 w-9 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20">
+                  <Icon className="h-4.5 w-4.5" strokeWidth={2.2} />
+                </span>
+                <span className="text-sm font-medium text-white/95">{label}</span>
+              </li>
+            ))}
+          </ul>
+
+          <blockquote className="border-l-2 border-white/40 pl-4 mb-10">
+            <p className="text-sm italic text-white/85 leading-relaxed">
+              "Há mais de 60 anos transformando vidas com dignidade e cuidado."
+            </p>
+          </blockquote>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/30 border border-blue-300/40 backdrop-blur-sm">
+              MADRE
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/30 border border-emerald-300/40 backdrop-blur-sm">
+              Floresta
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/30 border border-purple-300/40 backdrop-blur-sm">
+              Atendimento Floresta
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
