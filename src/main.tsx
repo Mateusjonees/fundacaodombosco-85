@@ -33,6 +33,44 @@ if (isPreviewHost || isInIframe) {
 
 // AUTO-HEAL agressivo: detecta SW preso/desatualizado E "boot parcial"
 // (React montou mas app não ficou utilizável em X segundos) e força limpeza total.
+// AUTO-UPDATE silencioso por versão de build.
+// Cada build tem um VITE_BUILD_TIMESTAMP único. Se o cliente tiver uma versão
+// diferente da última conhecida, limpa SW + caches automaticamente uma vez.
+// Isso resolve usuários "presos" em versão antiga do PWA sem ação manual.
+if (!isPreviewHost && !isInIframe) {
+  try {
+    const CURRENT_BUILD = (import.meta as any).env?.VITE_BUILD_TIMESTAMP || 'dev';
+    const STORED_BUILD = localStorage.getItem('app_build_version');
+    const AUTO_UPDATE_FLAG = 'auto_update_done';
+
+    if (STORED_BUILD && STORED_BUILD !== CURRENT_BUILD && !sessionStorage.getItem(AUTO_UPDATE_FLAG)) {
+      sessionStorage.setItem(AUTO_UPDATE_FLAG, '1');
+      console.warn('[Auto-update] Nova versão detectada, limpando caches...', { STORED_BUILD, CURRENT_BUILD });
+      localStorage.setItem('app_build_version', CURRENT_BUILD);
+
+      (async () => {
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((r) => r.unregister()));
+          }
+          if ('caches' in window) {
+            const names = await caches.keys();
+            await Promise.all(names.map((n) => caches.delete(n)));
+          }
+        } catch (e) {
+          console.warn('[Auto-update] erro ao limpar:', e);
+        }
+        window.location.reload();
+      })();
+    } else if (!STORED_BUILD) {
+      localStorage.setItem('app_build_version', CURRENT_BUILD);
+    }
+  } catch (e) {
+    console.warn('[Auto-update] erro:', e);
+  }
+}
+
 if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
   const HEAL_FLAG = 'sw_heal_v3';
   const APP_BOOT_TIMEOUT_MS = 12000;
