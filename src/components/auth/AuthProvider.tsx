@@ -73,115 +73,123 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isOfflineSession, setIsOfflineSession] = useState(false);
   const { preloadCriticalData } = useAppPreload();
 
+  const syncAuthState = (nextSession: Session | null, offline = false) => {
+    setSession(nextSession);
+    setUser(nextSession?.user ?? null);
+    setIsOfflineSession(offline);
+
+    if (!nextSession) {
+      setMustChangePassword(false);
+    }
+  };
+
+  const hydrateSessionProfile = async (
+    activeSession: Session,
+    options: { logLogin?: boolean } = {}
+  ) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_active, employee_role, must_change_password')
+        .eq('user_id', activeSession.user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('AuthProvider: Error checking user status', error);
+        return;
+      }
+
+      if (profile && !profile.is_active) {
+        await supabase.auth.signOut();
+        return;
+      }
+
+      setMustChangePassword(profile?.must_change_password === true);
+
+      await offlineDB.put(STORES.userSession, {
+        key: 'profile',
+        data: {
+          user_id: activeSession.user.id,
+          employee_role: profile?.employee_role,
+          is_active: profile?.is_active,
+        },
+        timestamp: Date.now(),
+      }).catch(() => {});
+
+      if (profile?.employee_role) {
+        void preloadCriticalData(activeSession.user.id, profile.employee_role);
+      }
+
+      if (options.logLogin) {
+        void AuditService.logAction({
+          entityType: 'auth',
+          action: 'login_success',
+          metadata: {
+            user_email: activeSession.user.email,
+            login_method: 'email_password'
+          }
+        });
+        AuditService.updateUserActivity();
+      }
+    } catch (error) {
+      console.error('AuthProvider: Error in login validation', error);
+    }
+  };
+
+  const handleSignedOutSideEffects = async () => {
+    await Promise.allSettled([
+      offlineDB.clear(STORES.clients),
+      offlineDB.clear(STORES.schedules),
+      offlineDB.clear(STORES.medicalRecords),
+      offlineDB.clear(STORES.dashboardStats),
+      offlineDB.clear(STORES.userSession),
+    ]);
+
+    void AuditService.logAction({
+      entityType: 'auth',
+      action: 'logout_completed',
+      metadata: { timestamp: new Date().toISOString() }
+    });
+  };
+
   useEffect(() => {
+    let isMounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsOfflineSession(false);
-        
-        // Check if user is active when logging in
-        if (event === 'SIGNED_IN' && session?.user) {
-          setTimeout(async () => {
-            try {
-              const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('is_active, employee_role, must_change_password')
-                .eq('user_id', session.user.id)
-                .single();
-              
-              if (error) {
-                console.error('AuthProvider: Error checking user status', error);
-                return;
-              }
-              
-              // If user is inactive, sign them out immediately
-              if (profile && !profile.is_active) {
-                await supabase.auth.signOut();
-                return;
-              }
-              
-              // Check if user must change password
-              if (profile && profile.must_change_password === true) {
-                setMustChangePassword(true);
-              } else {
-                setMustChangePassword(false);
-              }
+      (event, nextSession) => {
+        syncAuthState(nextSession, false);
 
-              // Salvar perfil no IndexedDB para uso offline
-              await offlineDB.put(STORES.userSession, {
-                key: 'profile',
-                data: {
-                  user_id: session.user.id,
-                  employee_role: profile.employee_role,
-                  is_active: profile.is_active,
-                },
-                timestamp: Date.now(),
-              }).catch(() => {});
-
-              // Pré-carregar dados críticos para performance
-              if (profile?.employee_role) {
-                preloadCriticalData(session.user.id, profile.employee_role);
-              }
-              
-              // Continue with normal login process
-              AuditService.logAction({
-                entityType: 'auth',
-                action: 'login_success',
-                metadata: { 
-                  user_email: session.user.email,
-                  login_method: 'email_password'
-                }
-              });
-              AuditService.updateUserActivity();
-            } catch (error) {
-              console.error('AuthProvider: Error in login validation', error);
-            }
+        // IMPORTANTE: nunca await dentro do onAuthStateChange
+        if (event === 'SIGNED_IN' && nextSession?.user) {
+          window.setTimeout(() => {
+            void hydrateSessionProfile(nextSession, { logLogin: true });
           }, 0);
         }
-        
+
         if (event === 'SIGNED_OUT') {
-          // Limpar cache offline para evitar dados residuais entre sessões
-          offlineDB.clear(STORES.clients).catch(() => {});
-          offlineDB.clear(STORES.schedules).catch(() => {});
-          offlineDB.clear(STORES.medicalRecords).catch(() => {});
-          offlineDB.clear(STORES.dashboardStats).catch(() => {});
-          offlineDB.clear(STORES.userSession).catch(() => {});
-          
-          setTimeout(() => {
-            AuditService.logAction({
-              entityType: 'auth',
-              action: 'logout_completed',
-              metadata: { timestamp: new Date().toISOString() }
-            });
+          window.setTimeout(() => {
+            void handleSignedOutSideEffects();
           }, 0);
         }
-        
-        setLoading(false);
+
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Preload data immediately if we have a session
+      syncAuthState(session, false);
+
       if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('employee_role')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data }) => {
-            if (data?.employee_role) {
-              preloadCriticalData(session.user.id, data.employee_role);
-            }
-          });
+        void hydrateSessionProfile(session);
       }
-      
-      setLoading(false);
+
+      if (isMounted) {
+        setLoading(false);
+      }
     }).catch((error) => {
       console.error('AuthProvider: Error getting initial session', error);
       
@@ -191,18 +199,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log('AuthProvider: Offline - tentando sessão cached');
         const cached = getOfflineSession();
         if (cached) {
-          setUser(cached.user);
-          setSession(cached.session);
-          setIsOfflineSession(true);
+          syncAuthState(cached.session, true);
           setMustChangePassword(false); // Não forçar troca de senha offline
           console.log('AuthProvider: Sessão offline restaurada com sucesso');
         }
       }
-      
-      setLoading(false);
+
+      if (isMounted) {
+        setLoading(false);
+      }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
