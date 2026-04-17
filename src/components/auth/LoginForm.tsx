@@ -67,12 +67,14 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   };
 
   return (
-    <div className="login-container">
+    <div className="login-container lg:flex-row lg:items-stretch lg:justify-stretch lg:p-0">
       <div className="login-bubble bubble-1" />
       <div className="login-bubble bubble-2" />
       <div className="login-bubble bubble-3" />
-      
-      <div className="relative z-10 w-full max-w-md px-4">
+
+      {/* LEFT: Login form */}
+      <div className="relative z-10 w-full lg:w-1/2 flex items-center justify-center px-4 lg:px-8 py-8 lg:py-0">
+        <div className="w-full max-w-md">
         {/* Logo floating above card */}
         <div className="flex justify-center mb-8">
           <div className="relative">
