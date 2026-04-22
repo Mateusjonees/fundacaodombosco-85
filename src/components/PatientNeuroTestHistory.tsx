@@ -1733,10 +1733,83 @@ export default function PatientNeuroTestHistory({
       case 'FPT_ADULTO':
         inputSection = renderFPTInputs(rawScores as unknown as Record<string, number | string>);
         break;
-      default: {
-        inputSection = renderGenericInputs(rawScores);
+      case 'REY':
+        inputSection = renderREYInputs(rawScores);
         break;
-      }
+      case 'STROOP':
+        inputSection = renderStroopInputs(rawScores);
+        calculationsSection = renderStroopCalculations(calculatedScores);
+        break;
+      case 'WCST':
+        inputSection = renderWCSTInputs(rawScores);
+        break;
+      case 'WECHSLER':
+        inputSection = renderWechslerInputs(rawScores);
+        break;
+      case 'TOL':
+        inputSection = renderTOLInputs(rawScores);
+        break;
+      case 'D2':
+        inputSection = renderD2Inputs(rawScores);
+        calculationsSection = renderD2Calculations(calculatedScores);
+        break;
+      case 'BDI':
+        inputSection = renderBDIInputs(rawScores);
+        break;
+      case 'BAI':
+        inputSection = renderBAIInputs(rawScores);
+        break;
+      case 'SNAPIV':
+        inputSection = renderSNAPIVInputs(rawScores);
+        break;
+      case 'MCHAT':
+        inputSection = renderMCHATInputs(rawScores);
+        break;
+      case 'RAVEN':
+        inputSection = renderRavenInputs(rawScores);
+        break;
+      case 'WMS':
+        inputSection = renderWMSInputs(rawScores);
+        break;
+      case 'MOCA':
+        inputSection = renderMoCAInputs(rawScores);
+        break;
+      case 'MEEM':
+        inputSection = renderMEEMInputs(rawScores);
+        break;
+      case 'BRIEF2':
+        inputSection = renderBRIEF2Inputs(rawScores);
+        break;
+      case 'CONNERS':
+        inputSection = renderConnersInputs(rawScores);
+        break;
+      case 'VINELAND':
+        inputSection = renderVinelandInputs(rawScores);
+        break;
+      case 'ACE3':
+        inputSection = renderACE3Inputs(rawScores);
+        break;
+      case 'CBCL':
+        inputSection = renderCBCLInputs(rawScores);
+        break;
+      case 'SDQ':
+        inputSection = renderSDQInputs(rawScores);
+        break;
+      case 'GDS':
+        inputSection = renderGDSInputs(rawScores);
+        break;
+      case 'TDE2':
+        inputSection = renderTDE2Inputs(rawScores);
+        break;
+      case 'NEUPSILIN':
+        inputSection = renderNeupsilinInputs(rawScores);
+        break;
+      case 'CANCELAMENTO':
+        inputSection = renderCancelamentoInputs(rawScores);
+        break;
+      case 'CORSI':
+        inputSection = renderCorsiInputs(rawScores);
+        break;
     }
 
     return (
