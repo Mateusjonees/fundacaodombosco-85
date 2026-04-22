@@ -171,6 +171,25 @@ export default function NeuroTestFPTInfantilForm({
             <p className="text-xs text-muted-foreground mt-3">
               <strong className="text-foreground">Ano escolar:</strong> {SCHOOL_YEAR_OPTIONS.find(o => o.value === results.schoolYear)?.label || results.schoolYear}
             </p>
+            {/* Explicação do cálculo do percentil */}
+            <div className={`mt-3 p-3 rounded-md border text-xs ${
+              results.lookupInfo.method === 'exact'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                : results.lookupInfo.method === 'adjacent'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400'
+                : 'bg-primary/5 border-primary/20 text-muted-foreground'
+            }`}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Info className="h-3.5 w-3.5 shrink-0" />
+                <strong className="text-foreground">Como o percentil foi calculado:</strong>
+              </div>
+              <p>{results.lookupInfo.description}</p>
+              <p className="mt-1 opacity-75">
+                Método: <Badge variant="outline" className="text-[10px] px-1.5 py-0">{results.lookupInfo.method}</Badge>
+                {results.lookupInfo.matchedScore !== null && <> · Pontuação ref.: {results.lookupInfo.matchedScore}</>}
+                {results.lookupInfo.matchedGroup && <> · Grupo ref.: {results.lookupInfo.matchedGroup}</>}
+              </p>
+            </div>
           </div>
         )}
       </CardContent>
