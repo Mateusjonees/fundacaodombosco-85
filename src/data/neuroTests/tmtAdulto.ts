@@ -21,10 +21,13 @@ export const TMT_ADULTO_TEST: NeuroTestDefinition = {
   maxAge: 75,
   subtests: [
     { code: 'A', name: 'Tempo A', fields: ['tempoA'], formula: 'tempo em segundos' },
-    { code: 'B', name: 'Tempo B', fields: ['tempoB'], formula: 'tempo em segundos' }
+    { code: 'B', name: 'Tempo B', fields: ['tempoB'], formula: 'tempo em segundos' },
+    { code: 'ERROS_A', name: 'Erros A', fields: ['errosA'], formula: 'quantidade de erros' },
+    { code: 'ERROS_B', name: 'Erros B', fields: ['errosB'], formula: 'quantidade de erros' }
   ],
   calculatedScores: [
-    { code: 'BA', name: 'Tempo B-A', formula: 'tempoB - tempoA' }
+    { code: 'BA', name: 'Tempo B-A', formula: 'tempoB - tempoA' },
+    { code: 'ERROS_TOTAL', name: 'Total de Erros', formula: 'errosA + errosB' }
   ]
 };
 
@@ -74,16 +77,37 @@ export const getClassificationFromPercentile = (percentile: string): string => {
 };
 
 // Interface para resultados
+// Classificação qualitativa de erros (sem tabela normativa)
+export const getErrorClassification = (errors: number): string => {
+  if (errors === 0) return 'Adequado';
+  if (errors <= 2) return 'Limítrofe';
+  return 'Elevado';
+};
+
+export const getErrorClassificationColor = (classification: string): string => {
+  switch (classification) {
+    case 'Adequado': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+    case 'Limítrofe': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
+    case 'Elevado': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
+  }
+};
+
 export interface TMTAdultoResults {
   rawScores: {
     tempoA: number;
     tempoB: number;
+    errosA: number;
+    errosB: number;
     educationLevel: EducationLevel;
   };
   calculatedScores: {
     tempoA: number;
     tempoB: number;
     tempoBA: number;
+    errosA: number;
+    errosB: number;
+    errosTotalAB: number;
   };
   percentiles: {
     tempoA: string;
@@ -94,6 +118,9 @@ export interface TMTAdultoResults {
     tempoA: string;
     tempoB: string;
     tempoBA: string;
+    errosA: string;
+    errosB: string;
+    errosTotalAB: string;
   };
   notes?: string;
 }

@@ -17,7 +17,7 @@
  * - >95, 95: Muito Superior
  */
 
-import { EducationLevel, AgeGroup, getAgeGroup, getClassificationFromPercentile } from './tmtAdulto';
+import { EducationLevel, AgeGroup, getAgeGroup, getClassificationFromPercentile, getErrorClassification } from './tmtAdulto';
 
 // Estrutura da tabela: [P95, P90, P75, P50, P25, P10, P5]
 // Valores em segundos
@@ -165,16 +165,19 @@ export const calculateTMTAdultoResults = (
   age: number,
   educationLevel: EducationLevel,
   tempoA: number,
-  tempoB: number
+  tempoB: number,
+  errosA: number = 0,
+  errosB: number = 0
 ): {
-  calculatedScores: { tempoA: number; tempoB: number; tempoBA: number };
+  calculatedScores: { tempoA: number; tempoB: number; tempoBA: number; errosA: number; errosB: number; errosTotalAB: number };
   percentiles: { tempoA: string; tempoB: string; tempoBA: string };
-  classifications: { tempoA: string; tempoB: string; tempoBA: string };
+  classifications: { tempoA: string; tempoB: string; tempoBA: string; errosA: string; errosB: string; errosTotalAB: string };
 } | null => {
   const ageGroup = getAgeGroup(age);
   if (!ageGroup) return null;
   
   const tempoBA = tempoB - tempoA;
+  const errosTotalAB = errosA + errosB;
   
   const percentileA = lookupTMTATempoPercentile(age, educationLevel, tempoA);
   const percentileB = lookupTMTBTempoPercentile(age, educationLevel, tempoB);
@@ -186,7 +189,10 @@ export const calculateTMTAdultoResults = (
     calculatedScores: {
       tempoA,
       tempoB,
-      tempoBA
+      tempoBA,
+      errosA,
+      errosB,
+      errosTotalAB
     },
     percentiles: {
       tempoA: percentileA,
@@ -196,7 +202,10 @@ export const calculateTMTAdultoResults = (
     classifications: {
       tempoA: getClassificationFromPercentile(percentileA),
       tempoB: getClassificationFromPercentile(percentileB),
-      tempoBA: getClassificationFromPercentile(percentileBA)
+      tempoBA: getClassificationFromPercentile(percentileBA),
+      errosA: getErrorClassification(errosA),
+      errosB: getErrorClassification(errosB),
+      errosTotalAB: getErrorClassification(errosTotalAB)
     }
   };
 };
