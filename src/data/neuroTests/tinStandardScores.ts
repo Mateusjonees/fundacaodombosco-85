@@ -87,6 +87,7 @@ const TIN_STANDARD_SCORES: Record<number, Partial<Record<AgeKey, number>>> = {
 export const lookupTINStandardScore = (age: number, rawScore: number): number | null => {
   // Validar idade (3-14 anos)
   if (age < 3 || age > 14) {
+    console.warn(`[TIN Debug] Idade fora da faixa: ${age} (válido: 3-14)`);
     return null;
   }
 
@@ -95,13 +96,14 @@ export const lookupTINStandardScore = (age: number, rawScore: number): number | 
   
   // Validar escore bruto (0-60)
   if (rawScore < 0 || rawScore > 60) {
+    console.warn(`[TIN Debug] Escore bruto fora da faixa: ${rawScore} (válido: 0-60)`);
     return null;
   }
 
   // Buscar na tabela
   const scoreEntry = TIN_STANDARD_SCORES[rawScore];
   if (!scoreEntry) {
-    // Se o escore bruto não está na tabela, é muito baixo para a idade
+    console.warn(`[TIN Debug] Escore bruto ${rawScore} não encontrado na tabela normativa. Chaves disponíveis: ${Object.keys(TIN_STANDARD_SCORES).join(', ')}`);
     return null;
   }
 
@@ -109,9 +111,11 @@ export const lookupTINStandardScore = (age: number, rawScore: number): number | 
   
   // Se não há escore para esta idade, o escore bruto é muito baixo
   if (standardScore === undefined) {
+    console.warn(`[TIN Debug] Sem norma para idade=${ageKey} no escore bruto=${rawScore}. Idades disponíveis neste escore: ${Object.keys(scoreEntry).join(', ')}`);
     return null;
   }
 
+  console.log(`[TIN Debug] Lookup OK: idade=${ageKey}, bruto=${rawScore} → EP=${standardScore}`);
   return standardScore;
 };
 
