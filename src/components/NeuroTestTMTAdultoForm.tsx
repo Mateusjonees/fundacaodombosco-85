@@ -7,13 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { X, ChevronDown, ChevronUp, Brain, GraduationCap, Clock, Calculator } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Brain, GraduationCap, Clock, Calculator, AlertTriangle } from 'lucide-react';
 import { 
   TMT_ADULTO_TEST, 
   EDUCATION_LEVELS, 
   type EducationLevel, 
   type TMTAdultoResults,
-  getAgeGroup
+  getAgeGroup,
+  getErrorClassification,
+  getErrorClassificationColor
 } from '@/data/neuroTests/tmtAdulto';
 import { 
   calculateTMTAdultoResults, 
@@ -54,6 +56,8 @@ export default function NeuroTestTMTAdultoForm({
 }: NeuroTestTMTAdultoFormProps) {
   const [tempoA, setTempoA] = useState<string>('');
   const [tempoB, setTempoB] = useState<string>('');
+  const [errosA, setErrosA] = useState<string>('0');
+  const [errosB, setErrosB] = useState<string>('0');
   const [educationLevel, setEducationLevel] = useState<EducationLevel | ''>('');
   const [notes, setNotes] = useState('');
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
@@ -66,9 +70,11 @@ export default function NeuroTestTMTAdultoForm({
   useEffect(() => {
     const tA = parseFloat(tempoA);
     const tB = parseFloat(tempoB);
+    const eA = parseInt(errosA) || 0;
+    const eB = parseInt(errosB) || 0;
     
     if (!isNaN(tA) && !isNaN(tB) && tA > 0 && tB > 0 && educationLevel && isValidAge) {
-      const results = calculateTMTAdultoResults(patientAge, educationLevel, tA, tB);
+      const results = calculateTMTAdultoResults(patientAge, educationLevel, tA, tB, eA, eB);
       setCalculatedResults(results);
       
       if (results) {
@@ -76,6 +82,8 @@ export default function NeuroTestTMTAdultoForm({
           rawScores: {
             tempoA: tA,
             tempoB: tB,
+            errosA: eA,
+            errosB: eB,
             educationLevel
           },
           calculatedScores: results.calculatedScores,
@@ -87,7 +95,7 @@ export default function NeuroTestTMTAdultoForm({
     } else {
       setCalculatedResults(null);
     }
-  }, [tempoA, tempoB, educationLevel, patientAge, notes, isValidAge, onResultsChange]);
+  }, [tempoA, tempoB, errosA, errosB, educationLevel, patientAge, notes, isValidAge, onResultsChange]);
 
   if (!isValidAge) {
     return (
@@ -191,6 +199,40 @@ export default function NeuroTestTMTAdultoForm({
           </div>
         </div>
 
+        {/* Entrada de Erros */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="h-3 w-3" />
+              Erros A
+            </Label>
+            <Input
+              type="number"
+              step="1"
+              min="0"
+              placeholder="0"
+              value={errosA}
+              onChange={(e) => setErrosA(e.target.value)}
+              className="text-center"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="h-3 w-3" />
+              Erros B
+            </Label>
+            <Input
+              type="number"
+              step="1"
+              min="0"
+              placeholder="0"
+              value={errosB}
+              onChange={(e) => setErrosB(e.target.value)}
+              className="text-center"
+            />
+          </div>
+        </div>
+
         {/* Resultados Calculados */}
         {calculatedResults && (
           <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -238,6 +280,37 @@ export default function NeuroTestTMTAdultoForm({
                     <Badge className={getClassificationColor(calculatedResults.classifications.tempoBA)}>
                       {calculatedResults.classifications.tempoBA}
                     </Badge>
+                  </div>
+                </div>
+
+                {/* Erros */}
+                <div className="border-t pt-2 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Erros A:</span>
+                    <div className="flex items-center gap-2">
+                      <span>{calculatedResults.calculatedScores.errosA}</span>
+                      <Badge className={getErrorClassificationColor(calculatedResults.classifications.errosA)}>
+                        {calculatedResults.classifications.errosA}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Erros B:</span>
+                    <div className="flex items-center gap-2">
+                      <span>{calculatedResults.calculatedScores.errosB}</span>
+                      <Badge className={getErrorClassificationColor(calculatedResults.classifications.errosB)}>
+                        {calculatedResults.classifications.errosB}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm font-medium">
+                    <span>Total de Erros (A+B):</span>
+                    <div className="flex items-center gap-2">
+                      <span>{calculatedResults.calculatedScores.errosTotalAB}</span>
+                      <Badge className={getErrorClassificationColor(calculatedResults.classifications.errosTotalAB)}>
+                        {calculatedResults.classifications.errosTotalAB}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </div>
