@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     if (createError) {
       console.error('Error creating user:', createError.message);
       const msg = createError.message.toLowerCase();
-      const friendlyMsg = msg.includes('already') || msg.includes('email') || msg.includes('unique') || msg.includes('duplicate')
+      const friendlyMsg = (msg.includes('already') || msg.includes('email') || msg.includes('unique') || msg.includes('duplicate') || msg.includes('database error'))
         ? 'Este e-mail já está cadastrado no sistema. Use outro e-mail.'
         : createError.message;
       return new Response(
