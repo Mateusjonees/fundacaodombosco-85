@@ -82,41 +82,104 @@ const TIN_STANDARD_SCORES: Record<number, Partial<Record<AgeKey, number>>> = {
 };
 
 /**
- * Busca o escore padrão para um escore bruto e idade
+ * Busca o escore padrão para um escore bruto e idade.
+ * Inclui fallback com interpolação e idade mais próxima.
+ * Retorna { score, method } onde method indica como o valor foi obtido.
  */
+export interface TINLookupResult {
+  score: number;
+  method: 'exact' | 'nearest_age' | 'interpolated' | 'extrapolated';
+  detail: string;
+}
+
 export const lookupTINStandardScore = (age: number, rawScore: number): number | null => {
+  const result = lookupTINStandardScoreWithFallback(age, rawScore);
+  return result ? result.score : null;
+};
+
+export const lookupTINStandardScoreWithFallback = (age: number, rawScore: number): TINLookupResult | null => {
   // Validar idade (3-14 anos)
   if (age < 3 || age > 14) {
     console.warn(`[TIN Debug] Idade fora da faixa: ${age} (válido: 3-14)`);
     return null;
   }
 
-  // Arredondar idade para inteiro
   const ageKey = Math.floor(age) as AgeKey;
-  
+
   // Validar escore bruto (0-60)
   if (rawScore < 0 || rawScore > 60) {
     console.warn(`[TIN Debug] Escore bruto fora da faixa: ${rawScore} (válido: 0-60)`);
     return null;
   }
 
-  // Buscar na tabela
+  // 1. Busca exata
   const scoreEntry = TIN_STANDARD_SCORES[rawScore];
-  if (!scoreEntry) {
-    console.warn(`[TIN Debug] Escore bruto ${rawScore} não encontrado na tabela normativa. Chaves disponíveis: ${Object.keys(TIN_STANDARD_SCORES).join(', ')}`);
-    return null;
+  if (scoreEntry && scoreEntry[ageKey] !== undefined) {
+    console.log(`[TIN Debug] Lookup exato: idade=${ageKey}, bruto=${rawScore} → EP=${scoreEntry[ageKey]}`);
+    return { score: scoreEntry[ageKey]!, method: 'exact', detail: `Tabela normativa: idade ${ageKey}, bruto ${rawScore}` };
   }
 
-  const standardScore = scoreEntry[ageKey];
-  
-  // Se não há escore para esta idade, o escore bruto é muito baixo
-  if (standardScore === undefined) {
-    console.warn(`[TIN Debug] Sem norma para idade=${ageKey} no escore bruto=${rawScore}. Idades disponíveis neste escore: ${Object.keys(scoreEntry).join(', ')}`);
-    return null;
+  // 2. Fallback: idade mais próxima no mesmo escore bruto
+  if (scoreEntry) {
+    const availableAges = Object.keys(scoreEntry).map(Number).sort((a, b) => a - b) as AgeKey[];
+    if (availableAges.length > 0) {
+      // Tentar interpolar entre duas idades adjacentes
+      const lowerAge = availableAges.filter(a => a <= ageKey).pop();
+      const upperAge = availableAges.filter(a => a >= ageKey).shift();
+
+      if (lowerAge !== undefined && upperAge !== undefined && lowerAge !== upperAge) {
+        const lowerScore = scoreEntry[lowerAge]!;
+        const upperScore = scoreEntry[upperAge]!;
+        const ratio = (ageKey - lowerAge) / (upperAge - lowerAge);
+        const interpolated = Math.round(lowerScore + ratio * (upperScore - lowerScore));
+        console.log(`[TIN Debug] Interpolação entre idades ${lowerAge}→${upperAge}: EP=${interpolated} (bruto=${rawScore})`);
+        return { score: interpolated, method: 'interpolated', detail: `Interpolado entre ${lowerAge}a (EP=${lowerScore}) e ${upperAge}a (EP=${upperScore})` };
+      }
+
+      // Idade mais próxima direta
+      const nearest = availableAges.reduce((prev, curr) =>
+        Math.abs(curr - ageKey) < Math.abs(prev - ageKey) ? curr : prev
+      );
+      const nearestScore = scoreEntry[nearest]!;
+      console.log(`[TIN Debug] Idade mais próxima: ${nearest} (original=${ageKey}), bruto=${rawScore} → EP=${nearestScore}`);
+      return { score: nearestScore, method: 'nearest_age', detail: `Idade mais próxima: ${nearest}a (EP=${nearestScore})` };
+    }
   }
 
-  console.log(`[TIN Debug] Lookup OK: idade=${ageKey}, bruto=${rawScore} → EP=${standardScore}`);
-  return standardScore;
+  // 3. Fallback: interpolar entre escores brutos adjacentes na mesma idade
+  let lowerRaw: number | null = null;
+  let upperRaw: number | null = null;
+
+  for (let r = rawScore - 1; r >= 0; r--) {
+    if (TIN_STANDARD_SCORES[r]?.[ageKey] !== undefined) { lowerRaw = r; break; }
+  }
+  for (let r = rawScore + 1; r <= 60; r++) {
+    if (TIN_STANDARD_SCORES[r]?.[ageKey] !== undefined) { upperRaw = r; break; }
+  }
+
+  if (lowerRaw !== null && upperRaw !== null) {
+    const lowerEP = TIN_STANDARD_SCORES[lowerRaw]![ageKey]!;
+    const upperEP = TIN_STANDARD_SCORES[upperRaw]![ageKey]!;
+    const ratio = (rawScore - lowerRaw) / (upperRaw - lowerRaw);
+    const interpolated = Math.round(lowerEP + ratio * (upperEP - lowerEP));
+    console.log(`[TIN Debug] Interpolação entre brutos ${lowerRaw}→${upperRaw} para idade=${ageKey}: EP=${interpolated}`);
+    return { score: interpolated, method: 'interpolated', detail: `Interpolado entre bruto ${lowerRaw} (EP=${lowerEP}) e bruto ${upperRaw} (EP=${upperEP}) para ${ageKey}a` };
+  }
+
+  // 4. Extrapolação: usar o escore bruto mais próximo disponível para esta idade
+  if (lowerRaw !== null) {
+    const ep = TIN_STANDARD_SCORES[lowerRaw]![ageKey]!;
+    console.log(`[TIN Debug] Extrapolação: bruto mais próximo inferior ${lowerRaw} para idade=${ageKey} → EP=${ep}`);
+    return { score: ep, method: 'extrapolated', detail: `Extrapolado do bruto ${lowerRaw} (EP=${ep}) para ${ageKey}a` };
+  }
+  if (upperRaw !== null) {
+    const ep = TIN_STANDARD_SCORES[upperRaw]![ageKey]!;
+    console.log(`[TIN Debug] Extrapolação: bruto mais próximo superior ${upperRaw} para idade=${ageKey} → EP=${ep}`);
+    return { score: ep, method: 'extrapolated', detail: `Extrapolado do bruto ${upperRaw} (EP=${ep}) para ${ageKey}a` };
+  }
+
+  console.warn(`[TIN Debug] Nenhum fallback encontrado: idade=${ageKey}, bruto=${rawScore}`);
+  return null;
 };
 
 /**

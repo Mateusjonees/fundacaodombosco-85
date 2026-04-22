@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Brain, Calculator, Trash2, AlertCircle } from 'lucide-react';
 import { TIN_TEST, getTINClassification, getTINClassificationColor } from '@/data/neuroTests/tin';
-import { lookupTINStandardScore, getTINAgeGroupName, isAgeValidForTIN } from '@/data/neuroTests/tinStandardScores';
+import { lookupTINStandardScoreWithFallback, getTINAgeGroupName, isAgeValidForTIN } from '@/data/neuroTests/tinStandardScores';
 import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -47,9 +47,14 @@ export default function NeuroTestTINForm({
   const acertos = rawParsed !== null && !isNaN(rawParsed) ? Math.min(60, Math.max(0, rawParsed)) : null;
 
   // Calcular resultados quando os scores mudam
+  const lookupResult = acertos !== null ? lookupTINStandardScoreWithFallback(patientAge, acertos) : null;
+  const escorePadrao = lookupResult?.score ?? null;
+  const lookupMethod = lookupResult?.method ?? null;
+  const lookupDetail = lookupResult?.detail ?? null;
+  const classification = escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado';
+  const hasInput = acertos !== null;
+
   useEffect(() => {
-    const escorePadrao = acertos !== null ? lookupTINStandardScore(patientAge, acertos) : null;
-    
     const results: TINResults = {
       rawScores: {
         acertos: acertos ?? 0
@@ -59,17 +64,13 @@ export default function NeuroTestTINForm({
       },
       percentiles: escorePadrao !== null ? { escorePadrao: epToPercentile(escorePadrao) } : {},
       classifications: {
-        escorePadrao: escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado'
+        escorePadrao: classification
       },
       notes
     };
 
     onResultsChange(results);
-  }, [acertos, notes, patientAge, onResultsChange]);
-
-  const escorePadrao = acertos !== null ? lookupTINStandardScore(patientAge, acertos) : null;
-  const classification = escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado';
-  const hasInput = acertos !== null;
+  }, [acertos, notes, patientAge, onResultsChange, escorePadrao, classification]);
 
   return (
     <Card className="border-primary/30">
@@ -154,6 +155,16 @@ export default function NeuroTestTINForm({
               <p className="text-xs text-muted-foreground">
                 (M=100, DP=15)
               </p>
+              {hasInput && lookupMethod && lookupMethod !== 'exact' && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                  ≈ {lookupMethod === 'interpolated' ? 'Interpolado' : lookupMethod === 'nearest_age' ? 'Idade próxima' : 'Extrapolado'}
+                </p>
+              )}
+              {hasInput && lookupDetail && lookupMethod !== 'exact' && (
+                <p className="text-[9px] text-muted-foreground mt-0.5 font-mono">
+                  {lookupDetail}
+                </p>
+              )}
               {hasInput && escorePadrao === null && (
                 <div className="text-[10px] text-destructive mt-1 space-y-0.5">
                   <p>Sem norma para esta combinação</p>
