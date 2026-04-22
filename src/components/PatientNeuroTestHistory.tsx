@@ -1810,6 +1810,9 @@ export default function PatientNeuroTestHistory({
       case 'CORSI':
         inputSection = renderCorsiInputs(rawScores);
         break;
+      default:
+        inputSection = renderGenericInputs(rawScores);
+        break;
     }
 
     return (
