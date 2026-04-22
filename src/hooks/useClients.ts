@@ -97,6 +97,12 @@ export const useClients = (filters?: ClientFilters) => {
       console.log('[useClients] Carregando dados do cache offline');
       let cached = await offlineDB.getAll<any>(STORES.clients);
       
+      // Se filtro por employeeId, retornar vazio no offline (não temos assignments em cache)
+      if (filters?.employeeId) {
+        console.warn('[useClients] Filtro employeeId não suportado offline — retornando vazio');
+        return [];
+      }
+      
       // Aplica filtros localmente
       if (filters?.unit) cached = cached.filter(c => c.unit === filters.unit);
       if (filters?.isActive !== undefined) cached = cached.filter(c => c.is_active === filters.isActive);
