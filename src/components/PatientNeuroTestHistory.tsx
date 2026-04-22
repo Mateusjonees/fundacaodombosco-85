@@ -1120,6 +1120,299 @@ const renderFPTInputs = (rawScores: Record<string, number | string>) => (
   </div>
 );
 
+// REY
+const renderREYInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Cópia</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.copia ?? '-'}</Badge>
+    </div>
+    <div className="p-3 bg-muted/30 rounded-lg border text-center">
+      <p className="text-xs font-medium text-muted-foreground mb-1">Memória</p>
+      <Badge variant="outline" className="font-mono text-lg">{rawScores.memoria ?? '-'}</Badge>
+    </div>
+  </div>
+);
+
+// STROOP
+const renderStroopInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    {[{ k: 'cartao1Tempo', l: 'Cartão 1 (Cores)' }, { k: 'cartao2Tempo', l: 'Cartão 2 (Palavras)' }, { k: 'cartao3Tempo', l: 'Cartão 3 (Interferência)' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}s</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+const renderStroopCalculations = (calc: Record<string, number>) => (
+  <div className="p-2 bg-primary/10 rounded-lg text-center text-sm">
+    <span className="font-medium">Efeito Interferência: </span>
+    <span className="font-mono"><strong>{typeof calc.interferencia === 'number' ? calc.interferencia.toFixed(1) : '-'}</strong></span>
+  </div>
+);
+
+// WCST
+const renderWCSTInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    {[{ k: 'totalErrors', l: 'Total Erros' }, { k: 'perseverativeResponses', l: 'Resp. Perseverativas' }, { k: 'perseverativeErrors', l: 'Erros Perseverativos' }, { k: 'nonPerseverativeErrors', l: 'Erros Não-Persev.' }, { k: 'categoriesCompleted', l: 'Categorias' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// WECHSLER
+const renderWechslerInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    {[{ k: 'qiTotal', l: 'QI Total' }, { k: 'icv', l: 'Compreensão Verbal' }, { k: 'iop', l: 'Org. Perceptual' }, { k: 'imo', l: 'Memória Operacional' }, { k: 'ivp', l: 'Vel. Processamento' }, { k: 'irf', l: 'Raciocínio Fluido' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// TOL
+const renderTOLInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalAcertos ?? '-'}</Badge>
+  </div>
+);
+
+// D2
+const renderD2Inputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    {[{ k: 'totalProcessado', l: 'Total Processado' }, { k: 'totalAcertos', l: 'Total Acertos' }, { k: 'totalErros', l: 'Total Erros' }, { k: 'omissoes', l: 'Omissões' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+const renderD2Calculations = (calc: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-2 text-sm">
+    <div className="p-2 bg-primary/10 rounded-lg text-center">
+      <span className="font-medium block mb-1">Resultado Líquido (RL)</span>
+      <span className="font-mono"><strong>{calc.rl ?? '-'}</strong></span>
+    </div>
+    <div className="p-2 bg-primary/10 rounded-lg text-center">
+      <span className="font-medium block mb-1">Índice Concentração (IC)</span>
+      <span className="font-mono"><strong>{calc.ic ?? '-'}</strong></span>
+    </div>
+  </div>
+);
+
+// BDI
+const renderBDIInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Escore Total</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalScore ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 63)</p>
+  </div>
+);
+
+// BAI
+const renderBAIInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Escore Total</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalScore ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 63)</p>
+  </div>
+);
+
+// SNAP-IV
+const renderSNAPIVInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    {[{ k: 'desatencao', l: 'Desatenção' }, { k: 'hiperatividade', l: 'Hiperatividade' }, { k: 'tod', l: 'TOD' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// M-CHAT
+const renderMCHATInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Escore Total</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalScore ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 20)</p>
+  </div>
+);
+
+// RAVEN
+const renderRavenInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Total de Acertos</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.total ?? '-'}</Badge>
+  </div>
+);
+
+// WMS
+const renderWMSInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    {[{ k: 'memoriaImediata', l: 'Memória Imediata' }, { k: 'memoriaTargia', l: 'Memória Tardia' }, { k: 'memoriaTrabalho', l: 'Memória de Trabalho' }, { k: 'reconhecimentoVisual', l: 'Reconhecimento Visual' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// MoCA
+const renderMoCAInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Escore Total</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalScore ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 30 | ponto de corte: 26)</p>
+  </div>
+);
+
+// MEEM
+const renderMEEMInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Escore Total</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalScore ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 30)</p>
+  </div>
+);
+
+// BRIEF-2
+const renderBRIEF2Inputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    {[{ k: 'gec', l: 'GEC (Global)' }, { k: 'bri', l: 'Reg. Comportamental' }, { k: 'eri', l: 'Reg. Emocional' }, { k: 'cri', l: 'Reg. Cognitiva' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// CONNERS
+const renderConnersInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    {[{ k: 'desatencao', l: 'Desatenção' }, { k: 'hiperatividade', l: 'Hiperatividade' }, { k: 'indiceTDAH', l: 'Índice TDAH' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// VINELAND
+const renderVinelandInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    {[{ k: 'compostoGeral', l: 'CAG (Composto)' }, { k: 'comunicacao', l: 'Comunicação' }, { k: 'vidaDiaria', l: 'Vida Diária' }, { k: 'socializacao', l: 'Socialização' }, { k: 'habMotoras', l: 'Hab. Motoras' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// ACE-III
+const renderACE3Inputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Escore Total</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalScore ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 100)</p>
+  </div>
+);
+
+// CBCL
+const renderCBCLInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-3 gap-3">
+    {[{ k: 'internalizacao', l: 'Internalização' }, { k: 'externalizacao', l: 'Externalização' }, { k: 'totalProblemas', l: 'Total Problemas' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// SDQ
+const renderSDQInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    {[{ k: 'totalDificuldades', l: 'Total Dificuldades' }, { k: 'proSocial', l: 'Pró-social' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// GDS
+const renderGDSInputs = (rawScores: Record<string, number>) => (
+  <div className="p-3 bg-muted/30 rounded-lg border text-center">
+    <p className="text-xs font-medium text-muted-foreground mb-1">Escore Total</p>
+    <Badge variant="outline" className="font-mono text-lg">{rawScores.totalScore ?? '-'}</Badge>
+    <p className="text-xs text-muted-foreground mt-1">(máximo: 30)</p>
+  </div>
+);
+
+// TDE-II
+const renderTDE2Inputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    {[{ k: 'escrita', l: 'Escrita' }, { k: 'aritmetica', l: 'Aritmética' }, { k: 'leitura', l: 'Leitura' }, { k: 'totalScore', l: 'Total' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// NEUPSILIN
+const renderNeupsilinInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    {[{ k: 'orientacao', l: 'Orientação' }, { k: 'atencao', l: 'Atenção' }, { k: 'percepcao', l: 'Percepção' }, { k: 'memoria', l: 'Memória' }, { k: 'aritmetica', l: 'Aritmética' }, { k: 'linguagem', l: 'Linguagem' }, { k: 'praxias', l: 'Praxias' }, { k: 'funcoesExecutivas', l: 'Funções Exec.' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// CANCELAMENTO
+const renderCancelamentoInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    {[{ k: 'acertos', l: 'Acertos' }, { k: 'erros', l: 'Erros' }, { k: 'omissoes', l: 'Omissões' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
+// CORSI
+const renderCorsiInputs = (rawScores: Record<string, number>) => (
+  <div className="grid grid-cols-2 gap-3">
+    {[{ k: 'spanDireto', l: 'Span Direto' }, { k: 'spanInverso', l: 'Span Inverso' }].map(({ k, l }) => (
+      <div key={k} className="p-3 bg-muted/30 rounded-lg border text-center">
+        <p className="text-xs font-medium text-muted-foreground mb-1">{l}</p>
+        <Badge variant="outline" className="font-mono text-lg">{rawScores[k] ?? '-'}</Badge>
+      </div>
+    ))}
+  </div>
+);
+
 // Renderiza dados genéricos de entrada com label/valor
 const renderGenericInputs = (rawScores: Record<string, number>) => {
   const entries = Object.entries(rawScores).filter(([_, v]) => v !== null && v !== undefined);
