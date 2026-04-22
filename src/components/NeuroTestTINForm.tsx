@@ -41,8 +41,10 @@ export default function NeuroTestTINForm({
 
   const isValidAge = isAgeValidForTIN(patientAge);
 
-  // Converter string para número para cálculos
-  const acertos = acertosStr !== '' ? Math.min(60, Math.max(0, parseInt(acertosStr) || 0)) : null;
+  // Converter string para número — aceitar qualquer valor, clampar para 0-60
+  const rawParsed = acertosStr !== '' ? parseInt(acertosStr) : null;
+  const isOutOfRange = rawParsed !== null && !isNaN(rawParsed) && (rawParsed < 0 || rawParsed > 60);
+  const acertos = rawParsed !== null && !isNaN(rawParsed) ? Math.min(60, Math.max(0, rawParsed)) : null;
 
   // Calcular resultados quando os scores mudam
   useEffect(() => {
@@ -117,13 +119,16 @@ export default function NeuroTestTINForm({
               <Input
                 id="tin-acertos"
                 type="number"
-                min={0}
-                max={60}
                 value={acertosStr}
                 onChange={(e) => setAcertosStr(e.target.value)}
                 placeholder="0-60"
                 className="w-32"
               />
+              {isOutOfRange && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                  ⚠ Valor digitado ({rawParsed}) fora do intervalo 0-60 — corrigido automaticamente para <strong>{acertos}</strong>
+                </p>
+              )}
             </div>
           </div>
         </div>
