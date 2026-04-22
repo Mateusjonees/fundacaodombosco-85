@@ -19,11 +19,19 @@ export const SCHOOL_YEAR_OPTIONS: { value: SchoolYear; label: string }[] = [
   { value: '14-15', label: '7º ao 9º ano (14-15 anos)' }
 ];
 
+export interface FPTPercentileLookupInfo {
+  method: 'exact' | 'floor' | 'ceil' | 'below_min' | 'above_max' | 'adjacent';
+  matchedScore: number | null;
+  matchedGroup: string | null;
+  description: string;
+}
+
 export interface FPTInfantilResults {
   schoolYear: SchoolYear;
   rawScore: number;
   percentile: number | null;
   classification: string;
+  lookupInfo: FPTPercentileLookupInfo;
 }
 
 export const FPT_INFANTIL_TEST: NeuroTestDefinition = {

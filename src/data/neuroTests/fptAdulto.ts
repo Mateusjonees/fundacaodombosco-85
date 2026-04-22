@@ -21,11 +21,19 @@ export const AGE_GROUP_OPTIONS: { value: FPTAdultoAgeGroup; label: string }[] = 
   { value: '70+', label: '70+ anos' }
 ];
 
+export interface FPTAdultoPercentileLookupInfo {
+  method: 'exact' | 'floor' | 'ceil' | 'below_min' | 'above_max' | 'adjacent';
+  matchedScore: number | null;
+  matchedGroup: string | null;
+  description: string;
+}
+
 export interface FPTAdultoResults {
   ageGroup: FPTAdultoAgeGroup;
   rawScore: number;
   percentile: number | null;
   classification: string;
+  lookupInfo: FPTAdultoPercentileLookupInfo;
 }
 
 export const FPT_ADULTO_TEST: NeuroTestDefinition = {
