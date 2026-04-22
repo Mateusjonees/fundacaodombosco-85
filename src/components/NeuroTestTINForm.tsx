@@ -119,13 +119,16 @@ export default function NeuroTestTINForm({
               <Input
                 id="tin-acertos"
                 type="number"
-                min={0}
-                max={60}
                 value={acertosStr}
                 onChange={(e) => setAcertosStr(e.target.value)}
                 placeholder="0-60"
                 className="w-32"
               />
+              {isOutOfRange && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                  ⚠ Valor digitado ({rawParsed}) fora do intervalo 0-60 — corrigido automaticamente para <strong>{acertos}</strong>
+                </p>
+              )}
             </div>
           </div>
         </div>
