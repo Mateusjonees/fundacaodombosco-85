@@ -141,7 +141,7 @@ export default function Patients() {
   const openTabs = useMemo(() => openTabIds.map(id => clients.find(c => c.id === id)).filter(Boolean) as Client[], [openTabIds, clients]);
 
   const isCoordinatorOrDirector = useCallback(() => {
-    return userProfile?.employee_role === "director" || userProfile?.employee_role === "coordinator_madre" || userProfile?.employee_role === "coordinator_floresta";
+    return userProfile?.employee_role === "director" || userProfile?.employee_role === "coordinator_madre" || userProfile?.employee_role === "coordinator_floresta" || userProfile?.employee_role === "coordinator_atendimento_floresta";
   }, [userProfile?.employee_role]);
 
   const getAge = useCallback((birthDate: string | undefined): number | null => {
