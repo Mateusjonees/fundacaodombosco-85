@@ -196,6 +196,7 @@ export default function NeuroTestFPTAdultoForm({
                 {results.lookupInfo.matchedGroup && <> · Grupo ref.: {results.lookupInfo.matchedGroup}</>}
               </p>
             </div>
+          </div>
         )}
       </CardContent>
     </Card>

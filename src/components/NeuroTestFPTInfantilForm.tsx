@@ -190,6 +190,7 @@ export default function NeuroTestFPTInfantilForm({
                 {results.lookupInfo.matchedGroup && <> · Grupo ref.: {results.lookupInfo.matchedGroup}</>}
               </p>
             </div>
+          </div>
         )}
       </CardContent>
     </Card>
