@@ -142,22 +142,22 @@ export default function NeuroTestFPTInfantilForm({
 
         {/* Tabela de Resultados - sempre mostra quando há results */}
         {results && (
-          <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-            <h4 className="text-sm font-semibold mb-3">Resultados</h4>
+          <div className="mt-4 p-4 bg-card border border-border rounded-lg">
+            <h4 className="text-sm font-semibold mb-3 text-card-foreground">Resultados</h4>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Medida</TableHead>
-                  <TableHead className="text-center">Pontuação</TableHead>
-                  <TableHead className="text-center">Percentil</TableHead>
-                  <TableHead className="text-center">Classificação</TableHead>
+                <TableRow className="border-border">
+                  <TableHead className="text-muted-foreground">Medida</TableHead>
+                  <TableHead className="text-center text-muted-foreground">Pontuação</TableHead>
+                  <TableHead className="text-center text-muted-foreground">Percentil</TableHead>
+                  <TableHead className="text-center text-muted-foreground">Classificação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Desenhos Únicos</TableCell>
-                  <TableCell className="text-center">{results.rawScore}</TableCell>
-                  <TableCell className="text-center">
+                <TableRow className="border-border">
+                  <TableCell className="font-medium text-foreground">Desenhos Únicos</TableCell>
+                  <TableCell className="text-center text-foreground">{results.rawScore}</TableCell>
+                  <TableCell className="text-center text-foreground">
                     {results.percentile !== null ? results.percentile : 'N/D'}
                   </TableCell>
                   <TableCell className="text-center">
@@ -169,7 +169,7 @@ export default function NeuroTestFPTInfantilForm({
               </TableBody>
             </Table>
             <p className="text-xs text-muted-foreground mt-3">
-              <strong>Ano escolar:</strong> {SCHOOL_YEAR_OPTIONS.find(o => o.value === results.schoolYear)?.label || results.schoolYear}
+              <strong className="text-foreground">Ano escolar:</strong> {SCHOOL_YEAR_OPTIONS.find(o => o.value === results.schoolYear)?.label || results.schoolYear}
             </p>
           </div>
         )}
