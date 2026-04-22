@@ -116,71 +116,123 @@ export const getAgeGroupForFPTAdulto = (age: number): FPTAdultoAgeGroup | null =
 };
 
 /**
- * Busca o percentil para uma pontuação bruta e faixa etária
+ * Busca o percentil com metadados de como foi encontrado
  */
-export const lookupFPTAdultoPercentile = (rawScore: number, ageGroup: FPTAdultoAgeGroup): number | null => {
-  // Se a pontuação for muito baixa, retornar o menor percentil
+export const lookupFPTAdultoPercentileWithInfo = (
+  rawScore: number,
+  ageGroup: FPTAdultoAgeGroup
+): { percentile: number | null; info: FPTAdultoPercentileLookupInfo } => {
   if (rawScore < 12) {
-    return 1;
+    return {
+      percentile: 1,
+      info: {
+        method: 'below_min',
+        matchedScore: null,
+        matchedGroup: ageGroup,
+        description: `Pontuação ${rawScore} abaixo do mínimo normativo (12). Atribuído percentil mínimo (1).`
+      }
+    };
   }
-  
-  // Buscar o percentil exato ou o mais próximo inferior
-  let percentile: number | null = null;
-  
-  for (let score = rawScore; score >= 12; score--) {
+
+  // Busca exata
+  if (FPT_ADULTO_PERCENTILES[rawScore]?.[ageGroup] !== undefined) {
+    return {
+      percentile: FPT_ADULTO_PERCENTILES[rawScore][ageGroup]!,
+      info: {
+        method: 'exact',
+        matchedScore: rawScore,
+        matchedGroup: ageGroup,
+        description: `Correspondência exata: pontuação ${rawScore} para a faixa etária ${ageGroup} anos.`
+      }
+    };
+  }
+
+  // Mais próximo inferior
+  for (let score = rawScore - 1; score >= 12; score--) {
     if (FPT_ADULTO_PERCENTILES[score]?.[ageGroup] !== undefined) {
-      percentile = FPT_ADULTO_PERCENTILES[score][ageGroup]!;
-      break;
-    }
-  }
-  
-  // Se ainda não encontrou, buscar o mais próximo superior
-  if (percentile === null) {
-    const allScores = Object.keys(FPT_ADULTO_PERCENTILES).map(Number).sort((a, b) => a - b);
-    for (const score of allScores) {
-      if (score > rawScore && FPT_ADULTO_PERCENTILES[score]?.[ageGroup] !== undefined) {
-        percentile = FPT_ADULTO_PERCENTILES[score][ageGroup]!;
-        break;
-      }
-    }
-  }
-  
-  // Se ainda não encontrou e score > máximo, retornar 99
-  if (percentile === null && rawScore > 52) {
-    return 99;
-  }
-  
-  // Último fallback: buscar percentil de faixa etária adjacente
-  if (percentile === null) {
-    const ageGroups: FPTAdultoAgeGroup[] = ['20-29', '30-39', '40-49', '50-59', '60-69', '70+'];
-    const currentIdx = ageGroups.indexOf(ageGroup);
-    const adjacent = [currentIdx - 1, currentIdx + 1].filter(i => i >= 0 && i < ageGroups.length);
-    for (const adjIdx of adjacent) {
-      const adjGroup = ageGroups[adjIdx];
-      for (let score = rawScore; score >= 12; score--) {
-        if (FPT_ADULTO_PERCENTILES[score]?.[adjGroup] !== undefined) {
-          percentile = FPT_ADULTO_PERCENTILES[score][adjGroup]!;
-          break;
+      return {
+        percentile: FPT_ADULTO_PERCENTILES[score][ageGroup]!,
+        info: {
+          method: 'floor',
+          matchedScore: score,
+          matchedGroup: ageGroup,
+          description: `Sem norma exata para pontuação ${rawScore}. Utilizada pontuação inferior mais próxima (${score}) na faixa ${ageGroup} anos.`
         }
-      }
-      if (percentile !== null) break;
+      };
     }
   }
-  
-  return percentile;
+
+  // Mais próximo superior
+  const allScores = Object.keys(FPT_ADULTO_PERCENTILES).map(Number).sort((a, b) => a - b);
+  for (const score of allScores) {
+    if (score > rawScore && FPT_ADULTO_PERCENTILES[score]?.[ageGroup] !== undefined) {
+      return {
+        percentile: FPT_ADULTO_PERCENTILES[score][ageGroup]!,
+        info: {
+          method: 'ceil',
+          matchedScore: score,
+          matchedGroup: ageGroup,
+          description: `Sem norma inferior disponível. Utilizada pontuação superior mais próxima (${score}) na faixa ${ageGroup} anos.`
+        }
+      };
+    }
+  }
+
+  // Acima do máximo
+  if (rawScore > 52) {
+    return {
+      percentile: 99,
+      info: {
+        method: 'above_max',
+        matchedScore: null,
+        matchedGroup: ageGroup,
+        description: `Pontuação ${rawScore} acima do máximo normativo (52). Atribuído percentil máximo (99).`
+      }
+    };
+  }
+
+  // Fallback: faixa etária adjacente
+  const ageGroups: FPTAdultoAgeGroup[] = ['20-29', '30-39', '40-49', '50-59', '60-69', '70+'];
+  const currentIdx = ageGroups.indexOf(ageGroup);
+  const adjacent = [currentIdx - 1, currentIdx + 1].filter(i => i >= 0 && i < ageGroups.length);
+  for (const adjIdx of adjacent) {
+    const adjGroup = ageGroups[adjIdx];
+    for (let score = rawScore; score >= 12; score--) {
+      if (FPT_ADULTO_PERCENTILES[score]?.[adjGroup] !== undefined) {
+        return {
+          percentile: FPT_ADULTO_PERCENTILES[score][adjGroup]!,
+          info: {
+            method: 'adjacent',
+            matchedScore: score,
+            matchedGroup: adjGroup,
+            description: `Sem norma para a faixa ${ageGroup} anos. Utilizada faixa adjacente (${adjGroup} anos) com pontuação ${score} como referência.`
+          }
+        };
+      }
+    }
+  }
+
+  return {
+    percentile: null,
+    info: {
+      method: 'exact',
+      matchedScore: null,
+      matchedGroup: null,
+      description: 'Nenhuma norma disponível para esta combinação.'
+    }
+  };
+};
+
+// Mantém compatibilidade
+export const lookupFPTAdultoPercentile = (rawScore: number, ageGroup: FPTAdultoAgeGroup): number | null => {
+  return lookupFPTAdultoPercentileWithInfo(rawScore, ageGroup).percentile;
 };
 
 /**
  * Retorna a classificação baseada no percentil
- * percentil <= 5 - Inferior
- * percentil 6-25 - Média Inferior
- * percentil 26-74 - Média
- * percentil 75-94 - Média Superior
- * percentil >= 95 - Superior
  */
 export const getFPTAdultoClassification = (percentile: number | null): string => {
   if (percentile === null) return 'Não disponível';
-  
   if (percentile <= 5) return 'Inferior';
   if (percentile <= 25) return 'Média Inferior';
   if (percentile <= 74) return 'Média';
@@ -195,15 +247,9 @@ export const calculateFPTAdultoResults = (
   rawScore: number,
   ageGroup: FPTAdultoAgeGroup
 ): FPTAdultoResults => {
-  const percentile = lookupFPTAdultoPercentile(rawScore, ageGroup);
+  const { percentile, info } = lookupFPTAdultoPercentileWithInfo(rawScore, ageGroup);
   const classification = getFPTAdultoClassification(percentile);
-  
-  return {
-    ageGroup,
-    rawScore,
-    percentile,
-    classification
-  };
+  return { ageGroup, rawScore, percentile, classification, lookupInfo: info };
 };
 
 /**

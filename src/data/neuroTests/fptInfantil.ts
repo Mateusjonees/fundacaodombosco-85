@@ -97,71 +97,124 @@ const FPT_INFANTIL_PERCENTILES: Record<number, Partial<Record<SchoolYear, number
 };
 
 /**
- * Busca o percentil para uma pontuação bruta e ano escolar
+ * Busca o percentil com metadados de como foi encontrado
  */
-export const lookupFPTInfantilPercentile = (rawScore: number, schoolYear: SchoolYear): number | null => {
-  // Se a pontuação for muito baixa, retornar o menor percentil
+export const lookupFPTInfantilPercentileWithInfo = (
+  rawScore: number,
+  schoolYear: SchoolYear
+): { percentile: number | null; info: FPTPercentileLookupInfo } => {
+  // Pontuação abaixo do mínimo da tabela
   if (rawScore < 5) {
-    return 1;
+    return {
+      percentile: 1,
+      info: {
+        method: 'below_min',
+        matchedScore: null,
+        matchedGroup: schoolYear,
+        description: `Pontuação ${rawScore} abaixo do mínimo normativo (5). Atribuído percentil mínimo (1).`
+      }
+    };
   }
-  
-  // Buscar o percentil exato ou o mais próximo inferior
-  let percentile: number | null = null;
-  
-  for (let score = rawScore; score >= 5; score--) {
+
+  // Busca exata
+  if (FPT_INFANTIL_PERCENTILES[rawScore]?.[schoolYear] !== undefined) {
+    return {
+      percentile: FPT_INFANTIL_PERCENTILES[rawScore][schoolYear]!,
+      info: {
+        method: 'exact',
+        matchedScore: rawScore,
+        matchedGroup: schoolYear,
+        description: `Correspondência exata: pontuação ${rawScore} para o ano escolar ${schoolYear}.`
+      }
+    };
+  }
+
+  // Buscar o mais próximo inferior
+  for (let score = rawScore - 1; score >= 5; score--) {
     if (FPT_INFANTIL_PERCENTILES[score]?.[schoolYear] !== undefined) {
-      percentile = FPT_INFANTIL_PERCENTILES[score][schoolYear]!;
-      break;
-    }
-  }
-  
-  // Se ainda não encontrou, buscar o mais próximo superior
-  if (percentile === null) {
-    const allScores = Object.keys(FPT_INFANTIL_PERCENTILES).map(Number).sort((a, b) => a - b);
-    for (const score of allScores) {
-      if (score > rawScore && FPT_INFANTIL_PERCENTILES[score]?.[schoolYear] !== undefined) {
-        percentile = FPT_INFANTIL_PERCENTILES[score][schoolYear]!;
-        break;
-      }
-    }
-  }
-  
-  // Se ainda não encontrou e score > máximo, retornar 99
-  if (percentile === null && rawScore > 40) {
-    return 99;
-  }
-  
-  // Último fallback: buscar percentil de qualquer ano escolar adjacente
-  if (percentile === null) {
-    const schoolYears: SchoolYear[] = ['8-9', '10-11', '12-13', '14-15'];
-    const currentIdx = schoolYears.indexOf(schoolYear);
-    const adjacent = [currentIdx - 1, currentIdx + 1].filter(i => i >= 0 && i < schoolYears.length);
-    for (const adjIdx of adjacent) {
-      const adjYear = schoolYears[adjIdx];
-      for (let score = rawScore; score >= 5; score--) {
-        if (FPT_INFANTIL_PERCENTILES[score]?.[adjYear] !== undefined) {
-          percentile = FPT_INFANTIL_PERCENTILES[score][adjYear]!;
-          break;
+      return {
+        percentile: FPT_INFANTIL_PERCENTILES[score][schoolYear]!,
+        info: {
+          method: 'floor',
+          matchedScore: score,
+          matchedGroup: schoolYear,
+          description: `Sem norma exata para pontuação ${rawScore}. Utilizada pontuação inferior mais próxima (${score}) no ano escolar ${schoolYear}.`
         }
-      }
-      if (percentile !== null) break;
+      };
     }
   }
-  
-  return percentile;
+
+  // Buscar o mais próximo superior
+  const allScores = Object.keys(FPT_INFANTIL_PERCENTILES).map(Number).sort((a, b) => a - b);
+  for (const score of allScores) {
+    if (score > rawScore && FPT_INFANTIL_PERCENTILES[score]?.[schoolYear] !== undefined) {
+      return {
+        percentile: FPT_INFANTIL_PERCENTILES[score][schoolYear]!,
+        info: {
+          method: 'ceil',
+          matchedScore: score,
+          matchedGroup: schoolYear,
+          description: `Sem norma inferior disponível. Utilizada pontuação superior mais próxima (${score}) no ano escolar ${schoolYear}.`
+        }
+      };
+    }
+  }
+
+  // Acima do máximo
+  if (rawScore > 40) {
+    return {
+      percentile: 99,
+      info: {
+        method: 'above_max',
+        matchedScore: null,
+        matchedGroup: schoolYear,
+        description: `Pontuação ${rawScore} acima do máximo normativo (40). Atribuído percentil máximo (99).`
+      }
+    };
+  }
+
+  // Fallback: ano escolar adjacente
+  const schoolYears: SchoolYear[] = ['8-9', '10-11', '12-13', '14-15'];
+  const currentIdx = schoolYears.indexOf(schoolYear);
+  const adjacent = [currentIdx - 1, currentIdx + 1].filter(i => i >= 0 && i < schoolYears.length);
+  for (const adjIdx of adjacent) {
+    const adjYear = schoolYears[adjIdx];
+    for (let score = rawScore; score >= 5; score--) {
+      if (FPT_INFANTIL_PERCENTILES[score]?.[adjYear] !== undefined) {
+        return {
+          percentile: FPT_INFANTIL_PERCENTILES[score][adjYear]!,
+          info: {
+            method: 'adjacent',
+            matchedScore: score,
+            matchedGroup: adjYear,
+            description: `Sem norma para o ano escolar ${schoolYear}. Utilizado ano escolar adjacente (${adjYear}) com pontuação ${score} como referência.`
+          }
+        };
+      }
+    }
+  }
+
+  return {
+    percentile: null,
+    info: {
+      method: 'exact',
+      matchedScore: null,
+      matchedGroup: null,
+      description: 'Nenhuma norma disponível para esta combinação.'
+    }
+  };
+};
+
+// Mantém compatibilidade com a função original
+export const lookupFPTInfantilPercentile = (rawScore: number, schoolYear: SchoolYear): number | null => {
+  return lookupFPTInfantilPercentileWithInfo(rawScore, schoolYear).percentile;
 };
 
 /**
  * Retorna a classificação baseada no percentil
- * percentil < 10 - Inferior
- * percentil 10-25 - Média Inferior
- * percentil 26-74 - Média
- * percentil 75-90 - Média Superior
- * percentil > 90 - Superior
  */
 export const getFPTInfantilClassification = (percentile: number | null): string => {
   if (percentile === null) return 'Não disponível';
-  
   if (percentile < 10) return 'Inferior';
   if (percentile <= 25) return 'Média Inferior';
   if (percentile <= 74) return 'Média';
@@ -176,15 +229,9 @@ export const calculateFPTInfantilResults = (
   rawScore: number,
   schoolYear: SchoolYear
 ): FPTInfantilResults => {
-  const percentile = lookupFPTInfantilPercentile(rawScore, schoolYear);
+  const { percentile, info } = lookupFPTInfantilPercentileWithInfo(rawScore, schoolYear);
   const classification = getFPTInfantilClassification(percentile);
-  
-  return {
-    schoolYear,
-    rawScore,
-    percentile,
-    classification
-  };
+  return { schoolYear, rawScore, percentile, classification, lookupInfo: info };
 };
 
 /**
