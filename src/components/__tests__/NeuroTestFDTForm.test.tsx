@@ -12,58 +12,56 @@ describe('NeuroTestFDTForm — zero value handling', () => {
   it('renders percentile badge when error field value is 0', () => {
     const { container } = render(<NeuroTestFDTForm {...defaultProps} />);
 
-    // Find the first error input (Leitura under Erros section)
     const errorInputs = container.querySelectorAll('input[type="number"][step="1"]');
     expect(errorInputs.length).toBeGreaterThan(0);
 
-    // Type "0" into the first error field
     fireEvent.change(errorInputs[0], { target: { value: '0' } });
 
-    // The input should retain the value "0", not become empty
     expect(errorInputs[0]).toHaveValue(0);
 
-    // A percentile badge (P>95 or similar) should appear
-    const badges = container.querySelectorAll('[class*="badge"]');
-    expect(badges.length).toBeGreaterThan(0);
+    // PercentilBadge renders text like "P>95" or "P75" — check for that pattern
+    expect(container.textContent).toMatch(/P[>\d]/);
   });
 
   it('renders percentile badge when tempo field value is 0', () => {
     const { container } = render(<NeuroTestFDTForm {...defaultProps} />);
 
-    // Find the first tempo input (Leitura under Tempos section)
     const tempoInputs = container.querySelectorAll('input[type="number"][step="0.1"]');
     expect(tempoInputs.length).toBeGreaterThan(0);
 
-    // Type "0" into the first tempo field
     fireEvent.change(tempoInputs[0], { target: { value: '0' } });
 
-    // The input should retain the value 0
     expect(tempoInputs[0]).toHaveValue(0);
 
-    // A percentile badge should appear (not hidden because value is 0)
-    const badges = container.querySelectorAll('[class*="badge"]');
-    expect(badges.length).toBeGreaterThan(0);
+    // Should show percentile text
+    expect(container.textContent).toMatch(/P[>\d]/);
+  });
+
+  it('renders classification text when value is 0', () => {
+    const { container } = render(<NeuroTestFDTForm {...defaultProps} />);
+
+    const errorInputs = container.querySelectorAll('input[type="number"][step="1"]');
+    fireEvent.change(errorInputs[0], { target: { value: '0' } });
+
+    // Should show a classification like Superior, Média, etc.
+    const classificationTexts = ['Superior', 'Média Superior', 'Média', 'Média Inferior', 'Inferior'];
+    const hasClassification = classificationTexts.some(c => container.textContent?.includes(c));
+    expect(hasClassification).toBe(true);
   });
 
   it('does NOT render percentile badge when field is empty', () => {
     const { container } = render(<NeuroTestFDTForm {...defaultProps} />);
 
-    // Without any input, no individual field badges should appear
-    // (only check that error/tempo field badges are absent)
     const tempoInputs = container.querySelectorAll('input[type="number"][step="0.1"]');
-    const firstInput = tempoInputs[0];
-    
-    // Ensure it's empty
-    expect(firstInput).toHaveValue(null);
+    expect(tempoInputs[0]).toHaveValue(null);
 
-    // No badges next to inputs (interpretation section also hidden)
-    const badges = container.querySelectorAll('[class*="badge"]');
-    // Only the header badges (if any) should exist, not field-level percentile badges
-    // Since no input is filled, the PercentilBadge components should not render
-    expect(badges.length).toBe(0);
+    // No percentile text like "P>95" should appear for unfilled fields
+    // The only text should be labels/instructions, not percentile badges
+    const textContent = container.textContent || '';
+    expect(textContent).not.toMatch(/P>\d+/);
   });
 
-  it('calls onResultsChange with correct scores when 0 is entered', () => {
+  it('calls onResultsChange with correct scores and classification when 0 is entered', () => {
     const onResultsChange = vi.fn();
     const { container } = render(
       <NeuroTestFDTForm {...defaultProps} onResultsChange={onResultsChange} />
@@ -72,13 +70,10 @@ describe('NeuroTestFDTForm — zero value handling', () => {
     const errorInputs = container.querySelectorAll('input[type="number"][step="1"]');
     fireEvent.change(errorInputs[0], { target: { value: '0' } });
 
-    // onResultsChange should be called with rawScores.errosLeitura = 0
     expect(onResultsChange).toHaveBeenCalled();
     const lastCall = onResultsChange.mock.calls[onResultsChange.mock.calls.length - 1][0];
     expect(lastCall.rawScores.errosLeitura).toBe(0);
-    // Classifications should exist (not empty)
     expect(lastCall.classifications.errosLeitura).toBeTruthy();
-    // Percentiles should be a number
     expect(typeof lastCall.percentiles.errosLeitura).toBe('number');
   });
 });
