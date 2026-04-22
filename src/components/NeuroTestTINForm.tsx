@@ -36,18 +36,21 @@ export default function NeuroTestTINForm({
   onResultsChange,
   onRemove
 }: NeuroTestTINFormProps) {
-  const [acertos, setAcertos] = useState(0);
+  const [acertosStr, setAcertosStr] = useState('');
   const [notes, setNotes] = useState('');
 
   const isValidAge = isAgeValidForTIN(patientAge);
 
+  // Converter string para número para cálculos
+  const acertos = acertosStr !== '' ? Math.min(60, Math.max(0, parseInt(acertosStr) || 0)) : null;
+
   // Calcular resultados quando os scores mudam
   useEffect(() => {
-    const escorePadrao = lookupTINStandardScore(patientAge, acertos);
+    const escorePadrao = acertos !== null ? lookupTINStandardScore(patientAge, acertos) : null;
     
     const results: TINResults = {
       rawScores: {
-        acertos
+        acertos: acertos ?? 0
       },
       calculatedScores: {
         escorePadrao
@@ -62,8 +65,9 @@ export default function NeuroTestTINForm({
     onResultsChange(results);
   }, [acertos, notes, patientAge, onResultsChange]);
 
-  const escorePadrao = lookupTINStandardScore(patientAge, acertos);
+  const escorePadrao = acertos !== null ? lookupTINStandardScore(patientAge, acertos) : null;
   const classification = escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado';
+  const hasInput = acertos !== null;
 
   return (
     <Card className="border-primary/30">
