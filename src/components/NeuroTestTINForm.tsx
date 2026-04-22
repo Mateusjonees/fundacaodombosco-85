@@ -135,22 +135,50 @@ export default function NeuroTestTINForm({
         </div>
 
         {/* Resultados */}
-        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+        <div className={`p-4 rounded-lg border ${
+          !hasInput 
+            ? 'bg-muted/10 border-muted/30' 
+            : escorePadrao !== null 
+              ? 'bg-primary/5 border-primary/20' 
+              : 'bg-destructive/5 border-destructive/20'
+        }`}>
           <h4 className="font-medium text-sm mb-4 flex items-center gap-2">
             <Calculator className="h-4 w-4 text-primary" />
             Resultados
+            {!hasInput && (
+              <Badge variant="outline" className="text-muted-foreground text-[10px] ml-auto">
+                Aguardando entrada
+              </Badge>
+            )}
+            {hasInput && escorePadrao !== null && (
+              <Badge variant="outline" className="text-green-600 dark:text-green-400 text-[10px] ml-auto border-green-300 dark:border-green-700">
+                ✓ Norma encontrada
+              </Badge>
+            )}
+            {hasInput && escorePadrao === null && (
+              <Badge variant="destructive" className="text-[10px] ml-auto">
+                ✗ Sem norma disponível
+              </Badge>
+            )}
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-background rounded-lg border">
+            <div className={`text-center p-3 rounded-lg border ${!hasInput ? 'bg-muted/20 border-dashed' : 'bg-background'}`}>
               <p className="text-xs text-muted-foreground mb-1">Escore Bruto</p>
-              <p className="text-2xl font-bold">{hasInput ? acertos : '-'}</p>
+              <p className={`text-2xl font-bold ${!hasInput ? 'text-muted-foreground/40' : ''}`}>{hasInput ? acertos : '-'}</p>
             </div>
             
-            <div className="text-center p-3 bg-background rounded-lg border">
+            <div className={`text-center p-3 rounded-lg border ${
+              !hasInput ? 'bg-muted/20 border-dashed' 
+              : escorePadrao !== null ? 'bg-background' 
+              : 'bg-destructive/5 border-destructive/30'
+            }`}>
               <p className="text-xs text-muted-foreground mb-1">Escore Padrão</p>
-              <p className="text-2xl font-bold">
-                {escorePadrao !== null ? escorePadrao : (hasInput ? 'N/D' : '-')}
+              <p className={`text-2xl font-bold ${
+                !hasInput ? 'text-muted-foreground/40' 
+                : escorePadrao === null ? 'text-destructive' : ''
+              }`}>
+                {escorePadrao !== null ? escorePadrao : (hasInput ? '—' : '-')}
               </p>
               <p className="text-xs text-muted-foreground">
                 (M=100, DP=15)
@@ -175,7 +203,10 @@ export default function NeuroTestTINForm({
               )}
             </div>
             
-            <div className="text-center p-3 bg-background rounded-lg border">
+            <div className={`text-center p-3 rounded-lg border ${
+              !hasInput ? 'bg-muted/20 border-dashed' 
+              : escorePadrao === null ? 'bg-destructive/5 border-destructive/30' : 'bg-background'
+            }`}>
               <p className="text-xs text-muted-foreground mb-1">Classificação</p>
               {escorePadrao !== null ? (
                 <Badge 
@@ -185,14 +216,21 @@ export default function NeuroTestTINForm({
                   {classification}
                 </Badge>
               ) : (
-                <p className="text-sm text-muted-foreground">{hasInput ? 'N/D' : '-'}</p>
+                <p className={`text-sm ${hasInput ? 'text-destructive' : 'text-muted-foreground/40'}`}>{hasInput ? '—' : '-'}</p>
               )}
             </div>
 
-            <div className="text-center p-3 bg-background rounded-lg border border-primary/30">
+            <div className={`text-center p-3 rounded-lg border ${
+              !hasInput ? 'bg-muted/20 border-dashed' 
+              : escorePadrao !== null ? 'border-primary/30 bg-background' 
+              : 'bg-destructive/5 border-destructive/30'
+            }`}>
               <p className="text-xs text-muted-foreground mb-1">Percentil</p>
-              <p className="text-2xl font-bold text-primary">
-                {escorePadrao !== null ? epToPercentile(escorePadrao) : (hasInput ? 'N/D' : '-')}
+              <p className={`text-2xl font-bold ${
+                !hasInput ? 'text-muted-foreground/40' 
+                : escorePadrao !== null ? 'text-primary' : 'text-destructive'
+              }`}>
+                {escorePadrao !== null ? epToPercentile(escorePadrao) : (hasInput ? '—' : '-')}
               </p>
               {escorePadrao !== null && (
                 <p className="text-[10px] text-muted-foreground mt-1 font-mono">
@@ -201,7 +239,6 @@ export default function NeuroTestTINForm({
               )}
             </div>
           </div>
-
           {/* Escala de classificação */}
           <div className="mt-4 p-3 bg-muted/30 rounded-lg">
             <p className="text-xs font-medium text-muted-foreground mb-2">Escala de Classificação:</p>
