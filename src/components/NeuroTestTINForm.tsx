@@ -47,9 +47,14 @@ export default function NeuroTestTINForm({
   const acertos = rawParsed !== null && !isNaN(rawParsed) ? Math.min(60, Math.max(0, rawParsed)) : null;
 
   // Calcular resultados quando os scores mudam
+  const lookupResult = acertos !== null ? lookupTINStandardScoreWithFallback(patientAge, acertos) : null;
+  const escorePadrao = lookupResult?.score ?? null;
+  const lookupMethod = lookupResult?.method ?? null;
+  const lookupDetail = lookupResult?.detail ?? null;
+  const classification = escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado';
+  const hasInput = acertos !== null;
+
   useEffect(() => {
-    const escorePadrao = acertos !== null ? lookupTINStandardScore(patientAge, acertos) : null;
-    
     const results: TINResults = {
       rawScores: {
         acertos: acertos ?? 0
@@ -59,17 +64,13 @@ export default function NeuroTestTINForm({
       },
       percentiles: escorePadrao !== null ? { escorePadrao: epToPercentile(escorePadrao) } : {},
       classifications: {
-        escorePadrao: escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado'
+        escorePadrao: classification
       },
       notes
     };
 
     onResultsChange(results);
-  }, [acertos, notes, patientAge, onResultsChange]);
-
-  const escorePadrao = acertos !== null ? lookupTINStandardScore(patientAge, acertos) : null;
-  const classification = escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado';
-  const hasInput = acertos !== null;
+  }, [acertos, notes, patientAge, onResultsChange, escorePadrao, classification]);
 
   return (
     <Card className="border-primary/30">
