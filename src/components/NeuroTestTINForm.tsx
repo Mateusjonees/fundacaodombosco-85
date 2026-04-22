@@ -36,18 +36,21 @@ export default function NeuroTestTINForm({
   onResultsChange,
   onRemove
 }: NeuroTestTINFormProps) {
-  const [acertos, setAcertos] = useState(0);
+  const [acertosStr, setAcertosStr] = useState('');
   const [notes, setNotes] = useState('');
 
   const isValidAge = isAgeValidForTIN(patientAge);
 
+  // Converter string para número para cálculos
+  const acertos = acertosStr !== '' ? Math.min(60, Math.max(0, parseInt(acertosStr) || 0)) : null;
+
   // Calcular resultados quando os scores mudam
   useEffect(() => {
-    const escorePadrao = lookupTINStandardScore(patientAge, acertos);
+    const escorePadrao = acertos !== null ? lookupTINStandardScore(patientAge, acertos) : null;
     
     const results: TINResults = {
       rawScores: {
-        acertos
+        acertos: acertos ?? 0
       },
       calculatedScores: {
         escorePadrao
@@ -62,8 +65,9 @@ export default function NeuroTestTINForm({
     onResultsChange(results);
   }, [acertos, notes, patientAge, onResultsChange]);
 
-  const escorePadrao = lookupTINStandardScore(patientAge, acertos);
+  const escorePadrao = acertos !== null ? lookupTINStandardScore(patientAge, acertos) : null;
   const classification = escorePadrao !== null ? getTINClassification(escorePadrao) : 'Não classificado';
+  const hasInput = acertos !== null;
 
   return (
     <Card className="border-primary/30">
@@ -115,8 +119,9 @@ export default function NeuroTestTINForm({
                 type="number"
                 min={0}
                 max={60}
-                value={acertos}
-                onChange={(e) => setAcertos(Math.min(60, Math.max(0, parseInt(e.target.value) || 0)))}
+                value={acertosStr}
+                onChange={(e) => setAcertosStr(e.target.value)}
+                placeholder="0-60"
                 className="w-32"
               />
             </div>
@@ -133,33 +138,42 @@ export default function NeuroTestTINForm({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-background rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">Escore Bruto</p>
-              <p className="text-2xl font-bold">{acertos}</p>
+              <p className="text-2xl font-bold">{hasInput ? acertos : '-'}</p>
             </div>
             
             <div className="text-center p-3 bg-background rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">Escore Padrão</p>
               <p className="text-2xl font-bold">
-                {escorePadrao !== null ? escorePadrao : '-'}
+                {escorePadrao !== null ? escorePadrao : (hasInput ? 'N/D' : '-')}
               </p>
               <p className="text-xs text-muted-foreground">
                 (M=100, DP=15)
               </p>
+              {hasInput && escorePadrao === null && (
+                <p className="text-[10px] text-destructive mt-1">
+                  Sem norma para esta idade/escore
+                </p>
+              )}
             </div>
             
             <div className="text-center p-3 bg-background rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">Classificação</p>
-              <Badge 
-                variant="outline" 
-                className={`text-sm ${getTINClassificationColor(classification)}`}
-              >
-                {classification}
-              </Badge>
+              {escorePadrao !== null ? (
+                <Badge 
+                  variant="outline" 
+                  className={`text-sm ${getTINClassificationColor(classification)}`}
+                >
+                  {classification}
+                </Badge>
+              ) : (
+                <p className="text-sm text-muted-foreground">{hasInput ? 'N/D' : '-'}</p>
+              )}
             </div>
 
             <div className="text-center p-3 bg-background rounded-lg border border-primary/30">
               <p className="text-xs text-muted-foreground mb-1">Percentil</p>
               <p className="text-2xl font-bold text-primary">
-                {escorePadrao !== null ? epToPercentile(escorePadrao) : '-'}
+                {escorePadrao !== null ? epToPercentile(escorePadrao) : (hasInput ? 'N/D' : '-')}
               </p>
               {escorePadrao !== null && (
                 <p className="text-[10px] text-muted-foreground mt-1 font-mono">
