@@ -150,9 +150,12 @@ export default function NeuroTestTINForm({
                 (M=100, DP=15)
               </p>
               {hasInput && escorePadrao === null && (
-                <p className="text-[10px] text-destructive mt-1">
-                  Sem norma para esta idade/escore
-                </p>
+                <div className="text-[10px] text-destructive mt-1 space-y-0.5">
+                  <p>Sem norma para esta combinação</p>
+                  <p className="font-mono text-[9px] text-destructive/70">
+                    idade={Math.floor(patientAge)}, bruto={acertos}
+                  </p>
+                </div>
               )}
             </div>
             
