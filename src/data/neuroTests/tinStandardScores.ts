@@ -18,6 +18,7 @@ type AgeKey = 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
 // Tabela de escores padrão por idade e escore bruto
 // Estrutura: rawScore -> { idade: escorePadrão }
 const TIN_STANDARD_SCORES: Record<number, Partial<Record<AgeKey, number>>> = {
+  0: { 3: 68, 4: 68, 5: 65, 6: 54, 7: 40 },
   1: { 3: 73, 4: 71, 5: 67, 6: 56, 7: 42, 8: 10, 9: 0 },
   2: { 3: 79, 4: 74, 5: 69, 6: 57, 7: 44, 8: 12, 9: 2 },
   3: { 3: 84, 4: 76, 5: 71, 6: 59, 7: 46, 8: 14, 9: 4 },
