@@ -138,33 +138,42 @@ export default function NeuroTestTINForm({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-background rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">Escore Bruto</p>
-              <p className="text-2xl font-bold">{acertos}</p>
+              <p className="text-2xl font-bold">{hasInput ? acertos : '-'}</p>
             </div>
             
             <div className="text-center p-3 bg-background rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">Escore Padrão</p>
               <p className="text-2xl font-bold">
-                {escorePadrao !== null ? escorePadrao : '-'}
+                {escorePadrao !== null ? escorePadrao : (hasInput ? 'N/D' : '-')}
               </p>
               <p className="text-xs text-muted-foreground">
                 (M=100, DP=15)
               </p>
+              {hasInput && escorePadrao === null && (
+                <p className="text-[10px] text-destructive mt-1">
+                  Sem norma para esta idade/escore
+                </p>
+              )}
             </div>
             
             <div className="text-center p-3 bg-background rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">Classificação</p>
-              <Badge 
-                variant="outline" 
-                className={`text-sm ${getTINClassificationColor(classification)}`}
-              >
-                {classification}
-              </Badge>
+              {escorePadrao !== null ? (
+                <Badge 
+                  variant="outline" 
+                  className={`text-sm ${getTINClassificationColor(classification)}`}
+                >
+                  {classification}
+                </Badge>
+              ) : (
+                <p className="text-sm text-muted-foreground">{hasInput ? 'N/D' : '-'}</p>
+              )}
             </div>
 
             <div className="text-center p-3 bg-background rounded-lg border border-primary/30">
               <p className="text-xs text-muted-foreground mb-1">Percentil</p>
               <p className="text-2xl font-bold text-primary">
-                {escorePadrao !== null ? epToPercentile(escorePadrao) : '-'}
+                {escorePadrao !== null ? epToPercentile(escorePadrao) : (hasInput ? 'N/D' : '-')}
               </p>
               {escorePadrao !== null && (
                 <p className="text-[10px] text-muted-foreground mt-1 font-mono">
