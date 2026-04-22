@@ -107,10 +107,37 @@ export const lookupFPTInfantilPercentile = (rawScore: number, schoolYear: School
     }
   }
   
-  // Se ainda não encontrou, verificar se é maior que o máximo
+  // Se ainda não encontrou, buscar o mais próximo superior
+  if (percentile === null) {
+    const allScores = Object.keys(FPT_INFANTIL_PERCENTILES).map(Number).sort((a, b) => a - b);
+    for (const score of allScores) {
+      if (score > rawScore && FPT_INFANTIL_PERCENTILES[score]?.[schoolYear] !== undefined) {
+        percentile = FPT_INFANTIL_PERCENTILES[score][schoolYear]!;
+        break;
+      }
+    }
+  }
+  
+  // Se ainda não encontrou e score > máximo, retornar 99
   if (percentile === null && rawScore > 40) {
-    // Para scores muito altos, retornar 99
     return 99;
+  }
+  
+  // Último fallback: buscar percentil de qualquer ano escolar adjacente
+  if (percentile === null) {
+    const schoolYears: SchoolYear[] = ['8-9', '10-11', '12-13', '14-15'];
+    const currentIdx = schoolYears.indexOf(schoolYear);
+    const adjacent = [currentIdx - 1, currentIdx + 1].filter(i => i >= 0 && i < schoolYears.length);
+    for (const adjIdx of adjacent) {
+      const adjYear = schoolYears[adjIdx];
+      for (let score = rawScore; score >= 5; score--) {
+        if (FPT_INFANTIL_PERCENTILES[score]?.[adjYear] !== undefined) {
+          percentile = FPT_INFANTIL_PERCENTILES[score][adjYear]!;
+          break;
+        }
+      }
+      if (percentile !== null) break;
+    }
   }
   
   return percentile;
