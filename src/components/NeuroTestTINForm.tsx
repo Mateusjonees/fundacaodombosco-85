@@ -155,6 +155,16 @@ export default function NeuroTestTINForm({
               <p className="text-xs text-muted-foreground">
                 (M=100, DP=15)
               </p>
+              {hasInput && lookupMethod && lookupMethod !== 'exact' && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                  ≈ {lookupMethod === 'interpolated' ? 'Interpolado' : lookupMethod === 'nearest_age' ? 'Idade próxima' : 'Extrapolado'}
+                </p>
+              )}
+              {hasInput && lookupDetail && lookupMethod !== 'exact' && (
+                <p className="text-[9px] text-muted-foreground mt-0.5 font-mono">
+                  {lookupDetail}
+                </p>
+              )}
               {hasInput && escorePadrao === null && (
                 <div className="text-[10px] text-destructive mt-1 space-y-0.5">
                   <p>Sem norma para esta combinação</p>
