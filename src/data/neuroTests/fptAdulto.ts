@@ -126,9 +126,37 @@ export const lookupFPTAdultoPercentile = (rawScore: number, ageGroup: FPTAdultoA
     }
   }
   
-  // Se ainda não encontrou, verificar se é maior que o máximo
+  // Se ainda não encontrou, buscar o mais próximo superior
+  if (percentile === null) {
+    const allScores = Object.keys(FPT_ADULTO_PERCENTILES).map(Number).sort((a, b) => a - b);
+    for (const score of allScores) {
+      if (score > rawScore && FPT_ADULTO_PERCENTILES[score]?.[ageGroup] !== undefined) {
+        percentile = FPT_ADULTO_PERCENTILES[score][ageGroup]!;
+        break;
+      }
+    }
+  }
+  
+  // Se ainda não encontrou e score > máximo, retornar 99
   if (percentile === null && rawScore > 52) {
     return 99;
+  }
+  
+  // Último fallback: buscar percentil de faixa etária adjacente
+  if (percentile === null) {
+    const ageGroups: FPTAdultoAgeGroup[] = ['20-29', '30-39', '40-49', '50-59', '60-69', '70+'];
+    const currentIdx = ageGroups.indexOf(ageGroup);
+    const adjacent = [currentIdx - 1, currentIdx + 1].filter(i => i >= 0 && i < ageGroups.length);
+    for (const adjIdx of adjacent) {
+      const adjGroup = ageGroups[adjIdx];
+      for (let score = rawScore; score >= 12; score--) {
+        if (FPT_ADULTO_PERCENTILES[score]?.[adjGroup] !== undefined) {
+          percentile = FPT_ADULTO_PERCENTILES[score][adjGroup]!;
+          break;
+        }
+      }
+      if (percentile !== null) break;
+    }
   }
   
   return percentile;

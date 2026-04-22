@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, AlertCircle } from 'lucide-react';
+import { Brain, Info, AlertCircle } from 'lucide-react';
 import {
   FPT_INFANTIL_TEST,
   SCHOOL_YEAR_OPTIONS,
@@ -31,7 +31,6 @@ export default function NeuroTestFPTInfantilForm({
 
   const isValidAge = isAgeValidForFPTInfantil(patientAge);
 
-  // Recalcular resultados quando os valores mudarem
   useEffect(() => {
     if (!schoolYear || rawScore === '') {
       setResults(null);
@@ -69,10 +68,10 @@ export default function NeuroTestFPTInfantilForm({
 
   if (!isValidAge) {
     return (
-      <Card className="border-amber-200 bg-amber-50/50">
+      <Card className="border-destructive/30 bg-destructive/5">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <AlertCircle className="h-5 w-5 text-destructive" />
             {FPT_INFANTIL_TEST.name}
           </CardTitle>
         </CardHeader>
@@ -90,15 +89,18 @@ export default function NeuroTestFPTInfantilForm({
   }
 
   return (
-    <Card>
+    <Card className="border-primary/20">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">{FPT_INFANTIL_TEST.name}</CardTitle>
-        <p className="text-sm text-muted-foreground">{FPT_INFANTIL_TEST.fullName}</p>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Brain className="h-5 w-5 text-primary" />
+          {FPT_INFANTIL_TEST.name}
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">{FPT_INFANTIL_TEST.fullName}</p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert className="bg-blue-50 border-blue-200">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-700">
+        <Alert className="bg-primary/5 border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-xs">
             <strong>Importante:</strong> Este teste é estratificado por <strong>ano escolar</strong>, 
             não por idade. Selecione o ano escolar correspondente ao paciente.
           </AlertDescription>
@@ -138,10 +140,10 @@ export default function NeuroTestFPTInfantilForm({
           </div>
         </div>
 
-        {/* Tabela de Resultados */}
-        {results && results.percentile !== null && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Resultados Calculados</h4>
+        {/* Tabela de Resultados - sempre mostra quando há results */}
+        {results && (
+          <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold mb-3">Resultados</h4>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -155,7 +157,9 @@ export default function NeuroTestFPTInfantilForm({
                 <TableRow>
                   <TableCell className="font-medium">Desenhos Únicos</TableCell>
                   <TableCell className="text-center">{results.rawScore}</TableCell>
-                  <TableCell className="text-center">{results.percentile}</TableCell>
+                  <TableCell className="text-center">
+                    {results.percentile !== null ? results.percentile : 'N/D'}
+                  </TableCell>
                   <TableCell className="text-center">
                     <Badge variant={getClassificationBadgeVariant(results.classification)}>
                       {results.classification}
@@ -164,18 +168,10 @@ export default function NeuroTestFPTInfantilForm({
                 </TableRow>
               </TableBody>
             </Table>
+            <p className="text-xs text-muted-foreground mt-3">
+              <strong>Ano escolar:</strong> {SCHOOL_YEAR_OPTIONS.find(o => o.value === results.schoolYear)?.label || results.schoolYear}
+            </p>
           </div>
-        )}
-
-        {/* Alerta se percentil não disponível */}
-        {results && results.percentile === null && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Não há normas disponíveis para esta combinação de pontuação ({results.rawScore}) 
-              e ano escolar ({schoolYear}).
-            </AlertDescription>
-          </Alert>
         )}
       </CardContent>
     </Card>

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Brain, AlertCircle, Info } from 'lucide-react';
 import {
   FPT_ADULTO_TEST,
@@ -57,20 +58,19 @@ export default function NeuroTestFPTAdultoForm({
     }
   }, [uniqueDesigns, selectedAgeGroup, onResultsChange]);
 
-  const getClassificationColor = (classification: string): string => {
+  const getClassificationBadgeVariant = (classification: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (classification) {
       case 'Superior':
-        return 'bg-green-500';
       case 'Média Superior':
-        return 'bg-blue-500';
+        return 'default';
       case 'Média':
-        return 'bg-gray-500';
+        return 'secondary';
       case 'Média Inferior':
-        return 'bg-orange-500';
+        return 'outline';
       case 'Inferior':
-        return 'bg-red-500';
+        return 'destructive';
       default:
-        return 'bg-gray-400';
+        return 'secondary';
     }
   };
 
@@ -98,8 +98,8 @@ export default function NeuroTestFPTAdultoForm({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert>
-          <Info className="h-4 w-4" />
+        <Alert className="bg-primary/5 border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
           <AlertDescription className="text-xs">
             O teste utiliza o período de <strong>2 minutos</strong>.
             As normas são estratificadas por faixa etária.
@@ -107,7 +107,6 @@ export default function NeuroTestFPTAdultoForm({
         </Alert>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Seletor de Faixa Etária */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Faixa Etária</Label>
             <Select
@@ -130,7 +129,6 @@ export default function NeuroTestFPTAdultoForm({
             </p>
           </div>
 
-          {/* Desenhos Únicos */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Desenhos Únicos</Label>
             <Input
@@ -152,45 +150,34 @@ export default function NeuroTestFPTAdultoForm({
         {results && (
           <div className="mt-4 p-4 bg-muted/50 rounded-lg">
             <h4 className="text-sm font-semibold mb-3">Resultados</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-2">Medida</th>
-                    <th className="text-center py-2 px-2">Pontuação</th>
-                    <th className="text-center py-2 px-2">Percentil</th>
-                    <th className="text-center py-2 px-2">Classificação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="py-2 px-2 font-medium">Desenhos Únicos</td>
-                    <td className="text-center py-2 px-2">{results.rawScore}</td>
-                    <td className="text-center py-2 px-2">
-                      {results.percentile !== null ? results.percentile : '-'}
-                    </td>
-                    <td className="text-center py-2 px-2">
-                      <Badge className={getClassificationColor(results.classification)}>
-                        {results.classification}
-                      </Badge>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Medida</TableHead>
+                  <TableHead className="text-center">Pontuação</TableHead>
+                  <TableHead className="text-center">Percentil</TableHead>
+                  <TableHead className="text-center">Classificação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="font-medium">Desenhos Únicos</TableCell>
+                  <TableCell className="text-center">{results.rawScore}</TableCell>
+                  <TableCell className="text-center">
+                    {results.percentile !== null ? results.percentile : 'N/D'}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant={getClassificationBadgeVariant(results.classification)}>
+                      {results.classification}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
             <p className="text-xs text-muted-foreground mt-3">
               <strong>Faixa etária:</strong> {results.ageGroup} anos
             </p>
           </div>
-        )}
-
-        {!results && uniqueDesigns && selectedAgeGroup && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              Normas não disponíveis para esta combinação de pontuação e faixa etária.
-            </AlertDescription>
-          </Alert>
         )}
       </CardContent>
     </Card>
