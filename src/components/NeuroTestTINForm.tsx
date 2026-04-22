@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Brain, Calculator, Trash2, AlertCircle } from 'lucide-react';
 import { TIN_TEST, getTINClassification, getTINClassificationColor } from '@/data/neuroTests/tin';
-import { lookupTINStandardScore, getTINAgeGroupName, isAgeValidForTIN } from '@/data/neuroTests/tinStandardScores';
+import { lookupTINStandardScoreWithFallback, getTINAgeGroupName, isAgeValidForTIN } from '@/data/neuroTests/tinStandardScores';
 import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
