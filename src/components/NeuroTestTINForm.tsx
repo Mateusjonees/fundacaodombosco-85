@@ -119,8 +119,9 @@ export default function NeuroTestTINForm({
                 type="number"
                 min={0}
                 max={60}
-                value={acertos}
-                onChange={(e) => setAcertos(Math.min(60, Math.max(0, parseInt(e.target.value) || 0)))}
+                value={acertosStr}
+                onChange={(e) => setAcertosStr(e.target.value)}
+                placeholder="0-60"
                 className="w-32"
               />
             </div>
