@@ -120,8 +120,8 @@ export default function UserManagement() {
     }
   };
 
-  const handleCreateEmployee = async () => {
-    console.log('Iniciando criação de usuário:', newEmployee);
+  const handlePreConfirm = () => {
+    console.log('Validando dados do usuário:', newEmployee);
     
     if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim()) {
       toast({
@@ -149,6 +149,12 @@ export default function UserManagement() {
       });
       return;
     }
+
+    setIsConfirmDialogOpen(true);
+  };
+
+  const handleCreateEmployee = async () => {
+    setIsConfirmDialogOpen(false);
 
     try {
       setLoading(true);
@@ -414,7 +420,7 @@ export default function UserManagement() {
                 Cancelar
               </Button>
               <Button 
-                onClick={handleCreateEmployee} 
+                onClick={handlePreConfirm} 
                 disabled={!newEmployee.name || !newEmployee.email || !newEmployee.password}
               >
                 Criar Usuário
@@ -422,6 +428,42 @@ export default function UserManagement() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Modal de confirmação */}
+        <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar dados do usuário</AlertDialogTitle>
+              <AlertDialogDescription>
+                Revise os dados abaixo antes de confirmar a criação:
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                <span className="font-medium text-muted-foreground">Nome:</span>
+                <span className="font-semibold uppercase">{newEmployee.name}</span>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                <span className="font-medium text-muted-foreground">Cargo:</span>
+                <span>{getRoleLabel(newEmployee.employee_role)}</span>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                <span className="font-medium text-muted-foreground">E-mail:</span>
+                <span className="font-semibold text-primary">{newEmployee.email}</span>
+              </div>
+              {newEmployee.department && (
+                <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                  <span className="font-medium text-muted-foreground">Departamento:</span>
+                  <span>{newEmployee.department}</span>
+                </div>
+              )}
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Voltar e Corrigir</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCreateEmployee}>Confirmar e Criar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         </div>
       </div>
 
