@@ -63,6 +63,7 @@ export default function EmployeesNew() {
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
+    emailConfirm: '',
     cpf: '',
     password: '',
     employee_role: 'staff',
@@ -122,6 +123,15 @@ export default function EmployeesNew() {
         variant: "destructive",
         title: "Campos obrigatórios",
         description: "Nome, email, senha e pelo menos uma unidade são obrigatórios.",
+      });
+      return;
+    }
+
+    if (newEmployee.email.trim().toLowerCase() !== newEmployee.emailConfirm.trim().toLowerCase()) {
+      toast({
+        variant: "destructive",
+        title: "E-mails não conferem",
+        description: "O e-mail e a confirmação de e-mail devem ser iguais. Verifique e tente novamente.",
       });
       return;
     }
@@ -255,6 +265,7 @@ export default function EmployeesNew() {
     setNewEmployee({
       name: '',
       email: '',
+      emailConfirm: '',
       cpf: '',
       password: '',
       employee_role: 'staff',
@@ -427,7 +438,18 @@ export default function EmployeesNew() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
+                  <Label htmlFor="emailConfirm">Confirmar E-mail *</Label>
+                  <Input
+                    id="emailConfirm"
+                    type="email"
+                    value={newEmployee.emailConfirm}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, emailConfirm: e.target.value })}
+                    placeholder="Confirme o email"
+                    className={newEmployee.emailConfirm && newEmployee.email.toLowerCase() !== newEmployee.emailConfirm.toLowerCase() ? 'border-destructive' : ''}
+                  />
+                  {newEmployee.emailConfirm && newEmployee.email.toLowerCase() !== newEmployee.emailConfirm.toLowerCase() && (
+                    <p className="text-xs text-destructive">Os e-mails não conferem</p>
+                  )}
                   <Input
                     id="cpf"
                     value={newEmployee.cpf}
