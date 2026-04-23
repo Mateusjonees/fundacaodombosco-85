@@ -119,8 +119,40 @@ export default function EmployeesNew() {
     }
   };
 
-  const handleCreateEmployee = async () => {
+  // Validação antes de abrir o modal de confirmação
+  const handlePreConfirm = () => {
     if (!newEmployee.name.trim() || !newEmployee.email.trim() || !newEmployee.password.trim() || newEmployee.units.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Campos obrigatórios",
+        description: "Nome, email, senha e pelo menos uma unidade são obrigatórios.",
+      });
+      return;
+    }
+
+    if (newEmployee.email.trim().toLowerCase() !== newEmployee.emailConfirm.trim().toLowerCase()) {
+      toast({
+        variant: "destructive",
+        title: "E-mails não conferem",
+        description: "O e-mail e a confirmação de e-mail devem ser iguais. Verifique e tente novamente.",
+      });
+      return;
+    }
+
+    if (newEmployee.password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Senha inválida",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+      });
+      return;
+    }
+
+    setIsConfirmDialogOpen(true);
+  };
+
+  const handleCreateEmployee = async () => {
+    setIsConfirmDialogOpen(false);
       toast({
         variant: "destructive",
         title: "Campos obrigatórios",
