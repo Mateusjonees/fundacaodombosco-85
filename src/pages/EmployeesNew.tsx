@@ -557,10 +557,58 @@ export default function EmployeesNew() {
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreateEmployee}>Criar Funcionário</Button>
+                <Button onClick={handlePreConfirm}>Criar Funcionário</Button>
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Modal de confirmação de dados */}
+          <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar dados do funcionário</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Revise os dados abaixo antes de confirmar a criação:
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                  <span className="font-medium text-muted-foreground">Nome:</span>
+                  <span className="font-semibold uppercase">{newEmployee.name}</span>
+                </div>
+                <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                  <span className="font-medium text-muted-foreground">Cargo:</span>
+                  <span>{roleNames[newEmployee.employee_role] || newEmployee.employee_role}</span>
+                </div>
+                <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                  <span className="font-medium text-muted-foreground">E-mail:</span>
+                  <span className="font-semibold text-primary">{newEmployee.email}</span>
+                </div>
+                {newEmployee.phone && (
+                  <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                    <span className="font-medium text-muted-foreground">Telefone:</span>
+                    <span>{newEmployee.phone}</span>
+                  </div>
+                )}
+                {newEmployee.cpf && (
+                  <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                    <span className="font-medium text-muted-foreground">CPF:</span>
+                    <span>{newEmployee.cpf}</span>
+                  </div>
+                )}
+                {newEmployee.units.length > 0 && (
+                  <div className="grid grid-cols-[120px_1fr] gap-1 text-sm">
+                    <span className="font-medium text-muted-foreground">Unidades:</span>
+                    <span>{newEmployee.units.map(u => UNITS.find(unit => unit.value === u)?.label || u).join(', ')}</span>
+                  </div>
+                )}
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Voltar e Corrigir</AlertDialogCancel>
+                <AlertDialogAction onClick={handleCreateEmployee}>Confirmar e Criar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
