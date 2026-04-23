@@ -130,6 +130,15 @@ export default function UserManagement() {
       return;
     }
 
+    if (newEmployee.email.trim().toLowerCase() !== newEmployee.emailConfirm.trim().toLowerCase()) {
+      toast({
+        variant: "destructive",
+        title: "E-mails não conferem",
+        description: "O e-mail e a confirmação de e-mail devem ser iguais. Verifique e tente novamente.",
+      });
+      return;
+    }
+
     if (newEmployee.password.length < 6) {
       toast({
         variant: "destructive",
@@ -347,7 +356,18 @@ export default function UserManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Senha Temporária</Label>
+                <Label htmlFor="emailConfirm">Confirmar E-mail</Label>
+                <Input
+                  id="emailConfirm"
+                  type="email"
+                  value={newEmployee.emailConfirm}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, emailConfirm: e.target.value })}
+                  placeholder="Confirme o email"
+                  className={newEmployee.emailConfirm && newEmployee.email.toLowerCase() !== newEmployee.emailConfirm.toLowerCase() ? 'border-destructive' : ''}
+                />
+                {newEmployee.emailConfirm && newEmployee.email.toLowerCase() !== newEmployee.emailConfirm.toLowerCase() && (
+                  <p className="text-xs text-destructive">Os e-mails não conferem</p>
+                )}
                 <Input
                   id="password"
                   type="password"
