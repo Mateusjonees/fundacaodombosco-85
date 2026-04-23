@@ -34,6 +34,7 @@ const EMPLOYEE_ROLES = [
 export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   const [email, setEmail] = useState('');
   const [emailConfirm, setEmailConfirm] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [employeeRole, setEmployeeRole] = useState('staff');
   const [phone, setPhone] = useState('');
