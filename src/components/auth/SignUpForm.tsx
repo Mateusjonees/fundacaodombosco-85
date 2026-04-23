@@ -33,7 +33,7 @@ const EMPLOYEE_ROLES = [
 
 export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [emailConfirm, setEmailConfirm] = useState('');
   const [name, setName] = useState('');
   const [employeeRole, setEmployeeRole] = useState('staff');
   const [phone, setPhone] = useState('');
@@ -43,6 +43,16 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (email.trim().toLowerCase() !== emailConfirm.trim().toLowerCase()) {
+      toast({
+        variant: "destructive",
+        title: "E-mails não conferem",
+        description: "O e-mail e a confirmação de e-mail devem ser iguais.",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -211,7 +221,20 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
               />
             </div>
             <div className="form-group">
-              <Label htmlFor="phone">Telefone</Label>
+              <Label htmlFor="emailConfirm">Confirmar Email</Label>
+              <Input
+                id="emailConfirm"
+                type="email"
+                value={emailConfirm}
+                onChange={(e) => setEmailConfirm(e.target.value)}
+                required
+                disabled={isLoading}
+                placeholder="Confirme seu email"
+                className={emailConfirm && email.toLowerCase() !== emailConfirm.toLowerCase() ? 'border-destructive' : ''}
+              />
+              {emailConfirm && email.toLowerCase() !== emailConfirm.toLowerCase() && (
+                <p className="text-xs text-destructive mt-1">Os e-mails não conferem</p>
+              )}
               <Input
                 id="phone"
                 type="tel"
