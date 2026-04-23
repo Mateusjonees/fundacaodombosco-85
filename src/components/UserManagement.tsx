@@ -215,6 +215,7 @@ export default function UserManagement() {
     setNewEmployee({
       name: '',
       email: '',
+      emailConfirm: '',
       password: '',
       employee_role: 'staff',
       department: ''
