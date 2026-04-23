@@ -1111,12 +1111,6 @@ export default function UserManagement() {
       <CreateEmployeeForm isOpen={isCreateEmployeeDialogOpen} onClose={() => setIsCreateEmployeeDialogOpen(false)} onSuccess={() => {
       loadUsers();
       setIsCreateEmployeeDialogOpen(false);
-    }} prefilledData={{
-      name: 'Elvimar Peixoto',
-      email: 'institucional@fundacaodombosco.org',
-      phone: '31985642292',
-      employee_role: 'director',
-      unit: 'madre'
     }} />
 
       {/* Dialog de Detalhes da Auditoria */}

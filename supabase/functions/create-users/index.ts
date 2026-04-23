@@ -38,13 +38,14 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('employee_role')
+      .select('employee_role, unit, units')
       .eq('user_id', user.id)
       .single();
 
-    if (!profile || profile.employee_role !== 'director') {
+    const allowedRoles = ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'];
+    if (!profile || !allowedRoles.includes(profile.employee_role)) {
       return new Response(
-        JSON.stringify({ error: 'Only directors can create users' }),
+        JSON.stringify({ error: 'Apenas diretores e coordenadores podem criar usuários' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
