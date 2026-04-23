@@ -36,6 +36,7 @@ export default function UserManagement() {
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
+    emailConfirm: '',
     password: '',
     employee_role: 'staff' as any,
     department: ''
