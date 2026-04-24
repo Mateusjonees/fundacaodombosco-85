@@ -1387,14 +1387,7 @@ export default function Reports() {
   };
 
   const clearFilters = () => {
-    setSelectedEmployee('all');
-    setSelectedClient('all');
-    setSelectedUnit('all');
-    setDateFrom('');
-    setDateTo('');
-    setSelectedMonth(format(new Date(), 'yyyy-MM'));
-    setSessionType('all');
-    setSelectedDemand('all');
+    clearAllFilters();
   };
 
   const getTotalSessions = () => attendanceReports.length;
