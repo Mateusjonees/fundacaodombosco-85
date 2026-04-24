@@ -1696,8 +1696,8 @@ export default function Reports() {
                       label: client.name
                     }))
                   ]}
-                  value={selectedClient}
-                  onValueChange={setSelectedClient}
+                  value={draftClient}
+                  onValueChange={setDraftClient}
                   placeholder="Buscar paciente..."
                   searchPlaceholder="Digite o nome do paciente..."
                   emptyMessage="Nenhum paciente encontrado."
