@@ -1769,8 +1769,9 @@ export default function Reports() {
                 <Label className="text-sm font-medium">Mês</Label>
                 <Input
                   type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  value={draftMonth}
+                  onChange={(e) => setDraftMonth(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
                 />
               </div>
 
@@ -1778,8 +1779,9 @@ export default function Reports() {
                 <Label className="text-sm font-medium">Data Inicial</Label>
                 <Input
                   type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  value={draftDateFrom}
+                  onChange={(e) => setDraftDateFrom(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
                 />
               </div>
 
@@ -1787,10 +1789,30 @@ export default function Reports() {
                 <Label className="text-sm font-medium">Data Final</Label>
                 <Input
                   type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  value={draftDateTo}
+                  onChange={(e) => setDraftDateTo(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
                 />
               </div>
+            </div>
+
+            {/* Botões de ação dos filtros */}
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={clearAllFilters}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Limpar
+              </Button>
+              <Button
+                onClick={applyFilters}
+                className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600"
+              >
+                <Search className="h-4 w-4" />
+                Buscar
+              </Button>
             </div>
           </div>
           
