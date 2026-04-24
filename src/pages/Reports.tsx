@@ -1678,8 +1678,8 @@ export default function Reports() {
                       label: employee.name
                     }))
                   ]}
-                  value={selectedEmployee}
-                  onValueChange={setSelectedEmployee}
+                  value={draftEmployee}
+                  onValueChange={setDraftEmployee}
                   placeholder="Buscar funcionário..."
                   searchPlaceholder="Digite o nome do funcionário..."
                   emptyMessage="Nenhum funcionário encontrado."
