@@ -1728,7 +1728,7 @@ export default function Reports() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Tipo de Atendimento</Label>
-                <Select value={sessionType} onValueChange={setSessionType}>
+                <Select value={draftSessionType} onValueChange={setDraftSessionType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
