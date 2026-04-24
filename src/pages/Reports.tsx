@@ -1707,8 +1707,8 @@ export default function Reports() {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Unidade</Label>
                 <Select 
-                  value={selectedUnit} 
-                  onValueChange={setSelectedUnit}
+                  value={draftUnit} 
+                  onValueChange={setDraftUnit}
                   disabled={!!coordinatorUnit}
                 >
                   <SelectTrigger>
