@@ -47,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Buscar agendamento pelo token
     const { data: schedule, error: fetchError } = await supabase
       .from("schedules")
-      .select("id, client_id, patient_confirmed, patient_declined, start_time, unit, clients(name)")
+      .select("id, client_id, patient_confirmed, patient_declined, start_time, unit, notes, clients(name)")
       .eq("confirmation_token", token)
       .single();
 
