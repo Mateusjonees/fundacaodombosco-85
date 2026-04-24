@@ -1,41 +1,48 @@
+# Corrigir pacientes aparecendo como "N/A" na agenda
 
+## Diagnóstico (causa raiz)
 
-## Correção: Pacientes vinculados não aparecem para funcionários do Atendimento Floresta
+Verifiquei direto no banco: o agendamento das 08:00 com a profissional **Carmen Cenira** está vinculado ao paciente **Miguel Avelino Atanázio Pinheiro** (e o das 15:30 ao **Taylor Peterson Honorato**). Os dados existem corretamente — o problema é de **permissão de leitura**.
 
-### Problemas Identificados
+A política de RLS da tabela `clients` só deixa um profissional ler o registro do paciente quando existe um vínculo ativo em `client_assignments` (profissional ↔ paciente). Como esse vínculo está ausente, o JOIN do hook `useSchedules` retorna `clients = null` e o `ScheduleCard` cai no fallback `'N/A'`.
 
-Após análise detalhada do banco de dados, RLS e código frontend, encontrei **três problemas concretos** que afetam a unidade Atendimento Floresta:
+Existe um trigger (`trigger_auto_assign_client` → `auto_assign_client_on_schedule`) que cria o vínculo automaticamente ao agendar, e ele está **ativo**. O problema é histórico: **1.630 agendamentos** foram criados antes do trigger / por fluxos que não dispararam o trigger e ficaram sem vínculo. Profissionais mais afetados:
 
-#### 1. RLS de `client_assignments` exclui `coordinator_atendimento_floresta`
-A política "Coordinators can manage assignments" só inclui `coordinator_madre`, `coordinator_floresta` e `director`. O cargo `coordinator_atendimento_floresta` está **ausente**, impedindo coordenadores desta unidade de visualizar e gerenciar vinculações de pacientes a profissionais.
+- Marina Adriana Xavier — 407 agendamentos sem vínculo
+- Patrícia Gomes Soares Alves — 332
+- Cristiane Aparecida Kosiniuk — 228
+- Tatiana Souto da Silveira — 150
+- Renata Lorena Barbosa Braga — 136
+- Carmen Cenira (do print) — 78
+- ... e outros
 
-#### 2. `isCoordinatorOrDirector()` em Clients.tsx exclui `coordinator_atendimento_floresta`
-A função auxiliar na página de Pacientes (linha 143-145) só reconhece `director`, `coordinator_madre` e `coordinator_floresta`. Isso esconde a aba "Gerenciar Vinculações", filtros de profissional, e ações de edição/relatório para coordenadores de Atendimento Floresta.
+## O que vou fazer
 
-#### 3. Falta de tratamento de erro visível para profissionais
-Se a query de `client_assignments` falhar silenciosamente, o sistema cai no fallback offline que não aplica filtro de `employeeId`, potencialmente retornando lista vazia (cache offline vazio para profissionais).
+**1. Migration de backfill (única ação necessária)**
 
-### Dados Verificados no Banco
-- Fernanda (speech_therapist): **18 vinculações ativas** existem na tabela `client_assignments`
-- Cynthia, Maria Carolina, Thais: também possuem vinculações ativas
-- Todos os clientes vinculados estão ativos e na unidade `atendimento_floresta`
-- As políticas RLS de `clients` e `schedules` já incluem `coordinator_atendimento_floresta`
+Criar uma migration que percorre `schedules` e insere em `client_assignments` todos os pares `(client_id, employee_id)` que ainda não têm vínculo ativo:
 
-### Correções Planejadas
+```sql
+INSERT INTO public.client_assignments (client_id, employee_id, assigned_by, assigned_at, is_active)
+SELECT DISTINCT s.client_id, s.employee_id, COALESCE(s.created_by, s.employee_id), now(), true
+FROM public.schedules s
+WHERE s.client_id IS NOT NULL
+  AND s.employee_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.client_assignments ca
+    WHERE ca.client_id = s.client_id
+      AND ca.employee_id = s.employee_id
+      AND ca.is_active = true
+  );
+```
 
-#### 1. Migration: Atualizar RLS de `client_assignments`
-- Recriar a política "Coordinators can manage assignments" incluindo `coordinator_atendimento_floresta` na lista de roles permitidos
+Resultado esperado: ~1.630 vínculos criados, e todos os cards "N/A" voltam a exibir o nome do paciente imediatamente após o refresh.
 
-#### 2. Clients.tsx: Incluir `coordinator_atendimento_floresta`
-- Atualizar `isCoordinatorOrDirector()` (linha 143-145) para incluir `coordinator_atendimento_floresta`
-- Garantir que coordenadores de Atendimento Floresta tenham acesso completo às funcionalidades de gestão
+**2. Não preciso mexer em código frontend** — o `useSchedules` e o `ScheduleCard` já estão corretos. O trigger também já está no lugar para novos agendamentos, então o problema não volta a acontecer.
 
-#### 3. useClients.ts: Melhorar fallback offline para profissionais
-- Adicionar filtro `employeeId` no fallback offline (linhas 96-115) para que profissionais não vejam dados incorretos quando offline
-- Adicionar `console.error` mais descritivo quando a query falha para facilitar debug futuro
+## Detalhes técnicos
 
-### Arquivos Alterados
-- **Migration SQL**: atualizar RLS policy em `client_assignments`
-- `src/pages/Clients.tsx`: incluir `coordinator_atendimento_floresta` em `isCoordinatorOrDirector()`
-- `src/hooks/useClients.ts`: melhorar fallback offline com filtro de employeeId
-
+- A migration é idempotente (`NOT EXISTS`), pode rodar múltiplas vezes sem duplicar.
+- `assigned_by` recebe `created_by` do schedule quando disponível, senão o próprio `employee_id` (necessário porque o campo é `NOT NULL`).
+- Não altero o trigger existente nem políticas de RLS — o modelo de segurança continua igual.
+- Após a migration, o cache do React Query do usuário é invalidado naturalmente no próximo fetch (basta recarregar a agenda).
