@@ -459,21 +459,29 @@ export default function Reports() {
 
   const loadEmployees = async () => {
     try {
-      let query = supabase
+      // Carregar TODOS os funcionários (sem filtro por unidade)
+      // pois muitos profissionais atendem múltiplas unidades ou não têm
+      // unidade fixa definida (ex.: psiquiatras, neuropediatras).
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .not('employee_role', 'is', null)
         .order('name');
 
-      // Filtrar por unidade se selecionado
-      if (selectedUnit !== 'all') {
-        query = query.eq('unit', selectedUnit);
-      }
-
-      const { data, error } = await query;
-
       if (error) throw error;
-      setEmployees(data || []);
+
+      // Se uma unidade foi selecionada, mantemos quem possui aquela unidade
+      // OU quem tem unidade não definida (atende todas as unidades).
+      let filtered = data || [];
+      if (selectedUnit !== 'all') {
+        filtered = filtered.filter((p: any) => {
+          const matchUnit = p.unit === selectedUnit;
+          const matchUnits = Array.isArray(p.units) && p.units.includes(selectedUnit);
+          const noUnit = !p.unit && (!p.units || p.units.length === 0);
+          return matchUnit || matchUnits || noUnit;
+        });
+      }
+      setEmployees(filtered);
     } catch (error) {
       console.error('Error loading employees:', error);
       setEmployees([]);
