@@ -60,16 +60,59 @@ export default function Reports() {
   const [allLaudos, setAllLaudos] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  // Draft filters (o que o usuário está editando)
+  const [draftEmployee, setDraftEmployee] = useState<string>('all');
+  const [draftClient, setDraftClient] = useState<string>('all');
+  const [draftUnit, setDraftUnit] = useState<string>('all');
+  const [draftDateFrom, setDraftDateFrom] = useState<string>('');
+  const [draftDateTo, setDraftDateTo] = useState<string>('');
+  const [draftMonth, setDraftMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [draftSessionType, setDraftSessionType] = useState<string>('all');
+  const [draftDemand, setDraftDemand] = useState<string>('all');
+
+  // Filtros aplicados (usados nas queries) — atualizados ao clicar em "Buscar"
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [selectedClient, setSelectedClient] = useState<string>('all');
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
-  const debouncedDateFrom = useDebouncedValue(dateFrom, 800);
-  const debouncedDateTo = useDebouncedValue(dateTo, 800);
+  const debouncedDateFrom = dateFrom;
+  const debouncedDateTo = dateTo;
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
   const [selectedDemand, setSelectedDemand] = useState<string>('all');
+
+  const applyFilters = () => {
+    setSelectedEmployee(draftEmployee);
+    setSelectedClient(draftClient);
+    setSelectedUnit(draftUnit);
+    setDateFrom(draftDateFrom);
+    setDateTo(draftDateTo);
+    setSelectedMonth(draftMonth);
+    setSessionType(draftSessionType);
+    setSelectedDemand(draftDemand);
+  };
+
+  const clearAllFilters = () => {
+    const defaultMonth = format(new Date(), 'yyyy-MM');
+    const baseUnit = coordinatorUnit || 'all';
+    setDraftEmployee('all');
+    setDraftClient('all');
+    setDraftUnit(baseUnit);
+    setDraftDateFrom('');
+    setDraftDateTo('');
+    setDraftMonth(defaultMonth);
+    setDraftSessionType('all');
+    setDraftDemand('all');
+    setSelectedEmployee('all');
+    setSelectedClient('all');
+    setSelectedUnit(baseUnit);
+    setDateFrom('');
+    setDateTo('');
+    setSelectedMonth(defaultMonth);
+    setSessionType('all');
+    setSelectedDemand('all');
+  };
   const [loading, setLoading] = useState(true);
   const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
