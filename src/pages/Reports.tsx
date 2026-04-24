@@ -60,16 +60,59 @@ export default function Reports() {
   const [allLaudos, setAllLaudos] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  // Draft filters (o que o usuário está editando)
+  const [draftEmployee, setDraftEmployee] = useState<string>('all');
+  const [draftClient, setDraftClient] = useState<string>('all');
+  const [draftUnit, setDraftUnit] = useState<string>('all');
+  const [draftDateFrom, setDraftDateFrom] = useState<string>('');
+  const [draftDateTo, setDraftDateTo] = useState<string>('');
+  const [draftMonth, setDraftMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [draftSessionType, setDraftSessionType] = useState<string>('all');
+  const [draftDemand, setDraftDemand] = useState<string>('all');
+
+  // Filtros aplicados (usados nas queries) — atualizados ao clicar em "Buscar"
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [selectedClient, setSelectedClient] = useState<string>('all');
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
-  const debouncedDateFrom = useDebouncedValue(dateFrom, 800);
-  const debouncedDateTo = useDebouncedValue(dateTo, 800);
+  const debouncedDateFrom = dateFrom;
+  const debouncedDateTo = dateTo;
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
   const [selectedDemand, setSelectedDemand] = useState<string>('all');
+
+  const applyFilters = () => {
+    setSelectedEmployee(draftEmployee);
+    setSelectedClient(draftClient);
+    setSelectedUnit(draftUnit);
+    setDateFrom(draftDateFrom);
+    setDateTo(draftDateTo);
+    setSelectedMonth(draftMonth);
+    setSessionType(draftSessionType);
+    setSelectedDemand(draftDemand);
+  };
+
+  const clearAllFilters = () => {
+    const defaultMonth = format(new Date(), 'yyyy-MM');
+    const baseUnit = coordinatorUnit || 'all';
+    setDraftEmployee('all');
+    setDraftClient('all');
+    setDraftUnit(baseUnit);
+    setDraftDateFrom('');
+    setDraftDateTo('');
+    setDraftMonth(defaultMonth);
+    setDraftSessionType('all');
+    setDraftDemand('all');
+    setSelectedEmployee('all');
+    setSelectedClient('all');
+    setSelectedUnit(baseUnit);
+    setDateFrom('');
+    setDateTo('');
+    setSelectedMonth(defaultMonth);
+    setSessionType('all');
+    setSelectedDemand('all');
+  };
   const [loading, setLoading] = useState(true);
   const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
@@ -127,6 +170,7 @@ export default function Reports() {
 
     if (coordinatorUnit && selectedUnit === 'all') {
       setSelectedUnit(coordinatorUnit);
+      setDraftUnit(coordinatorUnit);
     }
 
     const loadData = async () => {
@@ -415,21 +459,29 @@ export default function Reports() {
 
   const loadEmployees = async () => {
     try {
-      let query = supabase
+      // Carregar TODOS os funcionários (sem filtro por unidade)
+      // pois muitos profissionais atendem múltiplas unidades ou não têm
+      // unidade fixa definida (ex.: psiquiatras, neuropediatras).
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .not('employee_role', 'is', null)
         .order('name');
 
-      // Filtrar por unidade se selecionado
-      if (selectedUnit !== 'all') {
-        query = query.eq('unit', selectedUnit);
-      }
-
-      const { data, error } = await query;
-
       if (error) throw error;
-      setEmployees(data || []);
+
+      // Se uma unidade foi selecionada, mantemos quem possui aquela unidade
+      // OU quem tem unidade não definida (atende todas as unidades).
+      let filtered = data || [];
+      if (selectedUnit !== 'all') {
+        filtered = filtered.filter((p: any) => {
+          const matchUnit = p.unit === selectedUnit;
+          const matchUnits = Array.isArray(p.units) && p.units.includes(selectedUnit);
+          const noUnit = !p.unit && (!p.units || p.units.length === 0);
+          return matchUnit || matchUnits || noUnit;
+        });
+      }
+      setEmployees(filtered);
     } catch (error) {
       console.error('Error loading employees:', error);
       setEmployees([]);
@@ -1335,14 +1387,7 @@ export default function Reports() {
   };
 
   const clearFilters = () => {
-    setSelectedEmployee('all');
-    setSelectedClient('all');
-    setSelectedUnit('all');
-    setDateFrom('');
-    setDateTo('');
-    setSelectedMonth(format(new Date(), 'yyyy-MM'));
-    setSessionType('all');
-    setSelectedDemand('all');
+    clearAllFilters();
   };
 
   const getTotalSessions = () => attendanceReports.length;
@@ -1626,8 +1671,8 @@ export default function Reports() {
                       label: employee.name
                     }))
                   ]}
-                  value={selectedEmployee}
-                  onValueChange={setSelectedEmployee}
+                  value={draftEmployee}
+                  onValueChange={setDraftEmployee}
                   placeholder="Buscar funcionário..."
                   searchPlaceholder="Digite o nome do funcionário..."
                   emptyMessage="Nenhum funcionário encontrado."
@@ -1644,8 +1689,8 @@ export default function Reports() {
                       label: client.name
                     }))
                   ]}
-                  value={selectedClient}
-                  onValueChange={setSelectedClient}
+                  value={draftClient}
+                  onValueChange={setDraftClient}
                   placeholder="Buscar paciente..."
                   searchPlaceholder="Digite o nome do paciente..."
                   emptyMessage="Nenhum paciente encontrado."
@@ -1655,8 +1700,8 @@ export default function Reports() {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Unidade</Label>
                 <Select 
-                  value={selectedUnit} 
-                  onValueChange={setSelectedUnit}
+                  value={draftUnit} 
+                  onValueChange={setDraftUnit}
                   disabled={!!coordinatorUnit}
                 >
                   <SelectTrigger>
@@ -1676,7 +1721,7 @@ export default function Reports() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Tipo de Atendimento</Label>
-                <Select value={sessionType} onValueChange={setSessionType}>
+                <Select value={draftSessionType} onValueChange={setDraftSessionType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
@@ -1700,7 +1745,7 @@ export default function Reports() {
                   Demanda
                   <span className="text-xs text-muted-foreground font-normal">(só Atend. Floresta)</span>
                 </Label>
-                <Select value={selectedDemand} onValueChange={setSelectedDemand}>
+                <Select value={draftDemand} onValueChange={setDraftDemand}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
@@ -1717,8 +1762,9 @@ export default function Reports() {
                 <Label className="text-sm font-medium">Mês</Label>
                 <Input
                   type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  value={draftMonth}
+                  onChange={(e) => setDraftMonth(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
                 />
               </div>
 
@@ -1726,8 +1772,9 @@ export default function Reports() {
                 <Label className="text-sm font-medium">Data Inicial</Label>
                 <Input
                   type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  value={draftDateFrom}
+                  onChange={(e) => setDraftDateFrom(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
                 />
               </div>
 
@@ -1735,10 +1782,30 @@ export default function Reports() {
                 <Label className="text-sm font-medium">Data Final</Label>
                 <Input
                   type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  value={draftDateTo}
+                  onChange={(e) => setDraftDateTo(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
                 />
               </div>
+            </div>
+
+            {/* Botões de ação dos filtros */}
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={clearAllFilters}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Limpar
+              </Button>
+              <Button
+                onClick={applyFilters}
+                className="gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600"
+              >
+                <Search className="h-4 w-4" />
+                Buscar
+              </Button>
             </div>
           </div>
           
