@@ -1752,7 +1752,7 @@ export default function Reports() {
                   Demanda
                   <span className="text-xs text-muted-foreground font-normal">(só Atend. Floresta)</span>
                 </Label>
-                <Select value={selectedDemand} onValueChange={setSelectedDemand}>
+                <Select value={draftDemand} onValueChange={setDraftDemand}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
