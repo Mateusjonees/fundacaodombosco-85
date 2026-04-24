@@ -170,6 +170,7 @@ export default function Reports() {
 
     if (coordinatorUnit && selectedUnit === 'all') {
       setSelectedUnit(coordinatorUnit);
+      setDraftUnit(coordinatorUnit);
     }
 
     const loadData = async () => {
