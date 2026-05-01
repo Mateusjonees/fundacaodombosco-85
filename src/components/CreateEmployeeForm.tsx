@@ -73,17 +73,16 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
   useEffect(() => {
     if (isOpen) {
       loadJobPositions();
-      if (prefilledData) {
-        setFormData({
-          name: prefilledData.name || '',
-          email: prefilledData.email || '',
-          employee_role: (prefilledData.employee_role || 'staff') as EmployeeRole,
-          phone: prefilledData.phone || '',
-          department: '',
-          unit: prefilledData.unit || '',
-          job_position_id: ''
-        });
-      }
+      // Sempre resetar o formulário ao abrir, aplicando prefilledData se houver
+      setFormData({
+        name: prefilledData?.name || '',
+        email: prefilledData?.email || '',
+        employee_role: (prefilledData?.employee_role || 'staff') as EmployeeRole,
+        phone: prefilledData?.phone || '',
+        department: '',
+        unit: prefilledData?.unit || '',
+        job_position_id: ''
+      });
     }
   }, [isOpen, prefilledData]);
 
@@ -264,28 +263,40 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
             </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+            {/* Inputs ocultos para "absorver" o autofill do navegador */}
+            <input type="text" name="username" autoComplete="username" style={{ display: 'none' }} />
+            <input type="password" name="password" autoComplete="current-password" style={{ display: 'none' }} />
+
             <div className="space-y-2">
               <RequiredLabel htmlFor="name" required>Nome Completo</RequiredLabel>
               <Input
-                id="name"
+                id="emp-name-field"
+                name={`emp-name-${Date.now()}`}
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Digite o nome completo"
                 required
+                autoComplete="off"
+                data-lpignore="true"
+                data-form-type="other"
               />
             </div>
 
             <div className="space-y-2">
               <RequiredLabel htmlFor="email" required>Email</RequiredLabel>
               <Input
-                id="email"
+                id="emp-email-field"
+                name={`emp-email-${Date.now()}`}
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="email@exemplo.com"
                 required
+                autoComplete="off"
+                data-lpignore="true"
+                data-form-type="other"
               />
             </div>
 
@@ -329,11 +340,15 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
               <Input
-                id="phone"
+                id="emp-phone-field"
+                name={`emp-phone-${Date.now()}`}
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="(11) 99999-9999"
+                autoComplete="off"
+                data-lpignore="true"
+                data-form-type="other"
               />
             </div>
 

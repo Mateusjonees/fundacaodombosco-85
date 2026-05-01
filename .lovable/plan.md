@@ -1,48 +1,34 @@
-# Corrigir pacientes aparecendo como "N/A" na agenda
+# Plano: Novo botão "Criar Usuário" + corrigir autocomplete
 
-## Diagnóstico (causa raiz)
+## Diagnóstico
 
-Verifiquei direto no banco: o agendamento das 08:00 com a profissional **Carmen Cenira** está vinculado ao paciente **Miguel Avelino Atanázio Pinheiro** (e o das 15:30 ao **Taylor Peterson Honorato**). Os dados existem corretamente — o problema é de **permissão de leitura**.
+**Sobre os "dados do Elvimar" aparecendo:**
+O componente `CreateEmployeeForm` inicia o `formData` sempre vazio (`name: ''`, `email: ''`, etc.). O preenchimento automático que você vê **não vem do código** — é o **autocomplete do navegador (Chrome/Edge)**, que reconhece os campos `<Input type="email">` e nome e sugere o último cadastro feito (Elvimar). Solução: adicionar atributos `autoComplete="off"`, `name` único e `autoComplete="new-password"` em campos sensíveis, além de limpar o `formData` ao abrir.
 
-A política de RLS da tabela `clients` só deixa um profissional ler o registro do paciente quando existe um vínculo ativo em `client_assignments` (profissional ↔ paciente). Como esse vínculo está ausente, o JOIN do hook `useSchedules` retorna `clients = null` e o `ScheduleCard` cai no fallback `'N/A'`.
+**Sobre o botão atual:**
+Em `src/pages/UserManagement.tsx` (linhas 510-515) há somente o botão **"Criar Diretor"** (com ícone Crown), que abre o `CreateEmployeeForm`. O usuário quer **manter este** e adicionar um segundo botão **"Criar Usuário"** ao lado.
 
-Existe um trigger (`trigger_auto_assign_client` → `auto_assign_client_on_schedule`) que cria o vínculo automaticamente ao agendar, e ele está **ativo**. O problema é histórico: **1.630 agendamentos** foram criados antes do trigger / por fluxos que não dispararam o trigger e ficaram sem vínculo. Profissionais mais afetados:
+## Mudanças
 
-- Marina Adriana Xavier — 407 agendamentos sem vínculo
-- Patrícia Gomes Soares Alves — 332
-- Cristiane Aparecida Kosiniuk — 228
-- Tatiana Souto da Silveira — 150
-- Renata Lorena Barbosa Braga — 136
-- Carmen Cenira (do print) — 78
-- ... e outros
+### 1. `src/pages/UserManagement.tsx` (cabeçalho da página, ~linha 508-515)
+Adicionar segundo botão **"Criar Usuário"** ao lado do "Criar Diretor". Ambos abrem o mesmo `CreateEmployeeForm`, mas o novo botão passa `prefilledData` com `employee_role: 'staff'` (função padrão de usuário comum), enquanto "Criar Diretor" passa `employee_role: 'director'`.
 
-## O que vou fazer
-
-**1. Migration de backfill (única ação necessária)**
-
-Criar uma migration que percorre `schedules` e insere em `client_assignments` todos os pares `(client_id, employee_id)` que ainda não têm vínculo ativo:
-
-```sql
-INSERT INTO public.client_assignments (client_id, employee_id, assigned_by, assigned_at, is_active)
-SELECT DISTINCT s.client_id, s.employee_id, COALESCE(s.created_by, s.employee_id), now(), true
-FROM public.schedules s
-WHERE s.client_id IS NOT NULL
-  AND s.employee_id IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM public.client_assignments ca
-    WHERE ca.client_id = s.client_id
-      AND ca.employee_id = s.employee_id
-      AND ca.is_active = true
-  );
+```text
+[Criar Diretor] [Criar Usuário] [Novo Cargo]
+   (Crown)        (UserPlus)      (Briefcase)
 ```
 
-Resultado esperado: ~1.630 vínculos criados, e todos os cards "N/A" voltam a exibir o nome do paciente imediatamente após o refresh.
+Também passar a `prefilledData` para o `CreateEmployeeForm` na linha 1111 baseado em qual botão foi clicado (novo state `createMode: 'director' | 'user' | null`).
 
-**2. Não preciso mexer em código frontend** — o `useSchedules` e o `ScheduleCard` já estão corretos. O trigger também já está no lugar para novos agendamentos, então o problema não volta a acontecer.
+### 2. `src/components/CreateEmployeeForm.tsx`
+- **Resetar formData ao abrir o dialog** mesmo quando não há `prefilledData` (atualmente o `useEffect` só reseta se `prefilledData` existir — daí o navegador "cola" valores antigos por cima).
+- Adicionar `autoComplete="off"` no `<form>` e `autoComplete="new-password"` / `autoComplete="off"` nos inputs de nome, email, telefone para **bloquear o autopreenchimento do navegador**.
+- Adicionar atributos `name` aleatórios (ex.: `name="emp-email-${Date.now()}"`) ou `data-lpignore="true"` para também bloquear gerenciadores de senha (LastPass, 1Password).
 
-## Detalhes técnicos
+## Resultado esperado
 
-- A migration é idempotente (`NOT EXISTS`), pode rodar múltiplas vezes sem duplicar.
-- `assigned_by` recebe `created_by` do schedule quando disponível, senão o próprio `employee_id` (necessário porque o campo é `NOT NULL`).
-- Não altero o trigger existente nem políticas de RLS — o modelo de segurança continua igual.
-- Após a migration, o cache do React Query do usuário é invalidado naturalmente no próximo fetch (basta recarregar a agenda).
+- Dois botões no topo de **Gerenciar Usuários**: "Criar Diretor" (existente) e "Criar Usuário" (novo).
+- O formulário abre **sempre limpo**, sem dados do Elvimar nem de cadastros anteriores.
+- O navegador para de sugerir/auto-preencher os campos.
+
+Sem mudanças no backend, edge functions ou banco. Apenas frontend.
