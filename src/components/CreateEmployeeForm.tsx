@@ -58,6 +58,9 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
     name: string;
     email: string;
     tempPassword: string;
+    cpf?: string;
+    unit?: string;
+    role?: string;
   } | null>(null);
   
   const [formData, setFormData] = useState({
@@ -216,11 +219,24 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
           console.warn('Could not log action:', logError);
         }
 
+        // Mapear unidade e cargo para labels legíveis
+        const UNIT_LABELS: Record<string, string> = {
+          madre: 'MADRE (Clínica Social)',
+          floresta: 'Floresta (Neuroavaliação)',
+          atendimento_floresta: 'Atendimento Floresta',
+        };
+        const roleLabel = (ROLE_LABELS as Record<string, string>)[formData.employee_role] || formData.employee_role;
+        const jobPositionName = formData.job_position_id
+          ? jobPositions.find(p => p.id === formData.job_position_id)?.name
+          : undefined;
+
         // Guardar dados para o dialog de senha temporária
         setCreatedEmployee({
           name: formData.name,
           email: formData.email,
-          tempPassword
+          tempPassword,
+          unit: UNIT_LABELS[formData.unit] || formData.unit,
+          role: jobPositionName ? `${roleLabel} — ${jobPositionName}` : roleLabel,
         });
         
         // Mostrar dialog com senha temporária
@@ -437,6 +453,9 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
           employeeName={createdEmployee.name}
           employeeEmail={createdEmployee.email}
           tempPassword={createdEmployee.tempPassword}
+          employeeCpf={createdEmployee.cpf}
+          employeeUnit={createdEmployee.unit}
+          employeeRole={createdEmployee.role}
         />
       )}
     </>
