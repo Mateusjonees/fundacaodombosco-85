@@ -85,6 +85,7 @@ export default function UserManagement() {
   const [isPositionDialogOpen, setIsPositionDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
+  const [createMode, setCreateMode] = useState<'director' | 'user' | null>(null);
   const [isAuditDetailsDialogOpen, setIsAuditDetailsDialogOpen] = useState(false);
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
 
@@ -508,10 +509,18 @@ export default function UserManagement() {
         <div className="flex flex-wrap gap-2">
           {canManageUsers}
           {canManageUsers && <Button variant="outline" size="sm" onClick={() => {
+          setCreateMode('director');
           setIsCreateEmployeeDialogOpen(true);
         }}>
               <Crown className="h-4 w-4 mr-2" />
               Criar Diretor
+            </Button>}
+          {canManageUsers && <Button variant="default" size="sm" onClick={() => {
+          setCreateMode('user');
+          setIsCreateEmployeeDialogOpen(true);
+        }}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Criar Usuário
             </Button>}
           {canManageRoles && <Dialog open={isPositionDialogOpen} onOpenChange={setIsPositionDialogOpen}>
               <DialogTrigger asChild>
@@ -1108,10 +1117,12 @@ export default function UserManagement() {
       </Dialog>
 
       {/* Dialog de Criação de Funcionário */}
-      <CreateEmployeeForm isOpen={isCreateEmployeeDialogOpen} onClose={() => setIsCreateEmployeeDialogOpen(false)} onSuccess={() => {
-      loadUsers();
-      setIsCreateEmployeeDialogOpen(false);
-    }} />
+      <CreateEmployeeForm
+        isOpen={isCreateEmployeeDialogOpen}
+        onClose={() => { setIsCreateEmployeeDialogOpen(false); setCreateMode(null); }}
+        onSuccess={() => { loadUsers(); setIsCreateEmployeeDialogOpen(false); setCreateMode(null); }}
+        prefilledData={createMode ? { employee_role: (createMode === 'director' ? 'director' : 'staff') as any } : undefined}
+      />
 
       {/* Dialog de Detalhes da Auditoria */}
       <Dialog open={isAuditDetailsDialogOpen} onOpenChange={setIsAuditDetailsDialogOpen}>
