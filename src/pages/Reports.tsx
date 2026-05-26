@@ -1733,7 +1733,21 @@ export default function Reports() {
             </div>
 
             {/* Segunda linha: Tipo de Atendimento, Demanda e Período */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Status</Label>
+                <Select value={draftValidationStatus} onValueChange={setDraftValidationStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="pending_validation">Pendente</SelectItem>
+                    <SelectItem value="validated">Validado</SelectItem>
+                    <SelectItem value="rejected">Rejeitado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Tipo de Atendimento</Label>
                 <Select value={draftSessionType} onValueChange={setDraftSessionType}>
