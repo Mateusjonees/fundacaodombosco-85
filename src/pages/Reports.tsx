@@ -69,6 +69,7 @@ export default function Reports() {
   const [draftMonth, setDraftMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [draftSessionType, setDraftSessionType] = useState<string>('all');
   const [draftDemand, setDraftDemand] = useState<string>('all');
+  const [draftValidationStatus, setDraftValidationStatus] = useState<string>('all');
 
   // Filtros aplicados (usados nas queries) — atualizados ao clicar em "Buscar"
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
@@ -81,6 +82,13 @@ export default function Reports() {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
   const [selectedDemand, setSelectedDemand] = useState<string>('all');
+  const [selectedValidationStatus, setSelectedValidationStatus] = useState<string>('all');
+
+  // Dialog de edição de atendimento
+  const [editingReport, setEditingReport] = useState<any>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const applyFilters = () => {
     setSelectedEmployee(draftEmployee);
@@ -91,6 +99,7 @@ export default function Reports() {
     setSelectedMonth(draftMonth);
     setSessionType(draftSessionType);
     setSelectedDemand(draftDemand);
+    setSelectedValidationStatus(draftValidationStatus);
   };
 
   const clearAllFilters = () => {
@@ -104,6 +113,7 @@ export default function Reports() {
     setDraftMonth(defaultMonth);
     setDraftSessionType('all');
     setDraftDemand('all');
+    setDraftValidationStatus('all');
     setSelectedEmployee('all');
     setSelectedClient('all');
     setSelectedUnit(baseUnit);
@@ -112,6 +122,7 @@ export default function Reports() {
     setSelectedMonth(defaultMonth);
     setSessionType('all');
     setSelectedDemand('all');
+    setSelectedValidationStatus('all');
   };
   const [loading, setLoading] = useState(true);
   const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
