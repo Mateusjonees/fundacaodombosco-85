@@ -2048,17 +2048,41 @@ export default function Reports() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedReport(report);
-                              setIsDetailDialogOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver Tudo
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedReport(report);
+                                setIsDetailDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                            {(user?.id === report.employee_id || user?.id === report.created_by || isDirector() || coordinatorUnit) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingReport(report);
+                                  setEditForm({
+                                    session_notes: report.session_notes || '',
+                                    techniques_used: report.techniques_used || '',
+                                    patient_response: report.patient_response || '',
+                                    observations: report.observations || '',
+                                    next_session_plan: report.next_session_plan || '',
+                                    amount_charged: report.amount_charged ?? 0,
+                                    session_duration: report.session_duration ?? 0,
+                                  });
+                                  setIsEditOpen(true);
+                                }}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
