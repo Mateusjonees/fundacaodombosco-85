@@ -3415,6 +3415,131 @@ export default function Reports() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de edição de atendimento */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Atendimento</DialogTitle>
+          </DialogHeader>
+          {editingReport && (
+            <div className="space-y-4 py-2">
+              <div className="text-sm text-muted-foreground">
+                {editingReport.clients?.name} — {format(new Date(editingReport.start_time), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Duração (min)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.session_duration}
+                    onChange={(e) => setEditForm({ ...editForm, session_duration: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Valor (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.amount_charged}
+                    onChange={(e) => setEditForm({ ...editForm, amount_charged: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Notas da sessão</Label>
+                <Textarea
+                  rows={3}
+                  value={editForm.session_notes}
+                  onChange={(e) => setEditForm({ ...editForm, session_notes: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Técnicas utilizadas</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.techniques_used}
+                  onChange={(e) => setEditForm({ ...editForm, techniques_used: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Resposta do paciente</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.patient_response}
+                  onChange={(e) => setEditForm({ ...editForm, patient_response: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Observações</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.observations}
+                  onChange={(e) => setEditForm({ ...editForm, observations: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Plano da próxima sessão</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.next_session_plan}
+                  onChange={(e) => setEditForm({ ...editForm, next_session_plan: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={savingEdit}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!editingReport) return;
+                    setSavingEdit(true);
+                    try {
+                      const { error } = await supabase
+                        .from('attendance_reports')
+                        .update({
+                          session_notes: editForm.session_notes,
+                          techniques_used: editForm.techniques_used,
+                          patient_response: editForm.patient_response,
+                          observations: editForm.observations,
+                          next_session_plan: editForm.next_session_plan,
+                          amount_charged: editForm.amount_charged,
+                          session_duration: editForm.session_duration,
+                          updated_at: new Date().toISOString(),
+                        })
+                        .eq('id', editingReport.id);
+                      if (error) throw error;
+                      toast({ title: 'Atendimento atualizado com sucesso.' });
+                      setIsEditOpen(false);
+                      setEditingReport(null);
+                      await loadAttendanceReports();
+                    } catch (err: any) {
+                      console.error('Erro ao atualizar atendimento:', err);
+                      toast({
+                        variant: 'destructive',
+                        title: 'Erro ao salvar',
+                        description: err?.message || 'Não foi possível atualizar o atendimento.',
+                      });
+                    } finally {
+                      setSavingEdit(false);
+                    }
+                  }}
+                  disabled={savingEdit}
+                >
+                  {savingEdit ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
