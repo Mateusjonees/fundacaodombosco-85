@@ -1,34 +1,34 @@
-# Plano: Novo botão "Criar Usuário" + corrigir autocomplete
+## Plano
 
-## Diagnóstico
+### 1. Corrigir filtro de funcionário no relatório
+O `Combobox` atual (`src/components/ui/combobox.tsx`) passa o UUID do funcionário como `value` do `CommandItem`. A biblioteca `cmdk` faz busca pelo `value`, não pelo texto visível — por isso digitar "Lucas" ou "Mariana" não encontra ninguém. Vamos passar o `label` como `value` interno (mantendo o id em paralelo) para que a busca textual funcione. Mesma correção beneficia o filtro de pacientes.
 
-**Sobre os "dados do Elvimar" aparecendo:**
-O componente `CreateEmployeeForm` inicia o `formData` sempre vazio (`name: ''`, `email: ''`, etc.). O preenchimento automático que você vê **não vem do código** — é o **autocomplete do navegador (Chrome/Edge)**, que reconhece os campos `<Input type="email">` e nome e sugere o último cadastro feito (Elvimar). Solução: adicionar atributos `autoComplete="off"`, `name` único e `autoComplete="new-password"` em campos sensíveis, além de limpar o `formData` ao abrir.
+### 2. Relatório de atendimentos
+- Adicionar **filtro de status de validação** (Todos / Pendentes / Validados / Rejeitados) ao lado dos demais filtros em `src/pages/Reports.tsx`.
+- Remover o `limit(100)` rígido e aumentar para 1000 (ou paginar por mês) para não esconder atendimentos antigos.
+- Garantir que a query envie o `validation_status` quando o filtro for diferente de "Todos".
 
-**Sobre o botão atual:**
-Em `src/pages/UserManagement.tsx` (linhas 510-515) há somente o botão **"Criar Diretor"** (com ícone Crown), que abre o `CreateEmployeeForm`. O usuário quer **manter este** e adicionar um segundo botão **"Criar Usuário"** ao lado.
+### 3. Edição de atendimentos pelo profissional
+**RLS:** a política `Staff can update attendance reports` hoje permite update se `created_by = auth.uid() OR completed_by = auth.uid() OR director_has_god_mode()`. Vamos adicionar `employee_id = auth.uid()` para que o profissional dono do atendimento (mesmo que validado) consiga editar.
 
-## Mudanças
+**UI:** na lista de atendimentos do relatório (e onde já existe o detalhamento), exibir botão "Editar" quando o atendimento pertencer ao usuário atual (qualquer profissional) ou quando for diretor/coordenador. Abrir o diálogo de edição já existente em `AttendanceValidation` (ou um novo dialog enxuto) com os campos do atendimento.
 
-### 1. `src/pages/UserManagement.tsx` (cabeçalho da página, ~linha 508-515)
-Adicionar segundo botão **"Criar Usuário"** ao lado do "Criar Diretor". Ambos abrem o mesmo `CreateEmployeeForm`, mas o novo botão passa `prefilledData` com `employee_role: 'staff'` (função padrão de usuário comum), enquanto "Criar Diretor" passa `employee_role: 'director'`.
+### Arquivos a alterar
+- `src/components/ui/combobox.tsx` — busca por label.
+- `src/pages/Reports.tsx` — novo filtro de status, limite ampliado, botão "Editar" por linha.
+- Nova migration: ajustar política UPDATE em `attendance_reports` para incluir `employee_id = auth.uid()`.
 
-```text
-[Criar Diretor] [Criar Usuário] [Novo Cargo]
-   (Crown)        (UserPlus)      (Briefcase)
+### Detalhes técnicos
+- Combobox: usar `value={`${option.label}__${option.value}`}` no `CommandItem` e fazer o `onSelect` extrair o id após o `__`. Mantém compatibilidade com todos os usos do componente.
+- Migration sugerida:
+```sql
+DROP POLICY "Staff can update attendance reports" ON public.attendance_reports;
+CREATE POLICY "Staff can update attendance reports"
+  ON public.attendance_reports FOR UPDATE
+  USING (
+    created_by = auth.uid()
+    OR completed_by = auth.uid()
+    OR employee_id = auth.uid()
+    OR director_has_god_mode()
+  );
 ```
-
-Também passar a `prefilledData` para o `CreateEmployeeForm` na linha 1111 baseado em qual botão foi clicado (novo state `createMode: 'director' | 'user' | null`).
-
-### 2. `src/components/CreateEmployeeForm.tsx`
-- **Resetar formData ao abrir o dialog** mesmo quando não há `prefilledData` (atualmente o `useEffect` só reseta se `prefilledData` existir — daí o navegador "cola" valores antigos por cima).
-- Adicionar `autoComplete="off"` no `<form>` e `autoComplete="new-password"` / `autoComplete="off"` nos inputs de nome, email, telefone para **bloquear o autopreenchimento do navegador**.
-- Adicionar atributos `name` aleatórios (ex.: `name="emp-email-${Date.now()}"`) ou `data-lpignore="true"` para também bloquear gerenciadores de senha (LastPass, 1Password).
-
-## Resultado esperado
-
-- Dois botões no topo de **Gerenciar Usuários**: "Criar Diretor" (existente) e "Criar Usuário" (novo).
-- O formulário abre **sempre limpo**, sem dados do Elvimar nem de cadastros anteriores.
-- O navegador para de sugerir/auto-preencher os campos.
-
-Sem mudanças no backend, edge functions ou banco. Apenas frontend.
