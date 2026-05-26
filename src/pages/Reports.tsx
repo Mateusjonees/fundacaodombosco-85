@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -69,6 +70,7 @@ export default function Reports() {
   const [draftMonth, setDraftMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [draftSessionType, setDraftSessionType] = useState<string>('all');
   const [draftDemand, setDraftDemand] = useState<string>('all');
+  const [draftValidationStatus, setDraftValidationStatus] = useState<string>('all');
 
   // Filtros aplicados (usados nas queries) — atualizados ao clicar em "Buscar"
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
@@ -81,6 +83,13 @@ export default function Reports() {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [sessionType, setSessionType] = useState<string>('all');
   const [selectedDemand, setSelectedDemand] = useState<string>('all');
+  const [selectedValidationStatus, setSelectedValidationStatus] = useState<string>('all');
+
+  // Dialog de edição de atendimento
+  const [editingReport, setEditingReport] = useState<any>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const applyFilters = () => {
     setSelectedEmployee(draftEmployee);
@@ -91,6 +100,7 @@ export default function Reports() {
     setSelectedMonth(draftMonth);
     setSessionType(draftSessionType);
     setSelectedDemand(draftDemand);
+    setSelectedValidationStatus(draftValidationStatus);
   };
 
   const clearAllFilters = () => {
@@ -104,6 +114,7 @@ export default function Reports() {
     setDraftMonth(defaultMonth);
     setDraftSessionType('all');
     setDraftDemand('all');
+    setDraftValidationStatus('all');
     setSelectedEmployee('all');
     setSelectedClient('all');
     setSelectedUnit(baseUnit);
@@ -112,6 +123,7 @@ export default function Reports() {
     setSelectedMonth(defaultMonth);
     setSessionType('all');
     setSelectedDemand('all');
+    setSelectedValidationStatus('all');
   };
   const [loading, setLoading] = useState(true);
   const [isDeleteFinancialDialogOpen, setIsDeleteFinancialDialogOpen] = useState(false);
@@ -191,7 +203,7 @@ export default function Reports() {
     };
 
     loadData();
-  }, [selectedEmployee, selectedClient, selectedUnit, debouncedDateFrom, debouncedDateTo, selectedMonth, sessionType, selectedDemand, roleLoading, userRole, customPermissions.loading]);
+  }, [selectedEmployee, selectedClient, selectedUnit, debouncedDateFrom, debouncedDateTo, selectedMonth, sessionType, selectedDemand, selectedValidationStatus, roleLoading, userRole, customPermissions.loading]);
 
   // Carregar dados complementares do paciente quando um relatório é selecionado
   useEffect(() => {
@@ -388,7 +400,11 @@ export default function Reports() {
         query = query.eq('attendance_type', sessionType);
       }
 
-      const { data, error } = await query.limit(100);
+      if (selectedValidationStatus !== 'all') {
+        query = query.eq('validation_status', selectedValidationStatus);
+      }
+
+      const { data, error } = await query.limit(2000);
 
       if (error) throw error;
       
@@ -1718,7 +1734,21 @@ export default function Reports() {
             </div>
 
             {/* Segunda linha: Tipo de Atendimento, Demanda e Período */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Status</Label>
+                <Select value={draftValidationStatus} onValueChange={setDraftValidationStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="pending_validation">Pendente</SelectItem>
+                    <SelectItem value="validated">Validado</SelectItem>
+                    <SelectItem value="rejected">Rejeitado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Tipo de Atendimento</Label>
                 <Select value={draftSessionType} onValueChange={setDraftSessionType}>
@@ -2019,17 +2049,41 @@ export default function Reports() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedReport(report);
-                              setIsDetailDialogOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver Tudo
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedReport(report);
+                                setIsDetailDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                            {(user?.id === report.employee_id || user?.id === report.created_by || isDirector() || coordinatorUnit) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingReport(report);
+                                  setEditForm({
+                                    session_notes: report.session_notes || '',
+                                    techniques_used: report.techniques_used || '',
+                                    patient_response: report.patient_response || '',
+                                    observations: report.observations || '',
+                                    next_session_plan: report.next_session_plan || '',
+                                    amount_charged: report.amount_charged ?? 0,
+                                    session_duration: report.session_duration ?? 0,
+                                  });
+                                  setIsEditOpen(true);
+                                }}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -3358,6 +3412,131 @@ export default function Reports() {
                 )}
               </div>
             </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de edição de atendimento */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Atendimento</DialogTitle>
+          </DialogHeader>
+          {editingReport && (
+            <div className="space-y-4 py-2">
+              <div className="text-sm text-muted-foreground">
+                {editingReport.clients?.name} — {format(new Date(editingReport.start_time), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Duração (min)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.session_duration}
+                    onChange={(e) => setEditForm({ ...editForm, session_duration: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Valor (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.amount_charged}
+                    onChange={(e) => setEditForm({ ...editForm, amount_charged: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Notas da sessão</Label>
+                <Textarea
+                  rows={3}
+                  value={editForm.session_notes}
+                  onChange={(e) => setEditForm({ ...editForm, session_notes: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Técnicas utilizadas</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.techniques_used}
+                  onChange={(e) => setEditForm({ ...editForm, techniques_used: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Resposta do paciente</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.patient_response}
+                  onChange={(e) => setEditForm({ ...editForm, patient_response: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Observações</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.observations}
+                  onChange={(e) => setEditForm({ ...editForm, observations: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Plano da próxima sessão</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.next_session_plan}
+                  onChange={(e) => setEditForm({ ...editForm, next_session_plan: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={savingEdit}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!editingReport) return;
+                    setSavingEdit(true);
+                    try {
+                      const { error } = await supabase
+                        .from('attendance_reports')
+                        .update({
+                          session_notes: editForm.session_notes,
+                          techniques_used: editForm.techniques_used,
+                          patient_response: editForm.patient_response,
+                          observations: editForm.observations,
+                          next_session_plan: editForm.next_session_plan,
+                          amount_charged: editForm.amount_charged,
+                          session_duration: editForm.session_duration,
+                          updated_at: new Date().toISOString(),
+                        })
+                        .eq('id', editingReport.id);
+                      if (error) throw error;
+                      toast({ title: 'Atendimento atualizado com sucesso.' });
+                      setIsEditOpen(false);
+                      setEditingReport(null);
+                      await loadAttendanceReports();
+                    } catch (err: any) {
+                      console.error('Erro ao atualizar atendimento:', err);
+                      toast({
+                        variant: 'destructive',
+                        title: 'Erro ao salvar',
+                        description: err?.message || 'Não foi possível atualizar o atendimento.',
+                      });
+                    } finally {
+                      setSavingEdit(false);
+                    }
+                  }}
+                  disabled={savingEdit}
+                >
+                  {savingEdit ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

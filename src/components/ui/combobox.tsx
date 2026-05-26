@@ -67,9 +67,12 @@ export function Combobox({
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.value}
-                  onSelect={(currentValue) => {
-                    onValueChange(currentValue === value ? "" : currentValue)
+                  // cmdk filtra pelo `value` interno; usamos o label para que a busca
+                  // textual funcione (digitar "Lucas" encontra "Lucas Bifano").
+                  // Anexamos o id ao final para garantir unicidade.
+                  value={`${option.label} ${option.value}`}
+                  onSelect={() => {
+                    onValueChange(option.value === value ? "" : option.value)
                     setOpen(false)
                   }}
                 >
