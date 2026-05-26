@@ -399,7 +399,11 @@ export default function Reports() {
         query = query.eq('attendance_type', sessionType);
       }
 
-      const { data, error } = await query.limit(100);
+      if (selectedValidationStatus !== 'all') {
+        query = query.eq('validation_status', selectedValidationStatus);
+      }
+
+      const { data, error } = await query.limit(2000);
 
       if (error) throw error;
       
