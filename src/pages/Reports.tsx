@@ -1710,6 +1710,7 @@ export default function Reports() {
             );
           })()}
         </CardContent>
+        )}
       </Card>
 
       {/* Aviso sobre geração automática de relatórios */}
