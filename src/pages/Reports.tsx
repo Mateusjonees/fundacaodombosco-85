@@ -821,6 +821,55 @@ export default function Reports() {
     window.URL.revokeObjectURL(url);
   };
 
+  const exportToExcel = () => {
+    const rows = attendanceReports.map((report) => ({
+      'Data': format(new Date(report.start_time), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+      'Funcionário': (report.profiles?.name || '').toUpperCase(),
+      'Paciente': (report.clients?.name || '').toUpperCase(),
+      'Unidade': report.clients?.unit || '',
+      'Tipo': report.attendance_type || '',
+      'Demanda': getServiceTypeLabel(normalizeServiceType(report.service_type)) || '',
+      'Status': report.validation_status === 'validated' ? 'Validado'
+        : report.validation_status === 'rejected' ? 'Rejeitado'
+        : 'Pendente',
+      'Duração (min)': report.session_duration || '',
+      'Qualidade': report.quality_rating ?? '',
+      'Cooperação': report.patient_cooperation ?? '',
+      'Objetivos': report.session_objectives || '',
+      'Técnicas': report.techniques_used || '',
+      'Resposta do paciente': report.patient_response || '',
+      'Plano próxima sessão': report.next_session_plan || '',
+      'Observações': report.observations || '',
+      'Materiais': Array.isArray(report.materials_used)
+        ? report.materials_used.map((m: any) => `${m.name} (${m.quantity})`).join('; ')
+        : '',
+      'Valor (R$)': report.amount_charged ? Number(report.amount_charged).toFixed(2) : '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    // Auto-largura das colunas
+    const headers = Object.keys(rows[0] || { Data: '' });
+    ws['!cols'] = headers.map((h) => ({
+      wch: Math.min(
+        50,
+        Math.max(
+          h.length + 2,
+          ...rows.map((r) => String((r as any)[h] ?? '').length + 2)
+        )
+      ),
+    }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Atendimentos');
+    const fileName = `relatorio_atendimentos_${format(new Date(), 'yyyy-MM-dd_HHmm')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    toast({
+      title: 'Excel Exportado',
+      description: `${rows.length} atendimentos exportados para ${fileName}.`,
+    });
+  };
+
+
+
   const exportToPDF = async () => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
