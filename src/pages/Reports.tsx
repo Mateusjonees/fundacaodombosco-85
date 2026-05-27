@@ -477,34 +477,24 @@ export default function Reports() {
 
   const loadEmployees = async () => {
     try {
-      // Carregar TODOS os funcionários (sem filtro por unidade)
-      // pois muitos profissionais atendem múltiplas unidades ou não têm
-      // unidade fixa definida (ex.: psiquiatras, neuropediatras).
+      // Carregar TODOS os funcionários do sistema (ativos e inativos),
+      // sem filtro de unidade nem de role, para que o filtro do relatório
+      // sempre mostre o sistema completo. Usamos profiles_public para
+      // contornar restrições de RLS da tabela profiles.
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
+        .from('profiles_public')
+        .select('id, user_id, name, employee_role, unit, is_active')
         .not('employee_role', 'is', null)
         .order('name');
 
       if (error) throw error;
-
-      // Se uma unidade foi selecionada, mantemos quem possui aquela unidade
-      // OU quem tem unidade não definida (atende todas as unidades).
-      let filtered = data || [];
-      if (selectedUnit !== 'all') {
-        filtered = filtered.filter((p: any) => {
-          const matchUnit = p.unit === selectedUnit;
-          const matchUnits = Array.isArray(p.units) && p.units.includes(selectedUnit);
-          const noUnit = !p.unit && (!p.units || p.units.length === 0);
-          return matchUnit || matchUnits || noUnit;
-        });
-      }
-      setEmployees(filtered);
+      setEmployees((data || []) as any);
     } catch (error) {
       console.error('Error loading employees:', error);
       setEmployees([]);
     }
   };
+
 
   const loadEmployeeReports = async () => {
     try {
