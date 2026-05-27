@@ -1625,15 +1625,26 @@ export default function Reports() {
       {/* Card de Total de Horas por Mês */}
       <Card className="border-0 shadow-lg bg-gradient-to-r from-amber-500/10 via-card to-orange-500/10">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="p-2 bg-amber-500/20 rounded-lg">
-              <Timer className="h-5 w-5 text-amber-600" />
-            </div>
-            <span className="bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent font-bold">
-              Total de Horas Calculadas
-            </span>
-          </CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="p-2 bg-amber-500/20 rounded-lg">
+                <Timer className="h-5 w-5 text-amber-600" />
+              </div>
+              <span className="bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent font-bold">
+                Total de Horas Calculadas
+              </span>
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHoursPanel(v => !v)}
+              className="shrink-0"
+            >
+              {showHoursPanel ? 'Ocultar' : 'Visualizar'}
+            </Button>
+          </div>
         </CardHeader>
+        {showHoursPanel && (
         <CardContent>
           {(() => {
             const totalMinutes = attendanceReports.reduce((sum, r) => sum + (r.session_duration || 0), 0);
