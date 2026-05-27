@@ -32,49 +32,77 @@ interface ComboboxProps {
   className?: string
 }
 
-export function Combobox({
+const MAX_VISIBLE = 100
+
+function ComboboxImpl({
   options,
   value,
   onValueChange,
   placeholder = "Selecione uma opção...",
   searchPlaceholder = "Buscar...",
   emptyMessage = "Nenhum resultado encontrado.",
-  className
+  className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const [search, setSearch] = React.useState("")
 
-  const selectedOption = options.find((option) => option.value === value)
+  const selectedOption = React.useMemo(
+    () => options.find((option) => option.value === value),
+    [options, value]
+  )
+
+  // Filtragem manual (mais rápida e estável que o filter interno do cmdk
+  // quando há centenas/milhares de opções — evita o "piscar" durante a digitação).
+  const filtered = React.useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return options.slice(0, MAX_VISIBLE)
+    const result: ComboboxOption[] = []
+    for (const opt of options) {
+      if (opt.label.toLowerCase().includes(q)) {
+        result.push(opt)
+        if (result.length >= MAX_VISIBLE) break
+      }
+    }
+    return result
+  }, [options, search])
+
+  const handleSelect = React.useCallback(
+    (selectedValue: string) => {
+      onValueChange(selectedValue === value ? "" : selectedValue)
+      setOpen(false)
+      setSearch("")
+    },
+    [onValueChange, value]
+  )
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSearch("") }}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between", className)}
+          className={cn("w-full justify-between font-normal", className)}
         >
-          {selectedOption?.label || placeholder}
+          <span className="truncate">{selectedOption?.label || placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder={searchPlaceholder}
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
+              {filtered.map((option) => (
                 <CommandItem
                   key={option.value}
-                  // cmdk filtra pelo `value` interno; usamos o label para que a busca
-                  // textual funcione (digitar "Lucas" encontra "Lucas Bifano").
-                  // Anexamos o id ao final para garantir unicidade.
-                  value={`${option.label} ${option.value}`}
-                  onSelect={() => {
-                    onValueChange(option.value === value ? "" : option.value)
-                    setOpen(false)
-                  }}
+                  value={option.value}
+                  onSelect={() => handleSelect(option.value)}
                 >
                   <Check
                     className={cn(
@@ -85,6 +113,11 @@ export function Combobox({
                   {option.label}
                 </CommandItem>
               ))}
+              {options.length > filtered.length && (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  Mostrando {filtered.length} de {options.length} — refine a busca para ver mais.
+                </div>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>
@@ -92,3 +125,5 @@ export function Combobox({
     </Popover>
   )
 }
+
+export const Combobox = React.memo(ComboboxImpl)
