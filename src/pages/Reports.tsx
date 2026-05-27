@@ -260,7 +260,7 @@ export default function Reports() {
         if (anamnesisRes.data && anamnesisRes.data.length > 0) {
           const creatorIds = [...new Set(anamnesisRes.data.map(a => a.created_by).filter(Boolean))];
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('user_id, name')
             .in('user_id', creatorIds);
           const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
@@ -269,7 +269,7 @@ export default function Reports() {
         if (formalAnamnesisRes.data && formalAnamnesisRes.data.length > 0) {
           const fillerIds = [...new Set(formalAnamnesisRes.data.map(a => a.filled_by).filter(Boolean))];
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('user_id, name')
             .in('user_id', fillerIds);
           const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
@@ -307,7 +307,7 @@ export default function Reports() {
         if (mergedLaudos.length > 0) {
           const empIds = [...new Set(mergedLaudos.map(l => l.employee_id).filter(Boolean))];
           const { data: profiles } = empIds.length > 0
-            ? await supabase.from('profiles').select('user_id, name').in('user_id', empIds)
+            ? await supabase.from('profiles_public').select('user_id, name').in('user_id', empIds)
             : { data: [] };
           const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
           setDetailLaudos(mergedLaudos.map(l => ({ ...l, employee_name: profileMap.get(l.employee_id) || 'N/A' })));
@@ -319,7 +319,7 @@ export default function Reports() {
         if (prescriptionsRes.data && prescriptionsRes.data.length > 0) {
           const empIds = [...new Set(prescriptionsRes.data.map(p => p.employee_id))];
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('user_id, name')
             .in('user_id', empIds);
           const profileMap = new Map((profiles?.map(p => [p.user_id, p.name]) || []) as [string, string][]);
@@ -424,7 +424,7 @@ export default function Reports() {
       // Buscar todos os profiles de uma vez
       const employeeIds = [...new Set(filteredData.map(r => r.employee_id))];
       const { data: profilesData } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('user_id, name')
         .in('user_id', employeeIds);
       
@@ -529,7 +529,7 @@ export default function Reports() {
       // Buscar todos os profiles de uma vez
       const employeeIds = [...new Set(filteredData.map(r => r.employee_id))];
       const { data: profilesData } = await supabase
-        .from('profiles')
+        .from('profiles_public')
         .select('user_id, name')
         .in('user_id', employeeIds);
       
@@ -581,7 +581,7 @@ export default function Reports() {
           .in('id', clientIds);
 
         const { data: profilesData } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('user_id, name')
           .in('user_id', employeeIds);
 
@@ -636,7 +636,7 @@ export default function Reports() {
           .in('id', clientIds);
 
         const { data: profilesData } = await supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('user_id, name')
           .in('user_id', creatorIds);
 
@@ -752,7 +752,7 @@ export default function Reports() {
           .select('id, name, unit')
           .in('id', clientIds),
         employeeIds.length > 0
-          ? supabase.from('profiles').select('user_id, name').in('user_id', employeeIds)
+          ? supabase.from('profiles_public').select('user_id, name').in('user_id', employeeIds)
           : Promise.resolve({ data: [], error: null } as any)
       ]);
 
