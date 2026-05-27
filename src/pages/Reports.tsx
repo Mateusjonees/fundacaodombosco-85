@@ -56,6 +56,7 @@ interface Profile {
 
 export default function Reports() {
   const [attendanceReports, setAttendanceReports] = useState<any[]>([]);
+  const [showHoursPanel, setShowHoursPanel] = useState(false);
   const [employeeReports, setEmployeeReports] = useState<EmployeeReport[]>([]);
   const [allPrescriptions, setAllPrescriptions] = useState<any[]>([]);
   const [allAnamnesis, setAllAnamnesis] = useState<any[]>([]);
