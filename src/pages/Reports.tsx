@@ -25,6 +25,7 @@ import { ptBR } from 'date-fns/locale';
 import { Combobox } from '@/components/ui/combobox';
 import { DeleteFinancialRecordsDialog } from '@/components/DeleteFinancialRecordsDialog';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 interface EmployeeReport {
   id: string;
