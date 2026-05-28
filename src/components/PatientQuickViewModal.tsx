@@ -97,15 +97,15 @@ export const PatientQuickViewModal = ({ clientId, open, onOpenChange, onViewFull
         ) : client ? (
           <>
             {/* Header com Avatar e Info Principal */}
-            <div className={`p-4 sm:p-6 ${unitStyle.bg} border-b`}>
-              <div className="flex items-start gap-4">
-                <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-2 border-white/50 shadow-lg">
+            <div className={`p-4 sm:p-6 pr-12 sm:pr-14 ${unitStyle.bg} border-b`}>
+              <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-2 border-white/50 shadow-lg shrink-0">
                   <AvatarFallback className="text-lg sm:text-xl font-bold bg-primary text-primary-foreground">
                     {getInitials(client.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <h2 className="font-bold text-base sm:text-lg truncate">{client.name}</h2>
+                  <h2 className="font-bold text-base sm:text-lg break-words leading-tight">{client.name}</h2>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <Badge variant={client.is_active ? "default" : "secondary"} className="text-[10px]">
                       {client.is_active ? 'Ativo' : 'Inativo'}
