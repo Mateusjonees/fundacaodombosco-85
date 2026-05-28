@@ -448,7 +448,7 @@ const MyPatients: React.FC = () => {
                   return (
                     <div
                       key={day.toISOString()}
-                      className="border-l px-0.5 py-0.5 space-y-0.5 hover:bg-muted/10 cursor-pointer transition-colors"
+                      className="border-l px-0.5 py-0.5 space-y-0.5 hover:bg-muted/10 cursor-pointer transition-colors min-w-0 overflow-hidden"
                       onClick={() => openNewEvent(setHours(setMinutes(day, 0), hour))}
                     >
                       {dayTks.map(t => <TaskPill key={t.id} task={t} compact />)}
