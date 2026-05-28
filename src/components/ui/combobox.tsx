@@ -59,7 +59,15 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
+        <Command
+          filter={(itemValue, search) => {
+            const opt = options.find((o) => o.value === itemValue);
+            const haystack = (opt?.label || itemValue).toLowerCase();
+            const needle = search.toLowerCase().trim();
+            if (!needle) return 1;
+            return haystack.includes(needle) ? 1 : 0;
+          }}
+        >
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
