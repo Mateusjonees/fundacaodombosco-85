@@ -8,12 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Loader2, Brain, Maximize2, Minimize2 } from 'lucide-react';
-import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
+import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History } from 'lucide-react';
+import { getTodayLocalISODate, calculateAgeBR, formatDateBR } from '@/lib/utils';
 import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
+import AddAnamnesisDialog from './AddAnamnesisDialog';
 
 // Lazy load - formulários só carregam quando selecionados pelo profissional
 const NeuroTestBPA2Form = lazy(() => import('./NeuroTestBPA2Form'));
@@ -212,6 +213,15 @@ export default function CompleteAttendanceDialog({
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
   const [nutritionData, setNutritionData] = useState<NutritionData>({});
 
+  // Anamnese & history states
+  const [isAnamnesisOpen, setIsAnamnesisOpen] = useState(false);
+  const [hasExistingAnamnesis, setHasExistingAnamnesis] = useState(false);
+  const [isEvolutionHistoryOpen, setIsEvolutionHistoryOpen] = useState(false);
+  const [isAnamnesisHistoryOpen, setIsAnamnesisHistoryOpen] = useState(false);
+  const [evolutionHistory, setEvolutionHistory] = useState<any[]>([]);
+  const [anamnesisHistory, setAnamnesisHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
     if (isOpen && schedule?.client_id) {
@@ -248,6 +258,57 @@ export default function CompleteAttendanceDialog({
         setPatientAge(age ?? 0);
       }
     }
+
+    // Check for existing anamnesis
+    await checkExistingAnamnesis(schedule.client_id);
+  };
+
+  const checkExistingAnamnesis = async (clientId: string) => {
+    const { data, error } = await supabase
+      .from('client_notes')
+      .select('id')
+      .eq('client_id', clientId)
+      .eq('note_type', 'anamnesis')
+      .limit(1);
+
+    if (!error && data && data.length > 0) {
+      setHasExistingAnamnesis(true);
+    } else {
+      setHasExistingAnamnesis(false);
+    }
+  };
+
+  const refreshAnamnesisStatus = () => {
+    if (schedule?.client_id) {
+      checkExistingAnamnesis(schedule.client_id);
+    }
+  };
+
+  const loadEvolutionHistory = async () => {
+    if (!schedule?.client_id) return;
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from('attendance_reports')
+      .select('id, created_at, session_notes, observations, professional_name, attendance_type')
+      .eq('client_id', schedule.client_id)
+      .order('start_time', { ascending: false })
+      .limit(20);
+    setEvolutionHistory(data || []);
+    setLoadingHistory(false);
+  };
+
+  const loadAnamnesisHistory = async () => {
+    if (!schedule?.client_id) return;
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from('client_notes')
+      .select('id, created_at, note_text, created_by')
+      .eq('client_id', schedule.client_id)
+      .eq('note_type', 'anamnesis')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    setAnamnesisHistory(data || []);
+    setLoadingHistory(false);
   };
 
   // Reset form when dialog opens
@@ -1947,6 +2008,30 @@ export default function CompleteAttendanceDialog({
               onMaterialsChange={setSelectedMaterials}
             />
 
+            {/* Histórico do paciente */}
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
+              <History className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground">Histórico do paciente:</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => { loadEvolutionHistory(); setIsEvolutionHistoryOpen(true); }}
+              >
+                <FileText className="h-3.5 w-3.5 mr-1" />
+                Evoluções
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => { loadAnamnesisHistory(); setIsAnamnesisHistoryOpen(true); }}
+              >
+                <ClipboardList className="h-3.5 w-3.5 mr-1" />
+                Anamneses
+              </Button>
+            </div>
+
             {/* Evolução do Atendimento */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
@@ -1960,6 +2045,34 @@ export default function CompleteAttendanceDialog({
                 className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
               />
             </div>
+
+            {/* Anamnese do paciente */}
+            <Card className={`border-dashed ${hasExistingAnamnesis ? 'bg-green-50/50 border-green-200' : 'bg-muted/30'}`}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className={`h-4 w-4 ${hasExistingAnamnesis ? 'text-green-600' : 'text-muted-foreground'}`} />
+                    <span className="text-sm font-medium">Anamnese do paciente</span>
+                    {hasExistingAnamnesis && (
+                      <span className="text-xs text-green-600 font-medium">✓ Anamnese já realizada</span>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={hasExistingAnamnesis ? "outline" : "default"}
+                    onClick={() => setIsAnamnesisOpen(true)}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    {hasExistingAnamnesis ? 'Nova anamnese' : 'Criar anamnese'}
+                  </Button>
+                </div>
+                {!hasExistingAnamnesis && (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhuma anamnese registrada para este paciente. Clique no botão acima para criar.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </ScrollArea>
 
@@ -1972,6 +2085,96 @@ export default function CompleteAttendanceDialog({
             Finalizar Atendimento
           </Button>
         </DialogFooter>
+
+        {/* Dialog: Histórico de Evoluções */}
+        <Dialog open={isEvolutionHistoryOpen} onOpenChange={setIsEvolutionHistoryOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Histórico de Evoluções
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 pt-2">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando...
+                </div>
+              ) : evolutionHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhuma evolução encontrada.
+                </p>
+              ) : (
+                evolutionHistory.map((ev) => (
+                  <Card key={ev.id} className="border-muted">
+                    <CardContent className="p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {formatDateBR(ev.created_at)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{ev.attendance_type}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Profissional: {ev.professional_name}</p>
+                      <p className="text-sm whitespace-pre-wrap">{ev.observations || ev.session_notes}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: Histórico de Anamneses */}
+        <Dialog open={isAnamnesisHistoryOpen} onOpenChange={setIsAnamnesisHistoryOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Histórico de Anamneses
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 pt-2">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando...
+                </div>
+              ) : anamnesisHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhuma anamnese encontrada.
+                </p>
+              ) : (
+                anamnesisHistory.map((an) => (
+                  <Card key={an.id} className="border-muted">
+                    <CardContent className="p-3 space-y-1">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {formatDateBR(an.created_at)}
+                      </span>
+                      <p className="text-sm whitespace-pre-wrap">{an.note_text}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: Nova Anamnese */}
+        {schedule?.client_id && (
+          <AddAnamnesisDialog
+            open={isAnamnesisOpen}
+            onOpenChange={setIsAnamnesisOpen}
+            clientId={schedule.client_id}
+            onSuccess={() => {
+              refreshAnamnesisStatus();
+              toast({
+                title: 'Anamnese salva',
+                description: 'A anamnese foi registrada com sucesso.',
+              });
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
