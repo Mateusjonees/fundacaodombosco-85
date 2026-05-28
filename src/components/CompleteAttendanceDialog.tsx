@@ -2085,6 +2085,96 @@ export default function CompleteAttendanceDialog({
             Finalizar Atendimento
           </Button>
         </DialogFooter>
+
+        {/* Dialog: Histórico de Evoluções */}
+        <Dialog open={isEvolutionHistoryOpen} onOpenChange={setIsEvolutionHistoryOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Histórico de Evoluções
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 pt-2">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando...
+                </div>
+              ) : evolutionHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhuma evolução encontrada.
+                </p>
+              ) : (
+                evolutionHistory.map((ev) => (
+                  <Card key={ev.id} className="border-muted">
+                    <CardContent className="p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {formatDateBR(ev.created_at)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{ev.attendance_type}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Profissional: {ev.professional_name}</p>
+                      <p className="text-sm whitespace-pre-wrap">{ev.observations || ev.session_notes}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: Histórico de Anamneses */}
+        <Dialog open={isAnamnesisHistoryOpen} onOpenChange={setIsAnamnesisHistoryOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Histórico de Anamneses
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 pt-2">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando...
+                </div>
+              ) : anamnesisHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhuma anamnese encontrada.
+                </p>
+              ) : (
+                anamnesisHistory.map((an) => (
+                  <Card key={an.id} className="border-muted">
+                    <CardContent className="p-3 space-y-1">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {formatDateBR(an.created_at)}
+                      </span>
+                      <p className="text-sm whitespace-pre-wrap">{an.note_text}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: Nova Anamnese */}
+        {schedule?.client_id && (
+          <AddAnamnesisDialog
+            open={isAnamnesisOpen}
+            onOpenChange={setIsAnamnesisOpen}
+            clientId={schedule.client_id}
+            onSuccess={() => {
+              refreshAnamnesisStatus();
+              toast({
+                title: 'Anamnese salva',
+                description: 'A anamnese foi registrada com sucesso.',
+              });
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
