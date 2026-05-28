@@ -214,6 +214,37 @@ export default function CompleteAttendanceDialog({
   const [nutritionData, setNutritionData] = useState<NutritionData>({});
   const [isAnamnesisOpen, setIsAnamnesisOpen] = useState(false);
   const [hasExistingAnamnesis, setHasExistingAnamnesis] = useState(false);
+  const [isEvolutionHistoryOpen, setIsEvolutionHistoryOpen] = useState(false);
+  const [isAnamnesisHistoryOpen, setIsAnamnesisHistoryOpen] = useState(false);
+  const [evolutionHistory, setEvolutionHistory] = useState<any[]>([]);
+  const [anamnesisHistory, setAnamnesisHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const loadEvolutionHistory = useCallback(async () => {
+    if (!schedule?.client_id) return;
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from('attendance_reports')
+      .select('id, created_at, session_notes, observations, professional_name, attendance_type, start_time')
+      .eq('client_id', schedule.client_id)
+      .order('start_time', { ascending: false })
+      .limit(100);
+    setEvolutionHistory(data || []);
+    setLoadingHistory(false);
+  }, [schedule?.client_id]);
+
+  const loadAnamnesisHistory = useCallback(async () => {
+    if (!schedule?.client_id) return;
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from('client_notes')
+      .select('id, created_at, content, created_by_name')
+      .eq('client_id', schedule.client_id)
+      .eq('note_type', 'anamnesis')
+      .order('created_at', { ascending: false });
+    setAnamnesisHistory(data || []);
+    setLoadingHistory(false);
+  }, [schedule?.client_id]);
 
   // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
