@@ -115,14 +115,14 @@ export default {
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.1s ease-out',
-				'accordion-up': 'accordion-up 0.1s ease-out',
-				'page-enter': 'page-enter 0.08s ease-out forwards',
-				'page-exit': 'page-exit 0.08s ease-out forwards',
-				'fade-in': 'fade-in 0.15s ease-out forwards',
-				'slide-up': 'slide-up 0.15s ease-out forwards',
-				'scale-in': 'scale-in 0.15s ease-out forwards',
-				'stagger-in': 'stagger-in 0.2s ease-out forwards'
+				'accordion-down': 'accordion-down 0.08s ease-out',
+				'accordion-up': 'accordion-up 0.08s ease-out',
+				'page-enter': 'page-enter 0.06s ease-out forwards',
+				'page-exit': 'page-exit 0.06s ease-out forwards',
+				'fade-in': 'fade-in 0.08s ease-out forwards',
+				'slide-up': 'slide-up 0.08s ease-out forwards',
+				'scale-in': 'scale-in 0.08s ease-out forwards',
+				'stagger-in': 'stagger-in 0.1s ease-out forwards'
 			}
 		}
 	},
