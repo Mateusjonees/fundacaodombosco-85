@@ -14,6 +14,7 @@ import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
+import AddAnamnesisDialog from './AddAnamnesisDialog';
 
 // Lazy load - formulários só carregam quando selecionados pelo profissional
 const NeuroTestBPA2Form = lazy(() => import('./NeuroTestBPA2Form'));
