@@ -213,6 +213,15 @@ export default function CompleteAttendanceDialog({
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
   const [nutritionData, setNutritionData] = useState<NutritionData>({});
 
+  // Anamnese & history states
+  const [isAnamnesisOpen, setIsAnamnesisOpen] = useState(false);
+  const [hasExistingAnamnesis, setHasExistingAnamnesis] = useState(false);
+  const [isEvolutionHistoryOpen, setIsEvolutionHistoryOpen] = useState(false);
+  const [isAnamnesisHistoryOpen, setIsAnamnesisHistoryOpen] = useState(false);
+  const [evolutionHistory, setEvolutionHistory] = useState<any[]>([]);
+  const [anamnesisHistory, setAnamnesisHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
     if (isOpen && schedule?.client_id) {
