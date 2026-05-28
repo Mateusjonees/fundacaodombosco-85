@@ -2191,6 +2191,3 @@ export default function CompleteAttendanceDialog({
     </Dialog>
   );
 }
-    </Dialog>
-  );
-}
