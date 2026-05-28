@@ -484,11 +484,18 @@ export default function Reports() {
       const { data, error } = await supabase
         .from('profiles_public')
         .select('id, user_id, name, employee_role, unit, is_active')
-        .not('employee_role', 'is', null)
+        .not('user_id', 'is', null)
         .order('name');
 
       if (error) throw error;
-      setEmployees((data || []) as any);
+      // Deduplicar por user_id (alguns profiles podem ter múltiplas linhas)
+      const seen = new Set<string>();
+      const unique = (data || []).filter((p: any) => {
+        if (!p.user_id || seen.has(p.user_id)) return false;
+        seen.add(p.user_id);
+        return true;
+      });
+      setEmployees(unique as any);
     } catch (error) {
       console.error('Error loading employees:', error);
       setEmployees([]);
@@ -1940,64 +1947,11 @@ export default function Reports() {
         </CardContent>
       </Card>
 
-      {/* Dashboard de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{getTotalSessions()}</div>
-            <p className="text-xs text-muted-foreground">
-              Atendimentos {dateFrom || dateTo ? 'no período' : 'registrados'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clientes Únicos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{getUniqueClients()}</div>
-            <p className="text-xs text-muted-foreground">Clientes atendidos</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Duração Média</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(getAverageDuration())} min
-            </div>
-            <p className="text-xs text-muted-foreground">Por atendimento</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              R$ {getTotalRevenue().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {dateFrom || dateTo ? 'No período' : 'Total registrado'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       <Tabs defaultValue="attendance" className="space-y-6">
         <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
           <TabsTrigger value="attendance" className="text-xs sm:text-sm">Atendimentos</TabsTrigger>
+
+
           <TabsTrigger value="tempo" className="flex items-center gap-1 text-xs sm:text-sm">
             <Timer className="h-3 w-3 hidden sm:inline" />
             Tempo
