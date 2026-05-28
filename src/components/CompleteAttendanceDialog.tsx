@@ -2001,7 +2001,57 @@ export default function CompleteAttendanceDialog({
               onMaterialsChange={setSelectedMaterials}
             />
 
-            {/* Anamnese rápida */}
+            {/* Barra de histórico — acima da Evolução */}
+            <div className="rounded-lg border bg-muted/30 p-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                <History className="h-3.5 w-3.5" />
+                <span>Histórico do paciente</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  onClick={() => {
+                    setIsEvolutionHistoryOpen(true);
+                    loadEvolutionHistory();
+                  }}
+                >
+                  <FileText className="h-3.5 w-3.5 mr-1" />
+                  Evoluções
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  onClick={() => {
+                    setIsAnamnesisHistoryOpen(true);
+                    loadAnamnesisHistory();
+                  }}
+                >
+                  <ClipboardList className="h-3.5 w-3.5 mr-1" />
+                  Anamneses
+                </Button>
+              </div>
+            </div>
+
+            {/* Evolução do Atendimento */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Evolução do Atendimento <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
+                value={sessionNotes}
+                onChange={(e) => setSessionNotes(e.target.value)}
+                className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
+              />
+            </div>
+
+            {/* Anamnese rápida — abaixo da Evolução */}
             <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0">
                 <ClipboardList className="h-4 w-4 text-primary shrink-0" />
@@ -2024,20 +2074,6 @@ export default function CompleteAttendanceDialog({
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 {hasExistingAnamnesis ? 'Nova anamnese' : 'Criar anamnese'}
               </Button>
-            </div>
-
-            {/* Evolução do Atendimento */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Evolução do Atendimento <span className="text-destructive">*</span>
-              </Label>
-              <Textarea
-                placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
-                value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
-                className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
-              />
             </div>
           </div>
         </ScrollArea>
@@ -2069,6 +2105,92 @@ export default function CompleteAttendanceDialog({
           }}
         />
       )}
+
+      {/* Histórico de Evoluções */}
+      <Dialog open={isEvolutionHistoryOpen} onOpenChange={setIsEvolutionHistoryOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Histórico de Evoluções
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-3">
+            {loadingHistory ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+              </div>
+            ) : evolutionHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nenhuma evolução registrada para este paciente.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {evolutionHistory.map((ev) => {
+                  const text = ev.session_notes || ev.observations || '';
+                  return (
+                    <Card key={ev.id} className="border-muted">
+                      <CardContent className="p-3 space-y-1">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {formatDateBR(ev.start_time || ev.created_at)}
+                          </span>
+                          <span className="truncate ml-2">{ev.professional_name}</span>
+                        </div>
+                        {ev.attendance_type && (
+                          <p className="text-xs text-muted-foreground">{ev.attendance_type}</p>
+                        )}
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {text || <span className="italic text-muted-foreground">Sem texto de evolução.</span>}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Histórico de Anamneses */}
+      <Dialog open={isAnamnesisHistoryOpen} onOpenChange={setIsAnamnesisHistoryOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Histórico de Anamneses
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-3">
+            {loadingHistory ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+              </div>
+            ) : anamnesisHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nenhuma anamnese registrada para este paciente.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {anamnesisHistory.map((an) => (
+                  <Card key={an.id} className="border-muted">
+                    <CardContent className="p-3 space-y-1">
+                      <div className="text-xs font-medium text-foreground">
+                        {formatDateBR(an.created_at)}
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap break-words">{an.note_text}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </Dialog>
+  );
+}
     </Dialog>
   );
 }
