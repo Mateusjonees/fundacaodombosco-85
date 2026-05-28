@@ -1832,7 +1832,7 @@ export default function Reports() {
             <Timer className="h-3 w-3 hidden sm:inline" />
             Tempo
           </TabsTrigger>
-          <TabsTrigger value="sessions" className="text-xs sm:text-sm">Sessões</TabsTrigger>
+          
           <TabsTrigger value="anamnesis" className="text-xs sm:text-sm">Anamneses</TabsTrigger>
           <TabsTrigger value="prescriptions" className="text-xs sm:text-sm">Receitas</TabsTrigger>
           <TabsTrigger value="laudos" className="text-xs sm:text-sm">Laudos</TabsTrigger>
