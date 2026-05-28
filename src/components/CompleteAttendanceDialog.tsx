@@ -238,7 +238,7 @@ export default function CompleteAttendanceDialog({
     setLoadingHistory(true);
     const { data } = await supabase
       .from('client_notes')
-      .select('id, created_at, content, created_by_name')
+      .select('id, created_at, note_text, created_by')
       .eq('client_id', schedule.client_id)
       .eq('note_type', 'anamnesis')
       .order('created_at', { ascending: false });
