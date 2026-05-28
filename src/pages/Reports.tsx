@@ -1458,6 +1458,10 @@ export default function Reports() {
             <Download className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">CSV</span>
           </Button>
+          <Button onClick={exportToExcel} disabled={attendanceReports.length === 0} variant="outline" className="flex-1 sm:flex-none text-sm">
+            <FileText className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Excel</span>
+          </Button>
           <Button onClick={exportToPDF} disabled={attendanceReports.length === 0} className="flex-1 sm:flex-none text-sm">
             <FileDown className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">PDF</span>
