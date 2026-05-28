@@ -24,6 +24,7 @@ import { ptBR } from 'date-fns/locale';
 import { Combobox } from '@/components/ui/combobox';
 import { DeleteFinancialRecordsDialog } from '@/components/DeleteFinancialRecordsDialog';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 interface EmployeeReport {
   id: string;
@@ -752,6 +753,30 @@ export default function Reports() {
     window.URL.revokeObjectURL(url);
   };
 
+  const exportToExcel = () => {
+    const rows = attendanceReports.map(report => ({
+      'Data': format(new Date(report.start_time), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+      'Funcionário': report.profiles?.name || '',
+      'Cliente': report.clients?.name || '',
+      'Tipo': report.attendance_type || '',
+      'Duração (min)': report.session_duration || 0,
+      'Qualidade': report.quality_rating || '',
+      'Objetivos / Técnicas': report.techniques_used || '',
+      'Materiais': Array.isArray(report.materials_used)
+        ? report.materials_used.map((m: any) => `${m.name} (${m.quantity})`).join('; ')
+        : '',
+      'Valor (R$)': report.amount_charged || 0,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 16 },
+      { wch: 12 }, { wch: 10 }, { wch: 36 }, { wch: 36 }, { wch: 12 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Atendimentos');
+    XLSX.writeFile(wb, `relatorio_atendimentos_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  };
+
   const exportToPDF = async () => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -1433,6 +1458,10 @@ export default function Reports() {
             <Download className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">CSV</span>
           </Button>
+          <Button onClick={exportToExcel} disabled={attendanceReports.length === 0} variant="outline" className="flex-1 sm:flex-none text-sm">
+            <FileText className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Excel</span>
+          </Button>
           <Button onClick={exportToPDF} disabled={attendanceReports.length === 0} className="flex-1 sm:flex-none text-sm">
             <FileDown className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">PDF</span>
@@ -1786,60 +1815,7 @@ export default function Reports() {
         </CardContent>
       </Card>
 
-      {/* Dashboard de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{getTotalSessions()}</div>
-            <p className="text-xs text-muted-foreground">
-              Atendimentos {dateFrom || dateTo ? 'no período' : 'registrados'}
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clientes Únicos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{getUniqueClients()}</div>
-            <p className="text-xs text-muted-foreground">Clientes atendidos</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Duração Média</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(getAverageDuration())} min
-            </div>
-            <p className="text-xs text-muted-foreground">Por atendimento</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              R$ {getTotalRevenue().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {dateFrom || dateTo ? 'No período' : 'Total registrado'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       <Tabs defaultValue="attendance" className="space-y-6">
         <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
