@@ -212,6 +212,8 @@ export default function CompleteAttendanceDialog({
   const [patientAge, setPatientAge] = useState<number>(0);
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
   const [nutritionData, setNutritionData] = useState<NutritionData>({});
+  const [isAnamnesisOpen, setIsAnamnesisOpen] = useState(false);
+  const [hasExistingAnamnesis, setHasExistingAnamnesis] = useState(false);
 
   // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
