@@ -1,34 +1,39 @@
-## Plano
+## Reorganização do dialog "Finalizar Atendimento"
 
-### 1. Corrigir filtro de funcionário no relatório
-O `Combobox` atual (`src/components/ui/combobox.tsx`) passa o UUID do funcionário como `value` do `CommandItem`. A biblioteca `cmdk` faz busca pelo `value`, não pelo texto visível — por isso digitar "Lucas" ou "Mariana" não encontra ninguém. Vamos passar o `label` como `value` interno (mantendo o id em paralelo) para que a busca textual funcione. Mesma correção beneficia o filtro de pacientes.
+Alterações apenas no arquivo `src/components/CompleteAttendanceDialog.tsx`. Sem mudanças em lógica de negócio — apenas UI e leitura de dados existentes.
 
-### 2. Relatório de atendimentos
-- Adicionar **filtro de status de validação** (Todos / Pendentes / Validados / Rejeitados) ao lado dos demais filtros em `src/pages/Reports.tsx`.
-- Remover o `limit(100)` rígido e aumentar para 1000 (ou paginar por mês) para não esconder atendimentos antigos.
-- Garantir que a query envie o `validation_status` quando o filtro for diferente de "Todos".
+### 1. Mover o card de Anamnese para BAIXO da Evolução
+- Remover o bloco "Anamnese rápida" (linhas 1973–1996) de cima da Evolução.
+- Reinserir o mesmo bloco logo APÓS o `<Textarea>` da Evolução (após linha 2010).
+- Comportamento do botão "Criar/Nova anamnese" continua igual (abre `AddAnamnesisDialog`).
 
-### 3. Edição de atendimentos pelo profissional
-**RLS:** a política `Staff can update attendance reports` hoje permite update se `created_by = auth.uid() OR completed_by = auth.uid() OR director_has_god_mode()`. Vamos adicionar `employee_id = auth.uid()` para que o profissional dono do atendimento (mesmo que validado) consiga editar.
+### 2. Adicionar barra de Histórico ACIMA da Evolução
+Novo bloco acima do label "Evolução do Atendimento" com dois botões compactos lado a lado:
+- **Ver histórico de evoluções** — abre um sub-dialog listando os registros de `medical_records` (ou `session_notes`/`client_notes` de tipo `evolution`, o que já existir) do paciente, ordenados do mais recente para o mais antigo: data + autor + texto.
+- **Ver histórico de anamneses** — abre um sub-dialog listando os registros de `client_notes` com `note_type = 'anamnesis'` do paciente: data + autor + conteúdo.
 
-**UI:** na lista de atendimentos do relatório (e onde já existe o detalhamento), exibir botão "Editar" quando o atendimento pertencer ao usuário atual (qualquer profissional) ou quando for diretor/coordenador. Abrir o diálogo de edição já existente em `AttendanceValidation` (ou um novo dialog enxuto) com os campos do atendimento.
+Cada sub-dialog:
+- Carrega sob demanda (somente ao abrir) via `supabase.from(...).select(...).eq('client_id', schedule.client_id).order('created_at', { ascending: false })`.
+- Mostra estado de loading e mensagem "Nenhum registro encontrado" quando vazio.
+- Usa `ScrollArea` com altura máxima e cards compactos (somente leitura, sem edição).
+- Resolve o nome do autor consultando `profiles_public` por `user_id` (igual ao padrão usado no resto do app).
 
-### Arquivos a alterar
-- `src/components/ui/combobox.tsx` — busca por label.
-- `src/pages/Reports.tsx` — novo filtro de status, limite ampliado, botão "Editar" por linha.
-- Nova migration: ajustar política UPDATE em `attendance_reports` para incluir `employee_id = auth.uid()`.
+### 3. Layout final (de cima para baixo) no dialog
+1. Materiais Utilizados (existente)
+2. Avaliação Nutricional / Testes Neuro (existentes, quando aplicável)
+3. **NOVO:** Barra "Histórico" com dois botões (Evoluções • Anamneses)
+4. Evolução do Atendimento * (textarea — existente)
+5. **MOVIDO:** Card "Anamnese do paciente" com botão Criar/Nova anamnese
+6. Footer com Cancelar / Finalizar (existente)
 
 ### Detalhes técnicos
-- Combobox: usar `value={`${option.label}__${option.value}`}` no `CommandItem` e fazer o `onSelect` extrair o id após o `__`. Mantém compatibilidade com todos os usos do componente.
-- Migration sugerida:
-```sql
-DROP POLICY "Staff can update attendance reports" ON public.attendance_reports;
-CREATE POLICY "Staff can update attendance reports"
-  ON public.attendance_reports FOR UPDATE
-  USING (
-    created_by = auth.uid()
-    OR completed_by = auth.uid()
-    OR employee_id = auth.uid()
-    OR director_has_god_mode()
-  );
-```
+- Novos estados: `isEvolutionHistoryOpen`, `isAnamnesisHistoryOpen`, `evolutionHistory`, `anamnesisHistory`, `loadingHistory`.
+- Dois novos sub-componentes inline (ou um único `HistoryDialog` parametrizado por tipo) usando `Dialog` do shadcn.
+- Reutilizar ícones já importados (`ClipboardList`, `FileText`) + adicionar `History` do `lucide-react`.
+- Nenhuma mudança em RLS, schema ou em `AddAnamnesisDialog`.
+
+### Verificação
+- Conferir no preview (`/schedule`, abrir card → "Finalizar Atendimento") que:
+  - Os dois botões de histórico aparecem acima da Evolução.
+  - O card de Anamnese aparece abaixo da Evolução.
+  - Cada botão de histórico abre seu dialog e lista os registros existentes.
