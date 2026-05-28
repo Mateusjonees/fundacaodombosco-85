@@ -753,6 +753,30 @@ export default function Reports() {
     window.URL.revokeObjectURL(url);
   };
 
+  const exportToExcel = () => {
+    const rows = attendanceReports.map(report => ({
+      'Data': format(new Date(report.start_time), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+      'Funcionário': report.profiles?.name || '',
+      'Cliente': report.clients?.name || '',
+      'Tipo': report.attendance_type || '',
+      'Duração (min)': report.session_duration || 0,
+      'Qualidade': report.quality_rating || '',
+      'Objetivos / Técnicas': report.techniques_used || '',
+      'Materiais': Array.isArray(report.materials_used)
+        ? report.materials_used.map((m: any) => `${m.name} (${m.quantity})`).join('; ')
+        : '',
+      'Valor (R$)': report.amount_charged || 0,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 16 },
+      { wch: 12 }, { wch: 10 }, { wch: 36 }, { wch: 36 }, { wch: 12 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Atendimentos');
+    XLSX.writeFile(wb, `relatorio_atendimentos_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  };
+
   const exportToPDF = async () => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
