@@ -220,38 +220,30 @@
   /* Login bubbles removed — institutional look */
   .login-bubble { display: none; }
 
-  /* ======= Layout Utilities ======= */
+  /* ======= Layout Utilities (flat / institutional) ======= */
   .gradient-card {
-    background: var(--gradient-card);
-    box-shadow: var(--shadow-md);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
   }
-  
+
   .gradient-primary {
-    background: var(--gradient-primary);
+    background: hsl(var(--primary));
   }
-  
-  .shadow-professional {
-    box-shadow: var(--shadow-md);
-  }
-  
-  .shadow-elegant {
-    box-shadow: var(--shadow-lg);
-  }
-  
+
+  .shadow-professional { box-shadow: none; border: 1px solid hsl(var(--border)); }
+  .shadow-elegant { box-shadow: none; border: 1px solid hsl(var(--border)); }
+
   .medical-border {
-    border: 1px solid hsl(var(--primary) / 0.12);
+    border: 1px solid hsl(var(--border));
   }
-  
+
   .medical-gradient {
-    background: linear-gradient(135deg, 
-      hsl(var(--primary) / 0.04), 
-      hsl(var(--secondary) / 0.02));
+    background: hsl(var(--muted));
   }
 
   .glass-effect {
-    backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
   }
 
   /* ======= Animations ======= */
