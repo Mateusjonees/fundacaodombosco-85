@@ -310,17 +310,17 @@ const MyPatients: React.FC = () => {
   const SchedulePill = ({ schedule, compact }: { schedule: Schedule; compact?: boolean }) => (
     <button
       onClick={(e) => { e.stopPropagation(); if (['scheduled', 'confirmed'].includes(schedule.status)) setCompleteSchedule(schedule); }}
-      className={`w-full text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
+      className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
         schedule.status === 'completed' ? 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 line-through opacity-60'
         : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50'
         : 'bg-blue-500/10 border-blue-500 text-foreground cursor-pointer hover:bg-blue-500/20'
       }`}
     >
-      <div className="flex items-center gap-1">
-        <span className="font-semibold">{format(new Date(schedule.start_time), 'HH:mm')}</span>
-        {!compact && <span className="truncate">- {schedule.clients?.name || schedule.title}</span>}
+      <div className="flex items-center gap-1 min-w-0">
+        <span className="font-semibold shrink-0">{format(new Date(schedule.start_time), 'HH:mm')}</span>
+        {!compact && <span className="truncate min-w-0">- {schedule.clients?.name || schedule.title}</span>}
       </div>
-      {compact && <div className="truncate font-medium">{schedule.clients?.name || schedule.title}</div>}
+      {compact && <div className="truncate font-medium min-w-0">{schedule.clients?.name || schedule.title}</div>}
     </button>
   );
 
@@ -448,7 +448,7 @@ const MyPatients: React.FC = () => {
                   return (
                     <div
                       key={day.toISOString()}
-                      className="border-l px-0.5 py-0.5 space-y-0.5 hover:bg-muted/10 cursor-pointer transition-colors"
+                      className="border-l px-0.5 py-0.5 space-y-0.5 hover:bg-muted/10 cursor-pointer transition-colors min-w-0 overflow-hidden"
                       onClick={() => openNewEvent(setHours(setMinutes(day, 0), hour))}
                     >
                       {dayTks.map(t => <TaskPill key={t.id} task={t} compact />)}
