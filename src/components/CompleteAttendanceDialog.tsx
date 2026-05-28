@@ -2008,6 +2008,30 @@ export default function CompleteAttendanceDialog({
               onMaterialsChange={setSelectedMaterials}
             />
 
+            {/* Histórico do paciente */}
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
+              <History className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground">Histórico do paciente:</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => { loadEvolutionHistory(); setIsEvolutionHistoryOpen(true); }}
+              >
+                <FileText className="h-3.5 w-3.5 mr-1" />
+                Evoluções
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => { loadAnamnesisHistory(); setIsAnamnesisHistoryOpen(true); }}
+              >
+                <ClipboardList className="h-3.5 w-3.5 mr-1" />
+                Anamneses
+              </Button>
+            </div>
+
             {/* Evolução do Atendimento */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
@@ -2021,6 +2045,34 @@ export default function CompleteAttendanceDialog({
                 className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
               />
             </div>
+
+            {/* Anamnese do paciente */}
+            <Card className={`border-dashed ${hasExistingAnamnesis ? 'bg-green-50/50 border-green-200' : 'bg-muted/30'}`}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className={`h-4 w-4 ${hasExistingAnamnesis ? 'text-green-600' : 'text-muted-foreground'}`} />
+                    <span className="text-sm font-medium">Anamnese do paciente</span>
+                    {hasExistingAnamnesis && (
+                      <span className="text-xs text-green-600 font-medium">✓ Anamnese já realizada</span>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={hasExistingAnamnesis ? "outline" : "default"}
+                    onClick={() => setIsAnamnesisOpen(true)}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    {hasExistingAnamnesis ? 'Nova anamnese' : 'Criar anamnese'}
+                  </Button>
+                </div>
+                {!hasExistingAnamnesis && (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhuma anamnese registrada para este paciente. Clique no botão acima para criar.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </ScrollArea>
 
