@@ -251,7 +251,27 @@ export default function CompleteAttendanceDialog({
         setPatientAge(age ?? 0);
       }
     }
+
+    // Verifica se já existe anamnese para esse paciente
+    const { data: existing } = await supabase
+      .from('client_notes')
+      .select('id')
+      .eq('client_id', schedule.client_id)
+      .eq('note_type', 'anamnesis')
+      .limit(1);
+    setHasExistingAnamnesis((existing?.length || 0) > 0);
   };
+
+  const refreshAnamnesisStatus = useCallback(async () => {
+    if (!schedule?.client_id) return;
+    const { data } = await supabase
+      .from('client_notes')
+      .select('id')
+      .eq('client_id', schedule.client_id)
+      .eq('note_type', 'anamnesis')
+      .limit(1);
+    setHasExistingAnamnesis((data?.length || 0) > 0);
+  }, [schedule?.client_id]);
 
   // Reset form when dialog opens
   useEffect(() => {
