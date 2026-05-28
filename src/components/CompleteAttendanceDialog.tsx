@@ -1970,6 +1970,31 @@ export default function CompleteAttendanceDialog({
               onMaterialsChange={setSelectedMaterials}
             />
 
+            {/* Anamnese rápida */}
+            <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <ClipboardList className="h-4 w-4 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">Anamnese do paciente</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {hasExistingAnamnesis
+                      ? 'Já existe anamnese — você pode adicionar uma nova.'
+                      : 'Nenhuma anamnese registrada para este paciente.'}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={hasExistingAnamnesis ? 'outline' : 'default'}
+                onClick={() => setIsAnamnesisOpen(true)}
+                className="shrink-0"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                {hasExistingAnamnesis ? 'Nova anamnese' : 'Criar anamnese'}
+              </Button>
+            </div>
+
             {/* Evolução do Atendimento */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
@@ -1996,6 +2021,23 @@ export default function CompleteAttendanceDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Dialog de Anamnese — reutiliza o mesmo formulário do paciente,
+          salva em client_notes e aparece automaticamente na aba Anamnese */}
+      {schedule?.client_id && (
+        <AddAnamnesisDialog
+          open={isAnamnesisOpen}
+          onOpenChange={setIsAnamnesisOpen}
+          clientId={schedule.client_id}
+          onSuccess={() => {
+            refreshAnamnesisStatus();
+            toast({
+              title: 'Anamnese salva',
+              description: 'A anamnese foi registrada no prontuário do paciente.',
+            });
+          }}
+        />
+      )}
     </Dialog>
   );
 }
