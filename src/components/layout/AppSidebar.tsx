@@ -86,9 +86,6 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
   if (permissions.canViewMyPatients()) {
     items.push({ id: 'my-patients', title: 'Meus Pacientes', url: '/my-patients', icon: 'Heart', category: 'GESTÃO CLÍNICA', order_index: 2 });
   }
-  if (permissions.isProfessional() || permissions.isCoordinator() || permissions.isDirector()) {
-    items.push({ id: 'medical-records', title: 'Prontuários', url: '/medical-records', icon: 'FileText', category: 'GESTÃO CLÍNICA', order_index: 3 });
-  }
   if (permissions.isDirector() || permissions.isCoordinator() || permissions.hasAnyRole(['receptionist'])) {
     items.push({ id: 'attendance-validation', title: 'Validar Atendimentos', url: '/attendance-validation', icon: 'CheckSquare', category: 'GESTÃO CLÍNICA', order_index: 4 });
   }
