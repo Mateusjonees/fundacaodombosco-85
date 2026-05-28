@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { offlineDB, STORES } from '@/utils/offlineDB';
@@ -121,28 +121,73 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
           }
 
           const result = data || [];
-          await offlineDB.putMany(STORES.schedules, result).catch(() => {});
+          // Deduplicar por id (Realtime + polling podem trazer linhas repetidas)
+          const seenIds = new Set<string>();
+          const deduped = result.filter((r: any) => {
+            if (!r?.id || seenIds.has(r.id)) return false;
+            seenIds.add(r.id);
+            return true;
+          });
+          await offlineDB.putMany(STORES.schedules, deduped).catch(() => {});
           await offlineDB.setLastSync('schedules').catch(() => {});
-          return result;
+          return deduped;
         } catch (err) {
           console.warn('[useSchedules] Erro online, tentando cache:', err);
         }
       }
 
-      // Fallback offline
+      // Fallback offline — aplica os mesmos filtros de permissão para
+      // evitar que o usuário veja agendamentos de outras unidades.
       console.log('[useSchedules] Carregando agendamentos do cache offline');
       let cached = await offlineDB.getAll<any>(STORES.schedules);
-      
+
       // Filtrar por data
       cached = cached.filter(s => {
         const t = new Date(s.start_time);
         return t >= startDate && t <= endDate;
       });
 
+      // Aplicar permissão por unidade/profissional também no offline
+      if (userProfile) {
+        const isCoordinator = ['coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'].includes(userProfile.employee_role);
+        const isReceptionist = userProfile.employee_role === 'receptionist';
+        const isDirector = userProfile.employee_role === 'director';
+
+        if (!isDirector) {
+          if (isCoordinator || isReceptionist) {
+            const userUnits: string[] = Array.isArray(userProfile.units) && userProfile.units.length > 0
+              ? userProfile.units
+              : userProfile.unit ? [userProfile.unit] : [];
+            if (userUnits.length === 0 && isCoordinator) {
+              if (userProfile.employee_role === 'coordinator_madre') userUnits.push('madre');
+              else if (userProfile.employee_role === 'coordinator_floresta') userUnits.push('floresta');
+              else if (userProfile.employee_role === 'coordinator_atendimento_floresta') userUnits.push('atendimento_floresta');
+            }
+            if (userUnits.length > 0) {
+              cached = cached.filter(s => {
+                const u = s.clients?.unit;
+                if (userUnits.includes('madre') && (u === 'madre' || u == null)) return true;
+                return u && userUnits.includes(u);
+              });
+            }
+          } else {
+            cached = cached.filter(s => s.employee_id === userProfile.user_id);
+          }
+        }
+      }
+
       if (filters?.status) cached = cached.filter(s => s.status === filters.status);
       if (filters?.employeeId) cached = cached.filter(s => s.employee_id === filters.employeeId);
       if (filters?.clientId) cached = cached.filter(s => s.client_id === filters.clientId);
-      
+
+      // Deduplicar por id
+      const seenCachedIds = new Set<string>();
+      cached = cached.filter((s: any) => {
+        if (!s?.id || seenCachedIds.has(s.id)) return false;
+        seenCachedIds.add(s.id);
+        return true;
+      });
+
       cached.sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
       return cached;
     },
@@ -151,6 +196,8 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     enabled: !!userProfile,
+    // Mantém a lista visível enquanto refetch acontece (evita "piscar/sumir")
+    placeholderData: keepPreviousData,
   });
 };
 
