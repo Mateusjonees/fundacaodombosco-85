@@ -8,12 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Loader2, Brain, Maximize2, Minimize2 } from 'lucide-react';
+import { FileText, Loader2, Brain, Maximize2, Minimize2, ClipboardList, Plus } from 'lucide-react';
 import { getTodayLocalISODate, calculateAgeBR } from '@/lib/utils';
 import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
+import AddAnamnesisDialog from './AddAnamnesisDialog';
 
 // Lazy load - formulários só carregam quando selecionados pelo profissional
 const NeuroTestBPA2Form = lazy(() => import('./NeuroTestBPA2Form'));
@@ -211,6 +212,8 @@ export default function CompleteAttendanceDialog({
   const [patientAge, setPatientAge] = useState<number>(0);
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
   const [nutritionData, setNutritionData] = useState<NutritionData>({});
+  const [isAnamnesisOpen, setIsAnamnesisOpen] = useState(false);
+  const [hasExistingAnamnesis, setHasExistingAnamnesis] = useState(false);
 
   // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
@@ -248,7 +251,27 @@ export default function CompleteAttendanceDialog({
         setPatientAge(age ?? 0);
       }
     }
+
+    // Verifica se já existe anamnese para esse paciente
+    const { data: existing } = await supabase
+      .from('client_notes')
+      .select('id')
+      .eq('client_id', schedule.client_id)
+      .eq('note_type', 'anamnesis')
+      .limit(1);
+    setHasExistingAnamnesis((existing?.length || 0) > 0);
   };
+
+  const refreshAnamnesisStatus = useCallback(async () => {
+    if (!schedule?.client_id) return;
+    const { data } = await supabase
+      .from('client_notes')
+      .select('id')
+      .eq('client_id', schedule.client_id)
+      .eq('note_type', 'anamnesis')
+      .limit(1);
+    setHasExistingAnamnesis((data?.length || 0) > 0);
+  }, [schedule?.client_id]);
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -1947,6 +1970,31 @@ export default function CompleteAttendanceDialog({
               onMaterialsChange={setSelectedMaterials}
             />
 
+            {/* Anamnese rápida */}
+            <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <ClipboardList className="h-4 w-4 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">Anamnese do paciente</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {hasExistingAnamnesis
+                      ? 'Já existe anamnese — você pode adicionar uma nova.'
+                      : 'Nenhuma anamnese registrada para este paciente.'}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={hasExistingAnamnesis ? 'outline' : 'default'}
+                onClick={() => setIsAnamnesisOpen(true)}
+                className="shrink-0"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                {hasExistingAnamnesis ? 'Nova anamnese' : 'Criar anamnese'}
+              </Button>
+            </div>
+
             {/* Evolução do Atendimento */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
@@ -1973,6 +2021,23 @@ export default function CompleteAttendanceDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Dialog de Anamnese — reutiliza o mesmo formulário do paciente,
+          salva em client_notes e aparece automaticamente na aba Anamnese */}
+      {schedule?.client_id && (
+        <AddAnamnesisDialog
+          open={isAnamnesisOpen}
+          onOpenChange={setIsAnamnesisOpen}
+          clientId={schedule.client_id}
+          onSuccess={() => {
+            refreshAnamnesisStatus();
+            toast({
+              title: 'Anamnese salva',
+              description: 'A anamnese foi registrada no prontuário do paciente.',
+            });
+          }}
+        />
+      )}
     </Dialog>
   );
 }
