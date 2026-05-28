@@ -484,11 +484,18 @@ export default function Reports() {
       const { data, error } = await supabase
         .from('profiles_public')
         .select('id, user_id, name, employee_role, unit, is_active')
-        .not('employee_role', 'is', null)
+        .not('user_id', 'is', null)
         .order('name');
 
       if (error) throw error;
-      setEmployees((data || []) as any);
+      // Deduplicar por user_id (alguns profiles podem ter múltiplas linhas)
+      const seen = new Set<string>();
+      const unique = (data || []).filter((p: any) => {
+        if (!p.user_id || seen.has(p.user_id)) return false;
+        seen.add(p.user_id);
+        return true;
+      });
+      setEmployees(unique as any);
     } catch (error) {
       console.error('Error loading employees:', error);
       setEmployees([]);
