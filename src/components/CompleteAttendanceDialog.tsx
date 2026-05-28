@@ -258,6 +258,57 @@ export default function CompleteAttendanceDialog({
         setPatientAge(age ?? 0);
       }
     }
+
+    // Check for existing anamnesis
+    await checkExistingAnamnesis(schedule.client_id);
+  };
+
+  const checkExistingAnamnesis = async (clientId: string) => {
+    const { data, error } = await supabase
+      .from('client_notes')
+      .select('id')
+      .eq('client_id', clientId)
+      .eq('note_type', 'anamnesis')
+      .limit(1);
+
+    if (!error && data && data.length > 0) {
+      setHasExistingAnamnesis(true);
+    } else {
+      setHasExistingAnamnesis(false);
+    }
+  };
+
+  const refreshAnamnesisStatus = () => {
+    if (schedule?.client_id) {
+      checkExistingAnamnesis(schedule.client_id);
+    }
+  };
+
+  const loadEvolutionHistory = async () => {
+    if (!schedule?.client_id) return;
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from('attendance_reports')
+      .select('id, created_at, session_notes, observations, professional_name, attendance_type')
+      .eq('client_id', schedule.client_id)
+      .order('start_time', { ascending: false })
+      .limit(20);
+    setEvolutionHistory(data || []);
+    setLoadingHistory(false);
+  };
+
+  const loadAnamnesisHistory = async () => {
+    if (!schedule?.client_id) return;
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from('client_notes')
+      .select('id, created_at, note_text, created_by')
+      .eq('client_id', schedule.client_id)
+      .eq('note_type', 'anamnesis')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    setAnamnesisHistory(data || []);
+    setLoadingHistory(false);
   };
 
   // Reset form when dialog opens
