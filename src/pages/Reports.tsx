@@ -1941,6 +1941,9 @@ export default function Reports() {
       </Card>
 
       <Tabs defaultValue="attendance" className="space-y-6">
+        <TabsList className="flex flex-wrap h-auto gap-1 w-full justify-start p-1">
+          <TabsTrigger value="attendance" className="text-xs sm:text-sm">Atendimentos</TabsTrigger>
+
 
           <TabsTrigger value="tempo" className="flex items-center gap-1 text-xs sm:text-sm">
             <Timer className="h-3 w-3 hidden sm:inline" />
