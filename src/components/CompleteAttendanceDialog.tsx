@@ -636,18 +636,29 @@ export default function CompleteAttendanceDialog({
     setLoading(true);
     try {
       const isNutritionist = professionalRole === 'nutritionist';
-      const isAtendimentoFloresta = clientUnit === 'atendimento_floresta';
       const isNeuroSchedule = schedule.title?.toLowerCase().includes('neuro');
       const isNeuroUnit = clientUnit === 'floresta' || isNeuroSchedule;
 
-      // Buscar profissional
+      // Buscar profissional (inclui unidades para auto-validação)
       const { data: professionalProfile } = await supabase
         .from('profiles')
-        .select('name, email')
+        .select('name, email, unit, units, employee_role')
         .eq('user_id', schedule.employee_id)
         .maybeSingle();
 
+      // Auto-validar se o paciente OU o profissional pertence à unidade atendimento_floresta
+      const professionalUnits: string[] = [
+        ...(Array.isArray(professionalProfile?.units) ? professionalProfile!.units : []),
+        ...(professionalProfile?.unit ? [professionalProfile.unit] : []),
+      ];
+      const professionalIsAtendimentoFloresta =
+        professionalUnits.includes('atendimento_floresta') ||
+        professionalProfile?.employee_role === 'coordinator_atendimento_floresta';
+      const isAtendimentoFloresta =
+        clientUnit === 'atendimento_floresta' || professionalIsAtendimentoFloresta;
+
       const professionalName = professionalProfile?.name || professionalProfile?.email || 'Profissional';
+
 
       // Buscar usuário que está concluindo
       const { data: completedByProfile } = await supabase
