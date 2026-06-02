@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { ClipboardList, Maximize2, Minimize2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface ClientNote {
   id: string;
