@@ -199,7 +199,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             session_objectives: record.treatment_plan || '',
             patient_response: record.symptoms || '',
             created_at: record.session_date,
-            source: 'medical_record'
+            source: 'medical_record',
+            employee_id: record.employee_id
           });
         });
       }
