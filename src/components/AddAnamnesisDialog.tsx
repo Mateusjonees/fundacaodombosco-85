@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Maximize2, Minimize2 } from 'lucide-react';
 
 interface ClientNote {
   id: string;
@@ -71,6 +71,7 @@ export default function AddAnamnesisDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [serviceType, setServiceType] = useState<string>(defaultServiceType || 'private');
   
   const [formData, setFormData] = useState({
@@ -206,13 +207,26 @@ export default function AddAnamnesisDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={isMaximized ? "max-w-[100vw] w-screen h-screen sm:rounded-none overflow-y-auto" : "max-w-2xl max-h-[90vh] overflow-y-auto"}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ClipboardList className="h-5 w-5" />
-            {editingNote ? 'Editar Anamnese' : 'Nova Anamnese'}
+          <DialogTitle className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              {editingNote ? 'Editar Anamnese' : 'Nova Anamnese'}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 mr-6"
+              onClick={() => setIsMaximized(v => !v)}
+              aria-label={isMaximized ? 'Restaurar' : 'Maximizar'}
+            >
+              {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
           </DialogTitle>
         </DialogHeader>
+
 
         <div className="space-y-4 pt-4">
           {/* Tipo de Atendimento */}
