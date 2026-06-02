@@ -386,7 +386,9 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             amount_charged: report.materials_cost || 0,
             created_at: report.session_date,
             source: 'session_report',
-            conclusion_type
+            conclusion_type,
+            created_by_user_id: report.employee_id,
+            source_record_id: report.id
           });
         });
       }
