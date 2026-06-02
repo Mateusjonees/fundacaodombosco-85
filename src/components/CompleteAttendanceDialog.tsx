@@ -15,6 +15,7 @@ import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
 import AddAnamnesisDialog from './AddAnamnesisDialog';
+import { AddMedicalRecordDialog } from './AddMedicalRecordDialog';
 
 // Lazy load - formulários só carregam quando selecionados pelo profissional
 const NeuroTestBPA2Form = lazy(() => import('./NeuroTestBPA2Form'));
@@ -2110,6 +2111,27 @@ export default function CompleteAttendanceDialog({
                 )}
               </CardContent>
             </Card>
+
+            {/* Prontuário do paciente */}
+            {schedule?.client_id && schedule?.employee_id && (
+              <Card className="border-dashed bg-muted/30">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Prontuário do paciente</span>
+                    </div>
+                    <AddMedicalRecordDialog
+                      clientId={schedule.client_id}
+                      employeeId={schedule.employee_id}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Adicione um novo registro detalhado ao prontuário (sinais vitais, evolução, plano terapêutico).
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </ScrollArea>
 
