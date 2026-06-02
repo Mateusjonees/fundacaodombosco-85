@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History } from 'lucide-react';
+import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History, Stethoscope } from 'lucide-react';
 import { getTodayLocalISODate, calculateAgeBR, formatDateBR } from '@/lib/utils';
 import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
@@ -218,8 +218,10 @@ export default function CompleteAttendanceDialog({
   const [hasExistingAnamnesis, setHasExistingAnamnesis] = useState(false);
   const [isEvolutionHistoryOpen, setIsEvolutionHistoryOpen] = useState(false);
   const [isAnamnesisHistoryOpen, setIsAnamnesisHistoryOpen] = useState(false);
+  const [isMedicalRecordsHistoryOpen, setIsMedicalRecordsHistoryOpen] = useState(false);
   const [evolutionHistory, setEvolutionHistory] = useState<any[]>([]);
   const [anamnesisHistory, setAnamnesisHistory] = useState<any[]>([]);
+  const [medicalRecordsHistory, setMedicalRecordsHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Calculate patient age, get unit, and fetch professional role
@@ -308,6 +310,32 @@ export default function CompleteAttendanceDialog({
       .order('created_at', { ascending: false })
       .limit(20);
     setAnamnesisHistory(data || []);
+    setLoadingHistory(false);
+  };
+
+  const loadMedicalRecordsHistory = async () => {
+    if (!schedule?.client_id) return;
+    setLoadingHistory(true);
+    const { data: records } = await supabase
+      .from('medical_records')
+      .select('id, session_date, session_type, progress_notes, employee_id')
+      .eq('client_id', schedule.client_id)
+      .order('session_date', { ascending: false })
+      .limit(20);
+
+    let enriched = records || [];
+    if (enriched.length > 0) {
+      const employeeIds = [...new Set(enriched.map((r: any) => r.employee_id).filter(Boolean))];
+      if (employeeIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles_public')
+          .select('user_id, name')
+          .in('user_id', employeeIds);
+        const map = new Map((profiles || []).map((p: any) => [p.user_id, p.name]));
+        enriched = enriched.map((r: any) => ({ ...r, professional_name: map.get(r.employee_id) || '—' }));
+      }
+    }
+    setMedicalRecordsHistory(enriched);
     setLoadingHistory(false);
   };
 
@@ -2030,6 +2058,15 @@ export default function CompleteAttendanceDialog({
                 <ClipboardList className="h-3.5 w-3.5 mr-1" />
                 Anamneses
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => { loadMedicalRecordsHistory(); setIsMedicalRecordsHistoryOpen(true); }}
+              >
+                <Stethoscope className="h-3.5 w-3.5 mr-1" />
+                Prontuário
+              </Button>
             </div>
 
             {/* Evolução do Atendimento */}
@@ -2159,6 +2196,50 @@ export default function CompleteAttendanceDialog({
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog: Histórico de Prontuário */}
+        <Dialog open={isMedicalRecordsHistoryOpen} onOpenChange={setIsMedicalRecordsHistoryOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Stethoscope className="h-4 w-4" />
+                Histórico de Prontuário
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 pt-2">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando...
+                </div>
+              ) : medicalRecordsHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum registro de prontuário encontrado.
+                </p>
+              ) : (
+                medicalRecordsHistory.map((mr) => (
+                  <Card key={mr.id} className="border-muted">
+                    <CardContent className="p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {formatDateBR(mr.session_date)}
+                        </span>
+                        {mr.session_type && (
+                          <span className="text-xs text-muted-foreground">{mr.session_type}</span>
+                        )}
+                      </div>
+                      {mr.professional_name && (
+                        <p className="text-xs text-muted-foreground">Profissional: {mr.professional_name}</p>
+                      )}
+                      <p className="text-sm whitespace-pre-wrap">{mr.progress_notes}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
 
         {/* Dialog: Nova Anamnese */}
         {schedule?.client_id && (
