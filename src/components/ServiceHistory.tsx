@@ -672,22 +672,10 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 if (!record.conclusion_type) return false;
                 return record.conclusion_type === validationFilter;
               })
-              .map((record, index, filteredArray) =>
-            <div key={record.id} className="relative">
-                  {/* Linha da timeline */}
-                  {index < filteredArray.length - 1 &&
-              <div className="absolute left-6 top-12 w-0.5 h-full bg-border"></div>
-              }
-                  
-                  <div className="flex gap-3 sm:gap-4">
-                    {/* Indicador da timeline */}
-                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background border-2 border-primary flex items-center justify-center">
-                      {getStatusIcon(record.status)}
-                    </div>
-                    
-                    {/* Conteúdo do serviço */}
-                    <div className="flex-1 min-w-0 pb-6 sm:pb-8">
-                      <div className="bg-card border rounded-lg p-3 sm:p-4 shadow-sm">
+              .map((record) =>
+            <div key={record.id} className="mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="bg-card border rounded-lg p-3 sm:p-4 shadow-sm">
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
@@ -1014,7 +1002,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                     </div>
                   </div>
                 </div>
-              </div>
+
           )}
           </div> :
 
