@@ -1009,10 +1009,22 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
 
         <div className="text-center py-8">
             <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground">Nenhum serviço registrado no histórico.</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Adicione um novo serviço para começar o histórico detalhado.
+            <p className="text-muted-foreground">
+              {validationFilter === 'all'
+                ? 'Nenhum serviço registrado no histórico.'
+                : validationFilter === 'auto'
+                ? 'Nenhum atendimento concluído automaticamente.'
+                : validationFilter === 'coordinator'
+                ? 'Nenhum atendimento validado pelo coordenador.'
+                : validationFilter === 'pending'
+                ? 'Nenhum atendimento pendente de validação.'
+                : 'Nenhum atendimento rejeitado.'}
             </p>
+            {validationFilter !== 'all' && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Tente mudar o filtro para "Todos".
+              </p>
+            )}
           </div>
         }
       </CardContent>
