@@ -652,6 +652,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="px-4 sm:px-6">
