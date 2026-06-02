@@ -1002,7 +1002,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                     </div>
                   </div>
                 </div>
-              </div>
+
           )}
           </div> :
 
