@@ -346,7 +346,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             attachments: Array.isArray(report.attachments) ? report.attachments : [],
             amount_charged: report.materials_cost || 0,
             created_at: report.session_date,
-            source: 'session_report'
+            source: 'session_report',
+            employee_id: report.employee_id
           });
         });
       }
