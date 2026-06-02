@@ -2197,6 +2197,50 @@ export default function CompleteAttendanceDialog({
           </DialogContent>
         </Dialog>
 
+        {/* Dialog: Histórico de Prontuário */}
+        <Dialog open={isMedicalRecordsHistoryOpen} onOpenChange={setIsMedicalRecordsHistoryOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Stethoscope className="h-4 w-4" />
+                Histórico de Prontuário
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 pt-2">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando...
+                </div>
+              ) : medicalRecordsHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum registro de prontuário encontrado.
+                </p>
+              ) : (
+                medicalRecordsHistory.map((mr) => (
+                  <Card key={mr.id} className="border-muted">
+                    <CardContent className="p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {formatDateBR(mr.session_date)}
+                        </span>
+                        {mr.session_type && (
+                          <span className="text-xs text-muted-foreground">{mr.session_type}</span>
+                        )}
+                      </div>
+                      {mr.professional_name && (
+                        <p className="text-xs text-muted-foreground">Profissional: {mr.professional_name}</p>
+                      )}
+                      <p className="text-sm whitespace-pre-wrap">{mr.progress_notes}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
         {/* Dialog: Nova Anamnese */}
         {schedule?.client_id && (
           <AddAnamnesisDialog
