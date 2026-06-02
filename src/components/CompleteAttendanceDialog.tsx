@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History } from 'lucide-react';
+import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History, Stethoscope } from 'lucide-react';
 import { getTodayLocalISODate, calculateAgeBR, formatDateBR } from '@/lib/utils';
 import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
