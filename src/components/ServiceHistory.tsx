@@ -69,6 +69,8 @@ interface ServiceRecord {
   validated_by_name?: string;
   rejection_reason?: string;
   schedule_id?: string;
+  employee_id?: string;
+  conclusion_type?: 'auto' | 'coordinator' | 'pending' | 'rejected' | null;
 }
 
 interface ServiceHistoryProps {
