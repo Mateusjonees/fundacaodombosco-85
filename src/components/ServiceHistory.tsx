@@ -20,8 +20,11 @@ import {
   CheckCircle,
   AlertCircle,
   Star,
-  Eye } from
-'lucide-react';
+  Eye,
+  Zap,
+  Filter,
+  Pencil
+} from 'lucide-react';
 
 interface ServiceRecord {
   id: string;
