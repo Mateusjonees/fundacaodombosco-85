@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History } from 'lucide-react';
+import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History, CheckCircle, Info } from 'lucide-react';
 import { getTodayLocalISODate, calculateAgeBR, formatDateBR } from '@/lib/utils';
 import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
@@ -211,6 +211,7 @@ export default function CompleteAttendanceDialog({
   const [clientUnit, setClientUnit] = useState<string | null>(null);
   const [patientAge, setPatientAge] = useState<number>(0);
   const [professionalRole, setProfessionalRole] = useState<string | null>(null);
+  const [professionalUnits, setProfessionalUnits] = useState<string[]>([]);
   const [nutritionData, setNutritionData] = useState<NutritionData>({});
 
   // Anamnese & history states
@@ -236,10 +237,17 @@ export default function CompleteAttendanceDialog({
     if (!schedule?.employee_id) return;
     const { data } = await supabase
       .from('profiles')
-      .select('employee_role')
+      .select('employee_role, unit, units')
       .eq('user_id', schedule.employee_id)
       .maybeSingle();
-    if (data) setProfessionalRole(data.employee_role);
+    if (data) {
+      setProfessionalRole(data.employee_role);
+      const units = [
+        ...(Array.isArray(data.units) ? data.units : []),
+        ...(data.unit ? [data.unit] : []),
+      ];
+      setProfessionalUnits(units);
+    }
   };
 
   const fetchClientInfo = async () => {
@@ -364,6 +372,7 @@ export default function CompleteAttendanceDialog({
       setCancelamentoResults(null);
       setNutritionData({});
       setProfessionalRole(null);
+      setProfessionalUnits([]);
     }
   }, [isOpen]);
 
