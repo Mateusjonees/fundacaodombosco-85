@@ -776,12 +776,13 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                           </div>
                     }
 
-                        {record.session_objectives &&
+                        {(() => { const v = cleanText(record.session_objectives); return v ? (
                     <div>
                             <h5 className="font-medium text-sm mb-1">Objetivos da Sessão:</h5>
-                            <p className="text-sm text-muted-foreground">{record.session_objectives}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{v}</p>
                           </div>
-                    }
+                    ) : null; })()}
+
                         
                         {(() => {
                           const cleaned = (record.detailed_notes || '')
@@ -797,26 +798,29 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                           ) : null;
                         })()}
                         
-                        {record.techniques_used &&
+                        {(() => { const v = cleanText(record.techniques_used); return v ? (
                     <div>
                             <h5 className="font-medium text-sm mb-1">Técnicas Utilizadas:</h5>
-                            <p className="text-sm text-muted-foreground">{record.techniques_used}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{v}</p>
                           </div>
-                    }
+                    ) : null; })()}
+
                         
-                        {record.patient_response &&
+                        {(() => { const v = cleanText(record.patient_response); return v ? (
                     <div>
                             <h5 className="font-medium text-sm mb-1">Resposta do Paciente:</h5>
-                            <p className="text-sm text-muted-foreground">{record.patient_response}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{v}</p>
                           </div>
-                    }
+                    ) : null; })()}
+
                         
-                        {record.next_session_plan &&
+                        {(() => { const v = cleanText(record.next_session_plan); return v ? (
                     <div>
                             <h5 className="font-medium text-sm mb-1">Plano para Próxima Sessão:</h5>
-                            <p className="text-sm text-muted-foreground">{record.next_session_plan}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{v}</p>
                           </div>
-                    }
+                    ) : null; })()}
+
                         
                         {/* Avaliações da sessão (somente para attendance_report e session_report) */}
                         {(record.source === 'attendance_report' || record.source === 'session_report') && (
@@ -888,19 +892,24 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                           </div>
                     }
 
-                        {record.objectives_achieved &&
+                        {(() => { const v = cleanText(record.objectives_achieved); return v ? (
                     <div>
                             <h5 className="font-medium text-sm mb-1">Objetivos Alcançados:</h5>
-                            <p className="text-sm text-muted-foreground">{record.objectives_achieved}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{v}</p>
                           </div>
-                    }
+                    ) : null; })()}
                         
-                        {record.clinical_observations && record.clinical_observations !== record.detailed_notes &&
+                        {(() => {
+                          const v = cleanText(record.clinical_observations);
+                          if (!v || v === cleanText(record.detailed_notes)) return null;
+                          return (
                     <div>
                             <h5 className="font-medium text-sm mb-1">Observações Clínicas:</h5>
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{record.clinical_observations}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{v}</p>
                           </div>
-                    }
+                    );
+                        })()}
+
 
                         {record.materials_used && record.materials_used.length > 0 &&
                     <div>
