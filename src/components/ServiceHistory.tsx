@@ -662,33 +662,64 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           </div> :
         serviceRecords.length > 0 ?
         <div className="space-y-6">
-            {serviceRecords.map((record, index) =>
-          <div key={record.id} className="relative">
-                {/* Linha da timeline */}
-                {index < serviceRecords.length - 1 &&
-            <div className="absolute left-6 top-12 w-0.5 h-full bg-border"></div>
-            }
-                
-                <div className="flex gap-3 sm:gap-4">
-                  {/* Indicador da timeline */}
-                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background border-2 border-primary flex items-center justify-center">
-                    {getStatusIcon(record.status)}
-                  </div>
+            {serviceRecords
+              .filter((record) => {
+                if (validationFilter === 'all') return true;
+                if (!record.conclusion_type) return false;
+                return record.conclusion_type === validationFilter;
+              })
+              .map((record, index, filteredArray) =>
+            <div key={record.id} className="relative">
+                  {/* Linha da timeline */}
+                  {index < filteredArray.length - 1 &&
+              <div className="absolute left-6 top-12 w-0.5 h-full bg-border"></div>
+              }
                   
-                  {/* Conteúdo do serviço */}
-                  <div className="flex-1 min-w-0 pb-6 sm:pb-8">
-                    <div className="bg-card border rounded-lg p-3 sm:p-4 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
-                            <h4 className="font-semibold text-sm sm:text-base">{record.service_type}</h4>
-                            <Badge className={`text-xs ${getServiceTypeColor(record.service_type)}`}>
-                              {record.service_type}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {getStatusLabel(record.status)}
-                            </Badge>
-                          </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    {/* Indicador da timeline */}
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background border-2 border-primary flex items-center justify-center">
+                      {getStatusIcon(record.status)}
+                    </div>
+                    
+                    {/* Conteúdo do serviço */}
+                    <div className="flex-1 min-w-0 pb-6 sm:pb-8">
+                      <div className="bg-card border rounded-lg p-3 sm:p-4 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                              <h4 className="font-semibold text-sm sm:text-base">{record.service_type}</h4>
+                              <Badge className={`text-xs ${getServiceTypeColor(record.service_type)}`}>
+                                {record.service_type}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {getStatusLabel(record.status)}
+                              </Badge>
+                              {/* Badge de tipo de conclusão */}
+                              {record.conclusion_type === 'auto' && (
+                                <Badge className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-0">
+                                  <Zap className="h-3 w-3 mr-1" />
+                                  Concluído Automaticamente
+                                </Badge>
+                              )}
+                              {record.conclusion_type === 'coordinator' && (
+                                <Badge className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-0">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Validado pelo Coordenador
+                                </Badge>
+                              )}
+                              {record.conclusion_type === 'pending' && (
+                                <Badge className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300 border-0">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Pendente de Validação
+                                </Badge>
+                              )}
+                              {record.conclusion_type === 'rejected' && (
+                                <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-0">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  Rejeitado
+                                </Badge>
+                              )}
+                            </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
