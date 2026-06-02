@@ -1359,8 +1359,8 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                   <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 mb-6 overflow-x-auto">
                     <TabsTrigger value="history" className="flex-1 min-w-[100px] text-xs md:text-sm py-2">
                       <Activity className="h-4 w-4 mr-1.5" />
-                      <span className="hidden sm:inline">Atendimentos</span>
-                      <span className="sm:hidden">Atend.</span>
+                      <span className="hidden sm:inline">Evolutiva</span>
+                      <span className="sm:hidden">Evol.</span>
                     </TabsTrigger>
                     <TabsTrigger value="clinical" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
                       <ClipboardList className="h-4 w-4 mr-1.5" />
