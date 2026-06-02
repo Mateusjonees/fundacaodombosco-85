@@ -147,7 +147,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             status: schedule.status || 'scheduled',
             detailed_notes: schedule.description || schedule.notes || '',
             created_at: schedule.start_time,
-            source: 'schedule'
+            source: 'schedule',
+            employee_id: schedule.created_by
           });
         });
       }
