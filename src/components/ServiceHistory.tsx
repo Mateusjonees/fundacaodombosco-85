@@ -327,8 +327,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           validated_by_name
         `).
       eq('client_id', clientId).
-      eq('validation_status', 'validated') // Só mostrar relatórios validados
-      .order('session_date', { ascending: false });
+      order('session_date', { ascending: false });
 
       if (reportsError) throw reportsError;
 
@@ -337,6 +336,16 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         reports.
         filter((report) => !report.schedule_id || !attendanceScheduleIds.has(report.schedule_id)).
         forEach((report) => {
+          // Determinar tipo de conclusão para employee_reports
+          let conclusion_type: ServiceRecord['conclusion_type'] = null;
+          if (report.validation_status === 'pending_validation') {
+            conclusion_type = 'pending';
+          } else if (report.validation_status === 'rejected') {
+            conclusion_type = 'rejected';
+          } else if (report.validation_status === 'validated') {
+            conclusion_type = 'coordinator';
+          }
+
           records.push({
             id: `report_${report.id}`,
             date: report.session_date,
@@ -344,7 +353,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             professional_name: report.profiles?.name || 'Profissional',
             professional_role: report.profiles?.employee_role || 'Staff',
             duration: report.session_duration,
-            status: 'completed',
+            status: report.validation_status === 'pending_validation' ? 'pending' : 'completed',
             detailed_notes: report.professional_notes || '',
             techniques_used: report.techniques_used || '',
             session_objectives: report.session_objectives || '',
@@ -358,7 +367,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             attachments: Array.isArray(report.attachments) ? report.attachments : [],
             amount_charged: report.materials_cost || 0,
             created_at: report.session_date,
-            source: 'session_report'
+            source: 'session_report',
+            conclusion_type
           });
         });
       }
