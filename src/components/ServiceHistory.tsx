@@ -303,7 +303,9 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             validated_by_name: report.validated_by_name,
             rejection_reason: report.rejection_reason,
             schedule_id: report.schedule_id,
-            conclusion_type
+            conclusion_type,
+            created_by_user_id: report.employee_id,
+            source_record_id: report.id
           });
         });
       }
