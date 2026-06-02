@@ -239,24 +239,35 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           rejection_reason
         `).
       eq('client_id', clientId).
-      eq('validation_status', 'validated') // Só mostrar atendimentos validados
-      .order('start_time', { ascending: false });
+      order('start_time', { ascending: false });
 
       if (attendanceError) throw attendanceError;
 
       if (attendanceReports) {
         attendanceReports.forEach((report) => {
+          // Determinar tipo de conclusão
+          let conclusion_type: ServiceRecord['conclusion_type'] = null;
+          if (report.validation_status === 'pending_validation') {
+            conclusion_type = 'pending';
+          } else if (report.validation_status === 'rejected') {
+            conclusion_type = 'rejected';
+          } else if (report.validation_status === 'validated') {
+            conclusion_type = (report.validated_by_name && report.completed_by_name && report.validated_by_name === report.completed_by_name)
+              ? 'auto'
+              : 'coordinator';
+          }
+
           records.push({
             id: `attendance_${report.id}`,
             date: report.start_time,
             service_type: report.attendance_type || 'Atendimento Concluído',
             professional_name: report.professional_name || 'Profissional',
-            professional_role: 'Staff', // Pode ser melhorado buscando da tabela profiles
+            professional_role: 'Staff',
             duration: report.session_duration,
-            status: 'completed',
+            status: report.validation_status === 'pending_validation' ? 'pending' : 'completed',
             detailed_notes: report.session_notes || '',
             techniques_used: report.techniques_used || '',
-            session_objectives: '', // Pode ser adicionado se necessário
+            session_objectives: '',
             patient_response: report.patient_response || '',
             next_session_plan: report.next_session_plan || '',
             materials_used: Array.isArray(report.materials_used) ? report.materials_used : [],
@@ -265,7 +276,6 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             amount_charged: report.amount_charged || 0,
             created_at: report.created_at,
             source: 'attendance_report',
-            // Campos completos dos attendance_reports
             patient_name: report.patient_name,
             start_time: report.start_time,
             end_time: report.end_time,
@@ -276,7 +286,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             validated_at: report.validated_at,
             validated_by_name: report.validated_by_name,
             rejection_reason: report.rejection_reason,
-            schedule_id: report.schedule_id
+            schedule_id: report.schedule_id,
+            conclusion_type
           });
         });
       }
