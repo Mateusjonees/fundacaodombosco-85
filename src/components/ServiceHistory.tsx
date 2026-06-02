@@ -823,15 +823,27 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                         }
                           </div>
                         </div>
-                        <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openDetailsDialog(record)}
-                      className="self-start text-xs sm:text-sm shrink-0">
-                      
-                          <Eye className="h-3.5 w-3.5 sm:mr-1" />
-                          <span className="hidden sm:inline">Agendamento</span>
-                        </Button>
+                        <div className="flex items-center gap-2 self-start shrink-0">
+                          {canEditRecord(record) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(record)}
+                              title="Editar fechamento"
+                              className="text-xs sm:text-sm">
+                              <Pencil className="h-3.5 w-3.5 sm:mr-1" />
+                              <span className="hidden sm:inline">Editar</span>
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDetailsDialog(record)}
+                            className="text-xs sm:text-sm">
+                            <Eye className="h-3.5 w-3.5 sm:mr-1" />
+                            <span className="hidden sm:inline">Agendamento</span>
+                          </Button>
+                        </div>
                       </div>
                       
                       {/* Detalhes do serviço */}
