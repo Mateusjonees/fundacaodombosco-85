@@ -362,9 +362,11 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         });
       }
 
+      // Ocultar agendamentos sem evolutiva — mostrar apenas prontuários/atendimentos clínicos
+      const clinicalRecords = records.filter((r) => r.source !== 'schedule');
       // Ordenar todos os registros por data (mais recente primeiro)
-      records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setServiceRecords(records);
+      clinicalRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setServiceRecords(clinicalRecords);
     } catch (error) {
       console.error('Error loading service history:', error);
       toast({
