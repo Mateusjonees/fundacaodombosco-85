@@ -122,6 +122,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           created_by
         `).
       eq('client_id', clientId).
+      eq('status', 'completed').
       order('start_time', { ascending: false });
 
       if (schedulesError) throw schedulesError;
