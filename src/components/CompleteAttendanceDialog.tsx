@@ -313,6 +313,32 @@ export default function CompleteAttendanceDialog({
     setLoadingHistory(false);
   };
 
+  const loadMedicalRecordsHistory = async () => {
+    if (!schedule?.client_id) return;
+    setLoadingHistory(true);
+    const { data: records } = await supabase
+      .from('medical_records')
+      .select('id, session_date, session_type, progress_notes, employee_id')
+      .eq('client_id', schedule.client_id)
+      .order('session_date', { ascending: false })
+      .limit(20);
+
+    let enriched = records || [];
+    if (enriched.length > 0) {
+      const employeeIds = [...new Set(enriched.map((r: any) => r.employee_id).filter(Boolean))];
+      if (employeeIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles_public')
+          .select('user_id, name')
+          .in('user_id', employeeIds);
+        const map = new Map((profiles || []).map((p: any) => [p.user_id, p.name]));
+        enriched = enriched.map((r: any) => ({ ...r, professional_name: map.get(r.employee_id) || '—' }));
+      }
+    }
+    setMedicalRecordsHistory(enriched);
+    setLoadingHistory(false);
+  };
+
   // Reset form when dialog opens
   useEffect(() => {
     if (isOpen) {
