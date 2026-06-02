@@ -455,6 +455,17 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
+  // Remove linhas que contenham apenas "0", "R$ 0", etc, evitando poluição visual
+  const cleanText = (value?: string | null): string => {
+    if (!value) return '';
+    return value
+      .split('\n')
+      .filter((l) => !/^\s*(r\$\s*)?0+([.,]0+)?\s*$/i.test(l))
+      .join('\n')
+      .trim();
+  };
+
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
