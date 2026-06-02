@@ -1628,6 +1628,75 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Edição do Fechamento */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Editar Fechamento do Atendimento
+            </DialogTitle>
+          </DialogHeader>
+          {editRecord && (
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>
+                  {editRecord.source === 'medical_record' ? 'Evolução / Anotações' : 'Observações / Evolução'}
+                </Label>
+                <Textarea
+                  rows={4}
+                  value={editForm.detailed_notes}
+                  onChange={(e) => setEditForm({ ...editForm, detailed_notes: e.target.value })} />
+              </div>
+              {editRecord.source !== 'medical_record' && (
+                <div className="space-y-2">
+                  <Label>Técnicas Utilizadas</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.techniques_used}
+                    onChange={(e) => setEditForm({ ...editForm, techniques_used: e.target.value })} />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>
+                  {editRecord.source === 'medical_record' ? 'Sintomas' : 'Resposta do Paciente'}
+                </Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.patient_response}
+                  onChange={(e) => setEditForm({ ...editForm, patient_response: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  {editRecord.source === 'medical_record' ? 'Plano de Tratamento' : 'Plano para Próxima Sessão'}
+                </Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.next_session_plan}
+                  onChange={(e) => setEditForm({ ...editForm, next_session_plan: e.target.value })} />
+              </div>
+              {editRecord.source === 'attendance_report' && (
+                <div className="space-y-2">
+                  <Label>Observações Clínicas</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.clinical_observations}
+                    onChange={(e) => setEditForm({ ...editForm, clinical_observations: e.target.value })} />
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={loading}>
+              {loading ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>);
 
 }
