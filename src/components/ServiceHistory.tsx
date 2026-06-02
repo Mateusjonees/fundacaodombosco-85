@@ -20,8 +20,11 @@ import {
   CheckCircle,
   AlertCircle,
   Star,
-  Eye } from
-'lucide-react';
+  Eye,
+  Zap,
+  Filter,
+  Pencil
+} from 'lucide-react';
 
 interface ServiceRecord {
   id: string;
@@ -66,6 +69,8 @@ interface ServiceRecord {
   validated_by_name?: string;
   rejection_reason?: string;
   schedule_id?: string;
+  employee_id?: string;
+  conclusion_type?: 'auto' | 'coordinator' | 'pending' | 'rejected' | null;
 }
 
 interface ServiceHistoryProps {
@@ -77,6 +82,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
   const { toast } = useToast();
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [validationFilter, setValidationFilter] = useState<'all' | 'auto' | 'coordinator' | 'pending' | 'rejected'>('all');
   const [addServiceDialogOpen, setAddServiceDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -233,24 +239,35 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           rejection_reason
         `).
       eq('client_id', clientId).
-      eq('validation_status', 'validated') // Só mostrar atendimentos validados
-      .order('start_time', { ascending: false });
+      order('start_time', { ascending: false });
 
       if (attendanceError) throw attendanceError;
 
       if (attendanceReports) {
         attendanceReports.forEach((report) => {
+          // Determinar tipo de conclusão
+          let conclusion_type: ServiceRecord['conclusion_type'] = null;
+          if (report.validation_status === 'pending_validation') {
+            conclusion_type = 'pending';
+          } else if (report.validation_status === 'rejected') {
+            conclusion_type = 'rejected';
+          } else if (report.validation_status === 'validated') {
+            conclusion_type = (report.validated_by_name && report.completed_by_name && report.validated_by_name === report.completed_by_name)
+              ? 'auto'
+              : 'coordinator';
+          }
+
           records.push({
             id: `attendance_${report.id}`,
             date: report.start_time,
             service_type: report.attendance_type || 'Atendimento Concluído',
             professional_name: report.professional_name || 'Profissional',
-            professional_role: 'Staff', // Pode ser melhorado buscando da tabela profiles
+            professional_role: 'Staff',
             duration: report.session_duration,
-            status: 'completed',
+            status: report.validation_status === 'pending_validation' ? 'pending' : 'completed',
             detailed_notes: report.session_notes || '',
             techniques_used: report.techniques_used || '',
-            session_objectives: '', // Pode ser adicionado se necessário
+            session_objectives: '',
             patient_response: report.patient_response || '',
             next_session_plan: report.next_session_plan || '',
             materials_used: Array.isArray(report.materials_used) ? report.materials_used : [],
@@ -259,7 +276,6 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             amount_charged: report.amount_charged || 0,
             created_at: report.created_at,
             source: 'attendance_report',
-            // Campos completos dos attendance_reports
             patient_name: report.patient_name,
             start_time: report.start_time,
             end_time: report.end_time,
@@ -270,7 +286,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             validated_at: report.validated_at,
             validated_by_name: report.validated_by_name,
             rejection_reason: report.rejection_reason,
-            schedule_id: report.schedule_id
+            schedule_id: report.schedule_id,
+            conclusion_type
           });
         });
       }
@@ -310,8 +327,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           validated_by_name
         `).
       eq('client_id', clientId).
-      eq('validation_status', 'validated') // Só mostrar relatórios validados
-      .order('session_date', { ascending: false });
+      order('session_date', { ascending: false });
 
       if (reportsError) throw reportsError;
 
@@ -320,6 +336,16 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         reports.
         filter((report) => !report.schedule_id || !attendanceScheduleIds.has(report.schedule_id)).
         forEach((report) => {
+          // Determinar tipo de conclusão para employee_reports
+          let conclusion_type: ServiceRecord['conclusion_type'] = null;
+          if (report.validation_status === 'pending_validation') {
+            conclusion_type = 'pending';
+          } else if (report.validation_status === 'rejected') {
+            conclusion_type = 'rejected';
+          } else if (report.validation_status === 'validated') {
+            conclusion_type = 'coordinator';
+          }
+
           records.push({
             id: `report_${report.id}`,
             date: report.session_date,
@@ -327,7 +353,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             professional_name: report.profiles?.name || 'Profissional',
             professional_role: report.profiles?.employee_role || 'Staff',
             duration: report.session_duration,
-            status: 'completed',
+            status: report.validation_status === 'pending_validation' ? 'pending' : 'completed',
             detailed_notes: report.professional_notes || '',
             techniques_used: report.techniques_used || '',
             session_objectives: report.session_objectives || '',
@@ -341,7 +367,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             attachments: Array.isArray(report.attachments) ? report.attachments : [],
             amount_charged: report.materials_cost || 0,
             created_at: report.session_date,
-            source: 'session_report'
+            source: 'session_report',
+            conclusion_type
           });
         });
       }
@@ -435,6 +462,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         return <Clock className="h-4 w-4 text-blue-500" />;
       case 'cancelled':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-amber-500" />;
       default:
         return <Activity className="h-4 w-4 text-gray-500" />;
     }
@@ -442,10 +471,11 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'completed':return 'Concluído';
-      case 'scheduled':return 'Agendado';
-      case 'cancelled':return 'Cancelado';
-      default:return status;
+      case 'completed': return 'Concluído';
+      case 'scheduled': return 'Agendado';
+      case 'cancelled': return 'Cancelado';
+      case 'pending': return 'Pendente';
+      default: return status;
     }
   };
 
@@ -474,13 +504,27 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             <Clock className="h-5 w-5" />
             Histórico de Serviços
           </CardTitle>
-          <Dialog open={addServiceDialogOpen} onOpenChange={setAddServiceDialogOpen}>
-            <DialogTrigger asChild>
-              
+          <div className="flex items-center gap-2">
+            <Select value={validationFilter} onValueChange={(value: any) => setValidationFilter(value)}>
+              <SelectTrigger className="h-8 text-xs w-[180px]">
+                <Filter className="h-3 w-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="auto">Concluído Automaticamente</SelectItem>
+                <SelectItem value="coordinator">Validado pelo Coordenador</SelectItem>
+                <SelectItem value="pending">Pendente de Validação</SelectItem>
+                <SelectItem value="rejected">Rejeitado</SelectItem>
+              </SelectContent>
+            </Select>
+            <Dialog open={addServiceDialogOpen} onOpenChange={setAddServiceDialogOpen}>
+              <DialogTrigger asChild>
+                
 
 
               
-            </DialogTrigger>
+              </DialogTrigger>
             <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Serviço</DialogTitle>
@@ -611,6 +655,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="px-4 sm:px-6">
@@ -620,33 +665,64 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           </div> :
         serviceRecords.length > 0 ?
         <div className="space-y-6">
-            {serviceRecords.map((record, index) =>
-          <div key={record.id} className="relative">
-                {/* Linha da timeline */}
-                {index < serviceRecords.length - 1 &&
-            <div className="absolute left-6 top-12 w-0.5 h-full bg-border"></div>
-            }
-                
-                <div className="flex gap-3 sm:gap-4">
-                  {/* Indicador da timeline */}
-                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background border-2 border-primary flex items-center justify-center">
-                    {getStatusIcon(record.status)}
-                  </div>
+            {serviceRecords
+              .filter((record) => {
+                if (validationFilter === 'all') return true;
+                if (!record.conclusion_type) return false;
+                return record.conclusion_type === validationFilter;
+              })
+              .map((record, index, filteredArray) =>
+            <div key={record.id} className="relative">
+                  {/* Linha da timeline */}
+                  {index < filteredArray.length - 1 &&
+              <div className="absolute left-6 top-12 w-0.5 h-full bg-border"></div>
+              }
                   
-                  {/* Conteúdo do serviço */}
-                  <div className="flex-1 min-w-0 pb-6 sm:pb-8">
-                    <div className="bg-card border rounded-lg p-3 sm:p-4 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
-                            <h4 className="font-semibold text-sm sm:text-base">{record.service_type}</h4>
-                            <Badge className={`text-xs ${getServiceTypeColor(record.service_type)}`}>
-                              {record.service_type}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {getStatusLabel(record.status)}
-                            </Badge>
-                          </div>
+                  <div className="flex gap-3 sm:gap-4">
+                    {/* Indicador da timeline */}
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background border-2 border-primary flex items-center justify-center">
+                      {getStatusIcon(record.status)}
+                    </div>
+                    
+                    {/* Conteúdo do serviço */}
+                    <div className="flex-1 min-w-0 pb-6 sm:pb-8">
+                      <div className="bg-card border rounded-lg p-3 sm:p-4 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                              <h4 className="font-semibold text-sm sm:text-base">{record.service_type}</h4>
+                              <Badge className={`text-xs ${getServiceTypeColor(record.service_type)}`}>
+                                {record.service_type}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {getStatusLabel(record.status)}
+                              </Badge>
+                              {/* Badge de tipo de conclusão */}
+                              {record.conclusion_type === 'auto' && (
+                                <Badge className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-0">
+                                  <Zap className="h-3 w-3 mr-1" />
+                                  Concluído Automaticamente
+                                </Badge>
+                              )}
+                              {record.conclusion_type === 'coordinator' && (
+                                <Badge className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-0">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Validado pelo Coordenador
+                                </Badge>
+                              )}
+                              {record.conclusion_type === 'pending' && (
+                                <Badge className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300 border-0">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Pendente de Validação
+                                </Badge>
+                              )}
+                              {record.conclusion_type === 'rejected' && (
+                                <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-0">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  Rejeitado
+                                </Badge>
+                              )}
+                            </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
@@ -936,10 +1012,22 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
 
         <div className="text-center py-8">
             <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground">Nenhum serviço registrado no histórico.</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Adicione um novo serviço para começar o histórico detalhado.
+            <p className="text-muted-foreground">
+              {validationFilter === 'all'
+                ? 'Nenhum serviço registrado no histórico.'
+                : validationFilter === 'auto'
+                ? 'Nenhum atendimento concluído automaticamente.'
+                : validationFilter === 'coordinator'
+                ? 'Nenhum atendimento validado pelo coordenador.'
+                : validationFilter === 'pending'
+                ? 'Nenhum atendimento pendente de validação.'
+                : 'Nenhum atendimento rejeitado.'}
             </p>
+            {validationFilter !== 'all' && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Tente mudar o filtro para "Todos".
+              </p>
+            )}
           </div>
         }
       </CardContent>
