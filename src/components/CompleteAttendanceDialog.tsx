@@ -2085,14 +2085,14 @@ export default function CompleteAttendanceDialog({
             </div>
 
             {/* Anamnese do paciente */}
-            <Card className={`border-dashed ${hasExistingAnamnesis ? 'bg-green-50/50 border-green-200' : 'bg-muted/30'}`}>
+            <Card className={`border-dashed ${hasExistingAnamnesis ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800' : 'bg-muted/30'}`}>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ClipboardList className={`h-4 w-4 ${hasExistingAnamnesis ? 'text-green-600' : 'text-muted-foreground'}`} />
-                    <span className="text-sm font-medium">Anamnese do paciente</span>
+                    <ClipboardList className={`h-4 w-4 ${hasExistingAnamnesis ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
+                    <span className="text-sm font-medium text-foreground">Anamnese do paciente</span>
                     {hasExistingAnamnesis && (
-                      <span className="text-xs text-green-600 font-medium">✓ Anamnese já realizada</span>
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Anamnese já realizada</span>
                     )}
                   </div>
                   <Button
