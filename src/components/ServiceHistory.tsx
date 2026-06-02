@@ -71,6 +71,8 @@ interface ServiceRecord {
   schedule_id?: string;
   employee_id?: string;
   conclusion_type?: 'auto' | 'coordinator' | 'pending' | 'rejected' | null;
+  created_by_user_id?: string;
+  source_record_id?: string;
 }
 
 interface ServiceHistoryProps {
