@@ -82,6 +82,16 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
   const [addServiceDialogOpen, setAddServiceDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
+  const [editForm, setEditForm] = useState({
+    detailed_notes: '',
+    techniques_used: '',
+    session_objectives: '',
+    patient_response: '',
+    next_session_plan: ''
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
   const [newService, setNewService] = useState({
     service_type: '',
     date: '',
