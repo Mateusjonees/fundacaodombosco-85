@@ -719,6 +719,22 @@ export default function CompleteAttendanceDialog({
         .select('id')
         .maybeSingle();
 
+      // Criar entrada no prontuário (medical_records) — espelha a evolutiva
+      try {
+        await supabase.from('medical_records').insert({
+          client_id: schedule.client_id,
+          employee_id: schedule.employee_id,
+          session_date: schedule.start_time?.slice(0, 10) || getTodayLocalISODate(),
+          session_type: attendanceType,
+          session_duration: durationMinutes,
+          progress_notes: sessionNotes,
+          attachments: attachmentsData,
+          status: 'completed',
+        });
+      } catch (mrErr) {
+        console.warn('[CompleteAttendance] Falha ao espelhar no prontuário:', mrErr);
+      }
+
       // Salvar resultados dos testes neuro (se houver testes selecionados)
       if (selectedTests.length > 0) {
         const testsToSave = [];
