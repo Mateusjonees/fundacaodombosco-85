@@ -71,6 +71,7 @@ export default function AddAnamnesisDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [serviceType, setServiceType] = useState<string>(defaultServiceType || 'private');
   
   const [formData, setFormData] = useState({
