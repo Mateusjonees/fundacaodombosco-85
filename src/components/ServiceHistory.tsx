@@ -274,7 +274,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             validated_at: report.validated_at,
             validated_by_name: report.validated_by_name,
             rejection_reason: report.rejection_reason,
-            schedule_id: report.schedule_id
+            schedule_id: report.schedule_id,
+            employee_id: report.employee_id
           });
         });
       }
