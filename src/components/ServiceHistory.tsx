@@ -527,6 +527,70 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
     setDetailsDialogOpen(true);
   };
 
+  const canEditRecord = (record: ServiceRecord) => {
+    if (!user?.id || !record.created_by_user_id) return false;
+    if (user.id !== record.created_by_user_id) return false;
+    return record.source === 'attendance_report'
+      || record.source === 'medical_record'
+      || record.source === 'session_report';
+  };
+
+  const openEditDialog = (record: ServiceRecord) => {
+    setEditRecord(record);
+    setEditForm({
+      detailed_notes: record.detailed_notes || '',
+      techniques_used: record.techniques_used || '',
+      patient_response: record.patient_response || '',
+      next_session_plan: record.next_session_plan || '',
+      clinical_observations: record.clinical_observations || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editRecord || !editRecord.source_record_id) return;
+    setLoading(true);
+    try {
+      let error: any = null;
+      if (editRecord.source === 'attendance_report') {
+        const res = await supabase.from('attendance_reports').update({
+          session_notes: editForm.detailed_notes,
+          techniques_used: editForm.techniques_used,
+          patient_response: editForm.patient_response,
+          next_session_plan: editForm.next_session_plan,
+          observations: editForm.clinical_observations,
+        }).eq('id', editRecord.source_record_id);
+        error = res.error;
+      } else if (editRecord.source === 'medical_record') {
+        const res = await supabase.from('medical_records').update({
+          progress_notes: editForm.detailed_notes,
+          symptoms: editForm.patient_response,
+          treatment_plan: editForm.next_session_plan,
+        }).eq('id', editRecord.source_record_id);
+        error = res.error;
+      } else if (editRecord.source === 'session_report') {
+        const res = await supabase.from('employee_reports').update({
+          professional_notes: editForm.detailed_notes,
+          techniques_used: editForm.techniques_used,
+          patient_response: editForm.patient_response,
+          next_session_plan: editForm.next_session_plan,
+        }).eq('id', editRecord.source_record_id);
+        error = res.error;
+      }
+      if (error) throw error;
+      toast({ title: 'Atualizado', description: 'Fechamento atualizado com sucesso.' });
+      setEditDialogOpen(false);
+      setEditRecord(null);
+      loadServiceHistory();
+    } catch (err: any) {
+      console.error('Error updating record:', err);
+      toast({ variant: 'destructive', title: 'Erro', description: err.message || 'Não foi possível atualizar o registro.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
     <Card>
       <CardHeader className="px-4 sm:px-6">
