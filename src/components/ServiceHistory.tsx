@@ -482,6 +482,89 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
     setDetailsDialogOpen(true);
   };
 
+  const canEditRecord = (record: ServiceRecord) => {
+    if (!user?.id || !record.employee_id) return false;
+    if (user.id !== record.employee_id) return false;
+    return record.source === 'medical_record' ||
+      record.source === 'attendance_report' ||
+      record.source === 'session_report' ||
+      record.source === 'schedule';
+  };
+
+  const openEditDialog = (record: ServiceRecord) => {
+    setEditingRecord(record);
+    setEditForm({
+      detailed_notes: record.detailed_notes || '',
+      techniques_used: record.techniques_used || '',
+      session_objectives: record.session_objectives || '',
+      patient_response: record.patient_response || '',
+      next_session_plan: record.next_session_plan || ''
+    });
+    setEditDialogOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editingRecord) return;
+    setSavingEdit(true);
+    try {
+      const rawId = editingRecord.id.replace(/^(medical_|attendance_|report_)/, '');
+      let error: any = null;
+
+      if (editingRecord.source === 'medical_record') {
+        ({ error } = await supabase
+          .from('medical_records')
+          .update({
+            progress_notes: editForm.detailed_notes,
+            treatment_plan: editForm.session_objectives,
+            symptoms: editForm.patient_response
+          })
+          .eq('id', rawId));
+      } else if (editingRecord.source === 'attendance_report') {
+        ({ error } = await supabase
+          .from('attendance_reports')
+          .update({
+            session_notes: editForm.detailed_notes,
+            techniques_used: editForm.techniques_used,
+            patient_response: editForm.patient_response,
+            next_session_plan: editForm.next_session_plan
+          })
+          .eq('id', rawId));
+      } else if (editingRecord.source === 'session_report') {
+        ({ error } = await supabase
+          .from('employee_reports')
+          .update({
+            professional_notes: editForm.detailed_notes,
+            techniques_used: editForm.techniques_used,
+            session_objectives: editForm.session_objectives,
+            patient_response: editForm.patient_response,
+            next_session_plan: editForm.next_session_plan
+          })
+          .eq('id', rawId));
+      } else if (editingRecord.source === 'schedule') {
+        ({ error } = await supabase
+          .from('schedules')
+          .update({ description: editForm.detailed_notes })
+          .eq('id', rawId));
+      }
+
+      if (error) throw error;
+
+      toast({ title: 'Atualizado', description: 'Registro atualizado com sucesso.' });
+      setEditDialogOpen(false);
+      setEditingRecord(null);
+      await loadServiceHistory();
+    } catch (e: any) {
+      console.error('Error updating record:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: e?.message || 'Não foi possível atualizar o registro.'
+      });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="px-4 sm:px-6">
