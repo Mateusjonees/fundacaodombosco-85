@@ -163,7 +163,9 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             status: schedule.status || 'scheduled',
             detailed_notes: schedule.description || schedule.notes || '',
             created_at: schedule.start_time,
-            source: 'schedule'
+            source: 'schedule',
+            created_by_user_id: schedule.created_by,
+            source_record_id: schedule.id
           });
         });
       }
