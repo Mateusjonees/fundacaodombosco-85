@@ -218,8 +218,10 @@ export default function CompleteAttendanceDialog({
   const [hasExistingAnamnesis, setHasExistingAnamnesis] = useState(false);
   const [isEvolutionHistoryOpen, setIsEvolutionHistoryOpen] = useState(false);
   const [isAnamnesisHistoryOpen, setIsAnamnesisHistoryOpen] = useState(false);
+  const [isMedicalRecordsHistoryOpen, setIsMedicalRecordsHistoryOpen] = useState(false);
   const [evolutionHistory, setEvolutionHistory] = useState<any[]>([]);
   const [anamnesisHistory, setAnamnesisHistory] = useState<any[]>([]);
+  const [medicalRecordsHistory, setMedicalRecordsHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Calculate patient age, get unit, and fetch professional role
