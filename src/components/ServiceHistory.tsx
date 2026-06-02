@@ -82,6 +82,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
   const { toast } = useToast();
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [validationFilter, setValidationFilter] = useState<'all' | 'auto' | 'coordinator' | 'pending' | 'rejected'>('all');
   const [addServiceDialogOpen, setAddServiceDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
