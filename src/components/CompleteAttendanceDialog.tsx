@@ -719,6 +719,22 @@ export default function CompleteAttendanceDialog({
         .select('id')
         .maybeSingle();
 
+      // Criar entrada no prontuário (medical_records) — espelha a evolutiva
+      try {
+        await supabase.from('medical_records').insert({
+          client_id: schedule.client_id,
+          employee_id: schedule.employee_id,
+          session_date: schedule.start_time?.slice(0, 10) || getTodayLocalISODate(),
+          session_type: attendanceType,
+          session_duration: durationMinutes,
+          progress_notes: sessionNotes,
+          attachments: attachmentsData,
+          status: 'completed',
+        });
+      } catch (mrErr) {
+        console.warn('[CompleteAttendance] Falha ao espelhar no prontuário:', mrErr);
+      }
+
       // Salvar resultados dos testes neuro (se houver testes selecionados)
       if (selectedTests.length > 0) {
         const testsToSave = [];
@@ -2032,18 +2048,21 @@ export default function CompleteAttendanceDialog({
               </Button>
             </div>
 
-            {/* Evolução do Atendimento */}
+            {/* Prontuário / Evolutiva Clínica */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Evolução do Atendimento <span className="text-destructive">*</span>
+                Prontuário / Evolutiva Clínica <span className="text-destructive">*</span>
               </Label>
               <Textarea
-                placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
+                placeholder="Registro clínico oficial: evolução do paciente, procedimentos realizados, observações clínicas, condutas, orientações e plano para o próximo atendimento. Este texto será salvo no prontuário do paciente."
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
                 className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
               />
+              <p className="text-xs text-muted-foreground">
+                Este registro será salvo automaticamente no prontuário e aparecerá na aba "Evolutiva" do paciente.
+              </p>
             </div>
 
             {/* Anamnese do paciente */}

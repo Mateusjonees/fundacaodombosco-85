@@ -1,70 +1,52 @@
-## Refatoração visual — aparência hospitalar/ERP enterprise
+# Unificar Prontuário e Evolutiva no fluxo da Agenda + Paciente
 
-Sem mexer em lógica, rotas, hooks ou dados. Apenas tokens de design, densidade e estilos de componentes. A maior parte da mudança vem de `index.css` + `tailwind.config.ts` + alguns componentes de chrome (sidebar, dashboard, tabelas, cards). Os 150+ componentes herdam automaticamente via tokens semânticos.
+## Contexto
 
-### Escopo (o que muda)
+Hoje existem dois fluxos paralelos que confundem os profissionais:
 
-1. **Tokens globais (`src/index.css`)** — repintar a paleta para tons hospitalares sóbrios:
-   - `--primary`: azul petróleo (ex.: `200 60% 32%`) — mais sério que o azul vibrante atual
-   - `--secondary`: verde clínico discreto (`165 35% 38%`)
-   - `--background`: branco gelo levemente acinzentado (`210 20% 98%`)
-   - `--foreground`: cinza grafite (`215 25% 18%`)
-   - `--muted` / `--border`: cinzas hospitalares neutros
-   - Remover `--chart-3` roxo (trocar por azul-petróleo secundário)
-   - `--radius`: de `0.75rem` (12px) → `0.375rem` (6px)
-   - Sombras: `--shadow-md`/`-lg`/`-xl` praticamente zeradas (apenas 1px sutil); remover `--shadow-glow`
-   - Gradientes (`--gradient-primary/secondary/subtle/card`) trocados por cores sólidas chapadas
-   - Fonte: trocar import Google Fonts de `Inter` para **IBM Plex Sans** (400/500/600/700)
-   - Modo dark recebe os mesmos ajustes (paleta sóbria, sem glow)
+- **Agenda → Finalizar Atendimento** (`CompleteAttendanceDialog`): grava em `attendance_reports` o campo "Evolução do Atendimento".
+- **Prontuário** (`/prontuarios`): grava em `medical_records` separadamente. Profissionais estavam escrevendo lá manualmente.
+- **Ficha do paciente → aba "Atendimentos"** (`ServiceHistory`): já junta `medical_records` + `attendance_reports`, mas a aba se chama "Atendimentos", o que esconde a função clínica.
 
-2. **Layer `components` do `index.css`** — reduzir aparência "SaaS":
-   - Remover `.login-bubble`, blur e gradiente do `.login-container` (fundo cinza-azulado chapado)
-   - Reduzir paddings/raios de classes utilitárias do projeto que forçam visual macio
+O objetivo é unificar: ao finalizar pela agenda, a evolutiva já vira **prontuário oficial**, e na ficha do paciente o histórico fica em uma única aba chamada **Evolutiva**.
 
-3. **Tailwind config (`tailwind.config.ts`)** — encurtar animações (`fade-in`, `slide-up`, `scale-in` → de 150ms para 80ms ou removidas); reduzir keyframes decorativos.
+## O que muda
 
-4. **Sidebar (`src/components/layout/AppSidebar.tsx`)** — densidade ERP: menos padding vertical entre itens, ícones menores (h-4 w-4), tipografia 13px, separadores discretos por `border-b`, sem cards arredondados internos. Sem mudar itens nem navegação.
+### 1. `src/components/CompleteAttendanceDialog.tsx`
+- Renomear o label do textarea atual `Evolução do Atendimento` para **`Prontuário / Evolutiva Clínica`** (mantém o mesmo state `sessionNotes`, mantém obrigatório).
+- Atualizar o `placeholder` para reforçar que é o registro clínico oficial.
+- Dentro do `handleComplete`, **após** o `insert` em `attendance_reports`, fazer um `insert` adicional em `public.medical_records` com:
+  - `client_id`, `employee_id` do schedule
+  - `session_date` = data do schedule
+  - `session_type` = `attendanceType` (Consulta / Consulta Nutricional)
+  - `session_duration` = `durationMinutes`
+  - `progress_notes` = `sessionNotes`
+  - `attachments` = `attachmentsData`
+  - `status` = `'completed'`
+- Erro do insert em `medical_records` não pode bloquear a finalização (try/catch isolado com toast informativo) — `attendance_reports` continua sendo a fonte de verdade do agendamento.
 
-5. **Dashboard (`src/pages/Dashboard.tsx` + `DashboardActionCards`, `DashboardUpcomingAppointments`, `DashboardCharts`)** — reorganizar visualmente em painéis operacionais densos:
-   - Header institucional fino (título + data + unidade) no lugar de hero
-   - Grid 12 colunas com painéis bordados (sem sombras): "Agenda do dia", "Pacientes aguardando", "Pendências clínicas", "Atendimentos recentes"
-   - Substituir cards grandes de KPI por uma faixa horizontal compacta de contadores numéricos com labels pequenos
-   - Manter exatamente os mesmos dados/hooks que já existem
+### 2. `src/components/ClientDetailsView.tsx` (aba do paciente)
+- Trocar o label da `TabsTrigger value="history"`:
+  - `Atendimentos` → `Evolutiva`
+  - `Atend.` (mobile) → `Evol.`
+- Nenhuma mudança no `ServiceHistory` em si — ele já busca de `medical_records`, `attendance_reports`, `schedules` e `employee_reports`, então passará a mostrar a entrada criada no passo 1 automaticamente, ao lado das anteriores (anamnese continua na própria aba "Anamnese", e a evolutiva agrega tudo do histórico clínico).
 
-6. **Tabelas** (`src/components/ui/table.tsx`) — densidade enterprise: `py-2` no lugar de `py-4`, `text-xs` no header em caps, bordas horizontais sutis, zebra opcional desligada.
+### 3. `src/pages/MedicalRecords.tsx` (opcional, leve)
+- Sem mudança estrutural — os prontuários criados pela agenda passarão a aparecer aqui também, pois vão para a mesma tabela `medical_records`.
 
-7. **Cards** (`src/components/ui/card.tsx`) — `rounded-md`, borda 1px, sem sombra, header com `border-b` sutil e padding reduzido.
+## O que NÃO muda
 
-8. **Buttons / Inputs** (`src/components/ui/button.tsx`, `input.tsx`) — `rounded-md`, sem `shadow`, altura padrão `h-9`, foco com `ring-1` sólido (sem glow).
+- Schema do banco (tabelas, RLS, grants já permitem o insert pelo profissional autenticado).
+- Componentes neuro, anamnese, materiais, validação financeira.
+- Aba "Anamnese", "Receita", "Laudos", "Financeiro" da ficha do paciente.
+- Hooks `useMedicalRecords`, `useCreateMedicalRecord` (continuam sendo usados pela página Prontuário).
 
-9. **Prontuário (`src/pages/MedicalRecords.tsx` + `MedicalRecordTimeline.tsx` + `ServiceHistory.tsx`)** — layout em duas colunas densas: cabeçalho clínico do paciente fino no topo, timeline com linhas/separadores enxutos, sem cards bonitinhos. Mantém todos os dados e ações existentes.
+## Risco
 
-### O que não muda
+- Duplicação de registro: o mesmo atendimento aparece em `attendance_reports` (fluxo financeiro/agenda) e em `medical_records` (fluxo clínico). Isso é intencional — `ServiceHistory` já tem deduplicação por `schedule_id`, então na visualização não vai duplicar.
 
-- Nenhuma rota, hook, query Supabase, função ou fluxo.
-- Estrutura de componentes preservada — só classes e tokens.
-- Permissões, RLS, roles intocados.
-- Conteúdo (textos, labels) preservado.
-- Memórias de cores por unidade (MADRE azul / Floresta verde / Atendimento Floresta roxo) **preservadas** para os badges de unidade — a restrição "sem roxo" se aplica à paleta global, não às tags identificadoras de unidade.
+## Ordem de execução
 
-### Plano de execução (ordem)
-
-```text
-1. index.css         → paleta + radius + sombras + fonte + remover bolhas/glass
-2. tailwind.config   → animações curtas, remover keyframes decorativos
-3. ui/card, button, input, table → densidade enterprise
-4. AppSidebar        → densidade ERP
-5. Dashboard + widgets do dashboard
-6. Prontuário (MedicalRecords + Timeline + ServiceHistory)
-7. Smoke check no preview em 1280x800 e 1440x900
-```
-
-### Riscos e limites
-
-- Componentes que usam classes hardcoded de cor (ex.: `bg-blue-500`, `text-white`) não respondem aos tokens; eles serão tocados pontualmente apenas se quebrarem visualmente após a mudança de paleta — não vou varrer todos os 150 componentes preventivamente.
-- Manter compatibilidade com dark mode (a paleta dark é ajustada na mesma passada).
-- Sem mudar nenhum comportamento clínico, nem renomear classes que outros componentes possam estar referenciando como APIs (ex.: variantes de Button continuam com os mesmos nomes, só mudam os estilos).
-
-### Resultado esperado
-
-Sistema com cara de ERP hospitalar (Tasy/MV): denso, sóbrio, com bordas em vez de sombras, paleta institucional, tipografia IBM Plex, sidebar compacta, dashboard operacional, tabelas densas, prontuário clínico sério. Mesmas funcionalidades, outra identidade.
+1. Editar `CompleteAttendanceDialog.tsx` (label + insert em `medical_records`).
+2. Editar `ClientDetailsView.tsx` (renomear aba).
+3. Smoke check: finalizar um atendimento de teste e verificar se aparece tanto em `/prontuarios` quanto na aba "Evolutiva" do paciente.
