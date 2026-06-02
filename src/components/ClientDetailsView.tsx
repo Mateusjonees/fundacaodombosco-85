@@ -1374,10 +1374,6 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                       <FileCheck2 className="h-4 w-4 mr-1.5" />
                       Laudos
                     </TabsTrigger>
-                    <TabsTrigger value="registration" className="flex-1 min-w-[80px] text-xs md:text-sm py-2 hidden">
-                      <Edit className="h-4 w-4 mr-1.5" />
-                      Cadastro
-                    </TabsTrigger>
 
                     <TabsTrigger value="registration" className="flex-1 min-w-[80px] text-xs md:text-sm py-2">
                       <Edit className="h-4 w-4 mr-1.5" />
