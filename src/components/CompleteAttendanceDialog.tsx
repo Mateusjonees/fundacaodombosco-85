@@ -15,6 +15,7 @@ import AttendanceMaterialSelector from './AttendanceMaterialSelector';
 import NutritionAssessmentForm, { type NutritionData } from './NutritionAssessmentForm';
 import NeuroTestSelector from './NeuroTestSelector';
 import AddAnamnesisDialog from './AddAnamnesisDialog';
+import { AddMedicalRecordDialog } from './AddMedicalRecordDialog';
 
 // Lazy load - formulários só carregam quando selecionados pelo profissional
 const NeuroTestBPA2Form = lazy(() => import('./NeuroTestBPA2Form'));
