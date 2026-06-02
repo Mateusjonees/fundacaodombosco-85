@@ -1539,6 +1539,82 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Edição do Atendimento */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Editar Atendimento
+            </DialogTitle>
+          </DialogHeader>
+          {editingRecord &&
+          <div className="space-y-4 pt-4">
+              <div className="text-xs text-muted-foreground">
+                {editingRecord.service_type} — {formatDate(editingRecord.date)}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Prontuário / Evolutiva Clínica</Label>
+                <Textarea
+                  rows={6}
+                  value={editForm.detailed_notes}
+                  onChange={(e) => setEditForm({ ...editForm, detailed_notes: e.target.value })}
+                  placeholder="Descreva o atendimento, evolução e observações clínicas..." />
+              </div>
+
+              {(editingRecord.source === 'attendance_report' || editingRecord.source === 'session_report') &&
+              <div className="space-y-2">
+                  <Label>Técnicas Utilizadas</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.techniques_used}
+                    onChange={(e) => setEditForm({ ...editForm, techniques_used: e.target.value })} />
+                </div>
+              }
+
+              {(editingRecord.source === 'medical_record' || editingRecord.source === 'session_report') &&
+              <div className="space-y-2">
+                  <Label>Objetivos da Sessão</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.session_objectives}
+                    onChange={(e) => setEditForm({ ...editForm, session_objectives: e.target.value })} />
+                </div>
+              }
+
+              {editingRecord.source !== 'schedule' &&
+              <div className="space-y-2">
+                  <Label>Resposta do Paciente</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.patient_response}
+                    onChange={(e) => setEditForm({ ...editForm, patient_response: e.target.value })} />
+                </div>
+              }
+
+              {(editingRecord.source === 'attendance_report' || editingRecord.source === 'session_report') &&
+              <div className="space-y-2">
+                  <Label>Plano para Próxima Sessão</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.next_session_plan}
+                    onChange={(e) => setEditForm({ ...editForm, next_session_plan: e.target.value })} />
+                </div>
+              }
+            </div>
+          }
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={savingEdit}>
+              Cancelar
+            </Button>
+            <Button onClick={saveEdit} disabled={savingEdit}>
+              {savingEdit ? 'Salvando...' : 'Salvar alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>);
 
 }
