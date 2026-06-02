@@ -20,7 +20,8 @@ import {
   CheckCircle,
   AlertCircle,
   Star,
-  Eye } from
+  Eye,
+  Pencil } from
 'lucide-react';
 
 interface ServiceRecord {
@@ -66,6 +67,7 @@ interface ServiceRecord {
   validated_by_name?: string;
   rejection_reason?: string;
   schedule_id?: string;
+  employee_id?: string;
 }
 
 interface ServiceHistoryProps {
@@ -80,6 +82,16 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
   const [addServiceDialogOpen, setAddServiceDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
+  const [editForm, setEditForm] = useState({
+    detailed_notes: '',
+    techniques_used: '',
+    session_objectives: '',
+    patient_response: '',
+    next_session_plan: ''
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
   const [newService, setNewService] = useState({
     service_type: '',
     date: '',
@@ -145,7 +157,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             status: schedule.status || 'scheduled',
             detailed_notes: schedule.description || schedule.notes || '',
             created_at: schedule.start_time,
-            source: 'schedule'
+            source: 'schedule',
+            employee_id: schedule.created_by
           });
         });
       }
@@ -196,7 +209,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             session_objectives: record.treatment_plan || '',
             patient_response: record.symptoms || '',
             created_at: record.session_date,
-            source: 'medical_record'
+            source: 'medical_record',
+            employee_id: record.employee_id
           });
         });
       }
@@ -270,7 +284,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             validated_at: report.validated_at,
             validated_by_name: report.validated_by_name,
             rejection_reason: report.rejection_reason,
-            schedule_id: report.schedule_id
+            schedule_id: report.schedule_id,
+            employee_id: report.employee_id
           });
         });
       }
@@ -341,7 +356,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             attachments: Array.isArray(report.attachments) ? report.attachments : [],
             amount_charged: report.materials_cost || 0,
             created_at: report.session_date,
-            source: 'session_report'
+            source: 'session_report',
+            employee_id: report.employee_id
           });
         });
       }
@@ -464,6 +480,89 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
   const openDetailsDialog = (record: ServiceRecord) => {
     setSelectedRecord(record);
     setDetailsDialogOpen(true);
+  };
+
+  const canEditRecord = (record: ServiceRecord) => {
+    if (!user?.id || !record.employee_id) return false;
+    if (user.id !== record.employee_id) return false;
+    return record.source === 'medical_record' ||
+      record.source === 'attendance_report' ||
+      record.source === 'session_report' ||
+      record.source === 'schedule';
+  };
+
+  const openEditDialog = (record: ServiceRecord) => {
+    setEditingRecord(record);
+    setEditForm({
+      detailed_notes: record.detailed_notes || '',
+      techniques_used: record.techniques_used || '',
+      session_objectives: record.session_objectives || '',
+      patient_response: record.patient_response || '',
+      next_session_plan: record.next_session_plan || ''
+    });
+    setEditDialogOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editingRecord) return;
+    setSavingEdit(true);
+    try {
+      const rawId = editingRecord.id.replace(/^(medical_|attendance_|report_)/, '');
+      let error: any = null;
+
+      if (editingRecord.source === 'medical_record') {
+        ({ error } = await supabase
+          .from('medical_records')
+          .update({
+            progress_notes: editForm.detailed_notes,
+            treatment_plan: editForm.session_objectives,
+            symptoms: editForm.patient_response
+          })
+          .eq('id', rawId));
+      } else if (editingRecord.source === 'attendance_report') {
+        ({ error } = await supabase
+          .from('attendance_reports')
+          .update({
+            session_notes: editForm.detailed_notes,
+            techniques_used: editForm.techniques_used,
+            patient_response: editForm.patient_response,
+            next_session_plan: editForm.next_session_plan
+          })
+          .eq('id', rawId));
+      } else if (editingRecord.source === 'session_report') {
+        ({ error } = await supabase
+          .from('employee_reports')
+          .update({
+            professional_notes: editForm.detailed_notes,
+            techniques_used: editForm.techniques_used,
+            session_objectives: editForm.session_objectives,
+            patient_response: editForm.patient_response,
+            next_session_plan: editForm.next_session_plan
+          })
+          .eq('id', rawId));
+      } else if (editingRecord.source === 'schedule') {
+        ({ error } = await supabase
+          .from('schedules')
+          .update({ description: editForm.detailed_notes })
+          .eq('id', rawId));
+      }
+
+      if (error) throw error;
+
+      toast({ title: 'Atualizado', description: 'Registro atualizado com sucesso.' });
+      setEditDialogOpen(false);
+      setEditingRecord(null);
+      await loadServiceHistory();
+    } catch (e: any) {
+      console.error('Error updating record:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: e?.message || 'Não foi possível atualizar o registro.'
+      });
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   return (
@@ -664,15 +763,26 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                         }
                           </div>
                         </div>
-                        <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openDetailsDialog(record)}
-                      className="self-start text-xs sm:text-sm shrink-0">
-                      
-                          <Eye className="h-3.5 w-3.5 sm:mr-1" />
-                          <span className="hidden sm:inline">Agendamento</span>
-                        </Button>
+                        <div className="flex items-center gap-2 self-start shrink-0">
+                          {canEditRecord(record) &&
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditDialog(record)}
+                            className="text-xs sm:text-sm">
+                            <Pencil className="h-3.5 w-3.5 sm:mr-1" />
+                            <span className="hidden sm:inline">Editar</span>
+                          </Button>
+                          }
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDetailsDialog(record)}
+                            className="text-xs sm:text-sm">
+                            <Eye className="h-3.5 w-3.5 sm:mr-1" />
+                            <span className="hidden sm:inline">Agendamento</span>
+                          </Button>
+                        </div>
                       </div>
                       
                       {/* Detalhes do serviço */}
@@ -1425,6 +1535,82 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição do Atendimento */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Editar Atendimento
+            </DialogTitle>
+          </DialogHeader>
+          {editingRecord &&
+          <div className="space-y-4 pt-4">
+              <div className="text-xs text-muted-foreground">
+                {editingRecord.service_type} — {formatDate(editingRecord.date)}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Prontuário / Evolutiva Clínica</Label>
+                <Textarea
+                  rows={6}
+                  value={editForm.detailed_notes}
+                  onChange={(e) => setEditForm({ ...editForm, detailed_notes: e.target.value })}
+                  placeholder="Descreva o atendimento, evolução e observações clínicas..." />
+              </div>
+
+              {(editingRecord.source === 'attendance_report' || editingRecord.source === 'session_report') &&
+              <div className="space-y-2">
+                  <Label>Técnicas Utilizadas</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.techniques_used}
+                    onChange={(e) => setEditForm({ ...editForm, techniques_used: e.target.value })} />
+                </div>
+              }
+
+              {(editingRecord.source === 'medical_record' || editingRecord.source === 'session_report') &&
+              <div className="space-y-2">
+                  <Label>Objetivos da Sessão</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.session_objectives}
+                    onChange={(e) => setEditForm({ ...editForm, session_objectives: e.target.value })} />
+                </div>
+              }
+
+              {editingRecord.source !== 'schedule' &&
+              <div className="space-y-2">
+                  <Label>Resposta do Paciente</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.patient_response}
+                    onChange={(e) => setEditForm({ ...editForm, patient_response: e.target.value })} />
+                </div>
+              }
+
+              {(editingRecord.source === 'attendance_report' || editingRecord.source === 'session_report') &&
+              <div className="space-y-2">
+                  <Label>Plano para Próxima Sessão</Label>
+                  <Textarea
+                    rows={2}
+                    value={editForm.next_session_plan}
+                    onChange={(e) => setEditForm({ ...editForm, next_session_plan: e.target.value })} />
+                </div>
+              }
+            </div>
+          }
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={savingEdit}>
+              Cancelar
+            </Button>
+            <Button onClick={saveEdit} disabled={savingEdit}>
+              {savingEdit ? 'Salvando...' : 'Salvar alterações'}
             </Button>
           </DialogFooter>
         </DialogContent>
