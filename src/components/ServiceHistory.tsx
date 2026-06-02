@@ -501,13 +501,27 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             <Clock className="h-5 w-5" />
             Histórico de Serviços
           </CardTitle>
-          <Dialog open={addServiceDialogOpen} onOpenChange={setAddServiceDialogOpen}>
-            <DialogTrigger asChild>
-              
+          <div className="flex items-center gap-2">
+            <Select value={validationFilter} onValueChange={(value: any) => setValidationFilter(value)}>
+              <SelectTrigger className="h-8 text-xs w-[180px]">
+                <Filter className="h-3 w-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="auto">Concluído Automaticamente</SelectItem>
+                <SelectItem value="coordinator">Validado pelo Coordenador</SelectItem>
+                <SelectItem value="pending">Pendente de Validação</SelectItem>
+                <SelectItem value="rejected">Rejeitado</SelectItem>
+              </SelectContent>
+            </Select>
+            <Dialog open={addServiceDialogOpen} onOpenChange={setAddServiceDialogOpen}>
+              <DialogTrigger asChild>
+                
 
 
               
-            </DialogTrigger>
+              </DialogTrigger>
             <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Serviço</DialogTitle>
