@@ -2115,6 +2115,16 @@ export default function CompleteAttendanceDialog({
           </div>
         </ScrollArea>
 
+        {/* Banner de auto-conclusão para Atendimento Floresta */}
+        {(clientUnit === 'atendimento_floresta' || professionalUnits.includes('atendimento_floresta') || professionalRole === 'coordinator_atendimento_floresta') && (
+          <div className="mx-4 sm:mx-6 mb-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-start gap-2">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-800 dark:text-blue-300">
+              <span className="font-medium">Conclusão automática:</span> Este atendimento será finalizado automaticamente sem necessidade de validação do coordenador.
+            </div>
+          </div>
+        )}
+
         <DialogFooter className="flex-col sm:flex-row gap-2 px-4 sm:px-6 py-4 border-t shrink-0">
           <Button variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto">
             Cancelar
