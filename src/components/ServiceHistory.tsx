@@ -393,9 +393,15 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         });
       }
 
+      // Remover schedules que já têm attendance_report correspondente (evita duplicação)
+      const dedupedRecords = records.filter((r) => {
+        if (r.source !== 'schedule') return true;
+        return !attendanceScheduleIds.has(r.id);
+      });
+
       // Ordenar todos os registros por data (mais recente primeiro)
-      records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setServiceRecords(records);
+      dedupedRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setServiceRecords(dedupedRecords);
     } catch (error) {
       console.error('Error loading service history:', error);
       toast({
