@@ -2058,6 +2058,15 @@ export default function CompleteAttendanceDialog({
                 <ClipboardList className="h-3.5 w-3.5 mr-1" />
                 Anamneses
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => { loadMedicalRecordsHistory(); setIsMedicalRecordsHistoryOpen(true); }}
+              >
+                <Stethoscope className="h-3.5 w-3.5 mr-1" />
+                Prontuário
+              </Button>
             </div>
 
             {/* Evolução do Atendimento */}
