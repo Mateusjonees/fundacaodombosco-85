@@ -790,27 +790,47 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                       {/* Detalhes do serviço */}
                       <div className="space-y-3">
                         {/* Info de Validação - para atendimentos validados */}
-                        {record.source === 'attendance_report' && record.validated_by_name && record.validated_at &&
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                              <h5 className="font-medium text-sm text-green-800 dark:text-green-300">Atendimento Validado</h5>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-green-700 dark:text-green-400">
-                              <div>
-                                <span className="font-medium">Validado por:</span> {record.validated_by_name}
+                        {record.source === 'attendance_report' && record.validated_by_name && record.validated_at && (
+                          record.validated_by_name === record.completed_by_name ? (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <h5 className="font-medium text-sm text-blue-800 dark:text-blue-300">Concluído Automaticamente</h5>
                               </div>
-                              <div>
-                                <span className="font-medium">Data da validação:</span> {formatDateTime(record.validated_at)}
-                              </div>
-                              {record.completed_by_name &&
-                        <div>
-                                  <span className="font-medium">Finalizado por:</span> {record.completed_by_name}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-700 dark:text-blue-400">
+                                <div>
+                                  <span className="font-medium">Profissional:</span> {record.professional_name}
                                 </div>
-                        }
+                                <div>
+                                  <span className="font-medium">Data:</span> {formatDateTime(record.validated_at)}
+                                </div>
+                              </div>
+                              <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-2 italic">
+                                Este atendimento foi concluído automaticamente sem necessidade de validação do coordenador.
+                              </p>
                             </div>
-                          </div>
-                    }
+                          ) : (
+                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <h5 className="font-medium text-sm text-green-800 dark:text-green-300">Atendimento Validado</h5>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-green-700 dark:text-green-400">
+                                <div>
+                                  <span className="font-medium">Validado por:</span> {record.validated_by_name}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Data da validação:</span> {formatDateTime(record.validated_at)}
+                                </div>
+                                {record.completed_by_name &&
+                                  <div>
+                                    <span className="font-medium">Finalizado por:</span> {record.completed_by_name}
+                                  </div>
+                                }
+                              </div>
+                            </div>
+                          )
+                        )}
 
                         {record.session_objectives &&
                     <div>
