@@ -2032,18 +2032,21 @@ export default function CompleteAttendanceDialog({
               </Button>
             </div>
 
-            {/* Evolução do Atendimento */}
+            {/* Prontuário / Evolutiva Clínica */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Evolução do Atendimento <span className="text-destructive">*</span>
+                Prontuário / Evolutiva Clínica <span className="text-destructive">*</span>
               </Label>
               <Textarea
-                placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
+                placeholder="Registro clínico oficial: evolução do paciente, procedimentos realizados, observações clínicas, condutas, orientações e plano para o próximo atendimento. Este texto será salvo no prontuário do paciente."
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
                 className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
               />
+              <p className="text-xs text-muted-foreground">
+                Este registro será salvo automaticamente no prontuário e aparecerá na aba "Evolutiva" do paciente.
+              </p>
             </div>
 
             {/* Anamnese do paciente */}
