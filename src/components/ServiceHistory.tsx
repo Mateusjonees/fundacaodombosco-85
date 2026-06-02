@@ -462,6 +462,8 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         return <Clock className="h-4 w-4 text-blue-500" />;
       case 'cancelled':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-amber-500" />;
       default:
         return <Activity className="h-4 w-4 text-gray-500" />;
     }
@@ -469,10 +471,11 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'completed':return 'Concluído';
-      case 'scheduled':return 'Agendado';
-      case 'cancelled':return 'Cancelado';
-      default:return status;
+      case 'completed': return 'Concluído';
+      case 'scheduled': return 'Agendado';
+      case 'cancelled': return 'Cancelado';
+      case 'pending': return 'Pendente';
+      default: return status;
     }
   };
 
