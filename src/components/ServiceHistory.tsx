@@ -784,12 +784,19 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                           </div>
                     }
                         
-                        {record.detailed_notes &&
-                    <div>
-                            <h5 className="font-medium text-sm mb-1">Observações Detalhadas:</h5>
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{record.detailed_notes}</p>
-                          </div>
-                    }
+                        {(() => {
+                          const cleaned = (record.detailed_notes || '')
+                            .split('\n')
+                            .filter(l => !/^\s*(r\$\s*)?0+([.,]0+)?\s*$/i.test(l))
+                            .join('\n')
+                            .trim();
+                          return cleaned ? (
+                            <div>
+                              <h5 className="font-medium text-sm mb-1">Observações Detalhadas:</h5>
+                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{cleaned}</p>
+                            </div>
+                          ) : null;
+                        })()}
                         
                         {record.techniques_used &&
                     <div>
