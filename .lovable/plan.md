@@ -1,14 +1,34 @@
-## Objetivo
-Remover a poluição visual da timeline lateral (círculo verde com check + linha vertical conectando os cards) no "Histórico de Serviços" dentro do paciente, deixando uma lista mais técnica e densa.
+## Filtro de Atendimentos por Profissional no Histórico do Paciente
 
-## Mudanças
-Arquivo: `src/components/ServiceHistory.tsx` (linhas ~676-689)
+### Objetivo
+Adicionar um filtro dentro da aba "Histórico de Serviços" do paciente para que o profissional logado possa alternar entre ver **todos os atendimentos** do paciente ou apenas **os seus próprios atendimentos**.
 
-1. Remover o wrapper `relative` + a `<div>` da linha vertical (`absolute left-6 top-12 ...`).
-2. Remover o indicador circular (`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background border-2 border-primary ...`) que renderiza o `getStatusIcon`.
-3. Remover o `flex gap-3` que existia só para acomodar a timeline.
-4. O status do atendimento continua visível através do Badge "Concluído" / "Pendente" que já aparece no cabeçalho do card (linha 698-700), então nenhuma informação é perdida.
-5. Reduzir o `pb-6 sm:pb-8` (que servia para dar espaço para a linha) para um `mb-2` ou `space-y-2` no container pai, deixando os cards mais próximos.
+### Arquivo Alvo
+- `src/components/ServiceHistory.tsx`
 
-## Resultado visual
-Os cards de sessão passam a aparecer empilhados diretamente, sem o trilho lateral com bolinhas, ocupando 100% da largura disponível — visual técnico e limpo mesmo com muitas sessões.
+### Alterações
+
+1. **Novo estado de filtro**
+   - Adicionar `professionalFilter` com tipo `'all' | 'mine'` e valor inicial `'all'`.
+
+2. **Novo controle de filtro na UI**
+   - Adicionar um `<Select>` ao lado do filtro de validação existente (`validationFilter`), no header do `Card`.
+   - Opções:
+     - `all`: "Todos os atendimentos"
+     - `mine`: "Meus atendimentos"
+   - Ícone: `User` (do Lucide).
+
+3. **Aplicação do filtro na listagem**
+   - Combinar o filtro `professionalFilter` com o `validationFilter` existente no `.filter()` dos `serviceRecords`.
+   - Lógica: quando `professionalFilter === 'mine'`, manter apenas registros onde `record.created_by_user_id === user?.id`.
+
+4. **Mensagem de estado vazio**
+   - Atualizar a mensagem exibida quando não há registros para refletir também o filtro de profissional (ex.: "Nenhum atendimento seu encontrado." quando `professionalFilter === 'mine'`).
+
+### Notas
+- O campo `created_by_user_id` já existe em todos os `ServiceRecord` (populado de `schedules.created_by`, `medical_records.employee_id`, `attendance_reports.employee_id` e `employee_reports.employee_id`).
+- O `user` já está disponível via `useAuth()`.
+- O filtro é puramente frontend, sem alterações no carregamento de dados do Supabase.
+
+## Resumo
+Adicionar um select "Todos / Meus atendimentos" no header do histórico de serviços do paciente, filtrando os registros já carregados pelo `created_by_user_id` do profissional logado.
