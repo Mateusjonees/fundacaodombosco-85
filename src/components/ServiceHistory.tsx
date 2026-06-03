@@ -779,6 +779,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         <div className="space-y-6">
             {serviceRecords
               .filter((record) => {
+                if (professionalFilter === 'mine' && record.created_by_user_id !== user?.id) return false;
                 if (validationFilter === 'all') return true;
                 if (!record.conclusion_type) return false;
                 return record.conclusion_type === validationFilter;
