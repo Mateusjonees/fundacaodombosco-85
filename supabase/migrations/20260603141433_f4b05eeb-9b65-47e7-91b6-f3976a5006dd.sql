@@ -1,0 +1,1 @@
+UPDATE public.clients SET created_by = NULL WHERE created_by = '793ba891-6ac5-4096-9cbe-50acef30f3fc';
