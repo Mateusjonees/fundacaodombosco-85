@@ -65,17 +65,68 @@ interface AttendanceRecord {
 
 export function PatientReportGenerator({ client, isOpen, onClose }: PatientReportGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [employeeReports, setEmployeeReports] = useState<any[]>([]);
-  const [medicalRecords, setMedicalRecords] = useState<any[]>([]);
+  const [_attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [_employeeReports, setEmployeeReports] = useState<any[]>([]);
+  const [_medicalRecords, setMedicalRecords] = useState<any[]>([]);
   const [neuroTestResults, setNeuroTestResults] = useState<any[]>([]);
   const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
-  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [_prescriptions, setPrescriptions] = useState<any[]>([]);
   const [clientNotes, setClientNotes] = useState<any[]>([]);
   const [scheduleHistory, setScheduleHistory] = useState<any[]>([]);
-  const [laudos, setLaudos] = useState<any[]>([]);
+  const [_laudos, setLaudos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Filtros do relatório
+  const [filterProfessional, setFilterProfessional] = useState<string>('all');
+  const [sections, setSections] = useState({
+    personal: true,
+    payments: true,
+    attendances: true,
+    neuro: true,
+    notes: true,
+    prescriptions: true,
+    laudos: true,
+    schedule: true,
+  });
+
+  const toggleSection = (key: keyof typeof sections) =>
+    setSections((s) => ({ ...s, [key]: !s[key] }));
+
+  // Lista de profissionais presentes nos dados
+  const professionalOptions = useMemo(() => {
+    const set = new Set<string>();
+    _attendanceRecords.forEach((r: any) => r?.professional_name && set.add(r.professional_name));
+    _employeeReports.forEach((r: any) => r?.profiles?.name && set.add(r.profiles.name));
+    _medicalRecords.forEach((r: any) => r?.profiles?.name && set.add(r.profiles.name));
+    _prescriptions.forEach((r: any) => r?.professional_name && set.add(r.professional_name));
+    _laudos.forEach((r: any) => r?.professional_name && set.add(r.professional_name));
+    return Array.from(set).sort();
+  }, [_attendanceRecords, _employeeReports, _medicalRecords, _prescriptions, _laudos]);
+
+  const matchesProfessional = (name?: string) =>
+    filterProfessional === 'all' || (name || '').toLowerCase() === filterProfessional.toLowerCase();
+
+  const attendanceRecords = useMemo(
+    () => _attendanceRecords.filter((r: any) => matchesProfessional(r?.professional_name)),
+    [_attendanceRecords, filterProfessional]
+  );
+  const employeeReports = useMemo(
+    () => _employeeReports.filter((r: any) => matchesProfessional(r?.profiles?.name)),
+    [_employeeReports, filterProfessional]
+  );
+  const medicalRecords = useMemo(
+    () => _medicalRecords.filter((r: any) => matchesProfessional(r?.profiles?.name)),
+    [_medicalRecords, filterProfessional]
+  );
+  const prescriptions = useMemo(
+    () => _prescriptions.filter((r: any) => matchesProfessional(r?.professional_name)),
+    [_prescriptions, filterProfessional]
+  );
+  const laudos = useMemo(
+    () => _laudos.filter((r: any) => matchesProfessional(r?.professional_name)),
+    [_laudos, filterProfessional]
+  );
 
   useEffect(() => {
     if (isOpen && client?.id) {
