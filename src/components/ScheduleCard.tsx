@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin } from 'lucide-react';
+import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin, RotateCcw } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
@@ -46,6 +46,7 @@ interface ScheduleCardProps {
   onCancelClick: () => void;
   onDeleteClick: () => void;
   onCompleteClick: () => void;
+  onRevertClick?: () => void;
   onPresenceUpdate: () => void;
   getStatusBadge: (status: string) => { text: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string };
 }
@@ -64,6 +65,7 @@ export const ScheduleCard = memo(({
   onCancelClick,
   onDeleteClick,
   onCompleteClick,
+  onRevertClick,
   onPresenceUpdate,
   getStatusBadge
 }: ScheduleCardProps) => {
