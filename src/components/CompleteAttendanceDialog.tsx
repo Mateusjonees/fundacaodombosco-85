@@ -224,11 +224,29 @@ export default function CompleteAttendanceDialog({
   const [anamnesisHistory, setAnamnesisHistory] = useState<any[]>([]);
   const [medicalRecordsHistory, setMedicalRecordsHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [hasMedicalRecordToday, setHasMedicalRecordToday] = useState(false);
+
+  // Check whether the professional already added a medical_record for this patient today
+  const checkMedicalRecordToday = async () => {
+    if (!schedule?.client_id || !schedule?.employee_id) return false;
+    const today = getTodayLocalISODate();
+    const { data, error } = await supabase
+      .from('medical_records')
+      .select('id')
+      .eq('client_id', schedule.client_id)
+      .eq('employee_id', schedule.employee_id)
+      .eq('session_date', today)
+      .limit(1);
+    const has = !error && !!data && data.length > 0;
+    setHasMedicalRecordToday(has);
+    return has;
+  };
 
   // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
     if (isOpen && schedule?.client_id) {
       fetchClientInfo();
+      checkMedicalRecordToday();
     }
     if (isOpen && schedule?.employee_id) {
       fetchProfessionalRole();
