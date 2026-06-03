@@ -291,6 +291,18 @@ export const ScheduleCard = memo(({
               </span>
             )}
 
+            {isAdmin && (isCompleted || isCancelled || isPendingValidation) && onRevertClick && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRevertClick}
+                className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1 sm:gap-1.5 px-2 sm:px-3 border-amber-400/60 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+              >
+                <RotateCcw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden xs:inline">Reverter</span>
+              </Button>
+            )}
+
             {isAdmin && !isCompleted && !isCancelled && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
