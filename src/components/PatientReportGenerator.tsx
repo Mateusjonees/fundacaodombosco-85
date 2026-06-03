@@ -565,6 +565,93 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           </Button>
         </div>
 
+        {/* Filtros do Relatório */}
+        <div className="no-print border rounded-lg p-4 mb-4 bg-muted/30 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Filter className="h-4 w-4" />
+            Filtros do Relatório
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Profissional</Label>
+              <Select value={filterProfessional} onValueChange={setFilterProfessional}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Todos os profissionais" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os profissionais</SelectItem>
+                  {professionalOptions.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Paciente</Label>
+              <div className="h-9 px-3 flex items-center rounded-md border bg-background text-sm text-muted-foreground">
+                {client.name}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs mb-2 block">Seções a incluir</Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              {([
+                ['personal', 'Dados pessoais'],
+                ['payments', 'Financeiro'],
+                ['attendances', 'Atendimentos'],
+                ['neuro', 'Neuropsicológico'],
+                ['notes', 'Anotações'],
+                ['prescriptions', 'Prescrições'],
+                ['laudos', 'Laudos'],
+                ['schedule', 'Agenda'],
+              ] as const).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={sections[key]}
+                    onCheckedChange={() => toggleSection(key)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2 text-xs">
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => setSections({
+                personal: true, payments: true, attendances: true, neuro: true,
+                notes: true, prescriptions: true, laudos: true, schedule: true,
+              })}
+            >
+              Marcar todos
+            </button>
+            <span className="text-muted-foreground">·</span>
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => setSections({
+                personal: true, payments: false, attendances: false, neuro: false,
+                notes: false, prescriptions: false, laudos: false, schedule: false,
+              })}
+            >
+              Apenas dados pessoais
+            </button>
+            <span className="text-muted-foreground">·</span>
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => { setFilterProfessional('all'); }}
+            >
+              Limpar profissional
+            </button>
+          </div>
+        </div>
+
         <div id="patient-report" className="bg-white p-8 space-y-6">
           {/* Cabeçalho */}
           <div className="report-header text-center">
