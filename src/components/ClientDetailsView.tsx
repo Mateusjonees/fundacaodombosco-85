@@ -920,8 +920,42 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     setShowReportGenerator(true);
   };
 
+  const MAX_DOCUMENT_SIZE_MB = 10;
+  const MAX_DOCUMENT_SIZE_BYTES = MAX_DOCUMENT_SIZE_MB * 1024 * 1024;
+
+  const formatFileSize = (bytes?: number | null) => {
+    if (bytes === undefined || bytes === null) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const handleSelectDocumentFile = (file: File | null) => {
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: `O tamanho máximo permitido é ${MAX_DOCUMENT_SIZE_MB} MB. Este arquivo tem ${formatFileSize(file.size)}.`
+      });
+      return;
+    }
+    setSelectedFile(file);
+  };
+
   const handleFileUpload = async () => {
     if (!selectedFile) return;
+    if (selectedFile.size > MAX_DOCUMENT_SIZE_BYTES) {
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: `O tamanho máximo permitido é ${MAX_DOCUMENT_SIZE_MB} MB.`
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -966,6 +1000,29 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (doc: ClientDocument) => {
+    if (!confirm(`Excluir o documento "${doc.document_name}"?`)) return;
+    try {
+      const { error } = await supabase.
+        from('client_documents').
+        update({ is_active: false }).
+        eq('id', doc.id);
+      if (error) throw error;
+
+      await supabase.storage.from('user-documents').remove([doc.file_path]).catch(() => {});
+
+      toast({ title: 'Documento excluído', description: 'O arquivo foi removido.' });
+      loadDocuments();
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: `Não foi possível excluir o documento: ${error.message || error}`
+      });
     }
   };
 
