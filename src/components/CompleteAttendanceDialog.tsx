@@ -2138,12 +2138,18 @@ export default function CompleteAttendanceDialog({
 
             {/* Prontuário do paciente */}
             {schedule?.client_id && schedule?.employee_id && (
-              <Card className="border-dashed bg-muted/30">
+              <Card
+                className={`border-dashed ${hasMedicalRecordToday ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800' : 'bg-muted/30'}`}
+                onClick={() => checkMedicalRecordToday()}
+              >
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                      <Stethoscope className={`h-4 w-4 ${hasMedicalRecordToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
                       <span className="text-sm font-medium">Prontuário do paciente</span>
+                      {hasMedicalRecordToday && (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Registro adicionado hoje</span>
+                      )}
                     </div>
                     <AddMedicalRecordDialog
                       clientId={schedule.client_id}
@@ -2156,6 +2162,7 @@ export default function CompleteAttendanceDialog({
                 </CardContent>
               </Card>
             )}
+
           </div>
         </ScrollArea>
 
