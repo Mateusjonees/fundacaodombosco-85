@@ -85,6 +85,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [validationFilter, setValidationFilter] = useState<'all' | 'auto' | 'coordinator' | 'pending' | 'rejected'>('all');
+  const [professionalFilter, setProfessionalFilter] = useState<'all' | 'mine'>('all');
   const [addServiceDialogOpen, setAddServiceDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -605,7 +606,17 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             <Clock className="h-5 w-5" />
             Histórico de Serviços
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={professionalFilter} onValueChange={(value: any) => setProfessionalFilter(value)}>
+              <SelectTrigger className="h-8 text-xs w-[180px]">
+                <User className="h-3 w-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os atendimentos</SelectItem>
+                <SelectItem value="mine">Meus atendimentos</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={validationFilter} onValueChange={(value: any) => setValidationFilter(value)}>
               <SelectTrigger className="h-8 text-xs w-[180px]">
                 <Filter className="h-3 w-3 mr-1" />
@@ -768,6 +779,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
         <div className="space-y-6">
             {serviceRecords
               .filter((record) => {
+                if (professionalFilter === 'mine' && record.created_by_user_id !== user?.id) return false;
                 if (validationFilter === 'all') return true;
                 if (!record.conclusion_type) return false;
                 return record.conclusion_type === validationFilter;
