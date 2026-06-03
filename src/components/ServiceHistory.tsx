@@ -606,7 +606,17 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             <Clock className="h-5 w-5" />
             Histórico de Serviços
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={professionalFilter} onValueChange={(value: any) => setProfessionalFilter(value)}>
+              <SelectTrigger className="h-8 text-xs w-[180px]">
+                <User className="h-3 w-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os atendimentos</SelectItem>
+                <SelectItem value="mine">Meus atendimentos</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={validationFilter} onValueChange={(value: any) => setValidationFilter(value)}>
               <SelectTrigger className="h-8 text-xs w-[180px]">
                 <Filter className="h-3 w-3 mr-1" />
