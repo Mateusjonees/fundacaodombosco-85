@@ -73,6 +73,13 @@ interface ServiceRecord {
   conclusion_type?: 'auto' | 'coordinator' | 'pending' | 'rejected' | null;
   created_by_user_id?: string;
   source_record_id?: string;
+  // Campos específicos do prontuário médico (medical_records)
+  vital_signs?: Record<string, string> | null;
+  medications?: any[] | null;
+  next_appointment_notes?: string;
+  symptoms?: string;
+  treatment_plan?: string;
+  progress_notes?: string;
 }
 
 interface ServiceHistoryProps {
