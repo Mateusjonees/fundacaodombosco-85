@@ -641,11 +641,13 @@ export default function CompleteAttendanceDialog({
       return;
     }
 
-    if (!sessionNotes.trim()) {
+    // Allow finalization without evolution text if a medical record was already added today
+    const hasRecordToday = hasMedicalRecordToday || (await checkMedicalRecordToday());
+    if (!sessionNotes.trim() && !hasRecordToday) {
       toast({
         variant: "destructive",
         title: "Campo obrigatório",
-        description: "Por favor, preencha a evolução do atendimento."
+        description: "Preencha a evolução do atendimento ou adicione um registro de prontuário."
       });
       return;
     }
