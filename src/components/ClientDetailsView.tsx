@@ -1434,6 +1434,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                       Laudos
                     </TabsTrigger>
 
+                    <TabsTrigger value="documents" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
+                      <FolderOpen className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Documentos</span>
+                      <span className="sm:hidden">Docs</span>
+                    </TabsTrigger>
                     <TabsTrigger value="registration" className="flex-1 min-w-[80px] text-xs md:text-sm py-2">
                       <Edit className="h-4 w-4 mr-1.5" />
                       Cadastro
