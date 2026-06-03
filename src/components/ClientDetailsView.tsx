@@ -94,6 +94,7 @@ interface ClientDocument {
   document_name: string;
   document_type: string;
   file_path: string;
+  file_size?: number | null;
   uploaded_at: string;
   profiles?: {name: string;};
 }
@@ -395,6 +396,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
           document_name,
           document_type,
           file_path,
+          file_size,
           uploaded_at,
           profiles:uploaded_by (name)
         `).
@@ -920,8 +922,42 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
     setShowReportGenerator(true);
   };
 
+  const MAX_DOCUMENT_SIZE_MB = 10;
+  const MAX_DOCUMENT_SIZE_BYTES = MAX_DOCUMENT_SIZE_MB * 1024 * 1024;
+
+  const formatFileSize = (bytes?: number | null) => {
+    if (bytes === undefined || bytes === null) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const handleSelectDocumentFile = (file: File | null) => {
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: `O tamanho máximo permitido é ${MAX_DOCUMENT_SIZE_MB} MB. Este arquivo tem ${formatFileSize(file.size)}.`
+      });
+      return;
+    }
+    setSelectedFile(file);
+  };
+
   const handleFileUpload = async () => {
     if (!selectedFile) return;
+    if (selectedFile.size > MAX_DOCUMENT_SIZE_BYTES) {
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: `O tamanho máximo permitido é ${MAX_DOCUMENT_SIZE_MB} MB.`
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -966,6 +1002,29 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (doc: ClientDocument) => {
+    if (!confirm(`Excluir o documento "${doc.document_name}"?`)) return;
+    try {
+      const { error } = await supabase.
+        from('client_documents').
+        update({ is_active: false }).
+        eq('id', doc.id);
+      if (error) throw error;
+
+      await supabase.storage.from('user-documents').remove([doc.file_path]).catch(() => {});
+
+      toast({ title: 'Documento excluído', description: 'O arquivo foi removido.' });
+      loadDocuments();
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: `Não foi possível excluir o documento: ${error.message || error}`
+      });
     }
   };
 
@@ -1375,6 +1434,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                       Laudos
                     </TabsTrigger>
 
+                    <TabsTrigger value="documents" className="flex-1 min-w-[90px] text-xs md:text-sm py-2">
+                      <FolderOpen className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Documentos</span>
+                      <span className="sm:hidden">Docs</span>
+                    </TabsTrigger>
                     <TabsTrigger value="registration" className="flex-1 min-w-[80px] text-xs md:text-sm py-2">
                       <Edit className="h-4 w-4 mr-1.5" />
                       Cadastro
@@ -1647,6 +1711,112 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                       <ContractGenerator client={client} />
                     </div>
                   </TabsContent>
+
+                  {/* Documents Tab */}
+                  <TabsContent value="documents" className="space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h4 className="font-medium flex items-center gap-2">
+                          <FolderOpen className="h-4 w-4" />
+                          Documentos do Paciente
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Tamanho máximo por arquivo: {MAX_DOCUMENT_SIZE_MB} MB
+                        </p>
+                      </div>
+                      <Button size="sm" onClick={() => setUploadDialogOpen(true)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Anexar Documento
+                      </Button>
+                    </div>
+
+                    {documents.length > 0 ? (
+                      <div className="space-y-2">
+                        {documents.map((doc) => (
+                          <Card key={doc.id} className="hover:shadow-sm transition-shadow">
+                            <CardContent className="p-3 flex items-center gap-3">
+                              <div className={`p-2 rounded-lg ${unitColors.bg}`}>
+                                <FileText className={`h-4 w-4 ${unitColors.text}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{doc.document_name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {doc.document_type?.toUpperCase()} {doc.file_size ? `· ${formatFileSize(doc.file_size)}` : ''} · {formatDateTime(doc.uploaded_at)}
+                                  {doc.profiles?.name ? ` · ${doc.profiles.name}` : ''}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleViewDocument(doc)}>
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Visualizar</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownloadDocument(doc)}>
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Baixar</TooltipContent>
+                                </Tooltip>
+                                {isCoordinatorOrDirector() && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDeleteDocument(doc)}>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Excluir</TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm text-center py-8">
+                        Nenhum documento anexado.
+                      </p>
+                    )}
+
+                    <Dialog open={uploadDialogOpen} onOpenChange={(open) => { setUploadDialogOpen(open); if (!open) setSelectedFile(null); }}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Anexar Documento</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="doc-file">Arquivo (máx. {MAX_DOCUMENT_SIZE_MB} MB)</Label>
+                            <Input
+                              id="doc-file"
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt"
+                              onChange={(e) => handleSelectDocumentFile(e.target.files?.[0] || null)}
+                            />
+                            {selectedFile && (
+                              <p className="text-xs text-muted-foreground">
+                                {selectedFile.name} · {formatFileSize(selectedFile.size)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => { setUploadDialogOpen(false); setSelectedFile(null); }}>
+                            Cancelar
+                          </Button>
+                          <Button onClick={handleFileUpload} disabled={!selectedFile || loading}>
+                            {loading ? 'Enviando...' : 'Enviar'}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </TabsContent>
+
+
 
 
                   {/* Neuro Tests Tab - Available for all units */}
