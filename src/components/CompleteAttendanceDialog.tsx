@@ -224,11 +224,29 @@ export default function CompleteAttendanceDialog({
   const [anamnesisHistory, setAnamnesisHistory] = useState<any[]>([]);
   const [medicalRecordsHistory, setMedicalRecordsHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [hasMedicalRecordToday, setHasMedicalRecordToday] = useState(false);
+
+  // Check whether the professional already added a medical_record for this patient today
+  const checkMedicalRecordToday = async () => {
+    if (!schedule?.client_id || !schedule?.employee_id) return false;
+    const today = getTodayLocalISODate();
+    const { data, error } = await supabase
+      .from('medical_records')
+      .select('id')
+      .eq('client_id', schedule.client_id)
+      .eq('employee_id', schedule.employee_id)
+      .eq('session_date', today)
+      .limit(1);
+    const has = !error && !!data && data.length > 0;
+    setHasMedicalRecordToday(has);
+    return has;
+  };
 
   // Calculate patient age, get unit, and fetch professional role
   useEffect(() => {
     if (isOpen && schedule?.client_id) {
       fetchClientInfo();
+      checkMedicalRecordToday();
     }
     if (isOpen && schedule?.employee_id) {
       fetchProfessionalRole();
@@ -623,11 +641,13 @@ export default function CompleteAttendanceDialog({
       return;
     }
 
-    if (!sessionNotes.trim()) {
+    // Allow finalization without evolution text if a medical record was already added today
+    const hasRecordToday = hasMedicalRecordToday || (await checkMedicalRecordToday());
+    if (!sessionNotes.trim() && !hasRecordToday) {
       toast({
         variant: "destructive",
         title: "Campo obrigatório",
-        description: "Por favor, preencha a evolução do atendimento."
+        description: "Preencha a evolução do atendimento ou adicione um registro de prontuário."
       });
       return;
     }
@@ -2074,7 +2094,10 @@ export default function CompleteAttendanceDialog({
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Evolução do Atendimento <span className="text-destructive">*</span>
+                Evolução do Atendimento {!hasMedicalRecordToday && <span className="text-destructive">*</span>}
+                {hasMedicalRecordToday && (
+                  <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400">(opcional — prontuário já registrado)</span>
+                )}
               </Label>
               <Textarea
                 placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
@@ -2083,6 +2106,7 @@ export default function CompleteAttendanceDialog({
                 className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
               />
             </div>
+
 
             {/* Anamnese do paciente */}
             <Card className={`border-dashed ${hasExistingAnamnesis ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800' : 'bg-muted/30'}`}>
@@ -2114,12 +2138,18 @@ export default function CompleteAttendanceDialog({
 
             {/* Prontuário do paciente */}
             {schedule?.client_id && schedule?.employee_id && (
-              <Card className="border-dashed bg-muted/30">
+              <Card
+                className={`border-dashed ${hasMedicalRecordToday ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800' : 'bg-muted/30'}`}
+                onClick={() => checkMedicalRecordToday()}
+              >
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                      <Stethoscope className={`h-4 w-4 ${hasMedicalRecordToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
                       <span className="text-sm font-medium">Prontuário do paciente</span>
+                      {hasMedicalRecordToday && (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Registro adicionado hoje</span>
+                      )}
                     </div>
                     <AddMedicalRecordDialog
                       clientId={schedule.client_id}
@@ -2132,6 +2162,7 @@ export default function CompleteAttendanceDialog({
                 </CardContent>
               </Card>
             )}
+
           </div>
         </ScrollArea>
 

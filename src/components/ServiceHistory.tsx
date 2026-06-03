@@ -73,6 +73,13 @@ interface ServiceRecord {
   conclusion_type?: 'auto' | 'coordinator' | 'pending' | 'rejected' | null;
   created_by_user_id?: string;
   source_record_id?: string;
+  // Campos específicos do prontuário médico (medical_records)
+  vital_signs?: Record<string, string> | null;
+  medications?: any[] | null;
+  next_appointment_notes?: string;
+  symptoms?: string;
+  treatment_plan?: string;
+  progress_notes?: string;
 }
 
 interface ServiceHistoryProps {
@@ -183,7 +190,10 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           symptoms,
           session_duration,
           status,
-          employee_id
+          employee_id,
+          vital_signs,
+          medications,
+          next_appointment_notes
         `).
       eq('client_id', clientId).
       order('session_date', { ascending: false });
@@ -203,7 +213,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           medicalProfiles = profilesData || [];
         }
 
-        medicalRecords.forEach((record) => {
+        medicalRecords.forEach((record: any) => {
           const profile = medicalProfiles.find((p) => p.user_id === record.employee_id);
           records.push({
             id: `medical_${record.id}`,
@@ -219,10 +229,18 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             created_at: record.session_date,
             source: 'medical_record',
             created_by_user_id: record.employee_id,
-            source_record_id: record.id
+            source_record_id: record.id,
+            // Campos separados do prontuário
+            vital_signs: record.vital_signs || null,
+            medications: Array.isArray(record.medications) ? record.medications : null,
+            next_appointment_notes: record.next_appointment_notes || '',
+            symptoms: record.symptoms || '',
+            treatment_plan: record.treatment_plan || '',
+            progress_notes: record.progress_notes || '',
           });
         });
       }
+
 
       // Carregar attendance reports (relatórios de atendimento completos) - apenas validados
       const { data: attendanceReports, error: attendanceError } = await supabase.
@@ -1250,57 +1268,153 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
                 </div>
               </div>
 
-              {/* Objetivos da Sessão */}
-              {selectedRecord.session_objectives &&
-            <div>
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <Star className="h-5 w-5" />
-                    Objetivos da Sessão
-                  </h3>
-                  <div className="bg-card border rounded-lg p-4">
-                    <p className="whitespace-pre-wrap">{selectedRecord.session_objectives}</p>
-                  </div>
-                </div>
-            }
 
-              {/* Observações da Sessão */}
-              {selectedRecord.detailed_notes &&
-            <div>
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Observações da Sessão
-                  </h3>
-                  <div className="bg-card border rounded-lg p-4">
-                    <p className="whitespace-pre-wrap">{selectedRecord.detailed_notes}</p>
-                  </div>
-                </div>
-            }
+              {/* === Seções específicas do Prontuário (medical_record) === */}
+              {selectedRecord.source === 'medical_record' ? (
+                <>
+                  {/* Sinais Vitais */}
+                  {selectedRecord.vital_signs && Object.keys(selectedRecord.vital_signs).length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Sinais Vitais
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                        {Object.entries(selectedRecord.vital_signs).map(([k, v]) => (
+                          <div key={k}>
+                            <span className="text-xs text-muted-foreground block">{k}</span>
+                            <span className="font-medium">{String(v)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              {/* Técnicas Utilizadas */}
-              {selectedRecord.techniques_used &&
-            <div>
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Técnicas Utilizadas
-                  </h3>
-                  <div className="bg-card border rounded-lg p-4">
-                    <p className="whitespace-pre-wrap">{selectedRecord.techniques_used}</p>
-                  </div>
-                </div>
-            }
+                  {/* Queixa / Sintomas */}
+                  {selectedRecord.symptoms && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Queixa Principal / Sintomas
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <p className="whitespace-pre-wrap">{selectedRecord.symptoms}</p>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Resposta do Paciente */}
-              {selectedRecord.patient_response &&
-            <div>
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Resposta do Paciente
-                  </h3>
-                  <div className="bg-card border rounded-lg p-4">
-                    <p className="whitespace-pre-wrap">{selectedRecord.patient_response}</p>
-                  </div>
-                </div>
-            }
+                  {/* Evolução */}
+                  {selectedRecord.progress_notes && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Evolução / Registro da Sessão
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <p className="whitespace-pre-wrap">{selectedRecord.progress_notes}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Plano Terapêutico */}
+                  {selectedRecord.treatment_plan && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <Star className="h-5 w-5" />
+                        Conduta / Plano Terapêutico
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <p className="whitespace-pre-wrap">{selectedRecord.treatment_plan}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Medicações */}
+                  {selectedRecord.medications && selectedRecord.medications.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <Zap className="h-5 w-5" />
+                        Medicações Prescritas
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          {selectedRecord.medications.map((m: any, i: number) => (
+                            <li key={i}>{typeof m === 'string' ? m : (m?.name || JSON.stringify(m))}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Observações para Próxima Sessão */}
+                  {selectedRecord.next_appointment_notes && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Observações para Próxima Sessão
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <p className="whitespace-pre-wrap">{selectedRecord.next_appointment_notes}</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Objetivos da Sessão */}
+                  {selectedRecord.session_objectives &&
+                <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <Star className="h-5 w-5" />
+                        Objetivos da Sessão
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <p className="whitespace-pre-wrap">{selectedRecord.session_objectives}</p>
+                      </div>
+                    </div>
+                }
+
+                  {/* Observações da Sessão */}
+                  {selectedRecord.detailed_notes &&
+                <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Observações da Sessão
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <p className="whitespace-pre-wrap">{selectedRecord.detailed_notes}</p>
+                      </div>
+                    </div>
+                }
+
+                  {/* Técnicas Utilizadas */}
+                  {selectedRecord.techniques_used &&
+                <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Técnicas Utilizadas
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <p className="whitespace-pre-wrap">{selectedRecord.techniques_used}</p>
+                      </div>
+                    </div>
+                }
+
+                  {/* Resposta do Paciente */}
+                  {selectedRecord.patient_response &&
+                <div>
+                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Resposta do Paciente
+                      </h3>
+                      <div className="bg-card border rounded-lg p-4">
+                        <p className="whitespace-pre-wrap">{selectedRecord.patient_response}</p>
+                      </div>
+                    </div>
+                }
+                </>
+              )}
+
 
               {/* Plano para Próxima Sessão */}
               {selectedRecord.next_session_plan &&
