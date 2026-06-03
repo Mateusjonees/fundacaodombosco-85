@@ -2094,7 +2094,10 @@ export default function CompleteAttendanceDialog({
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Evolução do Atendimento <span className="text-destructive">*</span>
+                Evolução do Atendimento {!hasMedicalRecordToday && <span className="text-destructive">*</span>}
+                {hasMedicalRecordToday && (
+                  <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400">(opcional — prontuário já registrado)</span>
+                )}
               </Label>
               <Textarea
                 placeholder="Descreva a evolução do atendimento, procedimentos realizados, observações clínicas, orientações dadas ao paciente..."
@@ -2103,6 +2106,7 @@ export default function CompleteAttendanceDialog({
                 className="min-h-[120px] sm:min-h-[150px] resize-none text-sm sm:text-base"
               />
             </div>
+
 
             {/* Anamnese do paciente */}
             <Card className={`border-dashed ${hasExistingAnamnesis ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800' : 'bg-muted/30'}`}>
