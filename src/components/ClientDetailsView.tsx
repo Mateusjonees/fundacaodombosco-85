@@ -94,6 +94,7 @@ interface ClientDocument {
   document_name: string;
   document_type: string;
   file_path: string;
+  file_size?: number | null;
   uploaded_at: string;
   profiles?: {name: string;};
 }
