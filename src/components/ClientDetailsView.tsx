@@ -396,6 +396,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
           document_name,
           document_type,
           file_path,
+          file_size,
           uploaded_at,
           profiles:uploaded_by (name)
         `).
