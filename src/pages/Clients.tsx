@@ -524,12 +524,24 @@ export default function Patients() {
   };
 
   // === Active client detail view ===
+  // Mantemos todas as abas montadas (display:none nas inativas) para que
+  // a troca entre abas seja instantânea e não recarregue os dados.
   if (activeTabId && activeClient) {
     return (
       <>
         <div className="space-y-0 animate-fade-in">
           {renderTabBar()}
-          <ClientDetailsView client={activeClient} onEdit={() => openEditDialog(activeClient)} onBack={handleBackToList} onRefresh={refreshClients} onDelete={canDeleteClients() ? () => setDeleteConfirmClient(activeClient) : undefined} />
+          {openTabs.map((tab) => (
+            <div key={tab.id} style={{ display: tab.id === activeTabId ? 'block' : 'none' }}>
+              <ClientDetailsView
+                client={tab}
+                onEdit={() => openEditDialog(tab)}
+                onBack={handleBackToList}
+                onRefresh={refreshClients}
+                onDelete={canDeleteClients() ? () => setDeleteConfirmClient(tab) : undefined}
+              />
+            </div>
+          ))}
         </div>
         <DeleteClientDialog clientName={deleteConfirmClient?.name || null} isOpen={!!deleteConfirmClient} isDeleting={isDeleting} onClose={() => setDeleteConfirmClient(null)} onConfirm={handleDeleteClient} />
       </>
