@@ -1,34 +1,53 @@
-## Filtro de Atendimentos por Profissional no Histórico do Paciente
+## Objetivo
 
-### Objetivo
-Adicionar um filtro dentro da aba "Histórico de Serviços" do paciente para que o profissional logado possa alternar entre ver **todos os atendimentos** do paciente ou apenas **os seus próprios atendimentos**.
+1. Permitir finalizar o atendimento **sem preencher o campo "Evolução"** quando o profissional já adicionou um Registro de Prontuário na mesma sessão.
+2. No **Histórico do Prontuário**, mostrar **todos os campos preenchidos separadamente** (sinais vitais, sintomas, evolução, plano terapêutico, medicações, próxima sessão, duração), em vez de juntar tudo em um bloco único.
 
-### Arquivo Alvo
-- `src/components/ServiceHistory.tsx`
+---
 
-### Alterações
+## 1. Finalizar atendimento sem evolução obrigatória
 
-1. **Novo estado de filtro**
-   - Adicionar `professionalFilter` com tipo `'all' | 'mine'` e valor inicial `'all'`.
+**Arquivo:** `src/components/CompleteAttendanceDialog.tsx`
 
-2. **Novo controle de filtro na UI**
-   - Adicionar um `<Select>` ao lado do filtro de validação existente (`validationFilter`), no header do `Card`.
-   - Opções:
-     - `all`: "Todos os atendimentos"
-     - `mine`: "Meus atendimentos"
-   - Ícone: `User` (do Lucide).
+- O estado `evolutionHistory` já carrega os `medical_records` do paciente (`session_date, session_type, progress_notes, employee_id`).
+- Criar um `hasMedicalRecordToday` (boolean): `true` se existir pelo menos 1 registro em `medical_records` para o `client_id` atual, criado pelo `user.id`, com `session_date` igual à data do agendamento (comparação `YYYY-MM-DD` em UTC-3).
+- No `handleComplete` (linha ~626), trocar a validação:
+  ```ts
+  if (!sessionNotes.trim() && !hasMedicalRecordToday) {
+    toast({ ... "Preencha a evolução ou adicione um registro de prontuário." });
+    return;
+  }
+  ```
+- No JSX do campo "Evolução do atendimento" (label perto da linha 2080):
+  - Remover o asterisco "*" quando `hasMedicalRecordToday` for `true`.
+  - Adicionar um hint discreto abaixo: "Prontuário já registrado nesta sessão — evolução opcional." quando aplicável.
+- Se `sessionNotes` estiver vazio mas houver prontuário do dia, preencher automaticamente `session_notes` salvo no `attendance_report` com algo como `"Ver registro de prontuário do dia (Dr(a). X)"` para manter rastreabilidade no relatório.
 
-3. **Aplicação do filtro na listagem**
-   - Combinar o filtro `professionalFilter` com o `validationFilter` existente no `.filter()` dos `serviceRecords`.
-   - Lógica: quando `professionalFilter === 'mine'`, manter apenas registros onde `record.created_by_user_id === user?.id`.
+## 2. Histórico do Prontuário: mostrar campos separadamente
 
-4. **Mensagem de estado vazio**
-   - Atualizar a mensagem exibida quando não há registros para refletir também o filtro de profissional (ex.: "Nenhum atendimento seu encontrado." quando `professionalFilter === 'mine'`).
+**Arquivo:** `src/components/ServiceHistory.tsx`
 
-### Notas
-- O campo `created_by_user_id` já existe em todos os `ServiceRecord` (populado de `schedules.created_by`, `medical_records.employee_id`, `attendance_reports.employee_id` e `employee_reports.employee_id`).
-- O `user` já está disponível via `useAuth()`.
-- O filtro é puramente frontend, sem alterações no carregamento de dados do Supabase.
+Hoje (linhas 175-225), os medical_records são "achatados" em 3 campos genéricos (`detailed_notes`, `session_objectives`, `patient_response`), perdendo `vital_signs`, `medications`, `next_appointment_notes` e a separação entre Sintomas / Evolução / Plano.
 
-## Resumo
-Adicionar um select "Todos / Meus atendimentos" no header do histórico de serviços do paciente, filtrando os registros já carregados pelo `created_by_user_id` do profissional logado.
+**Mudanças:**
+
+- Ampliar o `select` para incluir: `vital_signs, medications, next_appointment_notes`.
+- Estender a interface `ServiceRecord` com campos opcionais: `vital_signs?`, `medications?`, `symptoms?`, `treatment_plan?`, `progress_notes?`, `next_appointment_notes?` (sem remover os legados, para manter compat com agendamentos / attendance_reports).
+- Ao mapear o `medical_record`, popular esses novos campos individualmente em vez de só `detailed_notes`.
+- No **card resumo** da lista: continuar mostrando um preview curto (evolução truncada), mas adicionar pequenos badges/ícones indicando o que foi preenchido: "Sinais vitais", "Medicações", "Plano", "Próx. sessão" (apenas chips, sem expandir).
+- No **dialog de detalhes** (a partir da linha ~1245, branch `source === 'medical_record'`): renderizar seções separadas, cada uma só se preenchida:
+  - **Sinais Vitais** — grid com PA, FC, Temp, SpO2, Peso, Altura (a partir de `vital_signs`).
+  - **Queixa / Sintomas** — `symptoms`.
+  - **Evolução / Registro da Sessão** — `progress_notes`.
+  - **Conduta / Plano Terapêutico** — `treatment_plan`.
+  - **Medicações Prescritas** — lista a partir de `medications[]` (`name`).
+  - **Observações para Próxima Sessão** — `next_appointment_notes`.
+  - **Duração** — `session_duration` min, no header.
+- Replicar a mesma estrutura no **modo de edição** (`editRecord.source === 'medical_record'`, linhas ~1663-1690): mostrar/editar cada campo separadamente e salvar todos no `update` em `medical_records` (atualmente só salva `progress_notes`).
+
+## Notas técnicas
+
+- `vital_signs` é `jsonb` no formato `{ PA, FC, Temperatura, SpO2, Peso, Altura }` (vide `AddMedicalRecordDialog.tsx`).
+- `medications` é `jsonb[]` com objetos `{ name: string }`.
+- Comparação de data do dia: usar `getTodayLocalISODate` de `@/lib/utils` (regra do projeto: UTC-3 Brasília).
+- Sem alterações em schema/migrations.
