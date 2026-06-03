@@ -190,7 +190,10 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           symptoms,
           session_duration,
           status,
-          employee_id
+          employee_id,
+          vital_signs,
+          medications,
+          next_appointment_notes
         `).
       eq('client_id', clientId).
       order('session_date', { ascending: false });
@@ -210,7 +213,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
           medicalProfiles = profilesData || [];
         }
 
-        medicalRecords.forEach((record) => {
+        medicalRecords.forEach((record: any) => {
           const profile = medicalProfiles.find((p) => p.user_id === record.employee_id);
           records.push({
             id: `medical_${record.id}`,
@@ -226,10 +229,18 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             created_at: record.session_date,
             source: 'medical_record',
             created_by_user_id: record.employee_id,
-            source_record_id: record.id
+            source_record_id: record.id,
+            // Campos separados do prontuário
+            vital_signs: record.vital_signs || null,
+            medications: Array.isArray(record.medications) ? record.medications : null,
+            next_appointment_notes: record.next_appointment_notes || '',
+            symptoms: record.symptoms || '',
+            treatment_plan: record.treatment_plan || '',
+            progress_notes: record.progress_notes || '',
           });
         });
       }
+
 
       // Carregar attendance reports (relatórios de atendimento completos) - apenas validados
       const { data: attendanceReports, error: attendanceError } = await supabase.
