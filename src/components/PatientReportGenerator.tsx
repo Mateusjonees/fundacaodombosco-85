@@ -665,10 +665,11 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           <Separator />
 
           {/* Dados Pessoais */}
-          {sections.personal && (<></>)}
           {sections.personal && (<>
-          </>)}
-          {sections.personal && (<></>)}
+          <div className="report-section">
+            <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
+              DADOS PESSOAIS
+            </h2>
           <div className="report-section">
             <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
               DADOS PESSOAIS
