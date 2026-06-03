@@ -1478,7 +1478,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           )}
 
           {/* Histórico de Agendamentos */}
-          {scheduleHistory.length > 0 && (
+          {sections.schedule && scheduleHistory.length > 0 && (
             <div className="report-section">
               <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
                 HISTÓRICO DE AGENDAMENTOS
