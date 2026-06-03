@@ -670,10 +670,6 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
             <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
               DADOS PESSOAIS
             </h2>
-          <div className="report-section">
-            <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
-              DADOS PESSOAIS
-            </h2>
             <div className="field-grid grid grid-cols-2 gap-4">
               <div className="field">
                 <div className="field-label font-medium text-gray-700">Nome Completo:</div>
