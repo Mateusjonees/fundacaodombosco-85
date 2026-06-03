@@ -512,7 +512,7 @@ export default function Patients() {
         {openTabs.map((tab) => (
           <div key={tab.id}
             className={`shrink-0 flex items-center gap-1 rounded-t-lg rounded-b-none border-b-2 px-3 h-9 cursor-pointer transition-all ${tab.id === activeTabId ? "border-primary bg-primary/10 text-primary font-medium" : "border-transparent hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-            onClick={() => { setActiveTabId(tab.id); syncTabsToUrl(openTabIds, tab.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+            onClick={() => { setActiveTabId(tab.id); syncTabsToUrl(openTabIds, tab.id); }}>
             <span className="text-sm max-w-[120px] sm:max-w-[180px] truncate">{tab.name.split(' ')[0]}</span>
             <button onClick={(e) => { e.stopPropagation(); handleCloseTab(tab.id); }} className="ml-1 p-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors">
               <X className="h-3 w-3" />
@@ -524,12 +524,24 @@ export default function Patients() {
   };
 
   // === Active client detail view ===
+  // Mantemos todas as abas montadas (display:none nas inativas) para que
+  // a troca entre abas seja instantânea e não recarregue os dados.
   if (activeTabId && activeClient) {
     return (
       <>
         <div className="space-y-0 animate-fade-in">
           {renderTabBar()}
-          <ClientDetailsView client={activeClient} onEdit={() => openEditDialog(activeClient)} onBack={handleBackToList} onRefresh={refreshClients} onDelete={canDeleteClients() ? () => setDeleteConfirmClient(activeClient) : undefined} />
+          {openTabs.map((tab) => (
+            <div key={tab.id} style={{ display: tab.id === activeTabId ? 'block' : 'none' }}>
+              <ClientDetailsView
+                client={tab}
+                onEdit={() => openEditDialog(tab)}
+                onBack={handleBackToList}
+                onRefresh={refreshClients}
+                onDelete={canDeleteClients() ? () => setDeleteConfirmClient(tab) : undefined}
+              />
+            </div>
+          ))}
         </div>
         <DeleteClientDialog clientName={deleteConfirmClient?.name || null} isOpen={!!deleteConfirmClient} isDeleting={isDeleting} onClose={() => setDeleteConfirmClient(null)} onConfirm={handleDeleteClient} />
       </>
