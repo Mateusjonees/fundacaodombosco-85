@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Download, Printer, Star, Calendar, Clock, User } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileText, Download, Printer, Star, Calendar, Clock, User, Filter } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
@@ -62,17 +65,68 @@ interface AttendanceRecord {
 
 export function PatientReportGenerator({ client, isOpen, onClose }: PatientReportGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [employeeReports, setEmployeeReports] = useState<any[]>([]);
-  const [medicalRecords, setMedicalRecords] = useState<any[]>([]);
+  const [_attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [_employeeReports, setEmployeeReports] = useState<any[]>([]);
+  const [_medicalRecords, setMedicalRecords] = useState<any[]>([]);
   const [neuroTestResults, setNeuroTestResults] = useState<any[]>([]);
   const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
-  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [_prescriptions, setPrescriptions] = useState<any[]>([]);
   const [clientNotes, setClientNotes] = useState<any[]>([]);
   const [scheduleHistory, setScheduleHistory] = useState<any[]>([]);
-  const [laudos, setLaudos] = useState<any[]>([]);
+  const [_laudos, setLaudos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Filtros do relatório
+  const [filterProfessional, setFilterProfessional] = useState<string>('all');
+  const [sections, setSections] = useState({
+    personal: true,
+    payments: true,
+    attendances: true,
+    neuro: true,
+    notes: true,
+    prescriptions: true,
+    laudos: true,
+    schedule: true,
+  });
+
+  const toggleSection = (key: keyof typeof sections) =>
+    setSections((s) => ({ ...s, [key]: !s[key] }));
+
+  // Lista de profissionais presentes nos dados
+  const professionalOptions = useMemo(() => {
+    const set = new Set<string>();
+    _attendanceRecords.forEach((r: any) => r?.professional_name && set.add(r.professional_name));
+    _employeeReports.forEach((r: any) => r?.profiles?.name && set.add(r.profiles.name));
+    _medicalRecords.forEach((r: any) => r?.profiles?.name && set.add(r.profiles.name));
+    _prescriptions.forEach((r: any) => r?.professional_name && set.add(r.professional_name));
+    _laudos.forEach((r: any) => r?.professional_name && set.add(r.professional_name));
+    return Array.from(set).sort();
+  }, [_attendanceRecords, _employeeReports, _medicalRecords, _prescriptions, _laudos]);
+
+  const matchesProfessional = (name?: string) =>
+    filterProfessional === 'all' || (name || '').toLowerCase() === filterProfessional.toLowerCase();
+
+  const attendanceRecords = useMemo(
+    () => _attendanceRecords.filter((r: any) => matchesProfessional(r?.professional_name)),
+    [_attendanceRecords, filterProfessional]
+  );
+  const employeeReports = useMemo(
+    () => _employeeReports.filter((r: any) => matchesProfessional(r?.profiles?.name)),
+    [_employeeReports, filterProfessional]
+  );
+  const medicalRecords = useMemo(
+    () => _medicalRecords.filter((r: any) => matchesProfessional(r?.profiles?.name)),
+    [_medicalRecords, filterProfessional]
+  );
+  const prescriptions = useMemo(
+    () => _prescriptions.filter((r: any) => matchesProfessional(r?.professional_name)),
+    [_prescriptions, filterProfessional]
+  );
+  const laudos = useMemo(
+    () => _laudos.filter((r: any) => matchesProfessional(r?.professional_name)),
+    [_laudos, filterProfessional]
+  );
 
   useEffect(() => {
     if (isOpen && client?.id) {
@@ -511,6 +565,93 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           </Button>
         </div>
 
+        {/* Filtros do Relatório */}
+        <div className="no-print border rounded-lg p-4 mb-4 bg-muted/30 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Filter className="h-4 w-4" />
+            Filtros do Relatório
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Profissional</Label>
+              <Select value={filterProfessional} onValueChange={setFilterProfessional}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Todos os profissionais" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os profissionais</SelectItem>
+                  {professionalOptions.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Paciente</Label>
+              <div className="h-9 px-3 flex items-center rounded-md border bg-background text-sm text-muted-foreground">
+                {client.name}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs mb-2 block">Seções a incluir</Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              {([
+                ['personal', 'Dados pessoais'],
+                ['payments', 'Financeiro'],
+                ['attendances', 'Atendimentos'],
+                ['neuro', 'Neuropsicológico'],
+                ['notes', 'Anotações'],
+                ['prescriptions', 'Prescrições'],
+                ['laudos', 'Laudos'],
+                ['schedule', 'Agenda'],
+              ] as const).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={sections[key]}
+                    onCheckedChange={() => toggleSection(key)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2 text-xs">
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => setSections({
+                personal: true, payments: true, attendances: true, neuro: true,
+                notes: true, prescriptions: true, laudos: true, schedule: true,
+              })}
+            >
+              Marcar todos
+            </button>
+            <span className="text-muted-foreground">·</span>
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => setSections({
+                personal: true, payments: false, attendances: false, neuro: false,
+                notes: false, prescriptions: false, laudos: false, schedule: false,
+              })}
+            >
+              Apenas dados pessoais
+            </button>
+            <span className="text-muted-foreground">·</span>
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => { setFilterProfessional('all'); }}
+            >
+              Limpar profissional
+            </button>
+          </div>
+        </div>
+
         <div id="patient-report" className="bg-white p-8 space-y-6">
           {/* Cabeçalho */}
           <div className="report-header text-center">
@@ -524,6 +665,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           <Separator />
 
           {/* Dados Pessoais */}
+          {sections.personal && (<>
           <div className="report-section">
             <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
               DADOS PESSOAIS
@@ -656,9 +798,10 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
               </div>
             </div>
           </div>
+          </>)}
 
           {/* Histórico Financeiro */}
-          {paymentRecords.length > 0 && (
+          {sections.payments && paymentRecords.length > 0 && (
             <div className="report-section">
               <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
                 HISTÓRICO FINANCEIRO
@@ -798,7 +941,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           )}
 
           {/* Histórico de Atendimentos Detalhados */}
-          {(attendanceRecords.length > 0 || employeeReports.length > 0) && (
+          {sections.attendances && (attendanceRecords.length > 0 || employeeReports.length > 0 || medicalRecords.length > 0) && (
             <div className="report-section">
               <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
                 HISTÓRICO DE ATENDIMENTOS DETALHADOS
@@ -1098,7 +1241,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           )}
 
           {/* Testes Neuropsicológicos */}
-          {neuroTestResults.length > 0 && (
+          {sections.neuro && neuroTestResults.length > 0 && (
             <div className="report-section" style={{ pageBreakBefore: 'auto' }}>
               <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
                 TESTES NEUROPSICOLÓGICOS APLICADOS
@@ -1176,7 +1319,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           )}
 
           {/* Notas Clínicas / Anamneses */}
-          {clientNotes.length > 0 && (
+          {sections.notes && clientNotes.length > 0 && (
             <div className="report-section">
               <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
                 NOTAS CLÍNICAS E ANAMNESES
@@ -1207,7 +1350,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           )}
 
           {/* Prescrições Médicas */}
-          {prescriptions.length > 0 && (
+          {sections.prescriptions && prescriptions.length > 0 && (
             <div className="report-section">
               <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
                 PRESCRIÇÕES MÉDICAS
@@ -1284,7 +1427,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           )}
 
           {/* Laudos */}
-          {laudos.length > 0 && (
+          {sections.laudos && laudos.length > 0 && (
             <div className="report-section">
               <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
                 LAUDOS
@@ -1335,7 +1478,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
           )}
 
           {/* Histórico de Agendamentos */}
-          {scheduleHistory.length > 0 && (
+          {sections.schedule && scheduleHistory.length > 0 && (
             <div className="report-section">
               <h2 className="section-title text-lg font-semibold text-gray-900 border-b border-gray-300 pb-2 mb-4">
                 HISTÓRICO DE AGENDAMENTOS
