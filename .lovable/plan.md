@@ -1,53 +1,34 @@
 ## Objetivo
 
-1. Permitir finalizar o atendimento **sem preencher o campo "Evolução"** quando o profissional já adicionou um Registro de Prontuário na mesma sessão.
-2. No **Histórico do Prontuário**, mostrar **todos os campos preenchidos separadamente** (sinais vitais, sintomas, evolução, plano terapêutico, medicações, próxima sessão, duração), em vez de juntar tudo em um bloco único.
+Permitir que o **Diretor** atue sobre agendamentos já **Concluídos** (ou cancelados), corrigindo erros do profissional. Hoje, quando o card está com status `completed`, nenhuma ação aparece além de "Editar".
 
----
+## O que será adicionado
 
-## 1. Finalizar atendimento sem evolução obrigatória
+No `ScheduleCard.tsx`, quando `isAdmin` (diretor) e `status === 'completed'` ou `'cancelled'` ou `'pending_validation'`, exibir um menu **"Reverter"** (ícone RotateCcw) com 3 opções:
 
-**Arquivo:** `src/components/CompleteAttendanceDialog.tsx`
+1. **Reabrir atendimento** — volta o status para `scheduled`, apaga o `attendance_report` vinculado (`schedule_id`) e o `medical_record` do dia criado por este atendimento. O profissional pode refazer.
+2. **Marcar como falta** — muda status para `cancelled` com motivo "Paciente faltou" e remove o `attendance_report` vinculado.
+3. **Excluir agendamento** — usa o `DeleteAppointmentDialog` já existente (remoção em cascata).
 
-- O estado `evolutionHistory` já carrega os `medical_records` do paciente (`session_date, session_type, progress_notes, employee_id`).
-- Criar um `hasMedicalRecordToday` (boolean): `true` se existir pelo menos 1 registro em `medical_records` para o `client_id` atual, criado pelo `user.id`, com `session_date` igual à data do agendamento (comparação `YYYY-MM-DD` em UTC-3).
-- No `handleComplete` (linha ~626), trocar a validação:
-  ```ts
-  if (!sessionNotes.trim() && !hasMedicalRecordToday) {
-    toast({ ... "Preencha a evolução ou adicione um registro de prontuário." });
-    return;
-  }
-  ```
-- No JSX do campo "Evolução do atendimento" (label perto da linha 2080):
-  - Remover o asterisco "*" quando `hasMedicalRecordToday` for `true`.
-  - Adicionar um hint discreto abaixo: "Prontuário já registrado nesta sessão — evolução opcional." quando aplicável.
-- Se `sessionNotes` estiver vazio mas houver prontuário do dia, preencher automaticamente `session_notes` salvo no `attendance_report` com algo como `"Ver registro de prontuário do dia (Dr(a). X)"` para manter rastreabilidade no relatório.
+Cada opção abre um `AlertDialog` de confirmação explicando o impacto (ex.: "Isso apagará a evolução registrada por X").
 
-## 2. Histórico do Prontuário: mostrar campos separadamente
+## Detalhes técnicos
 
-**Arquivo:** `src/components/ServiceHistory.tsx`
+- Restrição: apenas `userProfile?.employee_role === 'director'`.
+- Reabrir:
+  - `update schedules set status='scheduled', patient_arrived=false, arrived_at=null where id=?`
+  - `delete from attendance_reports where schedule_id=?`
+  - `delete from medical_records where client_id=? and session_date=<data do schedule> and employee_id=<profissional do schedule>` (somente o registro daquela sessão; confirmar com o usuário se quer apagar prontuário também — ver pergunta abaixo).
+- Falta: `update schedules set status='cancelled', notes = coalesce(notes,'') || ' [Revertido pelo diretor: paciente faltou]'` + delete em `attendance_reports`.
+- Registrar auditoria via `auditService` (já existe) com ação `revert_attendance`.
+- Invalidar queries: `['schedules']`, `['attendance-reports']`, `['medical-records']`.
 
-Hoje (linhas 175-225), os medical_records são "achatados" em 3 campos genéricos (`detailed_notes`, `session_objectives`, `patient_response`), perdendo `vital_signs`, `medications`, `next_appointment_notes` e a separação entre Sintomas / Evolução / Plano.
+## Onde mexer
 
-**Mudanças:**
+- `src/components/ScheduleCard.tsx` — novo bloco de botões para diretor em status finalizados.
+- `src/components/RevertAttendanceDialog.tsx` (novo) — modal com as 3 opções.
+- `src/pages/Schedule.tsx` — handler `onRevert` ligando o diálogo.
 
-- Ampliar o `select` para incluir: `vital_signs, medications, next_appointment_notes`.
-- Estender a interface `ServiceRecord` com campos opcionais: `vital_signs?`, `medications?`, `symptoms?`, `treatment_plan?`, `progress_notes?`, `next_appointment_notes?` (sem remover os legados, para manter compat com agendamentos / attendance_reports).
-- Ao mapear o `medical_record`, popular esses novos campos individualmente em vez de só `detailed_notes`.
-- No **card resumo** da lista: continuar mostrando um preview curto (evolução truncada), mas adicionar pequenos badges/ícones indicando o que foi preenchido: "Sinais vitais", "Medicações", "Plano", "Próx. sessão" (apenas chips, sem expandir).
-- No **dialog de detalhes** (a partir da linha ~1245, branch `source === 'medical_record'`): renderizar seções separadas, cada uma só se preenchida:
-  - **Sinais Vitais** — grid com PA, FC, Temp, SpO2, Peso, Altura (a partir de `vital_signs`).
-  - **Queixa / Sintomas** — `symptoms`.
-  - **Evolução / Registro da Sessão** — `progress_notes`.
-  - **Conduta / Plano Terapêutico** — `treatment_plan`.
-  - **Medicações Prescritas** — lista a partir de `medications[]` (`name`).
-  - **Observações para Próxima Sessão** — `next_appointment_notes`.
-  - **Duração** — `session_duration` min, no header.
-- Replicar a mesma estrutura no **modo de edição** (`editRecord.source === 'medical_record'`, linhas ~1663-1690): mostrar/editar cada campo separadamente e salvar todos no `update` em `medical_records` (atualmente só salva `progress_notes`).
+## Pergunta pendente
 
-## Notas técnicas
-
-- `vital_signs` é `jsonb` no formato `{ PA, FC, Temperatura, SpO2, Peso, Altura }` (vide `AddMedicalRecordDialog.tsx`).
-- `medications` é `jsonb[]` com objetos `{ name: string }`.
-- Comparação de data do dia: usar `getTodayLocalISODate` de `@/lib/utils` (regra do projeto: UTC-3 Brasília).
-- Sem alterações em schema/migrations.
+Antes de implementar: ao "Reabrir atendimento", devo **também apagar o registro de prontuário** (medical_record) daquela sessão, ou manter o prontuário e apenas reverter o agendamento + apagar o `attendance_report`?

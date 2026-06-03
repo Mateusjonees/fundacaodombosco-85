@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin } from 'lucide-react';
+import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin, RotateCcw } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
@@ -46,6 +46,7 @@ interface ScheduleCardProps {
   onCancelClick: () => void;
   onDeleteClick: () => void;
   onCompleteClick: () => void;
+  onRevertClick?: () => void;
   onPresenceUpdate: () => void;
   getStatusBadge: (status: string) => { text: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string };
 }
@@ -64,6 +65,7 @@ export const ScheduleCard = memo(({
   onCancelClick,
   onDeleteClick,
   onCompleteClick,
+  onRevertClick,
   onPresenceUpdate,
   getStatusBadge
 }: ScheduleCardProps) => {
@@ -287,6 +289,18 @@ export const ScheduleCard = memo(({
                 <span className="hidden sm:inline">Aguardando validação</span>
                 <span className="sm:hidden">Validação</span>
               </span>
+            )}
+
+            {isAdmin && (isCompleted || isCancelled || isPendingValidation) && onRevertClick && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRevertClick}
+                className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1 sm:gap-1.5 px-2 sm:px-3 border-amber-400/60 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+              >
+                <RotateCcw className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden xs:inline">Reverter</span>
+              </Button>
             )}
 
             {isAdmin && !isCompleted && !isCancelled && (

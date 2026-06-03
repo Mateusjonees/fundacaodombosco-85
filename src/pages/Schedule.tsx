@@ -19,6 +19,7 @@ import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
 import { DeleteAppointmentDialog } from '@/components/DeleteAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
+import { RevertAttendanceDialog } from '@/components/RevertAttendanceDialog';
 
 import { ScheduleCard } from '@/components/ScheduleCard';
 import { CreateScheduleDialog } from '@/components/schedule/CreateScheduleDialog';
@@ -53,6 +54,7 @@ export default function SchedulePage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [revertDialogOpen, setRevertDialogOpen] = useState(false);
   const [selectedScheduleForAction, setSelectedScheduleForAction] = useState<Schedule | null>(null);
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
 
@@ -242,6 +244,7 @@ export default function SchedulePage() {
     onCancelClick: () => { setSelectedScheduleForAction(schedule); setCancelDialogOpen(true); },
     onDeleteClick: () => { setSelectedScheduleForAction(schedule); setDeleteDialogOpen(true); },
     onCompleteClick: () => { setSelectedScheduleForAction(schedule); setCompleteDialogOpen(true); },
+    onRevertClick: () => { setSelectedScheduleForAction(schedule); setRevertDialogOpen(true); },
     onPresenceUpdate: refetchSchedules,
     getStatusBadge,
   }), [employees, userProfile, isAdmin, canCancelSchedules, canDeleteSchedules, handleEditSchedule, handleRedirect, refetchSchedules, getStatusBadge]);
@@ -471,6 +474,13 @@ export default function SchedulePage() {
           onClose={() => setDeleteDialogOpen(false)}
           onDelete={handleDelete}
           onDeleteMultiple={handleDeleteMultiple}
+        />
+
+        <RevertAttendanceDialog
+          schedule={selectedScheduleForAction}
+          isOpen={revertDialogOpen}
+          onClose={() => setRevertDialogOpen(false)}
+          onSuccess={refetchSchedules}
         />
       </div>
 
