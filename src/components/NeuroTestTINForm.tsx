@@ -9,6 +9,7 @@ import { Brain, Calculator, Trash2, AlertCircle } from 'lucide-react';
 import { TIN_TEST, getTINClassification, getTINClassificationColor } from '@/data/neuroTests/tin';
 import { lookupTINStandardScoreWithFallback, getTINAgeGroupName, isAgeValidForTIN } from '@/data/neuroTests/tinStandardScores';
 import { epToPercentile, getPercentileFormula } from '@/utils/neuroPercentile';
+import { percentileToRange } from '@/data/neuroTests/percentileClassification';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export interface TINResults {
@@ -233,9 +234,14 @@ export default function NeuroTestTINForm({
                 {escorePadrao !== null ? epToPercentile(escorePadrao) : (hasInput ? '—' : '-')}
               </p>
               {escorePadrao !== null && (
-                <p className="text-[10px] text-muted-foreground mt-1 font-mono">
-                  {getPercentileFormula('ep', escorePadrao)}
-                </p>
+                <>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Faixa: <span className="font-semibold">{percentileToRange(epToPercentile(escorePadrao))}</span>
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1 font-mono">
+                    {getPercentileFormula('ep', escorePadrao)}
+                  </p>
+                </>
               )}
             </div>
           </div>

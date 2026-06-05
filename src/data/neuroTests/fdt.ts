@@ -79,6 +79,10 @@ export const FDT_TEST: NeuroTestDefinition = {
   ]
 };
 
+// Classificação por percentil já está implementada em ./fdtPercentiles
+// (getFDTClassification / getFDTClassificationColor) — mantida lá para
+// evitar duplicação. Aqui ficam apenas os cálculos brutos.
+
 /**
  * Calcula o escore de Inibição
  */

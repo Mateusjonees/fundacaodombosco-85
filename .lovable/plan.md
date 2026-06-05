@@ -1,34 +1,74 @@
 ## Objetivo
 
-Permitir que o **Diretor** atue sobre agendamentos já **Concluídos** (ou cancelados), corrigindo erros do profissional. Hoje, quando o card está com status `completed`, nenhuma ação aparece além de "Editar".
+Você listou a mesma regra de faixas para todos os testes mencionados, então vou unificar a classificação por percentil em **uma única função compartilhada** e aplicá-la consistentemente em TFV, TIN, TSBC, Trilhas, FDT e BPA-2. Hoje cada teste tem sua própria lógica, com divergências (TFV usa 25-50 = "Média", BPA-2 usa 25 = "Médio Inferior", etc.).
 
-## O que será adicionado
+## Regra única de classificação por percentil
 
-No `ScheduleCard.tsx`, quando `isAdmin` (diretor) e `status === 'completed'` ou `'cancelled'` ou `'pending_validation'`, exibir um menu **"Reverter"** (ícone RotateCcw) com 3 opções:
+| Percentil | Classificação |
+|---|---|
+| < 5 | Inferior |
+| = 5 | Inferior |
+| 5–25 (exclusive) | Média Inferior |
+| = 25 | Média Inferior |
+| 25–50 (exclusive) | Média |
+| = 50 | Média |
+| 50–75 (exclusive) | Média |
+| = 75 | Média Superior |
+| 75–95 (exclusive) | Média Superior |
+| = 95 | Superior |
+| > 95 | Superior |
 
-1. **Reabrir atendimento** — volta o status para `scheduled`, apaga o `attendance_report` vinculado (`schedule_id`) e o `medical_record` do dia criado por este atendimento. O profissional pode refazer.
-2. **Marcar como falta** — muda status para `cancelled` com motivo "Paciente faltou" e remove o `attendance_report` vinculado.
-3. **Excluir agendamento** — usa o `DeleteAppointmentDialog` já existente (remoção em cascata).
+## Mudanças por teste
 
-Cada opção abre um `AlertDialog` de confirmação explicando o impacto (ex.: "Isso apagará a evolução registrada por X").
+### 1. Criar helper compartilhado
+- Novo arquivo `src/data/neuroTests/percentileClassification.ts` com:
+  - `classifyPercentile(p: number | string): string` — aceita número (`50`), faixa (`"25-50"`), ou modificadores (`"<5"`, `">95"`).
+  - `getClassificationColor(classification): string` — cores semânticas reusáveis.
 
-## Detalhes técnicos
+### 2. TFV (`tfv.ts`)
+- Substituir `getClassificationFromPercentile` por wrapper que delega para `classifyPercentile`.
+- Corrige o bug atual onde `25-50` retornava "Média" (passa a retornar "Média Inferior" no limite `=25`, e "Média" no intervalo aberto).
 
-- Restrição: apenas `userProfile?.employee_role === 'director'`.
-- Reabrir:
-  - `update schedules set status='scheduled', patient_arrived=false, arrived_at=null where id=?`
-  - `delete from attendance_reports where schedule_id=?`
-  - `delete from medical_records where client_id=? and session_date=<data do schedule> and employee_id=<profissional do schedule>` (somente o registro daquela sessão; confirmar com o usuário se quer apagar prontuário também — ver pergunta abaixo).
-- Falta: `update schedules set status='cancelled', notes = coalesce(notes,'') || ' [Revertido pelo diretor: paciente faltou]'` + delete em `attendance_reports`.
-- Registrar auditoria via `auditService` (já existe) com ação `revert_attendance`.
-- Invalidar queries: `['schedules']`, `['attendance-reports']`, `['medical-records']`.
+### 3. BPA-2 (`bpa2.ts`)
+- Reescrever `getClassification(percentile)` para usar `classifyPercentile`.
+- Hoje há linhas duplicadas (`<= 5` e `<= 10` ambas retornam "Inferior") e nomenclatura inconsistente ("Médio Inferior" vs "Média Inferior").
 
-## Onde mexer
+### 4. FDT (`fdt.ts`)
+- Adicionar `getFDTClassification(percentile)` e `getFDTClassificationColor` usando o helper compartilhado.
+- Esses helpers serão consumidos pelo componente de exibição do FDT (a interpretação hoje não aparece para o usuário — vou conectar nos cards de resultado).
 
-- `src/components/ScheduleCard.tsx` — novo bloco de botões para diretor em status finalizados.
-- `src/components/RevertAttendanceDialog.tsx` (novo) — modal com as 3 opções.
-- `src/pages/Schedule.tsx` — handler `onRevert` ligando o diálogo.
+### 5. Trilhas (`trilhas.ts`), TSBC (`tsbc.ts`), TIN (`tin.ts`)
+Esses três usam **Escore Padrão (M=100, DP=15)**, não percentil. Para alinhar à regra do livro:
+- Manter `getXClassification(standardScore)` baseado em EP (esse cálculo segue o manual padrão), MAS
+- Adicionar `getXClassificationByPercentile(p)` para quando o card exibir percentil derivado.
+- Converter EP → percentil aproximado (tabela padrão da curva normal: EP 70=2, 85=16, 100=50, 115=84, 130=98) e exibir a faixa de percentil ao lado do EP nos cards do TIN, conforme você pediu ("variação de percentil").
 
-## Pergunta pendente
+### 6. Auditoria visual dos cards
+Vou abrir os componentes que renderizam cada teste e garantir que estão chamando a nova função e exibindo o label correto. Arquivos a revisar (sem alteração de dados, só de classificação/cores):
+- `src/components/neuro/results/*` (cards de cada teste)
+- `src/components/neuro/forms/*` (preview inline, se houver)
 
-Antes de implementar: ao "Reabrir atendimento", devo **também apagar o registro de prontuário** (medical_record) daquela sessão, ou manter o prontuário e apenas reverter o agendamento + apagar o `attendance_report`?
+## O que NÃO será alterado neste plano
+
+- **Tabelas normativas** (TSBC infantil, Trilhas, BPA-2) — você optou por não enviar os PDFs. Se algum valor numérico de tabela estiver errado, preciso da página do manual para corrigir com segurança. Sinalize os valores específicos depois e eu aplico em um segundo passo.
+- Cálculos brutos (Inibição = Escolha − Leitura, AG = AC+AD+AA, etc.) seguem como estão.
+
+## Arquivos afetados
+
+```text
+src/data/neuroTests/
+├── percentileClassification.ts   (NOVO)
+├── tfv.ts                        (refactor classifier)
+├── bpa2.ts                       (refactor classifier)
+├── fdt.ts                        (add classifier + color)
+├── trilhas.ts                    (add percentile classifier)
+├── tsbc.ts                       (add percentile classifier)
+└── tin.ts                        (add percentile classifier + EP→percentil)
+
+src/components/neuro/results/*    (usar novos helpers)
+```
+
+## Validação
+
+- Conferir no preview cada card de teste com escores de exemplo nas faixas 4 / 5 / 15 / 25 / 40 / 75 / 90 / 95 / 99 e validar o label exibido.
+- Build limpo (sem quebrar imports antigos via re-export de compat).
