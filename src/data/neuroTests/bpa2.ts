@@ -72,17 +72,12 @@ export const calculateAG = (ac: number, ad: number, aa: number): number => {
 };
 
 /**
- * Retorna a classificação baseada no percentil
+ * Retorna a classificação baseada no percentil — usa regra unificada.
  */
+import { classifyPercentile } from './percentileClassification';
+
 export const getClassification = (percentile: number): string => {
-  if (percentile <= 1) return 'Muito Inferior';
-  if (percentile <= 5) return 'Inferior';
-  if (percentile <= 10) return 'Inferior';
-  if (percentile <= 25) return 'Médio Inferior';
-  if (percentile <= 75) return 'Médio';
-  if (percentile <= 90) return 'Médio Superior';
-  if (percentile <= 95) return 'Superior';
-  return 'Muito Superior';
+  return classifyPercentile(percentile);
 };
 
 /**

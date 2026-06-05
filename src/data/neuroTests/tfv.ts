@@ -43,23 +43,11 @@ export const TFV_TEST = {
   calculatedScores: [],
 } as const;
 
-// Classificação baseada em percentil
+// Classificação baseada em percentil — delega para o helper unificado
+import { classifyPercentile } from './percentileClassification';
+
 export const getClassificationFromPercentile = (percentile: string): string => {
-  // Percentil pode vir como número exato ou faixa
-  const numericPercentile = parseInt(percentile.replace(/[<>]/g, '').split('-')[0]);
-  
-  if (percentile.includes('<5') || numericPercentile <= 5) {
-    return 'Inferior';
-  } else if (percentile.includes('5-25') || (numericPercentile > 5 && numericPercentile <= 25)) {
-    return 'Média Inferior';
-  } else if (percentile.includes('25-50') || percentile.includes('50-75') || numericPercentile === 50 || (numericPercentile > 25 && numericPercentile <= 75)) {
-    return 'Média';
-  } else if (percentile.includes('75-95') || numericPercentile === 75 || (numericPercentile > 75 && numericPercentile < 95)) {
-    return 'Média Superior';
-  } else if (percentile.includes('>95') || numericPercentile >= 95) {
-    return 'Superior';
-  }
-  return 'Média';
+  return classifyPercentile(percentile);
 };
 
 // Tabelas normativas - Total de acertos por idade, tipo de escola e subteste

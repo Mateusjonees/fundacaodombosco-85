@@ -79,6 +79,8 @@ export const FDT_TEST: NeuroTestDefinition = {
   ]
 };
 
+import { classifyPercentile, getPercentileClassificationColor } from './percentileClassification';
+
 /**
  * Calcula o escore de Inibição
  */
@@ -91,4 +93,15 @@ export const calculateInibicao = (escolha: number, leitura: number): number => {
  */
 export const calculateFlexibilidade = (alternancia: number, leitura: number): number => {
   return alternancia - leitura;
+};
+
+/**
+ * Classificação por percentil — interpretação clínica padronizada do FDT.
+ */
+export const getFDTClassification = (percentile: number | string): string => {
+  return classifyPercentile(percentile);
+};
+
+export const getFDTClassificationColor = (classification: string): string => {
+  return getPercentileClassificationColor(classification);
 };
