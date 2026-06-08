@@ -521,14 +521,26 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   };
 
   const handleEditNote = (note: ClientNote) => {
+    setPrefillNote(null);
     setEditingNote(note);
     setAddAnamnesisDialogOpen(true);
+  };
+
+  const handleDuplicateNote = (note: ClientNote) => {
+    setEditingNote(null);
+    setPrefillNote(note);
+    setAddAnamnesisDialogOpen(true);
+    toast({
+      title: 'Anamnese copiada',
+      description: 'Os campos foram preenchidos. Edite e salve como uma nova anamnese.',
+    });
   };
 
   const handleCloseAnamnesisDialog = (open: boolean) => {
     setAddAnamnesisDialogOpen(open);
     if (!open) {
       setEditingNote(null);
+      setPrefillNote(null);
     }
   };
 
