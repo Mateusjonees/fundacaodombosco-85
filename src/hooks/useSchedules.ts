@@ -120,7 +120,29 @@ export const useSchedules = (date: Date, userProfile?: any, filters?: ScheduleFi
             return result;
           }
 
-          const result = data || [];
+          let result = data || [];
+
+          // Fallback: buscar pacientes que vieram null no join (cache antigo / RLS recém-corrigida)
+          const missingClientIds = Array.from(new Set(
+            result
+              .filter((s: any) => s.client_id && !s.clients)
+              .map((s: any) => s.client_id as string)
+          ));
+          if (missingClientIds.length > 0) {
+            const { data: extraClients } = await supabase
+              .from('clients')
+              .select('id, name, phone, cpf, email, unit, birth_date')
+              .in('id', missingClientIds);
+            if (extraClients && extraClients.length > 0) {
+              const map = new Map(extraClients.map((c: any) => [c.id, c]));
+              result = result.map((s: any) =>
+                !s.clients && s.client_id && map.has(s.client_id)
+                  ? { ...s, clients: map.get(s.client_id) }
+                  : s
+              );
+            }
+          }
+
           await offlineDB.putMany(STORES.schedules, result).catch(() => {});
           await offlineDB.setLastSync('schedules').catch(() => {});
           return result;
