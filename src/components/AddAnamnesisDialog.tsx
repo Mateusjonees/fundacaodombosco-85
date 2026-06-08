@@ -23,6 +23,7 @@ interface AddAnamnesisDialogProps {
   clientId: string;
   onSuccess: () => void;
   editingNote?: ClientNote | null;
+  prefillNote?: ClientNote | null;
   defaultServiceType?: string;
 }
 
