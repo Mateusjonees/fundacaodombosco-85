@@ -134,6 +134,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [addAnamnesisDialogOpen, setAddAnamnesisDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<ClientNote | null>(null);
+  const [prefillNote, setPrefillNote] = useState<ClientNote | null>(null);
   const [deleteNoteDialogOpen, setDeleteNoteDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<ClientNote | null>(null);
   const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
