@@ -47,6 +47,7 @@ import {
   Pill,
   ClipboardList,
   Trash2,
+  Copy,
   Pencil } from
 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
@@ -133,6 +134,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [addAnamnesisDialogOpen, setAddAnamnesisDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<ClientNote | null>(null);
+  const [prefillNote, setPrefillNote] = useState<ClientNote | null>(null);
   const [deleteNoteDialogOpen, setDeleteNoteDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<ClientNote | null>(null);
   const [linkProfessionalDialogOpen, setLinkProfessionalDialogOpen] = useState(false);
@@ -519,14 +521,26 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   };
 
   const handleEditNote = (note: ClientNote) => {
+    setPrefillNote(null);
     setEditingNote(note);
     setAddAnamnesisDialogOpen(true);
+  };
+
+  const handleDuplicateNote = (note: ClientNote) => {
+    setEditingNote(null);
+    setPrefillNote(note);
+    setAddAnamnesisDialogOpen(true);
+    toast({
+      title: 'Anamnese copiada',
+      description: 'Os campos foram preenchidos. Edite e salve como uma nova anamnese.',
+    });
   };
 
   const handleCloseAnamnesisDialog = (open: boolean) => {
     setAddAnamnesisDialogOpen(open);
     if (!open) {
       setEditingNote(null);
+      setPrefillNote(null);
     }
   };
 
@@ -1593,6 +1607,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                         clientId={client.id}
                         onSuccess={loadNotes}
                         editingNote={editingNote}
+                        prefillNote={prefillNote}
                         defaultServiceType={scheduleServiceType || undefined} />
                       
 
@@ -1639,6 +1654,19 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-muted-foreground">{formatDateTime(noteItem.created_at)}</span>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => handleDuplicateNote(noteItem)}>
+                                    
+                                        <Copy className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Copiar para nova</TooltipContent>
+                                  </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button

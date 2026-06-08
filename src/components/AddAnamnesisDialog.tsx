@@ -23,6 +23,7 @@ interface AddAnamnesisDialogProps {
   clientId: string;
   onSuccess: () => void;
   editingNote?: ClientNote | null;
+  prefillNote?: ClientNote | null;
   defaultServiceType?: string;
 }
 
@@ -66,6 +67,7 @@ export default function AddAnamnesisDialog({
   clientId, 
   onSuccess,
   editingNote,
+  prefillNote,
   defaultServiceType
 }: AddAnamnesisDialogProps) {
   const { user } = useAuth();
@@ -83,12 +85,16 @@ export default function AddAnamnesisDialog({
     conduta: ''
   });
 
-  // Load data when editing
+  // Load data when editing OR pre-filling from a copy
   useEffect(() => {
     if (editingNote) {
       const parsed = parseNoteText(editingNote.note_text);
       setFormData(parsed);
       setServiceType(editingNote.service_type || defaultServiceType || 'private');
+    } else if (prefillNote) {
+      const parsed = parseNoteText(prefillNote.note_text);
+      setFormData(parsed);
+      setServiceType(prefillNote.service_type || defaultServiceType || 'private');
     } else {
       setFormData({
         queixaPrincipal: '',
@@ -100,7 +106,7 @@ export default function AddAnamnesisDialog({
       });
       setServiceType(defaultServiceType || 'private');
     }
-  }, [editingNote, open, defaultServiceType]);
+  }, [editingNote, prefillNote, open, defaultServiceType]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
