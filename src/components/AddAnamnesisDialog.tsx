@@ -9,8 +9,6 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { ClipboardList, Maximize2, Minimize2 } from 'lucide-react';
 
-export { parseNoteText };
-
 interface ClientNote {
   id: string;
   note_text: string;
