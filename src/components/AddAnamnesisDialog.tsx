@@ -67,6 +67,7 @@ export default function AddAnamnesisDialog({
   clientId, 
   onSuccess,
   editingNote,
+  prefillNote,
   defaultServiceType
 }: AddAnamnesisDialogProps) {
   const { user } = useAuth();
