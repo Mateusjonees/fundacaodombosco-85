@@ -47,6 +47,7 @@ import {
   Pill,
   ClipboardList,
   Trash2,
+  Copy,
   Pencil } from
 'lucide-react';
 import { ContractGenerator } from './ContractGenerator';
