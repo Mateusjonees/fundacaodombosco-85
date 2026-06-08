@@ -1607,6 +1607,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                         clientId={client.id}
                         onSuccess={loadNotes}
                         editingNote={editingNote}
+                        prefillNote={prefillNote}
                         defaultServiceType={scheduleServiceType || undefined} />
                       
 
