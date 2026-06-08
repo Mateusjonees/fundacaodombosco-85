@@ -1659,6 +1659,19 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                                     size="sm"
                                     variant="ghost"
                                     className="h-7 w-7 p-0"
+                                    onClick={() => handleDuplicateNote(noteItem)}>
+                                    
+                                        <Copy className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Copiar para nova</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0"
                                     onClick={() => handleEditNote(noteItem)}>
                                     
                                         <Pencil className="h-3.5 w-3.5" />
