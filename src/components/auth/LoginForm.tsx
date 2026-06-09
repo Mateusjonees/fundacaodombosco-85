@@ -184,7 +184,21 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
               </div>
             </div>
 
-            <Button 
+            <div className="flex items-center gap-2">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
+                className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+              />
+              <Label htmlFor="remember" className="text-xs font-medium text-muted-foreground cursor-pointer select-none">
+                Lembrar senha e entrar automaticamente
+              </Label>
+            </div>
+
+            <Button
               type="submit" 
               className="w-full h-12 rounded-xl text-sm font-semibold gap-2 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
               disabled={isLoading}
