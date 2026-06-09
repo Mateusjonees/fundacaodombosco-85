@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,31 +12,62 @@ interface LoginFormProps {
   onSwitchToSignUp?: () => void;
 }
 
+const REMEMBER_KEY = 'fdb_remember_credentials';
+
 export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [autoLoginTried, setAutoLoginTried] = useState(false);
   const { toast } = useToast();
+
+  // Carrega credenciais salvas e tenta login automático
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REMEMBER_KEY);
+      if (!saved) { setAutoLoginTried(true); return; }
+      const { email: savedEmail, password: savedPassword } = JSON.parse(atob(saved));
+      if (savedEmail) setEmail(savedEmail);
+      if (savedPassword) setPassword(savedPassword);
+      setRememberMe(true);
+
+      // Auto-login silencioso
+      if (savedEmail && savedPassword && !autoLoginTried) {
+        setAutoLoginTried(true);
+        setIsLoading(true);
+        supabase.auth.signInWithPassword({ email: savedEmail, password: savedPassword })
+          .then(({ error }) => {
+            if (!error) {
+              onSuccess();
+            } else {
+              localStorage.removeItem(REMEMBER_KEY);
+            }
+          })
+          .finally(() => setIsLoading(false));
+      } else {
+        setAutoLoginTried(true);
+      }
+    } catch {
+      setAutoLoginTried(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await AuditService.logAction({
-        entityType: 'auth',
-        action: 'login_attempted',
-        metadata: { user_email: email }
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      
       if (error) {
-        await AuditService.logAction({
+        // Log assíncrono (não bloqueia UI)
+        AuditService.logAction({
           entityType: 'auth',
           action: 'login_failed',
           metadata: { user_email: email, error_message: error.message }
-        });
+        }).catch(() => {});
         toast({
           variant: "destructive",
           title: "Erro no Login",
@@ -45,17 +76,17 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
         return;
       }
 
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao sistema."
-      });
+      // Salva ou remove credenciais conforme "lembrar"
+      try {
+        if (rememberMe) {
+          localStorage.setItem(REMEMBER_KEY, btoa(JSON.stringify({ email, password })));
+        } else {
+          localStorage.removeItem(REMEMBER_KEY);
+        }
+      } catch {}
+
       onSuccess();
     } catch (error) {
-      await AuditService.logAction({
-        entityType: 'auth',
-        action: 'login_error',
-        metadata: { user_email: email, error: 'unexpected_error' }
-      });
       toast({
         variant: "destructive",
         title: "Erro",
@@ -153,7 +184,21 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
               </div>
             </div>
 
-            <Button 
+            <div className="flex items-center gap-2">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
+                className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+              />
+              <Label htmlFor="remember" className="text-xs font-medium text-muted-foreground cursor-pointer select-none">
+                Lembrar senha e entrar automaticamente
+              </Label>
+            </div>
+
+            <Button
               type="submit" 
               className="w-full h-12 rounded-xl text-sm font-semibold gap-2 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
               disabled={isLoading}
