@@ -10,9 +10,5 @@ interface PageTransitionProps {
  * Transição leve entre páginas — sem key por rota para evitar remontagem
  */
 export const PageTransition = ({ children, className }: PageTransitionProps) => {
-  return (
-    <div className={cn("animate-page-enter", className)}>
-      {children}
-    </div>
-  );
+  return <div className={className}>{children}</div>;
 };
