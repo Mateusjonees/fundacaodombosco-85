@@ -20,6 +20,7 @@ import { useCreateMedicalRecord } from '@/hooks/useMedicalRecords';
 interface AddMedicalRecordDialogProps {
   clientId: string;
   employeeId: string;
+  onSaved?: () => void;
 }
 
 const SESSION_TYPES = [
