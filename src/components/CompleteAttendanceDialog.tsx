@@ -2155,6 +2155,10 @@ export default function CompleteAttendanceDialog({
                     <AddMedicalRecordDialog
                       clientId={schedule.client_id}
                       employeeId={schedule.employee_id}
+                      onSaved={() => {
+                        checkMedicalRecordToday();
+                        setShowFinalizePrompt(true);
+                      }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
