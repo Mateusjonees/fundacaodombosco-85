@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
@@ -225,6 +226,7 @@ export default function CompleteAttendanceDialog({
   const [medicalRecordsHistory, setMedicalRecordsHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [hasMedicalRecordToday, setHasMedicalRecordToday] = useState(false);
+  const [showFinalizePrompt, setShowFinalizePrompt] = useState(false);
 
   // Check whether the professional already added a medical_record for this patient today
   const checkMedicalRecordToday = async () => {
@@ -2154,6 +2156,10 @@ export default function CompleteAttendanceDialog({
                     <AddMedicalRecordDialog
                       clientId={schedule.client_id}
                       employeeId={schedule.employee_id}
+                      onSaved={() => {
+                        checkMedicalRecordToday();
+                        setShowFinalizePrompt(true);
+                      }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -2309,6 +2315,29 @@ export default function CompleteAttendanceDialog({
             }}
           />
         )}
+
+        {/* Confirmação: Finalizar atendimento após salvar prontuário */}
+        <AlertDialog open={showFinalizePrompt} onOpenChange={setShowFinalizePrompt}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Prontuário salvo</AlertDialogTitle>
+              <AlertDialogDescription>
+                O registro foi adicionado ao prontuário. Deseja finalizar o atendimento agora e enviá-lo para o Relatório de Atendimentos?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setShowFinalizePrompt(false);
+                  handleComplete();
+                }}
+              >
+                OK, finalizar atendimento
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

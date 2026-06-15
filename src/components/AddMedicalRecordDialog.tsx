@@ -20,6 +20,7 @@ import { useCreateMedicalRecord } from '@/hooks/useMedicalRecords';
 interface AddMedicalRecordDialogProps {
   clientId: string;
   employeeId: string;
+  onSaved?: () => void;
 }
 
 const SESSION_TYPES = [
@@ -28,7 +29,7 @@ const SESSION_TYPES = [
   'Acompanhamento', 'Interconsulta', 'Alta', 'Encaminhamento',
 ];
 
-export const AddMedicalRecordDialog = ({ clientId, employeeId }: AddMedicalRecordDialogProps) => {
+export const AddMedicalRecordDialog = ({ clientId, employeeId, onSaved }: AddMedicalRecordDialogProps) => {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     session_type: 'Consulta',
@@ -95,6 +96,7 @@ export const AddMedicalRecordDialog = ({ clientId, employeeId }: AddMedicalRecor
       pa: '', fc: '', temp: '', spo2: '', peso: '', altura: '',
       medications_text: '',
     });
+    onSaved?.();
   };
 
   const update = (field: string, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
