@@ -29,7 +29,7 @@ const SESSION_TYPES = [
   'Acompanhamento', 'Interconsulta', 'Alta', 'Encaminhamento',
 ];
 
-export const AddMedicalRecordDialog = ({ clientId, employeeId }: AddMedicalRecordDialogProps) => {
+export const AddMedicalRecordDialog = ({ clientId, employeeId, onSaved }: AddMedicalRecordDialogProps) => {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     session_type: 'Consulta',
