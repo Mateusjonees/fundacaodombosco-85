@@ -96,6 +96,7 @@ export const AddMedicalRecordDialog = ({ clientId, employeeId, onSaved }: AddMed
       pa: '', fc: '', temp: '', spo2: '', peso: '', altura: '',
       medications_text: '',
     });
+    onSaved?.();
   };
 
   const update = (field: string, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
