@@ -2314,6 +2314,29 @@ export default function CompleteAttendanceDialog({
             }}
           />
         )}
+
+        {/* Confirmação: Finalizar atendimento após salvar prontuário */}
+        <AlertDialog open={showFinalizePrompt} onOpenChange={setShowFinalizePrompt}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Prontuário salvo</AlertDialogTitle>
+              <AlertDialogDescription>
+                O registro foi adicionado ao prontuário. Deseja finalizar o atendimento agora e enviá-lo para o Relatório de Atendimentos?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setShowFinalizePrompt(false);
+                  handleComplete();
+                }}
+              >
+                OK, finalizar atendimento
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
