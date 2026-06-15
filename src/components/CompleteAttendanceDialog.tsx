@@ -225,6 +225,7 @@ export default function CompleteAttendanceDialog({
   const [medicalRecordsHistory, setMedicalRecordsHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [hasMedicalRecordToday, setHasMedicalRecordToday] = useState(false);
+  const [showFinalizePrompt, setShowFinalizePrompt] = useState(false);
 
   // Check whether the professional already added a medical_record for this patient today
   const checkMedicalRecordToday = async () => {
