@@ -311,11 +311,32 @@ export const CreateScheduleDialog = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Data e Hora Início</Label>
-                <Input type="datetime-local" value={form.start_time} onChange={(e) => setForm(p => ({ ...p, start_time: e.target.value }))} />
+                <Input
+                  type="datetime-local"
+                  min="1900-01-01T00:00"
+                  max="2999-12-31T23:59"
+                  value={form.start_time}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    // Clamp ano a 4 dígitos (ex.: "20255-..." -> "2025-...")
+                    const fixed = v.replace(/^(\d{4})\d+(-)/, '$1$2');
+                    setForm(p => ({ ...p, start_time: fixed }));
+                  }}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Data e Hora Fim</Label>
-                <Input type="datetime-local" value={form.end_time} onChange={(e) => setForm(p => ({ ...p, end_time: e.target.value }))} />
+                <Input
+                  type="datetime-local"
+                  min="1900-01-01T00:00"
+                  max="2999-12-31T23:59"
+                  value={form.end_time}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const fixed = v.replace(/^(\d{4})\d+(-)/, '$1$2');
+                    setForm(p => ({ ...p, end_time: fixed }));
+                  }}
+                />
               </div>
             </div>
 
