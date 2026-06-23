@@ -41,28 +41,33 @@ if (!isPreviewHost && !isInIframe) {
   try {
     const CURRENT_BUILD = (import.meta as any).env?.VITE_BUILD_TIMESTAMP || 'dev';
     const STORED_BUILD = localStorage.getItem('app_build_version');
-    const AUTO_UPDATE_FLAG = 'auto_update_done';
+    // Coordena entre abas: só a primeira aba que detecta a nova build limpa
+    // caches e recarrega. As demais apenas atualizam o ponteiro e seguem.
+    const AUTO_UPDATE_FLAG = 'auto_update_build';
 
-    if (STORED_BUILD && STORED_BUILD !== CURRENT_BUILD && !sessionStorage.getItem(AUTO_UPDATE_FLAG)) {
-      sessionStorage.setItem(AUTO_UPDATE_FLAG, '1');
-      console.warn('[Auto-update] Nova versão detectada, limpando caches...', { STORED_BUILD, CURRENT_BUILD });
+    if (STORED_BUILD && STORED_BUILD !== CURRENT_BUILD) {
+      const alreadyHandled = localStorage.getItem(AUTO_UPDATE_FLAG) === CURRENT_BUILD;
       localStorage.setItem('app_build_version', CURRENT_BUILD);
 
-      (async () => {
-        try {
-          if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((r) => r.unregister()));
+      if (!alreadyHandled) {
+        localStorage.setItem(AUTO_UPDATE_FLAG, CURRENT_BUILD);
+        console.warn('[Auto-update] Nova versão detectada, limpando caches...', { STORED_BUILD, CURRENT_BUILD });
+        (async () => {
+          try {
+            if ('serviceWorker' in navigator) {
+              const regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map((r) => r.unregister()));
+            }
+            if ('caches' in window) {
+              const names = await caches.keys();
+              await Promise.all(names.map((n) => caches.delete(n)));
+            }
+          } catch (e) {
+            console.warn('[Auto-update] erro ao limpar:', e);
           }
-          if ('caches' in window) {
-            const names = await caches.keys();
-            await Promise.all(names.map((n) => caches.delete(n)));
-          }
-        } catch (e) {
-          console.warn('[Auto-update] erro ao limpar:', e);
-        }
-        window.location.reload();
-      })();
+          window.location.reload();
+        })();
+      }
     } else if (!STORED_BUILD) {
       localStorage.setItem('app_build_version', CURRENT_BUILD);
     }
@@ -75,12 +80,25 @@ if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
   const HEAL_FLAG = 'sw_heal_v3';
   const APP_BOOT_TIMEOUT_MS = 12000;
 
-  // Quando um novo SW assume o controle, recarrega UMA vez.
+  // Quando um novo SW assume o controle, recarrega — mas apenas a aba visível.
+  // Abas em background são marcadas para recarregar quando voltarem ao foco,
+  // evitando perda de trabalho em uso simultâneo de múltiplas abas.
   let reloadedAfterControllerChange = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
+  const reloadIfVisible = () => {
     if (reloadedAfterControllerChange) return;
-    reloadedAfterControllerChange = true;
-    window.location.reload();
+    if (document.visibilityState === 'visible') {
+      reloadedAfterControllerChange = true;
+      window.location.reload();
+    } else {
+      sessionStorage.setItem('sw_reload_pending', '1');
+    }
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', reloadIfVisible);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && sessionStorage.getItem('sw_reload_pending')) {
+      sessionStorage.removeItem('sw_reload_pending');
+      reloadIfVisible();
+    }
   });
 
   const performHardHeal = async (reason: string) => {
