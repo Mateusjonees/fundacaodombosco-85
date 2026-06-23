@@ -80,12 +80,25 @@ if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
   const HEAL_FLAG = 'sw_heal_v3';
   const APP_BOOT_TIMEOUT_MS = 12000;
 
-  // Quando um novo SW assume o controle, recarrega UMA vez.
+  // Quando um novo SW assume o controle, recarrega — mas apenas a aba visível.
+  // Abas em background são marcadas para recarregar quando voltarem ao foco,
+  // evitando perda de trabalho em uso simultâneo de múltiplas abas.
   let reloadedAfterControllerChange = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
+  const reloadIfVisible = () => {
     if (reloadedAfterControllerChange) return;
-    reloadedAfterControllerChange = true;
-    window.location.reload();
+    if (document.visibilityState === 'visible') {
+      reloadedAfterControllerChange = true;
+      window.location.reload();
+    } else {
+      sessionStorage.setItem('sw_reload_pending', '1');
+    }
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', reloadIfVisible);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && sessionStorage.getItem('sw_reload_pending')) {
+      sessionStorage.removeItem('sw_reload_pending');
+      reloadIfVisible();
+    }
   });
 
   const performHardHeal = async (reason: string) => {
