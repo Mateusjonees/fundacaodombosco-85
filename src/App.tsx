@@ -9,6 +9,7 @@ import { ThemeProvider } from 'next-themes';
 import { supabase } from "@/integrations/supabase/client";
 import { checkForUpdates } from "@/utils/cacheControl";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
+import { prefetchRoutes } from "@/utils/routePrefetch";
 
 
 
@@ -48,6 +49,10 @@ const AppContent = () => {
     if (!loading) {
       const shouldShowApp = !!user;
       setShowApp(shouldShowApp);
+      if (shouldShowApp) {
+        // Pré-carrega chunks das rotas mais usadas em segundo plano
+        prefetchRoutes();
+      }
     }
   }, [user, loading]);
 
