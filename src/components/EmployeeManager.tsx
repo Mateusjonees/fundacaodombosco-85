@@ -35,6 +35,8 @@ interface Profile {
   salary?: number;
   permissions?: any;
   birth_date?: string;
+  professional_license?: string;
+  professional_rqe?: string;
 }
 
 interface FormData {
@@ -49,6 +51,8 @@ interface FormData {
   unit: string;
   salary: string;
   birth_date: string;
+  professional_license: string;
+  professional_rqe: string;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -102,6 +106,8 @@ export const EmployeeManager = () => {
     unit: '',
     salary: '',
     birth_date: '',
+    professional_license: '',
+    professional_rqe: '',
   });
 
   useEffect(() => {
@@ -186,7 +192,9 @@ export const EmployeeManager = () => {
           unit: formData.unit,
           salary: formData.salary ? parseFloat(formData.salary) : null,
           birth_date: formData.birth_date || null,
-        })
+          professional_license: formData.professional_license || null,
+          professional_rqe: formData.professional_rqe || null,
+        } as any)
         .eq('id', selectedEmployee.id);
 
       if (error) {
@@ -267,6 +275,8 @@ export const EmployeeManager = () => {
       unit: employee.unit || '',
       salary: employee.salary?.toString() || '',
       birth_date: employee.birth_date || '',
+      professional_license: employee.professional_license || '',
+      professional_rqe: employee.professional_rqe || '',
     });
     setIsEditModalOpen(true);
   };
@@ -295,6 +305,8 @@ export const EmployeeManager = () => {
       unit: '',
       salary: '',
       birth_date: '',
+      professional_license: '',
+      professional_rqe: '',
     });
   };
 
@@ -564,6 +576,24 @@ export const EmployeeManager = () => {
                   id="rg"
                   value={formData.document_rg}
                   onChange={(e) => setFormData({ ...formData, document_rg: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="professional_license">CRM / Registro Profissional</Label>
+                <Input
+                  id="professional_license"
+                  value={formData.professional_license}
+                  onChange={(e) => setFormData({ ...formData, professional_license: e.target.value })}
+                  placeholder="ex: CRM/MG 12345"
+                />
+              </div>
+              <div>
+                <Label htmlFor="professional_rqe">RQE</Label>
+                <Input
+                  id="professional_rqe"
+                  value={formData.professional_rqe}
+                  onChange={(e) => setFormData({ ...formData, professional_rqe: e.target.value })}
+                  placeholder="ex: 6789"
                 />
               </div>
                <div>
