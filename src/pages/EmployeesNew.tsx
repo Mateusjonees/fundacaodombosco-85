@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { requiresMedicalLicense } from '@/utils/professionalCredentials';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useCustomPermissions } from '@/hooks/useCustomPermissions';
@@ -29,6 +30,8 @@ interface Employee {
   is_active: boolean;
   created_at: string;
   hire_date?: string;
+  professional_license?: string;
+  professional_rqe?: string;
 }
 
 const roleNames: Record<string, string> = {
@@ -68,7 +71,9 @@ export default function EmployeesNew() {
     employee_role: 'staff',
     phone: '',
     department: '',
-    units: [] as string[]
+    units: [] as string[],
+    professional_license: '',
+    professional_rqe: ''
   });
   const { toast } = useToast();
 
@@ -126,6 +131,15 @@ export default function EmployeesNew() {
       return;
     }
 
+    if (requiresMedicalLicense(newEmployee.employee_role) && !newEmployee.professional_license.trim()) {
+      toast({
+        variant: "destructive",
+        title: "CRM obrigatório",
+        description: "Informe o CRM (e o RQE, se houver) para profissionais médicos.",
+      });
+      return;
+    }
+
     if (newEmployee.password.length < 6) {
       toast({
         variant: "destructive",
@@ -148,7 +162,9 @@ export default function EmployeesNew() {
             department: newEmployee.department || null,
             unit: newEmployee.units[0] || null,
             units: newEmployee.units.length > 0 ? newEmployee.units : null,
-            document_cpf: newEmployee.cpf || null
+            document_cpf: newEmployee.cpf || null,
+            professional_license: newEmployee.professional_license || null,
+            professional_rqe: newEmployee.professional_rqe || null
           }
         }
       });
@@ -163,6 +179,19 @@ export default function EmployeesNew() {
             });
           } catch (confirmError) {
             console.log('Email confirmation may be required manually:', confirmError);
+          }
+        }
+
+        if (newEmployee.professional_license.trim() || newEmployee.professional_rqe.trim()) {
+          try {
+            await (supabase.from('profiles') as any)
+              .update({
+                professional_license: newEmployee.professional_license.trim() || null,
+                professional_rqe: newEmployee.professional_rqe.trim() || null
+              })
+              .eq('user_id', data.user.id);
+          } catch (licenseError) {
+            console.log('Could not save professional license:', licenseError);
           }
         }
 
@@ -217,8 +246,10 @@ export default function EmployeesNew() {
           phone: editingEmployee.phone,
           department: editingEmployee.department,
           unit: unitsToSave[0] || null,
-          units: unitsToSave.length > 0 ? unitsToSave : null
-        })
+          units: unitsToSave.length > 0 ? unitsToSave : null,
+          professional_license: editingEmployee.professional_license || null,
+          professional_rqe: editingEmployee.professional_rqe || null
+        } as any)
         .eq('user_id', editingEmployee.user_id)
         .select();
 
@@ -260,7 +291,9 @@ export default function EmployeesNew() {
       employee_role: 'staff',
       phone: '',
       department: '',
-      units: []
+      units: [],
+      professional_license: '',
+      professional_rqe: ''
     });
   };
 
@@ -499,6 +532,28 @@ export default function EmployeesNew() {
                     onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
                     placeholder="Nome do departamento"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="professional_license">
+                      CRM / Registro{requiresMedicalLicense(newEmployee.employee_role) ? ' *' : ''}
+                    </Label>
+                    <Input
+                      id="professional_license"
+                      value={newEmployee.professional_license}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, professional_license: e.target.value })}
+                      placeholder="ex: CRM/MG 12345"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="professional_rqe">RQE</Label>
+                    <Input
+                      id="professional_rqe"
+                      value={newEmployee.professional_rqe}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, professional_rqe: e.target.value })}
+                      placeholder="ex: 6789"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Unidades *</Label>
@@ -767,6 +822,26 @@ export default function EmployeesNew() {
                   value={editingEmployee.department || ''}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, department: e.target.value })}
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>
+                    CRM / Registro{requiresMedicalLicense(editingEmployee.employee_role) ? ' *' : ''}
+                  </Label>
+                  <Input
+                    value={editingEmployee.professional_license || ''}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, professional_license: e.target.value })}
+                    placeholder="ex: CRM/MG 12345"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>RQE</Label>
+                  <Input
+                    value={editingEmployee.professional_rqe || ''}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, professional_rqe: e.target.value })}
+                    placeholder="ex: 6789"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Unidades</Label>
