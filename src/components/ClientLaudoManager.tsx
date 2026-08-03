@@ -163,7 +163,8 @@ export default function ClientLaudoManager({
         laudo_type: laudo.laudo_type 
       },
       client,
-      professionalName
+      professionalName,
+      formatProfessionalCredentials(laudo.employee)
     );
   };
 
@@ -186,7 +187,8 @@ export default function ClientLaudoManager({
         laudo_type: laudo.laudo_type 
       },
       client,
-      professionalName
+      professionalName,
+      formatProfessionalCredentials(laudo.employee)
     );
   };
   const handleSubmit = async () => {

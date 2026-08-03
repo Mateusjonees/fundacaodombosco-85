@@ -9,6 +9,7 @@ import { usePrescriptions, useDeletePrescription, Prescription, Medication } fro
 import AddPrescriptionDialog from './AddPrescriptionDialog';
 import { downloadPrescriptionPdf, printPrescriptionPdf, printBlankPrescriptionPdf } from '@/utils/prescriptionPdf';
 import { formatDateBR } from '@/lib/utils';
+import { formatProfessionalCredentials } from '@/utils/professionalCredentials';
 interface Client {
   id: string;
   name: string;
@@ -40,11 +41,11 @@ export default function PrescriptionManager({
   };
   const handleDownload = async (prescription: Prescription) => {
     const professionalName = prescription.employee?.name || 'Profissional';
-    await downloadPrescriptionPdf(prescription, client, professionalName);
+    await downloadPrescriptionPdf(prescription, client, professionalName, formatProfessionalCredentials(prescription.employee));
   };
   const handlePrint = async (prescription: Prescription) => {
     const professionalName = prescription.employee?.name || 'Profissional';
-    await printPrescriptionPdf(prescription, client, professionalName);
+    await printPrescriptionPdf(prescription, client, professionalName, formatProfessionalCredentials(prescription.employee));
   };
   const handleDeleteClick = (prescription: Prescription) => {
     setPrescriptionToDelete(prescription);
