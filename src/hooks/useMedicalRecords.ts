@@ -55,7 +55,7 @@ export const useMedicalRecords = (clientId: string | null) => {
             .select('user_id, name, employee_role, professional_license, professional_rqe')
             .in('user_id', employeeIds);
 
-          const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+          const profilesMap = new Map(profiles?.map((p: any) => [p.user_id, p]) || []);
           const result = records.map(record => ({
             ...record,
             profiles: profilesMap.get(record.employee_id)
