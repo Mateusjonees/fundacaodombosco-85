@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { formatProfessionalCredentials } from '@/utils/professionalCredentials';
 
 interface MedicalRecord {
   id: string;
@@ -21,6 +22,8 @@ interface MedicalRecord {
   profiles?: {
     name: string;
     employee_role: string;
+    professional_license?: string | null;
+    professional_rqe?: string | null;
   };
 }
 
@@ -130,6 +133,11 @@ export const MedicalRecordTimeline = ({ records }: MedicalRecordTimelineProps) =
                       <span className="text-muted-foreground text-xs">
                         ({getRoleName(record.profiles.employee_role)})
                       </span>
+                      {formatProfessionalCredentials(record.profiles) && (
+                        <span className="text-[11px] text-muted-foreground/70 font-mono">
+                          {formatProfessionalCredentials(record.profiles)}
+                        </span>
+                      )}
                     </div>
                   )}
 
