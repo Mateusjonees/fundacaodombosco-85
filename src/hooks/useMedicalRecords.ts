@@ -24,6 +24,8 @@ interface MedicalRecord {
   profiles?: {
     name: string;
     employee_role: string;
+    professional_license?: string | null;
+    professional_rqe?: string | null;
   };
 }
 
@@ -48,9 +50,9 @@ export const useMedicalRecords = (clientId: string | null) => {
           if (!records || records.length === 0) return [];
 
           const employeeIds = [...new Set(records.map(r => r.employee_id))];
-          const { data: profiles } = await supabase
-            .from('profiles_public')
-            .select('user_id, name, employee_role')
+          const { data: profiles } = await (supabase
+            .from('profiles_public') as any)
+            .select('user_id, name, employee_role, professional_license, professional_rqe')
             .in('user_id', employeeIds);
 
           const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);

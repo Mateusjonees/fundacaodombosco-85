@@ -85,7 +85,7 @@ export const useLaudos = (clientId: string | null) => {
 
       return mergedLaudos.map((laudo) => ({
         ...laudo,
-        employee: profiles?.find((profile) => profile.user_id === laudo.employee_id)
+        employee: profiles?.find((profile: any) => profile.user_id === laudo.employee_id)
       })) as Laudo[];
     },
     enabled: !!clientId
