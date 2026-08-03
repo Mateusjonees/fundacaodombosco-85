@@ -26,7 +26,12 @@ export interface Prescription {
   show_prescription_date?: boolean;
   created_at: string;
   updated_at: string;
-  employee?: { name: string; employee_role: string };
+  employee?: {
+    name: string;
+    employee_role: string;
+    professional_license?: string | null;
+    professional_rqe?: string | null;
+  };
 }
 
 export const usePrescriptions = (clientId: string | null) => {
