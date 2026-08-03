@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { printBlankLaudoPdf, printLaudoPdf, downloadLaudoPdf } from '@/utils/prescriptionPdf';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
+import { formatProfessionalCredentials } from '@/utils/professionalCredentials';
 interface Client {
   id: string;
   name: string;
