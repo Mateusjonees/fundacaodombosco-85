@@ -146,41 +146,48 @@ export const generatePrescriptionPdf = async (
   // Patient info
   yPosition += 10;
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Paciente:', margin, yPosition);
-  doc.setFont('helvetica', 'normal');
-  doc.text(client.name, margin + 20, yPosition);
 
-  if (client.cpf) {
-    yPosition += 5;
+  const lineHeight = 5.5;
+  // Renderiza "Rótulo: valor" quebrando o valor em várias linhas quando necessário
+  const drawField = (label: string, value: string, startY: number): number => {
     doc.setFont('helvetica', 'bold');
-    doc.text('CPF:', margin, yPosition);
+    const labelWidth = doc.getTextWidth(label) + 2;
+    doc.text(label, margin, startY);
     doc.setFont('helvetica', 'normal');
-    doc.text(client.cpf, margin + 12, yPosition);
-  }
+    const valueLines: string[] = doc.splitTextToSize(
+      value,
+      pageWidth - margin * 2 - labelWidth
+    );
+    valueLines.forEach((line, i) => {
+      doc.text(line, margin + labelWidth, startY + i * lineHeight);
+    });
+    return startY + valueLines.length * lineHeight;
+  };
 
-  if (client.birth_date) {
-    const birthDate = formatDateBR(client.birth_date);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Data de Nascimento:', margin + 70, yPosition);
+  // Nome do paciente em linha própria (quebra automática para nomes longos)
+  yPosition = drawField('Paciente:', client.name, yPosition);
+
+  // CPF e nascimento na mesma linha, sem sobreposição
+  const infoParts: string[] = [];
+  if (client.cpf) infoParts.push(`CPF: ${client.cpf}`);
+  if (client.birth_date) infoParts.push(`Nascimento: ${formatDateBR(client.birth_date)}`);
+  if (infoParts.length > 0) {
     doc.setFont('helvetica', 'normal');
-    doc.text(birthDate, margin + 108, yPosition);
+    doc.text(infoParts.join('   •   '), margin, yPosition);
+    yPosition += lineHeight;
   }
 
   // Data de lançamento - só exibe se show_prescription_date !== false
   if (prescription.show_prescription_date !== false) {
-    yPosition += 5;
     doc.setFont('helvetica', 'bold');
     doc.text('Data da Prescrição:', margin, yPosition);
     doc.setFont('helvetica', 'normal');
     doc.text(new Date(prescription.prescription_date).toLocaleDateString('pt-BR'), margin + 38, yPosition);
-  } else {
-    // Manter espaçamento mínimo mesmo sem a data
-    yPosition += 3;
+    yPosition += lineHeight;
   }
 
   // Line separator
-  yPosition += 6;
+  yPosition += 3;
   doc.setLineWidth(0.3);
   doc.setDrawColor(200, 200, 200);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
@@ -323,7 +330,9 @@ export const generatePrescriptionPdf = async (
   if (professionalLicense) {
     yPosition += 5;
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     doc.text(professionalLicense, pageWidth / 2, yPosition, { align: 'center' });
+    doc.setFontSize(10);
   }
 
   // Data de impressão - só exibe se show_print_date === true
@@ -524,8 +533,9 @@ export const generateLaudoPdf = async (
   doc.setFont('helvetica', 'bold');
   doc.text('Paciente:', margin, yPosition);
   doc.setFont('helvetica', 'normal');
-  doc.text(client.name, margin + 22, yPosition);
-  yPosition += 6;
+  const nameLines: string[] = doc.splitTextToSize(client.name, contentWidth - 22);
+  nameLines.forEach((line, i) => doc.text(line, margin + 22, yPosition + i * 6));
+  yPosition += nameLines.length * 6;
 
   if (client.cpf) {
     doc.setFont('helvetica', 'bold');

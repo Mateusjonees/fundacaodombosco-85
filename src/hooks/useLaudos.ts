@@ -15,7 +15,12 @@ export interface Laudo {
   created_at: string;
   updated_at: string;
   source?: 'client_laudos' | 'feedback_control';
-  employee?: { name: string; employee_role: string };
+  employee?: {
+    name: string;
+    employee_role: string;
+    professional_license?: string | null;
+    professional_rqe?: string | null;
+  };
 }
 
 export const useLaudos = (clientId: string | null) => {
@@ -73,14 +78,14 @@ export const useLaudos = (clientId: string | null) => {
         return mergedLaudos;
       }
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, name, employee_role')
+      const { data: profiles } = await (supabase
+        .from('profiles_public') as any)
+        .select('user_id, name, employee_role, professional_license, professional_rqe')
         .in('user_id', employeeIds);
 
       return mergedLaudos.map((laudo) => ({
         ...laudo,
-        employee: profiles?.find((profile) => profile.user_id === laudo.employee_id)
+        employee: profiles?.find((profile: any) => profile.user_id === laudo.employee_id)
       })) as Laudo[];
     },
     enabled: !!clientId

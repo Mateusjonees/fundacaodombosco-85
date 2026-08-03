@@ -11,6 +11,7 @@ import { useAuditLog } from '@/hooks/useAuditLog';
 import { useRolePermissions, ROLE_LABELS, EmployeeRole } from '@/hooks/useRolePermissions';
 import { TempPasswordDialog } from './TempPasswordDialog';
 import { UserPlus, KeyRound } from 'lucide-react';
+import { requiresMedicalLicense } from '@/utils/professionalCredentials';
 
 interface CreateEmployeeFormProps {
   isOpen: boolean;
@@ -67,8 +68,12 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
     phone: '',
     department: '',
     unit: prefilledData?.unit || '',
-    job_position_id: ''
+    job_position_id: '',
+    professional_license: '',
+    professional_rqe: ''
   });
+
+  const needsMedicalLicense = requiresMedicalLicense(formData.employee_role);
 
   useEffect(() => {
     if (isOpen) {
@@ -81,7 +86,9 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
           phone: prefilledData.phone || '',
           department: '',
           unit: prefilledData.unit || '',
-          job_position_id: ''
+          job_position_id: '',
+          professional_license: '',
+          professional_rqe: ''
         });
       }
     }
@@ -114,7 +121,9 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
       phone: '',
       department: '',
       unit: '',
-      job_position_id: ''
+      job_position_id: '',
+      professional_license: '',
+      professional_rqe: ''
     });
   };
 
@@ -126,6 +135,15 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
         variant: "destructive",
         title: "Campos obrigatórios",
         description: "Nome, email e unidade são obrigatórios.",
+      });
+      return;
+    }
+
+    if (needsMedicalLicense && !formData.professional_license.trim()) {
+      toast({
+        variant: "destructive",
+        title: "CRM obrigatório",
+        description: "Informe o CRM (e o RQE, se houver) para profissionais médicos.",
       });
       return;
     }
@@ -173,6 +191,20 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
       const userId = data?.user?.id;
 
       if (userId) {
+        // Registros profissionais (CRM/RQE) para receituários, laudos e encaminhamentos
+        if (formData.professional_license.trim() || formData.professional_rqe.trim()) {
+          try {
+            await (supabase.from('profiles') as any)
+              .update({
+                professional_license: formData.professional_license.trim() || null,
+                professional_rqe: formData.professional_rqe.trim() || null
+              })
+              .eq('user_id', userId);
+          } catch (licenseError) {
+            console.log('Warning: Could not save professional license:', licenseError);
+          }
+        }
+
         // Se um cargo foi selecionado, criar a associação
         if (formData.job_position_id) {
           try {
@@ -347,6 +379,34 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                 placeholder="ex: Psicologia, Fisioterapia"
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="professional_license">
+                  CRM / Registro{needsMedicalLicense ? ' *' : ''}
+                </Label>
+                <Input
+                  id="professional_license"
+                  value={formData.professional_license}
+                  onChange={(e) => handleInputChange('professional_license', e.target.value)}
+                  placeholder="ex: CRM/MG 12345"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="professional_rqe">RQE</Label>
+                <Input
+                  id="professional_rqe"
+                  value={formData.professional_rqe}
+                  onChange={(e) => handleInputChange('professional_rqe', e.target.value)}
+                  placeholder="ex: 6789"
+                />
+              </div>
+            </div>
+            {needsMedicalLicense && (
+              <p className="text-xs text-muted-foreground -mt-2">
+                CRM e RQE são impressos nos receituários, laudos e encaminhamentos.
+              </p>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="unit">Unidade *</Label>

@@ -26,7 +26,12 @@ export interface Prescription {
   show_prescription_date?: boolean;
   created_at: string;
   updated_at: string;
-  employee?: { name: string; employee_role: string };
+  employee?: {
+    name: string;
+    employee_role: string;
+    professional_license?: string | null;
+    professional_rqe?: string | null;
+  };
 }
 
 export const usePrescriptions = (clientId: string | null) => {
@@ -46,15 +51,15 @@ export const usePrescriptions = (clientId: string | null) => {
       // Fetch employee profiles
       if (data && data.length > 0) {
         const employeeIds = [...new Set(data.map(p => p.employee_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, name, employee_role')
+        const { data: profiles } = await (supabase
+          .from('profiles_public') as any)
+          .select('user_id, name, employee_role, professional_license, professional_rqe')
           .in('user_id', employeeIds);
 
         return data.map(prescription => ({
           ...prescription,
           medications: (prescription.medications as unknown as Medication[]) || [],
-          employee: profiles?.find(p => p.user_id === prescription.employee_id)
+          employee: profiles?.find((p: any) => p.user_id === prescription.employee_id)
         })) as Prescription[];
       }
 
