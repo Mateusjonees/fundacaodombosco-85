@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Users, UserPlus, Shield, Settings, Eye, Edit, Trash2, Key, Clock, AlertTriangle, CheckCircle, XCircle, UserCheck, Crown, Briefcase } from 'lucide-react';
 import { useCustomPermissions, PERMISSION_LABELS, PERMISSION_CATEGORIES, type PermissionAction } from '@/hooks/useCustomPermissions';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useRolePermissions, ROLE_LABELS, type EmployeeRole } from '@/hooks/useRolePermissions';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -29,6 +29,11 @@ interface User {
   positions?: JobPosition[];
   units?: string[];
   unit?: string;
+  employee_role?: string;
+  phone?: string;
+  department?: string;
+  professional_license?: string;
+  professional_rqe?: string;
 }
 interface JobPosition {
   id: string;
