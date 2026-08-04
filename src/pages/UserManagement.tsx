@@ -92,6 +92,11 @@ export default function UserManagement() {
   const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
   const [isAuditDetailsDialogOpen, setIsAuditDetailsDialogOpen] = useState(false);
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
+  const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  const [savingUser, setSavingUser] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+
+
 
   // Estados dos formulários
   const [newPosition, setNewPosition] = useState({
