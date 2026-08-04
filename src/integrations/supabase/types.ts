@@ -2642,6 +2642,8 @@ export type Database = {
           name: string | null
           permissions: Json | null
           phone: string | null
+          professional_license: string | null
+          professional_rqe: string | null
           salary: number | null
           unit: string | null
           units: string[] | null
@@ -2665,6 +2667,8 @@ export type Database = {
           name?: string | null
           permissions?: Json | null
           phone?: string | null
+          professional_license?: string | null
+          professional_rqe?: string | null
           salary?: number | null
           unit?: string | null
           units?: string[] | null
@@ -2688,6 +2692,8 @@ export type Database = {
           name?: string | null
           permissions?: Json | null
           phone?: string | null
+          professional_license?: string | null
+          professional_rqe?: string | null
           salary?: number | null
           unit?: string | null
           units?: string[] | null
