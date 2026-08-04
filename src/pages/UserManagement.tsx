@@ -657,6 +657,12 @@ export default function UserManagement() {
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">
+                        {canManageUsers && <Button size="sm" variant="outline" className="h-8 w-8 p-0" title="Editar usuário" onClick={() => {
+                          setEditUser({ ...user });
+                          setIsEditUserDialogOpen(true);
+                        }}>
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>}
                         <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => {
                           setSelectedUser(user);
                           loadUserPermissions(user.id);
