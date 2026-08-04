@@ -708,6 +708,12 @@ export default function UserManagement() {
                           {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
                         <TableCell className="space-x-2">
+                          {canManageUsers && <Button size="sm" variant="outline" title="Editar usuário" onClick={() => {
+                            setEditUser({ ...user });
+                            setIsEditUserDialogOpen(true);
+                          }}>
+                            <Edit className="h-4 w-4" />
+                          </Button>}
                           <Button size="sm" variant="outline" onClick={() => {
                         setSelectedUser(user);
                         loadUserPermissions(user.id);
