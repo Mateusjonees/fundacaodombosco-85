@@ -125,25 +125,35 @@ export default function UserManagement() {
       const {
         data: profiles,
         error
-      } = await supabase.from('profiles').select(`
+      } = await (supabase.from('profiles') as any).select(`
           user_id,
           name,
           email,
           is_active,
           created_at,
           units,
-          unit
+          unit,
+          employee_role,
+          phone,
+          department,
+          professional_license,
+          professional_rqe
         `).order('name');
       if (error) throw error;
-      const usersData = profiles?.map(profile => ({
+      const usersData = (profiles || []).map((profile: any) => ({
         id: profile.user_id,
         email: profile.email || 'Não informado',
         name: profile.name,
         created_at: profile.created_at,
         is_active: profile.is_active,
         units: profile.units || [],
-        unit: profile.unit || ''
-      })) || [];
+        unit: profile.unit || '',
+        employee_role: profile.employee_role || '',
+        phone: profile.phone || '',
+        department: profile.department || '',
+        professional_license: profile.professional_license || '',
+        professional_rqe: profile.professional_rqe || ''
+      }));
       setUsers(usersData);
     } catch (error) {
       console.error('Error loading users:', error);
