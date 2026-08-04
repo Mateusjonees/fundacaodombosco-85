@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Users, UserPlus, Shield, Settings, Eye, Edit, Trash2, Key, Clock, AlertTriangle, CheckCircle, XCircle, UserCheck, Crown, Briefcase } from 'lucide-react';
 import { useCustomPermissions, PERMISSION_LABELS, PERMISSION_CATEGORIES, type PermissionAction } from '@/hooks/useCustomPermissions';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useRolePermissions, ROLE_LABELS, type EmployeeRole } from '@/hooks/useRolePermissions';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -29,6 +29,11 @@ interface User {
   positions?: JobPosition[];
   units?: string[];
   unit?: string;
+  employee_role?: string;
+  phone?: string;
+  department?: string;
+  professional_license?: string;
+  professional_rqe?: string;
 }
 interface JobPosition {
   id: string;
@@ -87,6 +92,11 @@ export default function UserManagement() {
   const [isCreateEmployeeDialogOpen, setIsCreateEmployeeDialogOpen] = useState(false);
   const [isAuditDetailsDialogOpen, setIsAuditDetailsDialogOpen] = useState(false);
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
+  const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  const [savingUser, setSavingUser] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+
+
 
   // Estados dos formulários
   const [newPosition, setNewPosition] = useState({
@@ -120,25 +130,35 @@ export default function UserManagement() {
       const {
         data: profiles,
         error
-      } = await supabase.from('profiles').select(`
+      } = await (supabase.from('profiles') as any).select(`
           user_id,
           name,
           email,
           is_active,
           created_at,
           units,
-          unit
+          unit,
+          employee_role,
+          phone,
+          department,
+          professional_license,
+          professional_rqe
         `).order('name');
       if (error) throw error;
-      const usersData = profiles?.map(profile => ({
+      const usersData = (profiles || []).map((profile: any) => ({
         id: profile.user_id,
         email: profile.email || 'Não informado',
         name: profile.name,
         created_at: profile.created_at,
         is_active: profile.is_active,
         units: profile.units || [],
-        unit: profile.unit || ''
-      })) || [];
+        unit: profile.unit || '',
+        employee_role: profile.employee_role || '',
+        phone: profile.phone || '',
+        department: profile.department || '',
+        professional_license: profile.professional_license || '',
+        professional_rqe: profile.professional_rqe || ''
+      }));
       setUsers(usersData);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -276,6 +296,50 @@ export default function UserManagement() {
         title: "Erro ao carregar permissões",
         description: "Não foi possível carregar as permissões do usuário."
       });
+    }
+  };
+
+  // Salva os dados cadastrais do usuário editado
+  const saveEditedUser = async () => {
+    if (!editUser) return;
+    if (!editUser.name?.trim()) {
+      toast({ variant: 'destructive', title: 'Nome obrigatório', description: 'Informe o nome do usuário.' });
+      return;
+    }
+    setSavingUser(true);
+    try {
+      const payload: any = {
+        name: editUser.name.trim().toUpperCase(),
+        phone: editUser.phone?.trim() || null,
+        department: editUser.department?.trim() || null,
+        unit: editUser.unit || null,
+        is_active: editUser.is_active ?? true,
+        professional_license: editUser.professional_license?.trim() || null,
+        professional_rqe: editUser.professional_rqe?.trim() || null,
+      };
+      if (editUser.employee_role) payload.employee_role = editUser.employee_role;
+
+      const { error } = await (supabase.from('profiles') as any)
+        .update(payload)
+        .eq('user_id', editUser.id);
+      if (error) throw error;
+
+      await logAction({
+        entityType: 'profiles',
+        entityId: editUser.id,
+        action: 'updated',
+        newData: payload,
+        metadata: { user_name: editUser.name }
+      }).catch(() => {});
+
+      toast({ title: 'Usuário atualizado!', description: 'Os dados foram salvos com sucesso.' });
+      setIsEditUserDialogOpen(false);
+      setEditUser(null);
+      loadUsers();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message });
+    } finally {
+      setSavingUser(false);
     }
   };
 
@@ -593,6 +657,12 @@ export default function UserManagement() {
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">
+                        {canManageUsers && <Button size="sm" variant="outline" className="h-8 w-8 p-0" title="Editar usuário" onClick={() => {
+                          setEditUser({ ...user });
+                          setIsEditUserDialogOpen(true);
+                        }}>
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>}
                         <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => {
                           setSelectedUser(user);
                           loadUserPermissions(user.id);
@@ -638,6 +708,12 @@ export default function UserManagement() {
                           {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
                         <TableCell className="space-x-2">
+                          {canManageUsers && <Button size="sm" variant="outline" title="Editar usuário" onClick={() => {
+                            setEditUser({ ...user });
+                            setIsEditUserDialogOpen(true);
+                          }}>
+                            <Edit className="h-4 w-4" />
+                          </Button>}
                           <Button size="sm" variant="outline" onClick={() => {
                         setSelectedUser(user);
                         loadUserPermissions(user.id);
@@ -806,6 +882,97 @@ export default function UserManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de Edição do Usuário */}
+      <Dialog open={isEditUserDialogOpen} onOpenChange={(open) => {
+        setIsEditUserDialogOpen(open);
+        if (!open) setEditUser(null);
+      }}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              Editar Usuário
+            </DialogTitle>
+          </DialogHeader>
+          {editUser && <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome Completo</Label>
+              <Input id="edit-name" value={editUser.name || ''} onChange={e => setEditUser({ ...editUser, name: e.target.value })} className="uppercase" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input id="edit-email" value={editUser.email} disabled />
+              <p className="text-xs text-muted-foreground">O email de login não pode ser alterado por aqui.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Função</Label>
+                <Select value={editUser.employee_role || ''} onValueChange={(v) => setEditUser({ ...editUser, employee_role: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <Select value={editUser.unit || ''} onValueChange={(v) => setEditUser({ ...editUser, unit: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Telefone</Label>
+                <Input id="edit-phone" value={editUser.phone || ''} onChange={e => setEditUser({ ...editUser, phone: e.target.value })} placeholder="(31) 99999-9999" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-department">Departamento</Label>
+                <Input id="edit-department" value={editUser.department || ''} onChange={e => setEditUser({ ...editUser, department: e.target.value })} placeholder="ex: Psicologia" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-license">CRM / Registro</Label>
+                <Input id="edit-license" value={editUser.professional_license || ''} onChange={e => setEditUser({ ...editUser, professional_license: e.target.value })} placeholder="ex: CRM/MG 12345" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-rqe">RQE</Label>
+                <Input id="edit-rqe" value={editUser.professional_rqe || ''} onChange={e => setEditUser({ ...editUser, professional_rqe: e.target.value })} placeholder="ex: 6789" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label htmlFor="edit-active">Usuário ativo</Label>
+                <p className="text-xs text-muted-foreground">Usuários inativos não conseguem acessar o sistema.</p>
+              </div>
+              <Switch id="edit-active" checked={editUser.is_active ?? true} onCheckedChange={(c) => setEditUser({ ...editUser, is_active: c })} />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setIsEditUserDialogOpen(false)} disabled={savingUser}>
+                Cancelar
+              </Button>
+              <Button className="flex-1" onClick={saveEditedUser} disabled={savingUser}>
+                {savingUser ? 'Salvando...' : 'Salvar alterações'}
+              </Button>
+            </div>
+          </div>}
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de Permissões do Usuário */}
       <Dialog open={isPermissionDialogOpen} onOpenChange={setIsPermissionDialogOpen}>
