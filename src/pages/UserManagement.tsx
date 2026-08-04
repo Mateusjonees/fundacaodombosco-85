@@ -299,6 +299,50 @@ export default function UserManagement() {
     }
   };
 
+  // Salva os dados cadastrais do usuário editado
+  const saveEditedUser = async () => {
+    if (!editUser) return;
+    if (!editUser.name?.trim()) {
+      toast({ variant: 'destructive', title: 'Nome obrigatório', description: 'Informe o nome do usuário.' });
+      return;
+    }
+    setSavingUser(true);
+    try {
+      const payload: any = {
+        name: editUser.name.trim().toUpperCase(),
+        phone: editUser.phone?.trim() || null,
+        department: editUser.department?.trim() || null,
+        unit: editUser.unit || null,
+        is_active: editUser.is_active ?? true,
+        professional_license: editUser.professional_license?.trim() || null,
+        professional_rqe: editUser.professional_rqe?.trim() || null,
+      };
+      if (editUser.employee_role) payload.employee_role = editUser.employee_role;
+
+      const { error } = await (supabase.from('profiles') as any)
+        .update(payload)
+        .eq('user_id', editUser.id);
+      if (error) throw error;
+
+      await logAction({
+        entityType: 'profiles',
+        entityId: editUser.id,
+        action: 'updated',
+        newData: payload,
+        metadata: { user_name: editUser.name }
+      }).catch(() => {});
+
+      toast({ title: 'Usuário atualizado!', description: 'Os dados foram salvos com sucesso.' });
+      setIsEditUserDialogOpen(false);
+      setEditUser(null);
+      loadUsers();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message });
+    } finally {
+      setSavingUser(false);
+    }
+  };
+
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (!confirm(`Tem certeza que deseja deletar permanentemente o usuário ${userName}? Esta ação não pode ser desfeita.`)) {
       return;
