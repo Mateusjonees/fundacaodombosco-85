@@ -883,6 +883,97 @@ export default function UserManagement() {
         </TabsContent>
       </Tabs>
 
+      {/* Dialog de Edição do Usuário */}
+      <Dialog open={isEditUserDialogOpen} onOpenChange={(open) => {
+        setIsEditUserDialogOpen(open);
+        if (!open) setEditUser(null);
+      }}>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              Editar Usuário
+            </DialogTitle>
+          </DialogHeader>
+          {editUser && <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome Completo</Label>
+              <Input id="edit-name" value={editUser.name || ''} onChange={e => setEditUser({ ...editUser, name: e.target.value })} className="uppercase" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input id="edit-email" value={editUser.email} disabled />
+              <p className="text-xs text-muted-foreground">O email de login não pode ser alterado por aqui.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Função</Label>
+                <Select value={editUser.employee_role || ''} onValueChange={(v) => setEditUser({ ...editUser, employee_role: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <Select value={editUser.unit || ''} onValueChange={(v) => setEditUser({ ...editUser, unit: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="madre">MADRE (Clínica Social)</SelectItem>
+                    <SelectItem value="floresta">Floresta (Neuroavaliação)</SelectItem>
+                    <SelectItem value="atendimento_floresta">Atendimento Floresta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Telefone</Label>
+                <Input id="edit-phone" value={editUser.phone || ''} onChange={e => setEditUser({ ...editUser, phone: e.target.value })} placeholder="(31) 99999-9999" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-department">Departamento</Label>
+                <Input id="edit-department" value={editUser.department || ''} onChange={e => setEditUser({ ...editUser, department: e.target.value })} placeholder="ex: Psicologia" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-license">CRM / Registro</Label>
+                <Input id="edit-license" value={editUser.professional_license || ''} onChange={e => setEditUser({ ...editUser, professional_license: e.target.value })} placeholder="ex: CRM/MG 12345" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-rqe">RQE</Label>
+                <Input id="edit-rqe" value={editUser.professional_rqe || ''} onChange={e => setEditUser({ ...editUser, professional_rqe: e.target.value })} placeholder="ex: 6789" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label htmlFor="edit-active">Usuário ativo</Label>
+                <p className="text-xs text-muted-foreground">Usuários inativos não conseguem acessar o sistema.</p>
+              </div>
+              <Switch id="edit-active" checked={editUser.is_active ?? true} onCheckedChange={(c) => setEditUser({ ...editUser, is_active: c })} />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setIsEditUserDialogOpen(false)} disabled={savingUser}>
+                Cancelar
+              </Button>
+              <Button className="flex-1" onClick={saveEditedUser} disabled={savingUser}>
+                {savingUser ? 'Salvando...' : 'Salvar alterações'}
+              </Button>
+            </div>
+          </div>}
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog de Permissões do Usuário */}
       <Dialog open={isPermissionDialogOpen} onOpenChange={setIsPermissionDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
