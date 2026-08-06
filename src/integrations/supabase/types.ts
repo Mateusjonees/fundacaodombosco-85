@@ -3669,6 +3669,8 @@ export type Database = {
           id: string | null
           is_active: boolean | null
           name: string | null
+          professional_license: string | null
+          professional_rqe: string | null
           unit: string | null
           updated_at: string | null
           user_id: string | null
@@ -3681,6 +3683,8 @@ export type Database = {
           id?: string | null
           is_active?: boolean | null
           name?: string | null
+          professional_license?: string | null
+          professional_rqe?: string | null
           unit?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -3693,6 +3697,8 @@ export type Database = {
           id?: string | null
           is_active?: boolean | null
           name?: string | null
+          professional_license?: string | null
+          professional_rqe?: string | null
           unit?: string | null
           updated_at?: string | null
           user_id?: string | null
