@@ -156,19 +156,13 @@ const MyPatients: React.FC = () => {
         rangeEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
       }
 
-      const { data: assignedClients } = await supabase
-        .from('client_assignments').select('client_id')
-        .eq('employee_id', user.id).eq('is_active', true);
-
-      if (!assignedClients?.length) { setSchedules([]); return; }
-
-      const clientIds = assignedClients.map(a => a.client_id);
+      // Agenda própria: todos os agendamentos em que o usuário é o profissional
       const { data, error } = await supabase
         .from('schedules')
         .select('id, client_id, employee_id, start_time, end_time, title, status, notes, clients(name)')
+        .eq('employee_id', user.id)
         .gte('start_time', rangeStart.toISOString())
         .lte('start_time', rangeEnd.toISOString())
-        .in('client_id', clientIds)
         .order('start_time');
 
       if (error) throw error;
@@ -213,17 +207,43 @@ const MyPatients: React.FC = () => {
     } catch (error) { console.error('Error loading events:', error); }
   };
 
+  const CLIENT_FIELDS = 'id, name, birth_date, phone, address, unit, responsible_name, responsible_phone, is_active, last_session_date, created_at';
+
   const loadMyPatients = async () => {
     if (!user) return;
     try {
       setLoading(true);
+
+      // 1) Pacientes vinculados formalmente
       const { data, error } = await supabase
         .from('client_assignments')
-        .select('client_id, clients(id, name, birth_date, phone, address, unit, responsible_name, responsible_phone, is_active, last_session_date, created_at)')
+        .select(`client_id, clients(${CLIENT_FIELDS})`)
         .eq('employee_id', user.id).eq('is_active', true).eq('clients.is_active', true);
       if (error) throw error;
-      const clientsData = (data || []).filter(a => a.clients).map(a => a.clients).filter(Boolean) as Client[];
-      setClients(clientsData);
+
+      const map = new Map<string, Client>();
+      (data || []).forEach(a => { if (a.clients) map.set((a.clients as any).id, a.clients as any); });
+
+      // 2) Fallback: pacientes com agendamentos do profissional (mesmo sem vínculo salvo)
+      const { data: schedClients } = await supabase
+        .from('schedules')
+        .select('client_id')
+        .eq('employee_id', user.id)
+        .not('client_id', 'is', null);
+
+      const missingIds = [...new Set((schedClients || []).map(s => s.client_id as string))]
+        .filter(id => id && !map.has(id));
+
+      if (missingIds.length) {
+        const { data: extra } = await supabase
+          .from('clients')
+          .select(CLIENT_FIELDS)
+          .in('id', missingIds)
+          .eq('is_active', true);
+        (extra || []).forEach(c => map.set(c.id, c as Client));
+      }
+
+      setClients(Array.from(map.values()));
     } catch (error) {
       console.error('Error:', error);
       toast({ variant: 'destructive', title: 'Erro ao carregar pacientes' });
