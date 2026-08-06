@@ -156,19 +156,13 @@ const MyPatients: React.FC = () => {
         rangeEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
       }
 
-      const { data: assignedClients } = await supabase
-        .from('client_assignments').select('client_id')
-        .eq('employee_id', user.id).eq('is_active', true);
-
-      if (!assignedClients?.length) { setSchedules([]); return; }
-
-      const clientIds = assignedClients.map(a => a.client_id);
+      // Agenda própria: todos os agendamentos em que o usuário é o profissional
       const { data, error } = await supabase
         .from('schedules')
         .select('id, client_id, employee_id, start_time, end_time, title, status, notes, clients(name)')
+        .eq('employee_id', user.id)
         .gte('start_time', rangeStart.toISOString())
         .lte('start_time', rangeEnd.toISOString())
-        .in('client_id', clientIds)
         .order('start_time');
 
       if (error) throw error;
