@@ -407,33 +407,22 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
   const generatePDF = async () => {
     setIsGenerating(true);
     try {
-      const reportElement = document.getElementById('patient-report');
-      if (!reportElement) return;
+      // Geração vetorial (texto real), com paginação correta e sem cortes
+      const logoDataUrl = await loadImageAsDataUrl(logoImage);
 
-      const canvas = await html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
+      const pdf = await generatePatientReportPdf({
+        client,
+        attendanceRecords,
+        employeeReports,
+        medicalRecords,
+        neuroTestResults,
+        paymentRecords,
+        prescriptions,
+        clientNotes,
+        scheduleHistory,
+        laudos,
+        logoDataUrl
       });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
 
       pdf.save(`Relatorio_${client.name.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
       
@@ -452,6 +441,7 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
       setIsGenerating(false);
     }
   };
+
 
   const printReport = () => {
     const reportElement = document.getElementById('patient-report');
