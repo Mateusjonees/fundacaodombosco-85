@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { FileText, Download, Printer, Star, Calendar, Clock, User } from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { generatePatientReportPdf, loadImageAsDataUrl } from '@/utils/patientReportPdf';
+
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import logoImage from '@/assets/fundacao-logo-report.png';
