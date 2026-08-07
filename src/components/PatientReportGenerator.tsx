@@ -455,20 +455,24 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
         <head>
           <title>Relatório - ${client.name}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .report-header { text-align: center; margin-bottom: 30px; }
-            .logo { max-width: 200px; margin-bottom: 20px; }
-            .report-section { margin-bottom: 20px; }
-            .section-title { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
-            .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-            .field { display: flex; flex-direction: column; }
-            .field-label { font-weight: bold; margin-bottom: 5px; }
-            .field-value { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-            .full-width { grid-column: span 2; }
+            @page { size: A4; margin: 14mm; }
+            body { font-family: Arial, Helvetica, sans-serif; margin: 0; color: #111827; font-size: 11px; line-height: 1.45; }
+            img { max-width: 140px; height: auto; }
+            .report-header { text-align: center; margin-bottom: 18px; }
+            .report-section { margin-bottom: 14px; page-break-inside: auto; }
+            .section-title { font-weight: bold; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin: 14px 0 8px; page-break-after: avoid; }
+            h3 { font-size: 11px; margin: 0 0 4px; page-break-after: avoid; }
+            .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 10px; }
+            .field { display: block; page-break-inside: avoid; }
+            .field-label { font-weight: bold; margin-bottom: 3px; color: #4b5563; font-size: 10px; }
+            .field-value { padding: 5px 7px; border: 1px solid #e5e7eb; border-radius: 4px; min-height: 0 !important; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+            .full-width, .field-grid > .full-width { grid-column: span 2; }
+            .border, [class*="border"] { page-break-inside: avoid; }
             @media print {
               body { margin: 0; }
               .no-print { display: none; }
             }
+
           </style>
         </head>
         <body>
