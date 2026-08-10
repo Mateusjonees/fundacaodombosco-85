@@ -1626,9 +1626,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                   </TabsContent>
 
                   {/* History Tab */}
-                  <TabsContent value="history">
+                  <TabsContent value="history" className="space-y-4">
+                    <ClinicalDocumentManager client={client} />
                     <ServiceHistory clientId={client.id} />
                   </TabsContent>
+
 
                   {/* Prescriptions Tab */}
                   <TabsContent value="prescriptions">
