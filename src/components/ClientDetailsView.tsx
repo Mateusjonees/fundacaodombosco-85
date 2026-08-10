@@ -53,6 +53,8 @@ import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
 import ClientPaymentManager from './ClientPaymentManager';
 import PrescriptionManager from './PrescriptionManager';
+import ClinicalDocumentManager from './ClinicalDocumentManager';
+
 import AddAnamnesisDialog from './AddAnamnesisDialog';
 import ClientLaudoManager from './ClientLaudoManager';
 import { PatientReportGenerator } from './PatientReportGenerator';
