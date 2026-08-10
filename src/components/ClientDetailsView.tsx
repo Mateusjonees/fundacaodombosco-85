@@ -53,6 +53,8 @@ import { ContractGenerator } from './ContractGenerator';
 import ServiceHistory from './ServiceHistory';
 import ClientPaymentManager from './ClientPaymentManager';
 import PrescriptionManager from './PrescriptionManager';
+import ClinicalDocumentManager from './ClinicalDocumentManager';
+
 import AddAnamnesisDialog from './AddAnamnesisDialog';
 import ClientLaudoManager from './ClientLaudoManager';
 import { PatientReportGenerator } from './PatientReportGenerator';
@@ -1626,9 +1628,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
                   </TabsContent>
 
                   {/* History Tab */}
-                  <TabsContent value="history">
+                  <TabsContent value="history" className="space-y-4">
+                    <ClinicalDocumentManager client={client} />
                     <ServiceHistory clientId={client.id} />
                   </TabsContent>
+
 
                   {/* Prescriptions Tab */}
                   <TabsContent value="prescriptions">

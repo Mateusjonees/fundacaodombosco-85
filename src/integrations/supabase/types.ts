@@ -1103,6 +1103,53 @@ export type Database = {
         }
         Relationships: []
       }
+      clinical_documents: {
+        Row: {
+          client_id: string
+          content: string
+          created_at: string
+          doc_date: string
+          doc_type: string
+          employee_id: string
+          id: string
+          metadata: Json
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          content?: string
+          created_at?: string
+          doc_date?: string
+          doc_type: string
+          employee_id: string
+          id?: string
+          metadata?: Json
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          content?: string
+          created_at?: string
+          doc_date?: string
+          doc_type?: string
+          employee_id?: string
+          id?: string
+          metadata?: Json
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consent_records: {
         Row: {
           client_id: string
