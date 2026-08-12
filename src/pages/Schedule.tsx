@@ -273,6 +273,7 @@ export default function SchedulePage() {
     onCancelClick: () => { setSelectedScheduleForAction(schedule); setCancelDialogOpen(true); },
     onDeleteClick: () => { setSelectedScheduleForAction(schedule); setDeleteDialogOpen(true); },
     onCompleteClick: () => { setSelectedScheduleForAction(schedule); setCompleteDialogOpen(true); },
+    onAbsenceClick: () => { setSelectedScheduleForAction(schedule); setAbsenceDialogOpen(true); },
     onPresenceUpdate: refetchSchedules,
     getStatusBadge,
   }), [employees, userProfile, isAdmin, canCancelSchedules, canDeleteSchedules, handleEditSchedule, handleRedirect, refetchSchedules, getStatusBadge]);
