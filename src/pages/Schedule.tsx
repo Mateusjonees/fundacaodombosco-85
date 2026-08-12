@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
+import { MarkAbsenceDialog } from '@/components/MarkAbsenceDialog';
 import { DeleteAppointmentDialog } from '@/components/DeleteAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 
