@@ -258,6 +258,20 @@ export const ScheduleCard = memo(({
                   <span className="hidden xs:inline">Concluir</span>
                 </Button>
 
+                {onAbsenceClick && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onAbsenceClick}
+                    className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1 sm:gap-1.5 px-2 sm:px-3 text-orange-600 border-orange-600/30 hover:bg-orange-600/10"
+                  >
+                    <UserX className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <span className="hidden xs:inline">Falta</span>
+                  </Button>
+                )}
+
+
+
                 {canCancelSchedules && (
                   <Button
                     size="sm"
