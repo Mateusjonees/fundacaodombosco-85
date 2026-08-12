@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin } from 'lucide-react';
+import { Clock, User, Edit, CheckCircle, XCircle, ArrowRightLeft, Stethoscope, Trash2, MapPin, UserX } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PatientPresenceButton from '@/components/PatientPresenceButton';
@@ -46,6 +46,7 @@ interface ScheduleCardProps {
   onCancelClick: () => void;
   onDeleteClick: () => void;
   onCompleteClick: () => void;
+  onAbsenceClick?: () => void;
   onPresenceUpdate: () => void;
   getStatusBadge: (status: string) => { text: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string };
 }
@@ -64,6 +65,7 @@ export const ScheduleCard = memo(({
   onCancelClick,
   onDeleteClick,
   onCompleteClick,
+  onAbsenceClick,
   onPresenceUpdate,
   getStatusBadge
 }: ScheduleCardProps) => {
@@ -255,6 +257,20 @@ export const ScheduleCard = memo(({
                   <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   <span className="hidden xs:inline">Concluir</span>
                 </Button>
+
+                {onAbsenceClick && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onAbsenceClick}
+                    className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1 sm:gap-1.5 px-2 sm:px-3 text-orange-600 border-orange-600/30 hover:bg-orange-600/10"
+                  >
+                    <UserX className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <span className="hidden xs:inline">Falta</span>
+                  </Button>
+                )}
+
+
 
                 {canCancelSchedules && (
                   <Button

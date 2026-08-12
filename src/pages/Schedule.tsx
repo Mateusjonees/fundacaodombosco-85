@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ScheduleAlerts } from '@/components/ScheduleAlerts';
 import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
+import { MarkAbsenceDialog } from '@/components/MarkAbsenceDialog';
 import { DeleteAppointmentDialog } from '@/components/DeleteAppointmentDialog';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
 
@@ -53,6 +54,7 @@ export default function SchedulePage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [absenceDialogOpen, setAbsenceDialogOpen] = useState(false);
   const [selectedScheduleForAction, setSelectedScheduleForAction] = useState<Schedule | null>(null);
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
 
@@ -172,6 +174,35 @@ export default function SchedulePage() {
     } catch { toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao cancelar.' }); }
   }, [toast, refetchSchedules]);
 
+  // Registra falta (justificada ou não) do paciente no agendamento
+  const handleMarkAbsence = useCallback(async (scheduleId: string, justified: boolean, reason: string) => {
+    const schedule: any = schedules.find((s: any) => s.id === scheduleId);
+    const label = justified ? 'FALTA JUSTIFICADA' : 'FALTA NÃO JUSTIFICADA';
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ status: 'cancelled', notes: `[${label}] ${reason}` })
+        .eq('id', scheduleId);
+      if (error) throw error;
+
+      if (schedule?.client_id) {
+        await supabase.from('absence_records').insert({
+          client_id: schedule.client_id,
+          schedule_id: scheduleId,
+          absence_date: format(new Date(schedule.start_time), 'yyyy-MM-dd'),
+          notes: `${label}: ${reason}`,
+        });
+      }
+
+      toast({ title: 'Falta registrada', description: label });
+      refetchSchedules();
+    } catch {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao registrar falta.' });
+    }
+  }, [schedules, toast, refetchSchedules]);
+
+
+
   const handleDelete = useCallback(async (id: string) => {
     try {
       const { error } = await supabase.from('schedules').delete().eq('id', id);
@@ -242,6 +273,7 @@ export default function SchedulePage() {
     onCancelClick: () => { setSelectedScheduleForAction(schedule); setCancelDialogOpen(true); },
     onDeleteClick: () => { setSelectedScheduleForAction(schedule); setDeleteDialogOpen(true); },
     onCompleteClick: () => { setSelectedScheduleForAction(schedule); setCompleteDialogOpen(true); },
+    onAbsenceClick: () => { setSelectedScheduleForAction(schedule); setAbsenceDialogOpen(true); },
     onPresenceUpdate: refetchSchedules,
     getStatusBadge,
   }), [employees, userProfile, isAdmin, canCancelSchedules, canDeleteSchedules, handleEditSchedule, handleRedirect, refetchSchedules, getStatusBadge]);
@@ -463,6 +495,13 @@ export default function SchedulePage() {
           onClose={() => setCancelDialogOpen(false)}
           onCancel={handleCancelAppointment}
           onCancelMultiple={handleCancelMultiple}
+        />
+
+        <MarkAbsenceDialog
+          schedule={selectedScheduleForAction}
+          isOpen={absenceDialogOpen}
+          onClose={() => setAbsenceDialogOpen(false)}
+          onConfirm={handleMarkAbsence}
         />
 
         <DeleteAppointmentDialog
