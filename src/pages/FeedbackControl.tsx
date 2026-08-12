@@ -1008,6 +1008,28 @@ export default function FeedbackControl() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação de exclusão (apenas diretores) */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir devolutiva?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A devolutiva de <strong>{deleteTarget?.clients?.name}</strong> será removida permanentemente do controle de prazos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDeleteFeedback(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
