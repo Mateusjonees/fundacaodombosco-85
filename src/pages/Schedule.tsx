@@ -54,6 +54,7 @@ export default function SchedulePage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [absenceDialogOpen, setAbsenceDialogOpen] = useState(false);
   const [selectedScheduleForAction, setSelectedScheduleForAction] = useState<Schedule | null>(null);
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
 
