@@ -46,6 +46,7 @@ interface ScheduleCardProps {
   onCancelClick: () => void;
   onDeleteClick: () => void;
   onCompleteClick: () => void;
+  onAbsenceClick?: () => void;
   onPresenceUpdate: () => void;
   getStatusBadge: (status: string) => { text: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; className?: string };
 }
