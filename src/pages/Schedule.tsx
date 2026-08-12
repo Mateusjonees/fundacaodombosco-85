@@ -497,6 +497,13 @@ export default function SchedulePage() {
           onCancelMultiple={handleCancelMultiple}
         />
 
+        <MarkAbsenceDialog
+          schedule={selectedScheduleForAction}
+          isOpen={absenceDialogOpen}
+          onClose={() => setAbsenceDialogOpen(false)}
+          onConfirm={handleMarkAbsence}
+        />
+
         <DeleteAppointmentDialog
           schedule={selectedScheduleForAction}
           isOpen={deleteDialogOpen}
