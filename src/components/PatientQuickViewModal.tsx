@@ -82,7 +82,7 @@ export const PatientQuickViewModal = ({ clientId, open, onOpenChange, onViewFull
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md p-0 overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-md p-0 overflow-hidden max-h-[90vh] flex flex-col">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <div className="flex items-center gap-4">
@@ -97,7 +97,7 @@ export const PatientQuickViewModal = ({ clientId, open, onOpenChange, onViewFull
         ) : client ? (
           <>
             {/* Header com Avatar e Info Principal */}
-            <div className={`p-4 sm:p-6 pr-12 sm:pr-14 ${unitStyle.bg} border-b`}>
+            <div className={`p-4 sm:p-6 pr-12 sm:pr-14 shrink-0 ${unitStyle.bg} border-b`}>
               <div className="flex items-start gap-3 sm:gap-4 min-w-0">
                 <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-2 border-white/50 shadow-lg shrink-0">
                   <AvatarFallback className="text-lg sm:text-xl font-bold bg-primary text-primary-foreground">
@@ -124,7 +124,7 @@ export const PatientQuickViewModal = ({ clientId, open, onOpenChange, onViewFull
             </div>
 
             {/* Conteúdo */}
-            <div className="p-4 sm:p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
               {/* Contato */}
               <div className="space-y-2">
                 {client.phone && (
