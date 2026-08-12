@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { AlertCircle, Calendar, Clock, FileText, Plus, Search, User } from 'lucide-react';
+import { AlertCircle, Calendar, Clock, FileText, Plus, Search, User, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format, addDays, isWeekend } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getTodayLocalISODate } from '@/lib/utils';
@@ -104,6 +105,9 @@ export default function FeedbackControl() {
   const { user } = useAuth();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isCoordinator, setIsCoordinator] = useState(false);
+  const [isDirector, setIsDirector] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<FeedbackControl | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [feedbacks, setFeedbacks] = useState<FeedbackControl[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -160,9 +164,31 @@ export default function FeedbackControl() {
                        profile.employee_role === 'coordinator_floresta' ||
                        profile.employee_role === 'coordinator_atendimento_floresta';
       setIsCoordinator(isManager);
+      setIsDirector(profile.employee_role === 'director');
     } catch (error) {
       console.error('Erro ao verificar permissões:', error);
       setHasPermission(false);
+    }
+  };
+
+  // Exclusão de devolutiva — restrito a diretores
+  const handleDeleteFeedback = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('client_feedback_control')
+        .delete()
+        .eq('id', deleteTarget.id);
+      if (error) throw error;
+      toast.success('Devolutiva excluída com sucesso');
+      setDeleteTarget(null);
+      loadFeedbacks();
+    } catch (error: any) {
+      console.error('Erro ao excluir devolutiva:', error);
+      toast.error('Não foi possível excluir a devolutiva');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -681,7 +707,20 @@ export default function FeedbackControl() {
                         )
                       )}
                     </div>
-                    {getStatusBadge(feedback.status, remainingDays)}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {getStatusBadge(feedback.status, remainingDays)}
+                      {isDirector && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground/60 hover:text-destructive"
+                          title="Excluir devolutiva"
+                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(feedback); }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
