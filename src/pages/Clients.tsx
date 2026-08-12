@@ -89,7 +89,7 @@ export default function Patients() {
   const [professionalFilter, setProfessionalFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name_asc");
   const [laudoFilter, setLaudoFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("active");
   const [genderFilter, setGenderFilter] = useState("all");
   const [clientLaudoIds, setClientLaudoIds] = useState<Set<string>>(new Set());
   const [clientAnamnesisIds, setClientAnamnesisIds] = useState<Set<string>>(new Set());
@@ -542,7 +542,7 @@ export default function Patients() {
   const minorCount = filteredClients.filter(c => { const age = getAge(c.birth_date); return age !== null && age < 18; }).length;
   const laudoCount = filteredClients.filter(c => clientLaudoIds.has(c.id)).length;
   const withoutLaudoCount = filteredClients.length - laudoCount;
-  const activeFiltersCount = [statusFilter !== "all", unitFilter !== "all", ageFilter !== "all", professionalFilter !== "all", laudoFilter !== "all", genderFilter !== "all", sortBy !== "name_asc"].filter(Boolean).length;
+  const activeFiltersCount = [statusFilter !== "active", unitFilter !== "all", ageFilter !== "all", professionalFilter !== "all", laudoFilter !== "all", genderFilter !== "all", sortBy !== "name_asc"].filter(Boolean).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -586,7 +586,7 @@ export default function Patients() {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar por nome, CPF, telefone..."
         activeFiltersCount={activeFiltersCount}
-        onClearFilters={() => { setStatusFilter("all"); setUnitFilter("all"); setAgeFilter("all"); setProfessionalFilter("all"); setLaudoFilter("all"); setGenderFilter("all"); setSortBy("name_asc"); }}
+        onClearFilters={() => { setStatusFilter("active"); setUnitFilter("all"); setAgeFilter("all"); setProfessionalFilter("all"); setLaudoFilter("all"); setGenderFilter("all"); setSortBy("name_asc"); }}
         filters={
           <>
             <Select value={sortBy} onValueChange={setSortBy}>
