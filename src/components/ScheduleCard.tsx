@@ -65,6 +65,7 @@ export const ScheduleCard = memo(({
   onCancelClick,
   onDeleteClick,
   onCompleteClick,
+  onAbsenceClick,
   onPresenceUpdate,
   getStatusBadge
 }: ScheduleCardProps) => {
