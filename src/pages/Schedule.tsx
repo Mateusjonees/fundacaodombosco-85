@@ -174,6 +174,35 @@ export default function SchedulePage() {
     } catch { toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao cancelar.' }); }
   }, [toast, refetchSchedules]);
 
+  // Registra falta (justificada ou não) do paciente no agendamento
+  const handleMarkAbsence = useCallback(async (scheduleId: string, justified: boolean, reason: string) => {
+    const schedule: any = schedules.find((s: any) => s.id === scheduleId);
+    const label = justified ? 'FALTA JUSTIFICADA' : 'FALTA NÃO JUSTIFICADA';
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ status: 'cancelled', notes: `[${label}] ${reason}` })
+        .eq('id', scheduleId);
+      if (error) throw error;
+
+      if (schedule?.client_id) {
+        await supabase.from('absence_records').insert({
+          client_id: schedule.client_id,
+          schedule_id: scheduleId,
+          absence_date: format(new Date(schedule.start_time), 'yyyy-MM-dd'),
+          notes: `${label}: ${reason}`,
+        });
+      }
+
+      toast({ title: 'Falta registrada', description: label });
+      refetchSchedules();
+    } catch {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao registrar falta.' });
+    }
+  }, [schedules, toast, refetchSchedules]);
+
+
+
   const handleDelete = useCallback(async (id: string) => {
     try {
       const { error } = await supabase.from('schedules').delete().eq('id', id);
