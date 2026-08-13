@@ -28,7 +28,8 @@ const EMPLOYEE_ROLES = [
   { value: 'psychopedagogue', label: 'Psicopedagogo(a)' },
   { value: 'speech_therapist', label: 'Fonoaudiólogo(a)' },
   { value: 'nutritionist', label: 'Nutricionista' },
-  { value: 'physiotherapist', label: 'Fisioterapeuta' }
+  { value: 'physiotherapist', label: 'Fisioterapeuta' },
+  { value: 'estoquista', label: 'Estoquista' }
 ];
 
 export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
