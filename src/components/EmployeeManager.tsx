@@ -16,7 +16,7 @@ import { CreateEmployeeForm } from './CreateEmployeeForm';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { UserPlus, Edit, Trash2, Eye, Calendar, MapPin, Building2, CreditCard, Key } from 'lucide-react';
 
-type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'coordinator_atendimento_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'terapeuta_ocupacional_integracao' | 'psiquiatra' | 'neuropediatra' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist';
+type EmployeeRole = 'director' | 'coordinator_madre' | 'coordinator_floresta' | 'coordinator_atendimento_floresta' | 'staff' | 'intern' | 'terapeuta_ocupacional' | 'terapeuta_ocupacional_integracao' | 'psiquiatra' | 'neuropediatra' | 'advogada' | 'musictherapist' | 'financeiro' | 'receptionist' | 'psychologist' | 'psychopedagogue' | 'speech_therapist' | 'nutritionist' | 'physiotherapist' | 'estoquista';
 
 interface Profile {
   id: string;
@@ -70,6 +70,7 @@ const ROLE_LABELS: Record<string, string> = {
   speech_therapist: 'Fonoaudiólogo(a)',
   nutritionist: 'Nutricionista',
   physiotherapist: 'Fisioterapeuta',
+  estoquista: 'Estoquista',
   terapeuta_ocupacional: 'Terapeuta Ocupacional',
   terapeuta_ocupacional_integracao: 'Terapeuta Ocupacional - Integração Sensorial',
   psiquiatra: 'Psiquiatra',

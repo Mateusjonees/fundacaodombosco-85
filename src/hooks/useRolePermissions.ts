@@ -21,14 +21,15 @@ export type EmployeeRole =
   | 'terapeuta_ocupacional_integracao'
   | 'psiquiatra'
   | 'neuropediatra'
-  | 'advogada';
+  | 'advogada'
+  | 'estoquista';
 
 // Grupos de permissões definidos
 export const ROLE_GROUPS = {
   DIRECTOR_ONLY: ['director'] as EmployeeRole[],
   FINANCE_ONLY: ['financeiro'] as EmployeeRole[],
   DIRECTOR_OR_FINANCE: ['director', 'financeiro'] as EmployeeRole[],
-  STOCK_MANAGERS: ['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'] as EmployeeRole[],
+  STOCK_MANAGERS: ['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'estoquista'] as EmployeeRole[],
   COORDINATOR_AND_HIGHER: ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta'] as EmployeeRole[],
   NON_FINANCE_ACCESS: ['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'staff', 'intern', 'terapeuta_ocupacional', 'terapeuta_ocupacional_integracao', 'psiquiatra', 'neuropediatra', 'advogada', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
   PROFESSIONAL_ROLES: ['staff', 'intern', 'terapeuta_ocupacional', 'terapeuta_ocupacional_integracao', 'psiquiatra', 'neuropediatra', 'advogada', 'musictherapist', 'receptionist', 'psychologist', 'psychopedagogue', 'speech_therapist', 'nutritionist', 'physiotherapist'] as EmployeeRole[],
@@ -55,7 +56,8 @@ export const ROLE_LABELS: Record<EmployeeRole, string> = {
   terapeuta_ocupacional_integracao: 'Terapeuta Ocupacional - Integração Sensorial',
   psiquiatra: 'Psiquiatra',
   neuropediatra: 'Neuropediatra',
-  advogada: 'Advogada'
+  advogada: 'Advogada',
+  estoquista: 'Estoquista'
 };
 
 export const useRolePermissions = () => {
