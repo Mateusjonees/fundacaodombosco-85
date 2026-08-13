@@ -3125,6 +3125,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           date: string
+          destination: string | null
+          expected_return_date: string | null
           from_location: string | null
           id: string
           moved_by: string | null
@@ -3134,6 +3136,7 @@ export type Database = {
           quantity: number
           reason: string | null
           reference_document: string | null
+          returned_at: string | null
           schedule_id: string | null
           session_number: number | null
           stock_item_id: string
@@ -3142,6 +3145,9 @@ export type Database = {
           type: string
           unit_cost: number | null
           updated_at: string | null
+          withdrawal_date: string | null
+          withdrawn_by_name: string | null
+          withdrawn_by_user_id: string | null
         }
         Insert: {
           attendance_id?: string | null
@@ -3149,6 +3155,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date?: string
+          destination?: string | null
+          expected_return_date?: string | null
           from_location?: string | null
           id?: string
           moved_by?: string | null
@@ -3158,6 +3166,7 @@ export type Database = {
           quantity: number
           reason?: string | null
           reference_document?: string | null
+          returned_at?: string | null
           schedule_id?: string | null
           session_number?: number | null
           stock_item_id: string
@@ -3166,6 +3175,9 @@ export type Database = {
           type: string
           unit_cost?: number | null
           updated_at?: string | null
+          withdrawal_date?: string | null
+          withdrawn_by_name?: string | null
+          withdrawn_by_user_id?: string | null
         }
         Update: {
           attendance_id?: string | null
@@ -3173,6 +3185,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date?: string
+          destination?: string | null
+          expected_return_date?: string | null
           from_location?: string | null
           id?: string
           moved_by?: string | null
@@ -3182,6 +3196,7 @@ export type Database = {
           quantity?: number
           reason?: string | null
           reference_document?: string | null
+          returned_at?: string | null
           schedule_id?: string | null
           session_number?: number | null
           stock_item_id?: string
@@ -3190,6 +3205,9 @@ export type Database = {
           type?: string
           unit_cost?: number | null
           updated_at?: string | null
+          withdrawal_date?: string | null
+          withdrawn_by_name?: string | null
+          withdrawn_by_user_id?: string | null
         }
         Relationships: [
           {
@@ -4065,6 +4083,7 @@ export type Database = {
         | "terapeuta_ocupacional_integracao"
         | "psiquiatra"
         | "neuropediatra"
+        | "estoquista"
       permission_action:
         | "view_dashboard"
         | "view_clients"
@@ -4330,6 +4349,7 @@ export const Constants = {
         "terapeuta_ocupacional_integracao",
         "psiquiatra",
         "neuropediatra",
+        "estoquista",
       ],
       permission_action: [
         "view_dashboard",
