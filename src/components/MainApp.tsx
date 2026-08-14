@@ -46,7 +46,7 @@ const ScheduleControl = lazy(() => import('@/pages/ScheduleControl'));
 const Financial = lazy(() => import('@/pages/Financial'));
 const Contracts = lazy(() => import('@/pages/Contracts'));
 const UserManagement = lazy(() => import('@/pages/UserManagement'));
-const StockManager = lazy(() => import('@/pages/StockManager'));
+const StockManager = lazy(() => import('@/pages/StockControl'));
 const Reports = lazy(() => import('@/pages/Reports'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const MyPatients = lazy(() => import('@/pages/MyPatients'));
@@ -79,7 +79,7 @@ const AppRoutes = memo(() => (
         <Route path="/feedback-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><FeedbackControl /></ProtectedRoute>} />
         <Route path="/financial" element={<ProtectedRoute requiredPermission="view_financial"><Financial /></ProtectedRoute>} />
         <Route path="/contracts" element={<ProtectedRoute requiredPermission="view_contracts"><Contracts /></ProtectedRoute>} />
-        <Route path="/stock" element={<ProtectedRoute requiredPermission="view_stock"><StockManager /></ProtectedRoute>} />
+        <Route path="/stock" element={<ProtectedRoute requiredPermission="view_stock" allowedRoles={['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'estoquista']}><StockManager /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute requiredPermission="view_reports"><Reports /></ProtectedRoute>} />
         <Route path="/my-patients" element={<MyPatients />} />
         <Route path="/medical-records" element={<ProtectedRoute requiredPermission="view_medical_records"><MedicalRecords /></ProtectedRoute>} />
