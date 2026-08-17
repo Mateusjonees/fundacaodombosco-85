@@ -457,6 +457,11 @@ export default function StockControl() {
           <p className="text-sm text-muted-foreground">
             Materiais físicos, entradas e retiradas com responsável e data.
           </p>
+          {isViewerOnly && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Acesso somente leitura — consulte itens de cozinha, consumo e materiais disponíveis.
+            </p>
+          )}
         </div>
         {canManage && (
           <Button onClick={openNewItem}>
