@@ -3062,6 +3062,7 @@ export type Database = {
         Row: {
           barcode: string | null
           category: string | null
+          clinic_unit: string
           created_at: string
           created_by: string | null
           current_quantity: number | null
@@ -3081,6 +3082,7 @@ export type Database = {
         Insert: {
           barcode?: string | null
           category?: string | null
+          clinic_unit?: string
           created_at?: string
           created_by?: string | null
           current_quantity?: number | null
@@ -3100,6 +3102,7 @@ export type Database = {
         Update: {
           barcode?: string | null
           category?: string | null
+          clinic_unit?: string
           created_at?: string
           created_by?: string | null
           current_quantity?: number | null
@@ -3122,6 +3125,7 @@ export type Database = {
         Row: {
           attendance_id: string | null
           client_id: string | null
+          clinic_unit: string | null
           created_at: string
           created_by: string | null
           date: string
@@ -3152,6 +3156,7 @@ export type Database = {
         Insert: {
           attendance_id?: string | null
           client_id?: string | null
+          clinic_unit?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
@@ -3182,6 +3187,7 @@ export type Database = {
         Update: {
           attendance_id?: string | null
           client_id?: string | null
+          clinic_unit?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
@@ -3790,6 +3796,7 @@ export type Database = {
         Returns: boolean
       }
       can_view_all_clients: { Args: never; Returns: boolean }
+      can_view_stock: { Args: never; Returns: boolean }
       create_appointment_notification: {
         Args: {
           p_appointment_date: string

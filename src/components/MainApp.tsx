@@ -79,7 +79,7 @@ const AppRoutes = memo(() => (
         <Route path="/feedback-control" element={<ProtectedRoute allowedRoles={['director', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta']}><FeedbackControl /></ProtectedRoute>} />
         <Route path="/financial" element={<ProtectedRoute requiredPermission="view_financial"><Financial /></ProtectedRoute>} />
         <Route path="/contracts" element={<ProtectedRoute requiredPermission="view_contracts"><Contracts /></ProtectedRoute>} />
-        <Route path="/stock" element={<ProtectedRoute requiredPermission="view_stock" allowedRoles={['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'estoquista']}><StockManager /></ProtectedRoute>} />
+        <Route path="/stock" element={<ProtectedRoute requiredPermission="view_stock" allowedRoles={['director', 'financeiro', 'coordinator_madre', 'coordinator_floresta', 'coordinator_atendimento_floresta', 'estoquista', 'nutritionist']}><StockManager /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute requiredPermission="view_reports"><Reports /></ProtectedRoute>} />
         <Route path="/my-patients" element={<MyPatients />} />
         <Route path="/medical-records" element={<ProtectedRoute requiredPermission="view_medical_records"><MedicalRecords /></ProtectedRoute>} />
