@@ -104,7 +104,7 @@ const emptyItem = {
 export default function StockControl() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { canManageStock, loading: roleLoading } = useRolePermissions();
+  const { canManageStock, userRole, loading: roleLoading } = useRolePermissions();
 
   const [items, setItems] = useState<StockItem[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
@@ -149,6 +149,8 @@ export default function StockControl() {
   const [histPerson, setHistPerson] = useState('all');
 
   const canManage = canManageStock();
+  // Nutricionista tem acesso somente leitura (materiais de cozinha e consumo)
+  const isViewerOnly = !canManage && userRole === 'nutritionist';
 
   useEffect(() => {
     loadAll();
