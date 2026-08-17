@@ -78,7 +78,10 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
   useEffect(() => {
     if (isOpen) {
       loadJobPositions();
-      if (prefilledData) {
+      if (!prefilledData) {
+        // Sempre iniciar em branco: evita herdar dados de outro usuário
+        resetForm();
+      } else {
         setFormData({
           name: prefilledData.name || '',
           email: prefilledData.email || '',
@@ -296,12 +299,17 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
             </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+            {/* Campos isca para impedir autofill do navegador */}
+            <input type="text" name="prevent_autofill" className="hidden" autoComplete="off" tabIndex={-1} />
+            <input type="password" name="password_fake" className="hidden" autoComplete="new-password" tabIndex={-1} />
             <div className="space-y-2">
               <RequiredLabel htmlFor="name" required>Nome Completo</RequiredLabel>
               <Input
                 id="name"
+                name="employee-name"
                 type="text"
+                autoComplete="off"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Digite o nome completo"
@@ -313,7 +321,9 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <RequiredLabel htmlFor="email" required>Email</RequiredLabel>
               <Input
                 id="email"
+                name="employee-email"
                 type="email"
+                autoComplete="off"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="email@exemplo.com"
@@ -362,6 +372,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <Label htmlFor="phone">Telefone</Label>
               <Input
                 id="phone"
+                autoComplete="off"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
@@ -373,6 +384,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <Label htmlFor="department">Departamento</Label>
               <Input
                 id="department"
+                autoComplete="off"
                 type="text"
                 value={formData.department}
                 onChange={(e) => handleInputChange('department', e.target.value)}
@@ -387,6 +399,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                 </Label>
                 <Input
                   id="professional_license"
+                  autoComplete="off"
+                autoComplete="off"
                   value={formData.professional_license}
                   onChange={(e) => handleInputChange('professional_license', e.target.value)}
                   placeholder="ex: CRM/MG 12345"
@@ -396,6 +410,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                 <Label htmlFor="professional_rqe">RQE</Label>
                 <Input
                   id="professional_rqe"
+                  autoComplete="off"
+                autoComplete="off"
                   value={formData.professional_rqe}
                   onChange={(e) => handleInputChange('professional_rqe', e.target.value)}
                   placeholder="ex: 6789"
