@@ -400,7 +400,6 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                 <Input
                   id="professional_license"
                   autoComplete="off"
-                autoComplete="off"
                   value={formData.professional_license}
                   onChange={(e) => handleInputChange('professional_license', e.target.value)}
                   placeholder="ex: CRM/MG 12345"
@@ -411,7 +410,6 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                 <Input
                   id="professional_rqe"
                   autoComplete="off"
-                autoComplete="off"
                   value={formData.professional_rqe}
                   onChange={(e) => handleInputChange('professional_rqe', e.target.value)}
                   placeholder="ex: 6789"
