@@ -372,6 +372,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <Label htmlFor="phone">Telefone</Label>
               <Input
                 id="phone"
+                autoComplete="off"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
@@ -383,6 +384,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <Label htmlFor="department">Departamento</Label>
               <Input
                 id="department"
+                autoComplete="off"
                 type="text"
                 value={formData.department}
                 onChange={(e) => handleInputChange('department', e.target.value)}
@@ -397,6 +399,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                 </Label>
                 <Input
                   id="professional_license"
+                  autoComplete="off"
+                autoComplete="off"
                   value={formData.professional_license}
                   onChange={(e) => handleInputChange('professional_license', e.target.value)}
                   placeholder="ex: CRM/MG 12345"
@@ -406,6 +410,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
                 <Label htmlFor="professional_rqe">RQE</Label>
                 <Input
                   id="professional_rqe"
+                  autoComplete="off"
+                autoComplete="off"
                   value={formData.professional_rqe}
                   onChange={(e) => handleInputChange('professional_rqe', e.target.value)}
                   placeholder="ex: 6789"
