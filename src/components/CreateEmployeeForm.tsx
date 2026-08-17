@@ -78,7 +78,10 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
   useEffect(() => {
     if (isOpen) {
       loadJobPositions();
-      if (prefilledData) {
+      if (!prefilledData) {
+        // Sempre iniciar em branco: evita herdar dados de outro usuário
+        resetForm();
+      } else {
         setFormData({
           name: prefilledData.name || '',
           email: prefilledData.email || '',
@@ -296,12 +299,17 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
             </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+            {/* Campos isca para impedir autofill do navegador */}
+            <input type="text" name="prevent_autofill" className="hidden" autoComplete="off" tabIndex={-1} />
+            <input type="password" name="password_fake" className="hidden" autoComplete="new-password" tabIndex={-1} />
             <div className="space-y-2">
               <RequiredLabel htmlFor="name" required>Nome Completo</RequiredLabel>
               <Input
                 id="name"
+                name="employee-name"
                 type="text"
+                autoComplete="off"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Digite o nome completo"
@@ -313,7 +321,9 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <RequiredLabel htmlFor="email" required>Email</RequiredLabel>
               <Input
                 id="email"
+                name="employee-email"
                 type="email"
+                autoComplete="off"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="email@exemplo.com"
