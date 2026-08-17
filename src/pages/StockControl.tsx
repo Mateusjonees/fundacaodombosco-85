@@ -23,7 +23,10 @@ import autoTable from 'jspdf-autotable';
 
 // Categorias de estoque físico
 const CATEGORIES = [
-  { value: 'material_escritorio', label: 'Material de Escritório' },
+  { value: 'material_escritorio', label: 'Papelaria / Escritório' },
+  { value: 'material_consumo', label: 'Material de Consumo' },
+  { value: 'material_cozinha', label: 'Material de Cozinha / Alimentos' },
+  { value: 'material_profissional', label: 'Material Profissional' },
   { value: 'material_limpeza', label: 'Material de Limpeza' },
   { value: 'material_terapeutico', label: 'Material Terapêutico' },
   { value: 'testes_neuro', label: 'Testes Neuropsicológicos' },
@@ -33,6 +36,17 @@ const CATEGORIES = [
   { value: 'higiene', label: 'Higiene' },
   { value: 'outros', label: 'Outros' },
 ];
+
+// Unidades da clínica (estoque separado por unidade)
+const CLINIC_UNITS = [
+  { value: 'todas', label: 'Todas as unidades' },
+  { value: 'madre', label: 'MADRE' },
+  { value: 'floresta', label: 'Floresta' },
+  { value: 'atendimento_floresta', label: 'Atendimento Floresta' },
+];
+
+const clinicUnitLabel = (value?: string | null) =>
+  CLINIC_UNITS.find((u) => u.value === (value || 'todas'))?.label || 'Todas as unidades';
 
 const UNITS = ['unidade', 'caixa', 'pacote', 'kit', 'litro', 'kg', 'resma', 'par'];
 
@@ -44,6 +58,7 @@ interface StockItem {
   name: string;
   description?: string | null;
   category?: string | null;
+  clinic_unit?: string | null;
   unit?: string | null;
   current_quantity: number;
   minimum_quantity: number;
@@ -68,6 +83,7 @@ interface Movement {
   withdrawal_date?: string | null;
   destination?: string | null;
   expected_return_date?: string | null;
+  clinic_unit?: string | null;
   created_by?: string | null;
   created_at: string;
 }
@@ -76,6 +92,7 @@ const emptyItem = {
   name: '',
   description: '',
   category: 'material_escritorio',
+  clinic_unit: 'todas',
   unit: 'unidade',
   current_quantity: 0,
   minimum_quantity: 0,
@@ -96,6 +113,7 @@ export default function StockControl() {
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [unitFilter, setUnitFilter] = useState('all');
 
   // Dialogs
   const [itemDialog, setItemDialog] = useState(false);
@@ -186,9 +204,14 @@ export default function StockControl() {
         (i.location || '').toLowerCase().includes(term) ||
         (i.supplier || '').toLowerCase().includes(term);
       const matchCat = categoryFilter === 'all' || (i.category || 'outros') === categoryFilter;
-      return matchTerm && matchCat;
+      // "todas" aparece em qualquer filtro de unidade
+      const matchUnit =
+        unitFilter === 'all' ||
+        (i.clinic_unit || 'todas') === unitFilter ||
+        (i.clinic_unit || 'todas') === 'todas';
+      return matchTerm && matchCat && matchUnit;
     });
-  }, [items, search, categoryFilter]);
+  }, [items, search, categoryFilter, unitFilter]);
 
   const stats = useMemo(() => {
     const monthPrefix = getTodayLocalISODate().slice(0, 7);
@@ -215,6 +238,7 @@ export default function StockControl() {
       name: item.name || '',
       description: item.description || '',
       category: item.category || 'outros',
+      clinic_unit: item.clinic_unit || 'todas',
       unit: item.unit || 'unidade',
       current_quantity: item.current_quantity || 0,
       minimum_quantity: item.minimum_quantity || 0,
@@ -291,6 +315,7 @@ export default function StockControl() {
         withdrawal_date: withdrawForm.withdrawal_date,
         withdrawn_by_user_id: withdrawForm.withdrawn_by_user_id || null,
         withdrawn_by_name: personName,
+        clinic_unit: targetItem.clinic_unit || 'todas',
         destination: withdrawForm.destination || null,
         expected_return_date: withdrawForm.expected_return_date || null,
         reason: withdrawForm.reason || 'Retirada de material',
@@ -346,6 +371,7 @@ export default function StockControl() {
         unit_cost: entryForm.unit_cost || 0,
         total_cost: (entryForm.unit_cost || 0) * qty,
         date: entryForm.date,
+        clinic_unit: targetItem.clinic_unit || 'todas',
         reason: entryForm.reason || 'Entrada de material',
         previous_quantity: previous,
         new_quantity: previous + qty,
@@ -496,6 +522,17 @@ export default function StockControl() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={unitFilter} onValueChange={setUnitFilter}>
+              <SelectTrigger className="h-9 w-[200px]">
+                <SelectValue placeholder="Unidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as unidades</SelectItem>
+                {CLINIC_UNITS.filter((u) => u.value !== 'todas').map((u) => (
+                  <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Card>
@@ -505,6 +542,7 @@ export default function StockControl() {
                   <TableRow>
                     <TableHead>Item</TableHead>
                     <TableHead>Categoria</TableHead>
+                    <TableHead>Unidade</TableHead>
                     <TableHead>Local</TableHead>
                     <TableHead className="text-right">Qtd</TableHead>
                     <TableHead className="text-right">Mín.</TableHead>
@@ -514,10 +552,10 @@ export default function StockControl() {
                 </TableHeader>
                 <TableBody>
                   {loading && (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
                   )}
                   {!loading && filteredItems.length === 0 && (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum item encontrado.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum item encontrado.</TableCell></TableRow>
                   )}
                   {filteredItems.map((item) => {
                     const low = (item.current_quantity ?? 0) <= (item.minimum_quantity ?? 0);
@@ -530,6 +568,9 @@ export default function StockControl() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm">{categoryLabel(item.category)}</TableCell>
+                        <TableCell className="text-sm">
+                          <Badge variant="outline">{clinicUnitLabel(item.clinic_unit)}</Badge>
+                        </TableCell>
                         <TableCell className="text-sm">{item.location || '—'}</TableCell>
                         <TableCell className="text-right">{item.current_quantity} {item.unit}</TableCell>
                         <TableCell className="text-right">{item.minimum_quantity}</TableCell>
@@ -659,7 +700,16 @@ export default function StockControl() {
                 </Select>
               </div>
               <div>
-                <Label>Unidade</Label>
+                <Label>Unidade da clínica</Label>
+                <Select value={itemForm.clinic_unit} onValueChange={(v) => setItemForm({ ...itemForm, clinic_unit: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CLINIC_UNITS.map((u) => <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Unidade de medida</Label>
                 <Select value={itemForm.unit} onValueChange={(v) => setItemForm({ ...itemForm, unit: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
