@@ -325,7 +325,7 @@ export default function StockControl() {
     }
 
     const previous = targetItem.current_quantity || 0;
-    const { error } = await supabase.from('stock_movements').insert([
+    const { data, error } = await supabase.from('stock_movements').insert([
       {
         stock_item_id: targetItem.id,
         type: 'out',
@@ -345,23 +345,68 @@ export default function StockControl() {
         created_by: user?.id,
         moved_by: user?.id,
       },
-    ]);
+    ]).select('*').single();
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao registrar retirada', description: error.message });
       return;
     }
 
-    await supabase
-      .from('stock_items')
-      .update({ current_quantity: Math.max(0, previous - qty) })
-      .eq('id', targetItem.id);
+    const newQty = Math.max(0, previous - qty);
+    await supabase.from('stock_items').update({ current_quantity: newQty }).eq('id', targetItem.id);
 
+    setMovements((prev) => [data as Movement, ...prev]);
+    setItems((prev) => prev.map((i) => (i.id === targetItem.id ? { ...i, current_quantity: newQty } : i)));
     toast({ title: 'Retirada registrada', description: `${qty}x ${targetItem.name} para ${personName}` });
     setWithdrawDialog(false);
-    loadItems();
-    loadMovements();
   };
+
+  // ---------- Devolução (controle de empréstimo) ----------
+  const registerReturn = async (movement: Movement) => {
+    const item = items.find((i) => i.id === movement.stock_item_id);
+    const nowIso = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('stock_movements')
+      .update({ returned_at: nowIso })
+      .eq('id', movement.id);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erro ao registrar devolução', description: error.message });
+      return;
+    }
+
+    let restored: Movement | null = null;
+    if (item) {
+      const previousQty = item.current_quantity || 0;
+      const newQty = previousQty + movement.quantity;
+      const { data: inMov } = await supabase.from('stock_movements').insert([
+        {
+          stock_item_id: item.id,
+          type: 'in',
+          quantity: movement.quantity,
+          unit_cost: item.unit_cost || 0,
+          total_cost: (item.unit_cost || 0) * movement.quantity,
+          date: getTodayLocalISODate(),
+          clinic_unit: item.clinic_unit || 'todas',
+          reason: `Devolução de ${movement.withdrawn_by_name || 'responsável'}`,
+          previous_quantity: previousQty,
+          new_quantity: newQty,
+          created_by: user?.id,
+          moved_by: user?.id,
+        },
+      ]).select('*').single();
+      restored = (inMov as Movement) || null;
+      await supabase.from('stock_items').update({ current_quantity: newQty }).eq('id', item.id);
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, current_quantity: newQty } : i)));
+    }
+
+    setMovements((prev) => {
+      const updated = prev.map((m) => (m.id === movement.id ? { ...m, returned_at: nowIso } : m));
+      return restored ? [restored, ...updated] : updated;
+    });
+    toast({ title: 'Devolução registrada' });
+  };
+
 
   // ---------- Entrada ----------
   const openEntry = (item: StockItem) => {
