@@ -258,18 +258,36 @@ export default function StockControl() {
       return;
     }
     const payload = { ...itemForm, name: itemForm.name.toUpperCase() };
-    const { error } = editingId
-      ? await supabase.from('stock_items').update(payload).eq('id', editingId)
-      : await supabase.from('stock_items').insert([{ ...payload, created_by: user?.id }]);
+    const { data, error } = editingId
+      ? await supabase.from('stock_items').update(payload).eq('id', editingId).select('*').single()
+      : await supabase.from('stock_items').insert([{ ...payload, created_by: user?.id }]).select('*').single();
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao salvar item', description: error.message });
       return;
     }
+    // Atualiza somente a linha alterada (evita recarregar a tela inteira)
+    const saved = data as StockItem;
+    setItems((prev) =>
+      editingId ? prev.map((i) => (i.id === editingId ? saved : i)) : [...prev, saved].sort((a, b) => a.name.localeCompare(b.name)),
+    );
     toast({ title: editingId ? 'Item atualizado' : 'Item cadastrado' });
     setItemDialog(false);
-    loadItems();
   };
+
+  const deleteItem = async (item: StockItem) => {
+    if (!window.confirm(`Remover "${item.name}" do estoque?`)) return;
+    const previous = items;
+    setItems((prev) => prev.filter((i) => i.id !== item.id)); // remoção otimista, sem flicker
+    const { error } = await supabase.from('stock_items').update({ is_active: false }).eq('id', item.id);
+    if (error) {
+      setItems(previous);
+      toast({ variant: 'destructive', title: 'Erro ao remover item', description: error.message });
+      return;
+    }
+    toast({ title: 'Item removido' });
+  };
+
 
   // ---------- Retirada ----------
   const openWithdraw = (item: StockItem) => {
