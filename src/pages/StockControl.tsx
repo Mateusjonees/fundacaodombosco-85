@@ -16,7 +16,7 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
 import {
   Package2, Plus, AlertTriangle, ArrowDownToLine, ArrowUpFromLine,
-  Search, FileDown, Pencil, Boxes, CalendarDays,
+  Search, FileDown, Pencil, Boxes, CalendarDays, Trash2, Undo2, Clock,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
