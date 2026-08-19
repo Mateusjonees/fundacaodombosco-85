@@ -493,6 +493,17 @@ export default function StockControl() {
     });
   }, [movements, histType, histFrom, histTo, histPerson]);
 
+  // Empréstimos em aberto (retiradas com previsão de devolução e sem devolução registrada)
+  const pendingLoans = useMemo(() => {
+    const today = getTodayLocalISODate();
+    return movements
+      .filter((m) => m.type === 'out' && m.expected_return_date && !m.returned_at)
+      .map((m) => ({ ...m, overdue: (m.expected_return_date || '') < today }))
+      .sort((a, b) => (a.expected_return_date || '').localeCompare(b.expected_return_date || ''));
+  }, [movements]);
+
+
+
   const exportPdf = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.setFontSize(14);
