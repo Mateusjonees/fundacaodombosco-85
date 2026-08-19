@@ -261,6 +261,27 @@ export default function AddAnamnesisDialog({
         </DialogHeader>
 
         <div className="space-y-4 pt-4">
+          {/* Reaproveitar anamnese anterior */}
+          {!editingNote && previousNote && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <p className="text-sm">
+                {prefillApplied
+                  ? 'Conteúdo da anamnese anterior carregado — edite o que precisar.'
+                  : `Existe uma anamnese anterior (${new Date(previousNote.created_at).toLocaleDateString('pt-BR')}). Deseja seguir com ela?`}
+              </p>
+              <div className="flex gap-2">
+                {!prefillApplied && (
+                  <Button type="button" size="sm" onClick={applyPreviousNote}>
+                    Usar anamnese anterior
+                  </Button>
+                )}
+                <Button type="button" size="sm" variant="outline" onClick={startBlank}>
+                  {prefillApplied ? 'Limpar e começar do zero' : 'Começar em branco'}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Tipo de Atendimento */}
           <div className="space-y-2">
             <Label htmlFor="serviceType">Tipo de Atendimento</Label>
