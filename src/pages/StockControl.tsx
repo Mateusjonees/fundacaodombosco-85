@@ -83,6 +83,7 @@ interface Movement {
   withdrawal_date?: string | null;
   destination?: string | null;
   expected_return_date?: string | null;
+  returned_at?: string | null;
   clinic_unit?: string | null;
   created_by?: string | null;
   created_at: string;
