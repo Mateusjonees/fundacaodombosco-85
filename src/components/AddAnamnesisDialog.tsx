@@ -82,6 +82,10 @@ export default function AddAnamnesisDialog({
     conduta: ''
   });
 
+  // Última anamnese do paciente (para reaproveitar)
+  const [previousNote, setPreviousNote] = useState<ClientNote | null>(null);
+  const [prefillApplied, setPrefillApplied] = useState(false);
+
   // Load data when editing
   useEffect(() => {
     if (editingNote) {
@@ -100,6 +104,48 @@ export default function AddAnamnesisDialog({
       setServiceType(defaultServiceType || 'private');
     }
   }, [editingNote, open, defaultServiceType]);
+
+  // Busca a anamnese anterior ao abrir para um novo registro
+  useEffect(() => {
+    if (!open || editingNote || !clientId) {
+      setPreviousNote(null);
+      setPrefillApplied(false);
+      return;
+    }
+    setPrefillApplied(false);
+    (async () => {
+      const { data } = await supabase
+        .from('client_notes')
+        .select('id, note_text, note_type, service_type, created_at')
+        .eq('client_id', clientId)
+        .eq('note_type', 'anamnesis')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      setPreviousNote((data?.[0] as ClientNote) || null);
+    })();
+  }, [open, editingNote, clientId]);
+
+  const applyPreviousNote = () => {
+    if (!previousNote) return;
+    setFormData(parseNoteText(previousNote.note_text));
+    if (previousNote.service_type && !defaultServiceType) {
+      setServiceType(previousNote.service_type);
+    }
+    setPrefillApplied(true);
+  };
+
+  const startBlank = () => {
+    setFormData({
+      queixaPrincipal: '',
+      hma: '',
+      hpp: '',
+      exameFisico: '',
+      hd: '',
+      conduta: ''
+    });
+    setPrefillApplied(false);
+    setPreviousNote(null);
+  };
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
