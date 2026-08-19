@@ -16,7 +16,7 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
 import {
   Package2, Plus, AlertTriangle, ArrowDownToLine, ArrowUpFromLine,
-  Search, FileDown, Pencil, Boxes, CalendarDays,
+  Search, FileDown, Pencil, Boxes, CalendarDays, Trash2, Undo2, Clock,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -83,6 +83,7 @@ interface Movement {
   withdrawal_date?: string | null;
   destination?: string | null;
   expected_return_date?: string | null;
+  returned_at?: string | null;
   clinic_unit?: string | null;
   created_by?: string | null;
   created_at: string;
@@ -257,18 +258,36 @@ export default function StockControl() {
       return;
     }
     const payload = { ...itemForm, name: itemForm.name.toUpperCase() };
-    const { error } = editingId
-      ? await supabase.from('stock_items').update(payload).eq('id', editingId)
-      : await supabase.from('stock_items').insert([{ ...payload, created_by: user?.id }]);
+    const { data, error } = editingId
+      ? await supabase.from('stock_items').update(payload).eq('id', editingId).select('*').single()
+      : await supabase.from('stock_items').insert([{ ...payload, created_by: user?.id }]).select('*').single();
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao salvar item', description: error.message });
       return;
     }
+    // Atualiza somente a linha alterada (evita recarregar a tela inteira)
+    const saved = data as StockItem;
+    setItems((prev) =>
+      editingId ? prev.map((i) => (i.id === editingId ? saved : i)) : [...prev, saved].sort((a, b) => a.name.localeCompare(b.name)),
+    );
     toast({ title: editingId ? 'Item atualizado' : 'Item cadastrado' });
     setItemDialog(false);
-    loadItems();
   };
+
+  const deleteItem = async (item: StockItem) => {
+    if (!window.confirm(`Remover "${item.name}" do estoque?`)) return;
+    const previous = items;
+    setItems((prev) => prev.filter((i) => i.id !== item.id)); // remoção otimista, sem flicker
+    const { error } = await supabase.from('stock_items').update({ is_active: false }).eq('id', item.id);
+    if (error) {
+      setItems(previous);
+      toast({ variant: 'destructive', title: 'Erro ao remover item', description: error.message });
+      return;
+    }
+    toast({ title: 'Item removido' });
+  };
+
 
   // ---------- Retirada ----------
   const openWithdraw = (item: StockItem) => {
@@ -306,7 +325,7 @@ export default function StockControl() {
     }
 
     const previous = targetItem.current_quantity || 0;
-    const { error } = await supabase.from('stock_movements').insert([
+    const { data, error } = await supabase.from('stock_movements').insert([
       {
         stock_item_id: targetItem.id,
         type: 'out',
@@ -326,23 +345,68 @@ export default function StockControl() {
         created_by: user?.id,
         moved_by: user?.id,
       },
-    ]);
+    ]).select('*').single();
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao registrar retirada', description: error.message });
       return;
     }
 
-    await supabase
-      .from('stock_items')
-      .update({ current_quantity: Math.max(0, previous - qty) })
-      .eq('id', targetItem.id);
+    const newQty = Math.max(0, previous - qty);
+    await supabase.from('stock_items').update({ current_quantity: newQty }).eq('id', targetItem.id);
 
+    setMovements((prev) => [data as Movement, ...prev]);
+    setItems((prev) => prev.map((i) => (i.id === targetItem.id ? { ...i, current_quantity: newQty } : i)));
     toast({ title: 'Retirada registrada', description: `${qty}x ${targetItem.name} para ${personName}` });
     setWithdrawDialog(false);
-    loadItems();
-    loadMovements();
   };
+
+  // ---------- Devolução (controle de empréstimo) ----------
+  const registerReturn = async (movement: Movement) => {
+    const item = items.find((i) => i.id === movement.stock_item_id);
+    const nowIso = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('stock_movements')
+      .update({ returned_at: nowIso })
+      .eq('id', movement.id);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erro ao registrar devolução', description: error.message });
+      return;
+    }
+
+    let restored: Movement | null = null;
+    if (item) {
+      const previousQty = item.current_quantity || 0;
+      const newQty = previousQty + movement.quantity;
+      const { data: inMov } = await supabase.from('stock_movements').insert([
+        {
+          stock_item_id: item.id,
+          type: 'in',
+          quantity: movement.quantity,
+          unit_cost: item.unit_cost || 0,
+          total_cost: (item.unit_cost || 0) * movement.quantity,
+          date: getTodayLocalISODate(),
+          clinic_unit: item.clinic_unit || 'todas',
+          reason: `Devolução de ${movement.withdrawn_by_name || 'responsável'}`,
+          previous_quantity: previousQty,
+          new_quantity: newQty,
+          created_by: user?.id,
+          moved_by: user?.id,
+        },
+      ]).select('*').single();
+      restored = (inMov as Movement) || null;
+      await supabase.from('stock_items').update({ current_quantity: newQty }).eq('id', item.id);
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, current_quantity: newQty } : i)));
+    }
+
+    setMovements((prev) => {
+      const updated = prev.map((m) => (m.id === movement.id ? { ...m, returned_at: nowIso } : m));
+      return restored ? [restored, ...updated] : updated;
+    });
+    toast({ title: 'Devolução registrada' });
+  };
+
 
   // ---------- Entrada ----------
   const openEntry = (item: StockItem) => {
@@ -365,7 +429,7 @@ export default function StockControl() {
       return;
     }
     const previous = targetItem.current_quantity || 0;
-    const { error } = await supabase.from('stock_movements').insert([
+    const { data, error } = await supabase.from('stock_movements').insert([
       {
         stock_item_id: targetItem.id,
         type: 'in',
@@ -380,7 +444,7 @@ export default function StockControl() {
         created_by: user?.id,
         moved_by: user?.id,
       },
-    ]);
+    ]).select('*').single();
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao registrar entrada', description: error.message });
       return;
@@ -395,11 +459,23 @@ export default function StockControl() {
       })
       .eq('id', targetItem.id);
 
+    setMovements((prev) => [data as Movement, ...prev]);
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === targetItem.id
+          ? {
+              ...i,
+              current_quantity: previous + qty,
+              unit_cost: entryForm.unit_cost || i.unit_cost,
+              supplier: entryForm.supplier || i.supplier,
+            }
+          : i,
+      ),
+    );
     toast({ title: 'Entrada registrada' });
     setEntryDialog(false);
-    loadItems();
-    loadMovements();
   };
+
 
   // ---------- Histórico ----------
   const itemName = (id: string) => items.find((i) => i.id === id)?.name || '—';
@@ -416,6 +492,17 @@ export default function StockControl() {
       return true;
     });
   }, [movements, histType, histFrom, histTo, histPerson]);
+
+  // Empréstimos em aberto (retiradas com previsão de devolução e sem devolução registrada)
+  const pendingLoans = useMemo(() => {
+    const today = getTodayLocalISODate();
+    return movements
+      .filter((m) => m.type === 'out' && m.expected_return_date && !m.returned_at)
+      .map((m) => ({ ...m, overdue: (m.expected_return_date || '') < today }))
+      .sort((a, b) => (a.expected_return_date || '').localeCompare(b.expected_return_date || ''));
+  }, [movements]);
+
+
 
   const exportPdf = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
