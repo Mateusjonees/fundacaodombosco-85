@@ -429,7 +429,7 @@ export default function StockControl() {
       return;
     }
     const previous = targetItem.current_quantity || 0;
-    const { error } = await supabase.from('stock_movements').insert([
+    const { data, error } = await supabase.from('stock_movements').insert([
       {
         stock_item_id: targetItem.id,
         type: 'in',
@@ -444,7 +444,7 @@ export default function StockControl() {
         created_by: user?.id,
         moved_by: user?.id,
       },
-    ]);
+    ]).select('*').single();
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao registrar entrada', description: error.message });
       return;
@@ -459,11 +459,23 @@ export default function StockControl() {
       })
       .eq('id', targetItem.id);
 
+    setMovements((prev) => [data as Movement, ...prev]);
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === targetItem.id
+          ? {
+              ...i,
+              current_quantity: previous + qty,
+              unit_cost: entryForm.unit_cost || i.unit_cost,
+              supplier: entryForm.supplier || i.supplier,
+            }
+          : i,
+      ),
+    );
     toast({ title: 'Entrada registrada' });
     setEntryDialog(false);
-    loadItems();
-    loadMovements();
   };
+
 
   // ---------- Histórico ----------
   const itemName = (id: string) => items.find((i) => i.id === id)?.name || '—';
