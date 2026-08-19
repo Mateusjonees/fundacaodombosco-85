@@ -82,6 +82,10 @@ export default function AddAnamnesisDialog({
     conduta: ''
   });
 
+  // Última anamnese do paciente (para reaproveitar)
+  const [previousNote, setPreviousNote] = useState<ClientNote | null>(null);
+  const [prefillApplied, setPrefillApplied] = useState(false);
+
   // Load data when editing
   useEffect(() => {
     if (editingNote) {
@@ -100,6 +104,48 @@ export default function AddAnamnesisDialog({
       setServiceType(defaultServiceType || 'private');
     }
   }, [editingNote, open, defaultServiceType]);
+
+  // Busca a anamnese anterior ao abrir para um novo registro
+  useEffect(() => {
+    if (!open || editingNote || !clientId) {
+      setPreviousNote(null);
+      setPrefillApplied(false);
+      return;
+    }
+    setPrefillApplied(false);
+    (async () => {
+      const { data } = await supabase
+        .from('client_notes')
+        .select('id, note_text, note_type, service_type, created_at')
+        .eq('client_id', clientId)
+        .eq('note_type', 'anamnesis')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      setPreviousNote((data?.[0] as ClientNote) || null);
+    })();
+  }, [open, editingNote, clientId]);
+
+  const applyPreviousNote = () => {
+    if (!previousNote) return;
+    setFormData(parseNoteText(previousNote.note_text));
+    if (previousNote.service_type && !defaultServiceType) {
+      setServiceType(previousNote.service_type);
+    }
+    setPrefillApplied(true);
+  };
+
+  const startBlank = () => {
+    setFormData({
+      queixaPrincipal: '',
+      hma: '',
+      hpp: '',
+      exameFisico: '',
+      hd: '',
+      conduta: ''
+    });
+    setPrefillApplied(false);
+    setPreviousNote(null);
+  };
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -215,6 +261,27 @@ export default function AddAnamnesisDialog({
         </DialogHeader>
 
         <div className="space-y-4 pt-4">
+          {/* Reaproveitar anamnese anterior */}
+          {!editingNote && previousNote && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <p className="text-sm">
+                {prefillApplied
+                  ? 'Conteúdo da anamnese anterior carregado — edite o que precisar.'
+                  : `Existe uma anamnese anterior (${new Date(previousNote.created_at).toLocaleDateString('pt-BR')}). Deseja seguir com ela?`}
+              </p>
+              <div className="flex gap-2">
+                {!prefillApplied && (
+                  <Button type="button" size="sm" onClick={applyPreviousNote}>
+                    Usar anamnese anterior
+                  </Button>
+                )}
+                <Button type="button" size="sm" variant="outline" onClick={startBlank}>
+                  {prefillApplied ? 'Limpar e começar do zero' : 'Começar em branco'}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Tipo de Atendimento */}
           <div className="space-y-2">
             <Label htmlFor="serviceType">Tipo de Atendimento</Label>

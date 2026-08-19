@@ -1675,11 +1675,15 @@ export default function CompleteAttendanceDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`flex flex-col p-0 gap-0 transition-all duration-200 ${
-        isMaximized 
-          ? 'w-[98vw] max-w-[98vw] h-[98vh] max-h-[98vh]' 
-          : 'w-[95vw] max-w-2xl h-[90vh] max-h-[90vh]'
-      }`}>
+      <DialogContent
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        className={`flex flex-col p-0 gap-0 transition-all duration-200 ${
+          isMaximized
+            ? 'w-[98vw] max-w-[98vw] h-[98vh] max-h-[98vh]'
+            : 'w-[95vw] max-w-2xl h-[90vh] max-h-[90vh]'
+        }`}
+      >
         <DialogHeader className="px-4 sm:px-6 py-4 border-b shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
