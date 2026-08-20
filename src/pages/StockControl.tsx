@@ -14,6 +14,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
+import { generateStockAuthorizationPdf } from '@/utils/stockAuthorizationPdf';
 import {
   Package2, Plus, AlertTriangle, ArrowDownToLine, ArrowUpFromLine,
   Search, FileDown, Pencil, Boxes, CalendarDays, Trash2, Undo2, Clock,
