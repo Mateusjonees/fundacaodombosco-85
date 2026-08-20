@@ -649,6 +649,9 @@ export default function StockControl() {
         <TabsList>
           <TabsTrigger value="items">Itens</TabsTrigger>
           <TabsTrigger value="history">Retiradas e Entradas</TabsTrigger>
+          <TabsTrigger value="loans">
+            Empréstimos {pendingLoans.length > 0 && `(${pendingLoans.length})`}
+          </TabsTrigger>
         </TabsList>
 
         {/* ITENS */}
