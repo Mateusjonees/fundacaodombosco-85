@@ -14,6 +14,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
+import { generateStockAuthorizationPdf } from '@/utils/stockAuthorizationPdf';
 import {
   Package2, Plus, AlertTriangle, ArrowDownToLine, ArrowUpFromLine,
   Search, FileDown, Pencil, Boxes, CalendarDays, Trash2, Undo2, Clock,
@@ -133,7 +134,14 @@ export default function StockControl() {
     destination: '',
     expected_return_date: '',
     reason: '',
+    generate_term: true,
   });
+
+  // Devolução
+  const [returnDialog, setReturnDialog] = useState(false);
+  const [returnTarget, setReturnTarget] = useState<Movement | null>(null);
+  const [returnForm, setReturnForm] = useState({ returned_by_user_id: '', returned_by_name: '', notes: '' });
+
 
   const [entryForm, setEntryForm] = useState({
     quantity: 1,
@@ -295,12 +303,14 @@ export default function StockControl() {
     setWithdrawForm({
       quantity: 1,
       withdrawn_by_user_id: user?.id || '',
-      withdrawn_by_name: '',
+      withdrawn_by_name: profiles.find((p) => p.user_id === user?.id)?.name || '',
       withdrawal_date: getTodayLocalISODate(),
       destination: item.location || '',
       expected_return_date: '',
       reason: '',
+      generate_term: true,
     });
+
     setWithdrawDialog(true);
   };
 
@@ -359,10 +369,53 @@ export default function StockControl() {
     setItems((prev) => prev.map((i) => (i.id === targetItem.id ? { ...i, current_quantity: newQty } : i)));
     toast({ title: 'Retirada registrada', description: `${qty}x ${targetItem.name} para ${personName}` });
     setWithdrawDialog(false);
+
+    if (withdrawForm.generate_term) {
+      await printAuthorization(data as Movement, targetItem);
+    }
+  };
+
+  // Termo de responsabilidade (impressão / assinatura)
+  const printAuthorization = async (movement: Movement, item?: StockItem | null) => {
+    const ref = item || items.find((i) => i.id === movement.stock_item_id) || null;
+    try {
+      const pdf = await generateStockAuthorizationPdf({
+        itemName: ref?.name || 'Material',
+        quantity: movement.quantity,
+        unitLabel: ref?.unit,
+        clinicUnitLabel: clinicUnitLabel(movement.clinic_unit || ref?.clinic_unit),
+        responsibleName: movement.withdrawn_by_name || profileName(movement.withdrawn_by_user_id),
+        destination: movement.destination,
+        withdrawalDate: movement.withdrawal_date || movement.date,
+        expectedReturnDate: movement.expected_return_date,
+        reason: movement.reason,
+        issuedBy: profiles.find((p) => p.user_id === user?.id)?.name || '',
+      });
+      pdf.save(`termo-retirada-${(ref?.name || 'material').toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Erro ao gerar termo', description: e?.message });
+    }
   };
 
   // ---------- Devolução (controle de empréstimo) ----------
-  const registerReturn = async (movement: Movement) => {
+  const openReturn = (movement: Movement) => {
+    setReturnTarget(movement);
+    setReturnForm({
+      returned_by_user_id: movement.withdrawn_by_user_id || '',
+      returned_by_name: movement.withdrawn_by_name || '',
+      notes: '',
+    });
+    setReturnDialog(true);
+  };
+
+  const registerReturn = async () => {
+    const movement = returnTarget;
+    if (!movement) return;
+    const returnedBy = returnForm.returned_by_name.trim().toUpperCase();
+    if (!returnedBy) {
+      toast({ variant: 'destructive', title: 'Informe quem está devolvendo o material' });
+      return;
+    }
     const item = items.find((i) => i.id === movement.stock_item_id);
     const nowIso = new Date().toISOString();
 
@@ -388,7 +441,10 @@ export default function StockControl() {
           total_cost: (item.unit_cost || 0) * movement.quantity,
           date: getTodayLocalISODate(),
           clinic_unit: item.clinic_unit || 'todas',
-          reason: `Devolução de ${movement.withdrawn_by_name || 'responsável'}`,
+          withdrawn_by_user_id: returnForm.returned_by_user_id || null,
+          withdrawn_by_name: returnedBy,
+          reason: `Devolução de ${returnedBy}`,
+          notes: returnForm.notes || null,
           previous_quantity: previousQty,
           new_quantity: newQty,
           created_by: user?.id,
@@ -404,7 +460,9 @@ export default function StockControl() {
       const updated = prev.map((m) => (m.id === movement.id ? { ...m, returned_at: nowIso } : m));
       return restored ? [restored, ...updated] : updated;
     });
-    toast({ title: 'Devolução registrada' });
+    setReturnDialog(false);
+    toast({ title: 'Devolução registrada', description: `${movement.quantity}x devolvido por ${returnedBy}` });
+
   };
 
 
@@ -591,6 +649,9 @@ export default function StockControl() {
         <TabsList>
           <TabsTrigger value="items">Itens</TabsTrigger>
           <TabsTrigger value="history">Retiradas e Entradas</TabsTrigger>
+          <TabsTrigger value="loans">
+            Empréstimos {pendingLoans.length > 0 && `(${pendingLoans.length})`}
+          </TabsTrigger>
         </TabsList>
 
         {/* ITENS */}
@@ -689,6 +750,15 @@ export default function StockControl() {
                               <Button size="sm" variant="ghost" className="h-8" onClick={() => openEditItem(item)}>
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 text-destructive"
+                                onClick={() => deleteItem(item)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+
                             </>
                           )}
                         </TableCell>
@@ -768,7 +838,116 @@ export default function StockControl() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* EMPRÉSTIMOS EM ABERTO */}
+        <TabsContent value="loans" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4" /> Materiais emprestados aguardando devolução
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead className="text-right">Qtd</TableHead>
+                    <TableHead>Com quem está</TableHead>
+                    <TableHead>Destino</TableHead>
+                    <TableHead>Retirada</TableHead>
+                    <TableHead>Devolver até</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingLoans.length === 0 && (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum empréstimo em aberto.</TableCell></TableRow>
+                  )}
+                  {pendingLoans.map((m) => (
+                    <TableRow key={m.id}>
+                      <TableCell className="font-medium">{itemName(m.stock_item_id)}</TableCell>
+                      <TableCell className="text-right">{m.quantity}</TableCell>
+                      <TableCell>{m.withdrawn_by_name || profileName(m.withdrawn_by_user_id)}</TableCell>
+                      <TableCell>{m.destination || '—'}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDateBR(m.withdrawal_date || m.date)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Badge variant={m.overdue ? 'destructive' : 'secondary'}>
+                          {formatDateBR(m.expected_return_date!)}{m.overdue ? ' • atrasado' : ''}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <Button size="sm" variant="ghost" className="h-8 mr-1" onClick={() => printAuthorization(m)}>
+                          <FileDown className="h-3.5 w-3.5 mr-1" /> Termo
+                        </Button>
+                        {canManage && (
+                          <Button size="sm" variant="outline" className="h-8" onClick={() => openReturn(m)}>
+                            <Undo2 className="h-3.5 w-3.5 mr-1" /> Devolver
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Dialog devolução */}
+      <Dialog open={returnDialog} onOpenChange={setReturnDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Undo2 className="h-5 w-5" /> Registrar devolução
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {returnTarget ? `${returnTarget.quantity}x ${itemName(returnTarget.stock_item_id)}` : ''}
+            </p>
+            <div>
+              <Label>Quem devolveu (funcionário cadastrado)</Label>
+              <Select
+                value={returnForm.returned_by_user_id || 'none'}
+                onValueChange={(v) => {
+                  const id = v === 'none' ? '' : v;
+                  setReturnForm({
+                    ...returnForm,
+                    returned_by_user_id: id,
+                    returned_by_name: id ? profiles.find((p) => p.user_id === id)?.name || returnForm.returned_by_name : returnForm.returned_by_name,
+                  });
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Outra pessoa (digitar nome)</SelectItem>
+                  {profiles.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Nome de quem devolveu *</Label>
+              <Input
+                placeholder="Ex.: CARLOS SILVA"
+                value={returnForm.returned_by_name}
+                onChange={(e) => setReturnForm({ ...returnForm, returned_by_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Observação (estado do material)</Label>
+              <Textarea rows={2} value={returnForm.notes}
+                onChange={(e) => setReturnForm({ ...returnForm, notes: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReturnDialog(false)}>Cancelar</Button>
+            <Button onClick={registerReturn}>Confirmar devolução</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Dialog item */}
       <Dialog open={itemDialog} onOpenChange={setItemDialog}>
@@ -877,10 +1056,19 @@ export default function StockControl() {
               </div>
             </div>
             <div>
-              <Label>Quem retirou (funcionário)</Label>
+              <Label>Quem retirou (funcionário cadastrado)</Label>
               <Select
                 value={withdrawForm.withdrawn_by_user_id || 'none'}
-                onValueChange={(v) => setWithdrawForm({ ...withdrawForm, withdrawn_by_user_id: v === 'none' ? '' : v })}
+                onValueChange={(v) => {
+                  const id = v === 'none' ? '' : v;
+                  setWithdrawForm({
+                    ...withdrawForm,
+                    withdrawn_by_user_id: id,
+                    withdrawn_by_name: id
+                      ? profiles.find((p) => p.user_id === id)?.name || withdrawForm.withdrawn_by_name
+                      : withdrawForm.withdrawn_by_name,
+                  });
+                }}
               >
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
@@ -889,13 +1077,18 @@ export default function StockControl() {
                 </SelectContent>
               </Select>
             </div>
-            {!withdrawForm.withdrawn_by_user_id && (
-              <div>
-                <Label>Nome de quem retirou *</Label>
-                <Input value={withdrawForm.withdrawn_by_name}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, withdrawn_by_name: e.target.value })} />
-              </div>
-            )}
+            <div>
+              <Label>Nome de quem retirou *</Label>
+              <Input
+                placeholder="Ex.: CARLOS SILVA"
+                value={withdrawForm.withdrawn_by_name}
+                onChange={(e) => setWithdrawForm({ ...withdrawForm, withdrawn_by_name: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Pode digitar livremente, mesmo para pessoas sem cadastro no sistema.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Destino / setor</Label>
@@ -913,6 +1106,20 @@ export default function StockControl() {
               <Textarea rows={2} value={withdrawForm.reason}
                 onChange={(e) => setWithdrawForm({ ...withdrawForm, reason: e.target.value })} />
             </div>
+            <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={withdrawForm.generate_term}
+                onChange={(e) => setWithdrawForm({ ...withdrawForm, generate_term: e.target.checked })}
+              />
+              <span className="text-sm">
+                Gerar termo de responsabilidade (PDF)
+                <span className="block text-xs text-muted-foreground">
+                  Documento com logo da Fundação para impressão e assinatura do responsável.
+                </span>
+              </span>
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWithdrawDialog(false)}>Cancelar</Button>
