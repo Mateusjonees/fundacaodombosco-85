@@ -1106,6 +1106,20 @@ export default function StockControl() {
               <Textarea rows={2} value={withdrawForm.reason}
                 onChange={(e) => setWithdrawForm({ ...withdrawForm, reason: e.target.value })} />
             </div>
+            <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={withdrawForm.generate_term}
+                onChange={(e) => setWithdrawForm({ ...withdrawForm, generate_term: e.target.checked })}
+              />
+              <span className="text-sm">
+                Gerar termo de responsabilidade (PDF)
+                <span className="block text-xs text-muted-foreground">
+                  Documento com logo da Fundação para impressão e assinatura do responsável.
+                </span>
+              </span>
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWithdrawDialog(false)}>Cancelar</Button>
