@@ -747,6 +747,15 @@ export default function StockControl() {
                               <Button size="sm" variant="ghost" className="h-8" onClick={() => openEditItem(item)}>
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 text-destructive"
+                                onClick={() => deleteItem(item)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+
                             </>
                           )}
                         </TableCell>
