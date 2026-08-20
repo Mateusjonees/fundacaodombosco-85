@@ -368,10 +368,93 @@ export default function StockControl() {
     setItems((prev) => prev.map((i) => (i.id === targetItem.id ? { ...i, current_quantity: newQty } : i)));
     toast({ title: 'Retirada registrada', description: `${qty}x ${targetItem.name} para ${personName}` });
     setWithdrawDialog(false);
+
+    if (withdrawForm.generate_term) {
+      await printAuthorization(data as Movement, targetItem);
+    }
+  };
+
+  // Termo de responsabilidade (impressão / assinatura)
+  const printAuthorization = async (movement: Movement, item?: StockItem | null) => {
+    const ref = item || items.find((i) => i.id === movement.stock_item_id) || null;
+    try {
+      const pdf = await generateStockAuthorizationPdf({
+        itemName: ref?.name || 'Material',
+        quantity: movement.quantity,
+        unitLabel: ref?.unit,
+        clinicUnitLabel: clinicUnitLabel(movement.clinic_unit || ref?.clinic_unit),
+        responsibleName: movement.withdrawn_by_name || profileName(movement.withdrawn_by_user_id),
+        destination: movement.destination,
+        withdrawalDate: movement.withdrawal_date || movement.date,
+        expectedReturnDate: movement.expected_return_date,
+        reason: movement.reason,
+        issuedBy: profiles.find((p) => p.user_id === user?.id)?.name || '',
+      });
+      pdf.save(`termo-retirada-${(ref?.name || 'material').toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Erro ao gerar termo', description: e?.message });
+    }
   };
 
   // ---------- Devolução (controle de empréstimo) ----------
-  const registerReturn = async (movement: Movement) => {
+  const openReturn = (movement: Movement) => {
+    setReturnTarget(movement);
+    setReturnForm({
+      returned_by_user_id: movement.withdrawn_by_user_id || '',
+      returned_by_name: movement.withdrawn_by_name || '',
+      notes: '',
+    });
+    setReturnDialog(true);
+  };
+
+  const registerReturn = async () => {
+    const movement = returnTarget;
+    if (!movement) return;
+    const returnedBy = returnForm.returned_by_name.trim().toUpperCase();
+    if (!returnedBy) {
+      toast({ variant: 'destructive', title: 'Informe quem está devolvendo o material' });
+      return;
+    }
+    const item = items.find((i) => i.id === movement.stock_item_id);
+    const nowIso = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('stock_movements')
+      .update({ returned_at: nowIso })
+      .eq('id', movement.id);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erro ao registrar devolução', description: error.message });
+      return;
+    }
+
+    let restored: Movement | null = null;
+    if (item) {
+      const previousQty = item.current_quantity || 0;
+      const newQty = previousQty + movement.quantity;
+      const { data: inMov } = await supabase.from('stock_movements').insert([
+        {
+          stock_item_id: item.id,
+          type: 'in',
+          quantity: movement.quantity,
+          unit_cost: item.unit_cost || 0,
+          total_cost: (item.unit_cost || 0) * movement.quantity,
+          date: getTodayLocalISODate(),
+          clinic_unit: item.clinic_unit || 'todas',
+          withdrawn_by_user_id: returnForm.returned_by_user_id || null,
+          withdrawn_by_name: returnedBy,
+          reason: `Devolução de ${returnedBy}`,
+          notes: returnForm.notes || null,
+          previous_quantity: previousQty,
+          new_quantity: newQty,
+          created_by: user?.id,
+          moved_by: user?.id,
+        },
+      ]).select('*').single();
+      restored = (inMov as Movement) || null;
+      await supabase.from('stock_items').update({ current_quantity: newQty }).eq('id', item.id);
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, current_quantity: newQty } : i)));
+    }
+
     const item = items.find((i) => i.id === movement.stock_item_id);
     const nowIso = new Date().toISOString();
 
