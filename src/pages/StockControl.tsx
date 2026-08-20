@@ -877,10 +877,19 @@ export default function StockControl() {
               </div>
             </div>
             <div>
-              <Label>Quem retirou (funcionário)</Label>
+              <Label>Quem retirou (funcionário cadastrado)</Label>
               <Select
                 value={withdrawForm.withdrawn_by_user_id || 'none'}
-                onValueChange={(v) => setWithdrawForm({ ...withdrawForm, withdrawn_by_user_id: v === 'none' ? '' : v })}
+                onValueChange={(v) => {
+                  const id = v === 'none' ? '' : v;
+                  setWithdrawForm({
+                    ...withdrawForm,
+                    withdrawn_by_user_id: id,
+                    withdrawn_by_name: id
+                      ? profiles.find((p) => p.user_id === id)?.name || withdrawForm.withdrawn_by_name
+                      : withdrawForm.withdrawn_by_name,
+                  });
+                }}
               >
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
@@ -889,13 +898,18 @@ export default function StockControl() {
                 </SelectContent>
               </Select>
             </div>
-            {!withdrawForm.withdrawn_by_user_id && (
-              <div>
-                <Label>Nome de quem retirou *</Label>
-                <Input value={withdrawForm.withdrawn_by_name}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, withdrawn_by_name: e.target.value })} />
-              </div>
-            )}
+            <div>
+              <Label>Nome de quem retirou *</Label>
+              <Input
+                placeholder="Ex.: CARLOS SILVA"
+                value={withdrawForm.withdrawn_by_name}
+                onChange={(e) => setWithdrawForm({ ...withdrawForm, withdrawn_by_name: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Pode digitar livremente, mesmo para pessoas sem cadastro no sistema.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Destino / setor</Label>
