@@ -302,12 +302,14 @@ export default function StockControl() {
     setWithdrawForm({
       quantity: 1,
       withdrawn_by_user_id: user?.id || '',
-      withdrawn_by_name: '',
+      withdrawn_by_name: profiles.find((p) => p.user_id === user?.id)?.name || '',
       withdrawal_date: getTodayLocalISODate(),
       destination: item.location || '',
       expected_return_date: '',
       reason: '',
+      generate_term: true,
     });
+
     setWithdrawDialog(true);
   };
 
