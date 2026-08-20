@@ -838,7 +838,116 @@ export default function StockControl() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* EMPRÉSTIMOS EM ABERTO */}
+        <TabsContent value="loans" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4" /> Materiais emprestados aguardando devolução
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead className="text-right">Qtd</TableHead>
+                    <TableHead>Com quem está</TableHead>
+                    <TableHead>Destino</TableHead>
+                    <TableHead>Retirada</TableHead>
+                    <TableHead>Devolver até</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingLoans.length === 0 && (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum empréstimo em aberto.</TableCell></TableRow>
+                  )}
+                  {pendingLoans.map((m) => (
+                    <TableRow key={m.id}>
+                      <TableCell className="font-medium">{itemName(m.stock_item_id)}</TableCell>
+                      <TableCell className="text-right">{m.quantity}</TableCell>
+                      <TableCell>{m.withdrawn_by_name || profileName(m.withdrawn_by_user_id)}</TableCell>
+                      <TableCell>{m.destination || '—'}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDateBR(m.withdrawal_date || m.date)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Badge variant={m.overdue ? 'destructive' : 'secondary'}>
+                          {formatDateBR(m.expected_return_date!)}{m.overdue ? ' • atrasado' : ''}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <Button size="sm" variant="ghost" className="h-8 mr-1" onClick={() => printAuthorization(m)}>
+                          <FileDown className="h-3.5 w-3.5 mr-1" /> Termo
+                        </Button>
+                        {canManage && (
+                          <Button size="sm" variant="outline" className="h-8" onClick={() => openReturn(m)}>
+                            <Undo2 className="h-3.5 w-3.5 mr-1" /> Devolver
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Dialog devolução */}
+      <Dialog open={returnDialog} onOpenChange={setReturnDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Undo2 className="h-5 w-5" /> Registrar devolução
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {returnTarget ? `${returnTarget.quantity}x ${itemName(returnTarget.stock_item_id)}` : ''}
+            </p>
+            <div>
+              <Label>Quem devolveu (funcionário cadastrado)</Label>
+              <Select
+                value={returnForm.returned_by_user_id || 'none'}
+                onValueChange={(v) => {
+                  const id = v === 'none' ? '' : v;
+                  setReturnForm({
+                    ...returnForm,
+                    returned_by_user_id: id,
+                    returned_by_name: id ? profiles.find((p) => p.user_id === id)?.name || returnForm.returned_by_name : returnForm.returned_by_name,
+                  });
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Outra pessoa (digitar nome)</SelectItem>
+                  {profiles.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Nome de quem devolveu *</Label>
+              <Input
+                placeholder="Ex.: CARLOS SILVA"
+                value={returnForm.returned_by_name}
+                onChange={(e) => setReturnForm({ ...returnForm, returned_by_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Observação (estado do material)</Label>
+              <Textarea rows={2} value={returnForm.notes}
+                onChange={(e) => setReturnForm({ ...returnForm, notes: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReturnDialog(false)}>Cancelar</Button>
+            <Button onClick={registerReturn}>Confirmar devolução</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Dialog item */}
       <Dialog open={itemDialog} onOpenChange={setItemDialog}>
