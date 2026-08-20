@@ -133,7 +133,14 @@ export default function StockControl() {
     destination: '',
     expected_return_date: '',
     reason: '',
+    generate_term: true,
   });
+
+  // Devolução
+  const [returnDialog, setReturnDialog] = useState(false);
+  const [returnTarget, setReturnTarget] = useState<Movement | null>(null);
+  const [returnForm, setReturnForm] = useState({ returned_by_user_id: '', returned_by_name: '', notes: '' });
+
 
   const [entryForm, setEntryForm] = useState({
     quantity: 1,
