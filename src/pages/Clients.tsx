@@ -473,7 +473,9 @@ export default function Patients() {
     return filtered;
   }, [clients, statusFilter, unitFilter, ageFilter, professionalFilter, laudoFilter, genderFilter, sortBy, clientAssignments, employees, clientLaudoIds, getAge, isCoordinatorOrDirector, lastAppointments]);
 
-  const handleExportExcel = useCallback(() => {
+  const handleExportExcel = useCallback(async () => {
+    // Carrega a lib de planilha só quando o usuário exporta (bundle mais leve)
+    const XLSX = await import("xlsx");
     const exportData = filteredClients.map(c => ({
       'Nome': c.name, 'CPF': c.cpf || '', 'Telefone': c.phone || '', 'E-mail': c.email || '',
       'Unidade': c.unit === 'madre' ? 'MADRE' : c.unit === 'floresta' ? 'Floresta' : c.unit === 'atendimento_floresta' ? 'Atend. Floresta' : c.unit || '',
