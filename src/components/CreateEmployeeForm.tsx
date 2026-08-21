@@ -17,13 +17,6 @@ interface CreateEmployeeFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  prefilledData?: {
-    name?: string;
-    email?: string;
-    employee_role?: EmployeeRole;
-    unit?: string;
-    phone?: string;
-  };
 }
 
 interface JobPosition {
@@ -46,7 +39,19 @@ const generateTempPassword = () => {
   return password;
 };
 
-export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }: CreateEmployeeFormProps) => {
+const emptyFormData = {
+  name: '',
+  email: '',
+  employee_role: 'staff' as EmployeeRole,
+  phone: '',
+  department: '',
+  unit: '',
+  job_position_id: '',
+  professional_license: '',
+  professional_rqe: ''
+};
+
+export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmployeeFormProps) => {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const { userRole } = useRolePermissions();
@@ -61,41 +66,17 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
     tempPassword: string;
   } | null>(null);
   
-  const [formData, setFormData] = useState({
-    name: prefilledData?.name || '',
-    email: prefilledData?.email || '',
-    employee_role: (prefilledData?.employee_role || 'staff') as EmployeeRole,
-    phone: '',
-    department: '',
-    unit: prefilledData?.unit || '',
-    job_position_id: '',
-    professional_license: '',
-    professional_rqe: ''
-  });
+  const [formData, setFormData] = useState(emptyFormData);
 
   const needsMedicalLicense = requiresMedicalLicense(formData.employee_role);
 
   useEffect(() => {
     if (isOpen) {
       loadJobPositions();
-      if (!prefilledData) {
-        // Sempre iniciar em branco: evita herdar dados de outro usuário
-        resetForm();
-      } else {
-        setFormData({
-          name: prefilledData.name || '',
-          email: prefilledData.email || '',
-          employee_role: (prefilledData.employee_role || 'staff') as EmployeeRole,
-          phone: prefilledData.phone || '',
-          department: '',
-          unit: prefilledData.unit || '',
-          job_position_id: '',
-          professional_license: '',
-          professional_rqe: ''
-        });
-      }
+      // Cada abertura começa com um cadastro novo e independente.
+      resetForm();
     }
-  }, [isOpen, prefilledData]);
+  }, [isOpen]);
 
   const loadJobPositions = async () => {
     try {
@@ -117,17 +98,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
   };
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      email: '',
-      employee_role: 'staff',
-      phone: '',
-      department: '',
-      unit: '',
-      job_position_id: '',
-      professional_license: '',
-      professional_rqe: ''
-    });
+    setFormData({ ...emptyFormData });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,9 +131,9 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
       // Usar edge function que cria usuário via API Admin (não faz login automático)
       const { data, error } = await supabase.functions.invoke('create-users', {
         body: {
-          email: formData.email,
+          email: formData.email.trim().toLowerCase(),
           password: tempPassword,
-          name: formData.name,
+          name: formData.name.trim().toUpperCase(),
           employee_role: formData.employee_role,
           phone: formData.phone || null,
           department: formData.department || null,
@@ -254,8 +225,8 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
 
         // Guardar dados para o dialog de senha temporária
         setCreatedEmployee({
-          name: formData.name,
-          email: formData.email,
+          name: formData.name.trim().toUpperCase(),
+          email: formData.email.trim().toLowerCase(),
           tempPassword
         });
         
@@ -307,11 +278,11 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <RequiredLabel htmlFor="name" required>Nome Completo</RequiredLabel>
               <Input
                 id="name"
-                name="employee-name"
+                name="new-employee-full-name"
                 type="text"
-                autoComplete="off"
+                autoComplete="new-password"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange('name', e.target.value.toUpperCase())}
                 placeholder="Digite o nome completo"
                 required
               />
@@ -321,9 +292,9 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess, prefilledData }
               <RequiredLabel htmlFor="email" required>Email</RequiredLabel>
               <Input
                 id="email"
-                name="employee-email"
+                name="new-employee-contact-email"
                 type="email"
-                autoComplete="off"
+                autoComplete="new-password"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="email@exemplo.com"

@@ -574,8 +574,8 @@ export default function UserManagement() {
           {canManageUsers && <Button variant="outline" size="sm" onClick={() => {
           setIsCreateEmployeeDialogOpen(true);
         }}>
-              <Crown className="h-4 w-4 mr-2" />
-              Criar Diretor
+              <UserPlus className="h-4 w-4 mr-2" />
+              Criar Usuário
             </Button>}
           {canManageRoles && <Dialog open={isPositionDialogOpen} onOpenChange={setIsPositionDialogOpen}>
               <DialogTrigger asChild>
@@ -1275,16 +1275,16 @@ export default function UserManagement() {
       </Dialog>
 
       {/* Dialog de Criação de Funcionário */}
-      <CreateEmployeeForm isOpen={isCreateEmployeeDialogOpen} onClose={() => setIsCreateEmployeeDialogOpen(false)} onSuccess={() => {
-      loadUsers();
-      setIsCreateEmployeeDialogOpen(false);
-    }} prefilledData={{
-      name: 'Elvimar Peixoto',
-      email: 'institucional@fundacaodombosco.org',
-      phone: '31985642292',
-      employee_role: 'director',
-      unit: 'madre'
-    }} />
+      {isCreateEmployeeDialogOpen && (
+        <CreateEmployeeForm
+          isOpen
+          onClose={() => setIsCreateEmployeeDialogOpen(false)}
+          onSuccess={() => {
+            // Atualiza somente a lista, sem recarregar a página.
+            void loadUsers();
+          }}
+        />
+      )}
 
       {/* Dialog de Detalhes da Auditoria */}
       <Dialog open={isAuditDetailsDialogOpen} onOpenChange={setIsAuditDetailsDialogOpen}>
