@@ -55,30 +55,34 @@ export function PatientCommandAutocomplete({
 
   // Load client name when value is set externally (e.g., from URL params)
   useEffect(() => {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const loadSelectedClient = async () => {
-      if (value && !displayValue) {
-        try {
-          const { data } = await supabase
-            .from('clients')
-            .select('id, name, cpf, phone, email, unit')
-            .eq('id', value)
-            .single();
-          
-          if (data) {
-            setDisplayValue(data.name);
-            setClients(prev => {
-              const exists = prev.some(c => c.id === data.id);
-              return exists ? prev : [...prev, data];
-            });
-          }
-        } catch (error) {
-          console.error('Erro ao carregar paciente selecionado:', error);
+      // Ignora valores vazios/inválidos para evitar erro de UUID no Supabase
+      if (!value || !UUID_RE.test(value.trim()) || displayValue) return;
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('id, name, cpf, phone, email, unit')
+          .eq('id', value.trim())
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setDisplayValue(data.name);
+          setClients(prev => {
+            const exists = prev.some(c => c.id === data.id);
+            return exists ? prev : [...prev, data];
+          });
         }
+      } catch (error) {
+        console.error('Erro ao carregar paciente selecionado:', error);
       }
     };
-    
+
     loadSelectedClient();
   }, [value]);
+
 
   // Update display value only when a selection is made (value changes)
   useEffect(() => {

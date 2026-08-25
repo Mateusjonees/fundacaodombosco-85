@@ -130,36 +130,41 @@ export const useClients = (filters?: ClientFilters) => {
  * Hook para carregar detalhes completos de um cliente
  */
 export const useClientDetails = (clientId: string | null) => {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const validId = clientId && UUID_RE.test(clientId.trim()) ? clientId.trim() : null;
+
   return useQuery({
-    queryKey: ['client-details', clientId],
+    queryKey: ['client-details', validId],
     queryFn: async () => {
-      if (!clientId) return null;
+      if (!validId) return null;
 
       if (navigator.onLine) {
         try {
           const { data, error } = await supabase
             .from('clients')
             .select(DETAIL_COLUMNS)
-            .eq('id', clientId)
-            .single();
+            .eq('id', validId)
+            .maybeSingle();
           if (error) throw error;
-
-          // Salva detalhes no cache
-          await offlineDB.put(STORES.clients, data).catch(() => {});
-          return data;
+          if (data) {
+            // Salva detalhes no cache
+            await offlineDB.put(STORES.clients, data).catch(() => {});
+            return data;
+          }
         } catch (err) {
           console.warn('[useClientDetails] Erro online, tentando cache:', err);
         }
       }
 
       // Fallback offline
-      const cached = await offlineDB.get<any>(STORES.clients, clientId);
+      const cached = await offlineDB.get<any>(STORES.clients, validId);
       return cached || null;
     },
-    enabled: !!clientId,
+    enabled: !!validId,
     staleTime: 30000,
   });
 };
+
 
 /**
  * Hook para contagem de clientes
