@@ -1181,6 +1181,7 @@ export default function Financial() {
           {!isCoordinatorOnly && <TabsTrigger value="projection">Projeção</TabsTrigger>}
           {!isCoordinatorOnly && <TabsTrigger value="default">Inadimplência</TabsTrigger>}
           {!isCoordinatorOnly && <TabsTrigger value="costcenter">Centro Custo</TabsTrigger>}
+          {!isCoordinatorOnly && <TabsTrigger value="monthly">Relatório Mensal</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
