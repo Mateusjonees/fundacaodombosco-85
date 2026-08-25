@@ -23,6 +23,7 @@ import { FinancialProjection } from '@/components/FinancialProjection';
 import { DefaultManagementPanel } from '@/components/DefaultManagementPanel';
 import { CostCenterAnalysis } from '@/components/CostCenterAnalysis';
 import { PaymentReceiptGenerator } from '@/components/PaymentReceiptGenerator';
+import { MonthlyFinancialReport } from '@/components/MonthlyFinancialReport';
 
 interface FinancialRecord {
   id: string;
