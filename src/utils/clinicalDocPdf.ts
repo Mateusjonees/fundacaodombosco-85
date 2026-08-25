@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import prescriptionTimbrado from '@/assets/prescription-timbrado-full.jpg';
 import fundacaoLogo from '@/assets/fundacao-dom-bosco-saude-logo.png';
 import { formatDateBR } from '@/lib/utils';
+import { printPdfDoc } from '@/utils/printPdf';
 
 export type ClinicalDocType = 'encaminhamento' | 'exame' | 'atestado' | 'comparecimento';
 
