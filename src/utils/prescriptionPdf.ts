@@ -3,6 +3,7 @@ import { Medication, Prescription } from '@/hooks/usePrescriptions';
 import prescriptionTimbrado from '@/assets/prescription-timbrado-full.jpg';
 import fundacaoLogo from '@/assets/fundacao-dom-bosco-saude-logo.png';
 import { formatDateBR, formatNowBR } from '@/lib/utils';
+import { printPdfDoc } from '@/utils/printPdf';
 
 interface Client {
   name: string;
