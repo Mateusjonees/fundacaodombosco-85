@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import prescriptionTimbrado from '@/assets/prescription-timbrado-full.jpg';
 import fundacaoLogo from '@/assets/fundacao-dom-bosco-saude-logo.png';
 import { formatDateBR } from '@/lib/utils';
+import { printPdfDoc } from '@/utils/printPdf';
 
 export type ClinicalDocType = 'encaminhamento' | 'exame' | 'atestado' | 'comparecimento';
 
@@ -178,28 +179,6 @@ export const printClinicalDocPdf = async (
   professionalCredentials?: string
 ) => {
   const pdf = await generateClinicalDocPdf(docData, client, professionalName, professionalCredentials);
-  const url = URL.createObjectURL(pdf.output('blob'));
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = 'none';
-  iframe.src = url;
-  iframe.onload = () => {
-    setTimeout(() => {
-      try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      } catch {
-        window.open(url);
-      }
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        URL.revokeObjectURL(url);
-      }, 1500);
-    }, 400);
-  };
-  document.body.appendChild(iframe);
+  await printPdfDoc(pdf, `${docData.doc_type}_${client.name.replace(/\s+/g, '_')}_${docData.doc_date}.pdf`);
 };
+
