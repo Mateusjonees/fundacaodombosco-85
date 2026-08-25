@@ -18,8 +18,14 @@ export const formatDateBR = (dateString: string | null | undefined): string => {
     return `${day}/${month}/${year}`;
   }
   
-  // Para datas com timestamp (YYYY-MM-DDTHH:mm:ss), extrair apenas a data
+  // Timestamps com fuso (Z ou +/-hh:mm) precisam ser convertidos para Brasília
   if (dateString.includes('T')) {
+    if (/Z$|[+-]\d{2}:?\d{2}$/.test(dateString)) {
+      const d = new Date(dateString);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+      }
+    }
     const datePart = dateString.split('T')[0];
     const [year, month, day] = datePart.split('-');
     return `${day}/${month}/${year}`;
