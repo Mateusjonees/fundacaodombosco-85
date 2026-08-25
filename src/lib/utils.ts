@@ -61,15 +61,12 @@ export const formatNowBR = (withSeconds = false): string => {
 };
 
 /**
- * Retorna a data de hoje no formato YYYY-MM-DD usando o fuso local.
- * Evita o bug de 1 dia a menos ao usar toISOString() (UTC).
+ * Retorna a data de hoje (YYYY-MM-DD) sempre no fuso de Brasília.
+ * Evita o bug de 1 dia a mais/menos por causa de UTC ou fuso do aparelho.
  */
 export const getTodayLocalISODate = (): string => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  // en-CA gera diretamente no formato YYYY-MM-DD
+  return new Date().toLocaleDateString('en-CA', { timeZone: BR_TIMEZONE });
 };
 
 /**
