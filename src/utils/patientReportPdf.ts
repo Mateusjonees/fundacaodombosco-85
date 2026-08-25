@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { formatDateBR, formatDateTimeBR, formatNowBR } from '@/lib/utils';
 
 // Geração nativa (texto vetorial) do relatório do paciente.
 // Evita html2canvas: nada de letras cortadas entre páginas e texto sempre nítido.
@@ -27,17 +28,11 @@ const brl = (v: number) => `R$ ${(Number(v) || 0).toFixed(2).replace('.', ',')}`
 
 const fmtDate = (d?: string) => {
   if (!d) return 'Não informado';
-  const date = new Date(d.length === 10 ? `${d}T12:00:00` : d);
-  if (isNaN(date.getTime())) return 'Não informado';
-  return date.toLocaleDateString('pt-BR');
+  const out = formatDateBR(d);
+  return out === '-' ? 'Não informado' : out;
 };
 
-const fmtDateTime = (d?: string) => {
-  if (!d) return '-';
-  const date = new Date(d);
-  if (isNaN(date.getTime())) return '-';
-  return `${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-};
+const fmtDateTime = (d?: string) => formatDateTimeBR(d);
 
 const unitLabel = (u?: string) =>
   u === 'madre' ? 'MADRE' : u === 'floresta' ? 'Floresta' : u === 'atendimento_floresta' ? 'Atendimento Floresta' : u || 'Não informado';
@@ -183,7 +178,7 @@ export async function generatePatientReportPdf(data: PatientReportData): Promise
   pdf.setFontSize(8.5);
   pdf.setTextColor(107, 114, 128);
   pdf.text(
-    `Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+    `Gerado em ${formatNowBR(true)}`,
     PAGE_W / 2,
     y,
     { align: 'center' }

@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import { Medication, Prescription } from '@/hooks/usePrescriptions';
 import prescriptionTimbrado from '@/assets/prescription-timbrado-full.jpg';
 import fundacaoLogo from '@/assets/fundacao-dom-bosco-saude-logo.png';
-import { formatDateBR } from '@/lib/utils';
+import { formatDateBR, formatNowBR } from '@/lib/utils';
 
 interface Client {
   name: string;
@@ -182,7 +182,7 @@ export const generatePrescriptionPdf = async (
     doc.setFont('helvetica', 'bold');
     doc.text('Data da Prescrição:', margin, yPosition);
     doc.setFont('helvetica', 'normal');
-    doc.text(new Date(prescription.prescription_date).toLocaleDateString('pt-BR'), margin + 38, yPosition);
+    doc.text(formatDateBR(prescription.prescription_date), margin + 38, yPosition);
     yPosition += lineHeight;
   }
 
@@ -339,7 +339,7 @@ export const generatePrescriptionPdf = async (
   if (prescription.show_print_date === true) {
     yPosition += 8;
     doc.setFontSize(9);
-    doc.text(`Data de Impressão: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, yPosition, { align: 'center' });
+    doc.text(`Data de Impressão: ${formatNowBR()}`, pageWidth / 2, yPosition, { align: 'center' });
   }
 
   return doc;
