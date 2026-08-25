@@ -367,85 +367,15 @@ export const printPrescriptionPdf = async (
     letterheadInsetMm: 5,
     letterheadOffsetYmm: 0,
   });
-  
-  const pdfBlob = doc.output('blob');
-  const url = URL.createObjectURL(pdfBlob);
-  
-  // Usar iframe invisível para impressão - evita que usuário use Ctrl+P na tela errada
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = 'none';
-  iframe.src = url;
-  
-  iframe.onload = () => {
-    setTimeout(() => {
-      try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      } catch (e) {
-        // Fallback: abrir em nova janela se iframe não funcionar
-        const printWindow = window.open(url);
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.focus();
-            setTimeout(() => printWindow.print(), 500);
-          };
-        }
-      }
-      // Limpar iframe após impressão
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        URL.revokeObjectURL(url);
-      }, 1000);
-    }, 500);
-  };
-  
-  document.body.appendChild(iframe);
+  await printPdfDoc(doc, `receita_${client.name.replace(/\s+/g, '_')}_${prescription.prescription_date}.pdf`);
 };
 
 // Imprimir página em branco para uso com matriz pré-impressa
 export const printBlankPrescriptionPdf = async () => {
   const doc = await generateBlankPrescriptionPdf();
-  
-  const pdfBlob = doc.output('blob');
-  const url = URL.createObjectURL(pdfBlob);
-  
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = 'none';
-  iframe.src = url;
-  
-  iframe.onload = () => {
-    setTimeout(() => {
-      try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      } catch (e) {
-        const printWindow = window.open(url);
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.focus();
-            setTimeout(() => printWindow.print(), 500);
-          };
-        }
-      }
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        URL.revokeObjectURL(url);
-      }, 1000);
-    }, 500);
-  };
-  
-  document.body.appendChild(iframe);
+  await printPdfDoc(doc, 'receita_em_branco.pdf');
 };
+
 
 // Interface para Laudo
 interface LaudoData {
@@ -615,42 +545,9 @@ export const printLaudoPdf = async (
   professionalLicense?: string
 ) => {
   const doc = await generateLaudoPdf(laudo, client, professionalName, professionalLicense);
-  
-  const pdfBlob = doc.output('blob');
-  const url = URL.createObjectURL(pdfBlob);
-  
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = 'none';
-  iframe.src = url;
-  
-  iframe.onload = () => {
-    setTimeout(() => {
-      try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      } catch (e) {
-        const printWindow = window.open(url);
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.focus();
-            setTimeout(() => printWindow.print(), 500);
-          };
-        }
-      }
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        URL.revokeObjectURL(url);
-      }, 1000);
-    }, 500);
-  };
-  
-  document.body.appendChild(iframe);
+  await printPdfDoc(doc, `laudo_${client.name.replace(/\s+/g, '_')}_${laudo.laudo_date}.pdf`);
 };
+
 
 // Download laudo PDF
 export const downloadLaudoPdf = async (
@@ -686,39 +583,6 @@ export const generateBlankLaudoPdf = async (): Promise<jsPDF> => {
 
 export const printBlankLaudoPdf = async () => {
   const doc = await generateBlankLaudoPdf();
-  
-  const pdfBlob = doc.output('blob');
-  const url = URL.createObjectURL(pdfBlob);
-  
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = 'none';
-  iframe.src = url;
-  
-  iframe.onload = () => {
-    setTimeout(() => {
-      try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      } catch (e) {
-        const printWindow = window.open(url);
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.focus();
-            setTimeout(() => printWindow.print(), 500);
-          };
-        }
-      }
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        URL.revokeObjectURL(url);
-      }, 1000);
-    }, 500);
-  };
-  
-  document.body.appendChild(iframe);
+  await printPdfDoc(doc, 'laudo_em_branco.pdf');
 };
+
