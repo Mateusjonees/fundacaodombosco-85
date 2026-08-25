@@ -23,6 +23,7 @@ import { FinancialProjection } from '@/components/FinancialProjection';
 import { DefaultManagementPanel } from '@/components/DefaultManagementPanel';
 import { CostCenterAnalysis } from '@/components/CostCenterAnalysis';
 import { PaymentReceiptGenerator } from '@/components/PaymentReceiptGenerator';
+import { MonthlyFinancialReport } from '@/components/MonthlyFinancialReport';
 
 interface FinancialRecord {
   id: string;
@@ -1181,6 +1182,7 @@ export default function Financial() {
           {!isCoordinatorOnly && <TabsTrigger value="projection">Projeção</TabsTrigger>}
           {!isCoordinatorOnly && <TabsTrigger value="default">Inadimplência</TabsTrigger>}
           {!isCoordinatorOnly && <TabsTrigger value="costcenter">Centro Custo</TabsTrigger>}
+          {!isCoordinatorOnly && <TabsTrigger value="monthly">Relatório Mensal</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
@@ -1808,7 +1810,12 @@ export default function Financial() {
         <TabsContent value="costcenter">
           <CostCenterAnalysis />
         </TabsContent>
+
+        <TabsContent value="monthly">
+          <MonthlyFinancialReport unitFilter={unitFilter} />
+        </TabsContent>
       </Tabs>
+
 
       <Card>
         <CardHeader>
