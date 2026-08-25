@@ -18,8 +18,14 @@ export const formatDateBR = (dateString: string | null | undefined): string => {
     return `${day}/${month}/${year}`;
   }
   
-  // Para datas com timestamp (YYYY-MM-DDTHH:mm:ss), extrair apenas a data
+  // Timestamps com fuso (Z ou +/-hh:mm) precisam ser convertidos para Brasília
   if (dateString.includes('T')) {
+    if (/Z$|[+-]\d{2}:?\d{2}$/.test(dateString)) {
+      const d = new Date(dateString);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+      }
+    }
     const datePart = dateString.split('T')[0];
     const [year, month, day] = datePart.split('-');
     return `${day}/${month}/${year}`;
@@ -29,16 +35,44 @@ export const formatDateBR = (dateString: string | null | undefined): string => {
   return dateString;
 };
 
+/** Fuso oficial do sistema (Brasília) — usado em todos os documentos gerados */
+export const BR_TIMEZONE = 'America/Sao_Paulo';
+
 /**
- * Retorna a data de hoje no formato YYYY-MM-DD usando o fuso local.
- * Evita o bug de 1 dia a menos ao usar toISOString() (UTC).
+ * Formata data + hora sempre no fuso de Brasília (UTC-3).
+ * Evita horários deslocados quando o dispositivo/servidor está em outro fuso.
+ */
+export const formatDateTimeBR = (value: string | Date | null | undefined): string => {
+  if (!value) return '-';
+  // Datas puras (YYYY-MM-DD) não possuem hora: mostra só a data
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return formatDateBR(value);
+  const date = value instanceof Date ? value : new Date(value);
+  if (isNaN(date.getTime())) return '-';
+  const d = date.toLocaleDateString('pt-BR', { timeZone: BR_TIMEZONE });
+  const t = date.toLocaleTimeString('pt-BR', { timeZone: BR_TIMEZONE, hour: '2-digit', minute: '2-digit' });
+  return `${d} ${t}`;
+};
+
+/** Data/hora atual formatada em Brasília (para carimbo "Gerado em ...") */
+export const formatNowBR = (withSeconds = false): string => {
+  const now = new Date();
+  const d = now.toLocaleDateString('pt-BR', { timeZone: BR_TIMEZONE });
+  const t = now.toLocaleTimeString('pt-BR', {
+    timeZone: BR_TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    ...(withSeconds ? { second: '2-digit' } : {}),
+  });
+  return `${d} às ${t}`;
+};
+
+/**
+ * Retorna a data de hoje (YYYY-MM-DD) sempre no fuso de Brasília.
+ * Evita o bug de 1 dia a mais/menos por causa de UTC ou fuso do aparelho.
  */
 export const getTodayLocalISODate = (): string => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  // en-CA gera diretamente no formato YYYY-MM-DD
+  return new Date().toLocaleDateString('en-CA', { timeZone: BR_TIMEZONE });
 };
 
 /**
