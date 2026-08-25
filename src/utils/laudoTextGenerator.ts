@@ -1,3 +1,4 @@
+import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
 // Mapeamento de testes → domínios cognitivos
 const DOMAIN_MAP: Record<string, string> = {
   // Atenção
@@ -246,7 +247,7 @@ export const generateTestDescription = (test: TestDataForLaudo): string => {
 const generateTestTable = (tests: TestDataForLaudo[]): string => {
   const lines: string[] = ['TESTES APLICADOS:', ''];
   for (const test of tests) {
-    const date = new Date(test.applied_at).toLocaleDateString('pt-BR');
+    const date = formatDateBR(test.applied_at);
     lines.push(`• ${getTestFullName(test.test_code, test.test_name)} — ${date}`);
   }
   return lines.join('\n');
@@ -264,13 +265,13 @@ export const generateLaudoDraft = (
   const age = clientBirthDate 
     ? Math.floor((Date.now() - new Date(clientBirthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : '';
-  const birthStr = clientBirthDate ? new Date(clientBirthDate).toLocaleDateString('pt-BR') : '';
+  const birthStr = clientBirthDate ? formatDateBR(clientBirthDate) : '';
   
   sections.push('LAUDO DE AVALIAÇÃO NEUROPSICOLÓGICA\n');
   sections.push(`IDENTIFICAÇÃO:`);
   sections.push(`Nome: ${clientName}`);
   if (birthStr) sections.push(`Data de Nascimento: ${birthStr} (${age} anos)`);
-  sections.push(`Data da Avaliação: ${new Date().toLocaleDateString('pt-BR')}`);
+  sections.push(`Data da Avaliação: ${formatDateBR(getTodayLocalISODate())}`);
   sections.push('');
 
   // Demanda
