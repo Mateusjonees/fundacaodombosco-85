@@ -1809,7 +1809,12 @@ export default function Financial() {
         <TabsContent value="costcenter">
           <CostCenterAnalysis />
         </TabsContent>
+
+        <TabsContent value="monthly">
+          <MonthlyFinancialReport unitFilter={unitFilter} />
+        </TabsContent>
       </Tabs>
+
 
       <Card>
         <CardHeader>
