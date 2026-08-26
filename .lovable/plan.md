@@ -1,52 +1,44 @@
-# Unificar Prontuário e Evolutiva no fluxo da Agenda + Paciente
+# Diagnóstico do sistema — o que dá para melhorar
 
-## Contexto
+Levantamento feito sobre o código atual (370 arquivos em `src`, ~107 mil linhas) e sobre o banco.
 
-Hoje existem dois fluxos paralelos que confundem os profissionais:
+## 1. Segurança (prioridade alta)
 
-- **Agenda → Finalizar Atendimento** (`CompleteAttendanceDialog`): grava em `attendance_reports` o campo "Evolução do Atendimento".
-- **Prontuário** (`/prontuarios`): grava em `medical_records` separadamente. Profissionais estavam escrevendo lá manualmente.
-- **Ficha do paciente → aba "Atendimentos"** (`ServiceHistory`): já junta `medical_records` + `attendance_reports`, mas a aba se chama "Atendimentos", o que esconde a função clínica.
+- O linter do banco aponta **126 avisos** de funções `SECURITY DEFINER` que podem ser executadas por qualquer visitante (anônimo) ou por qualquer usuário logado. A maioria dessas funções é de uso interno (checagem de papel, triggers, relatórios) e deveria ter o `EXECUTE` revogado de `anon`/`authenticated`.
+- **Proteção contra senhas vazadas está desativada** no Supabase Auth — ativar é uma configuração simples e aumenta bastante a segurança de contas.
+- **Postgres com patches de segurança pendentes** — upgrade recomendado.
+- O "lembrar senha" guarda a senha no navegador de forma reversível. Vale migrar para sessão persistente do Supabase (refresh token), que é o padrão seguro e continua entrando automático.
 
-O objetivo é unificar: ao finalizar pela agenda, a evolutiva já vira **prontuário oficial**, e na ficha do paciente o histórico fica em uma única aba chamada **Evolutiva**.
+## 2. Performance percebida
 
-## O que muda
+- Arquivos gigantes que carregam de uma vez: `Reports.tsx` (3.171 linhas), `CompleteAttendanceDialog.tsx` (2.234), `PatientNeuroTestHistory.tsx` (2.107), `ClientDetailsView.tsx` (1.896), `Financial.tsx` (1.866). Quebrar em subcomponentes e carregar abas sob demanda reduz o tempo de abertura dessas telas.
+- Listas longas (pacientes, agenda, estoque) renderizam todos os itens; virtualização deixaria a rolagem fluida em celular.
+- Cache do React Query já existe, mas várias telas refazem as mesmas consultas com chaves diferentes — unificar as chaves elimina requisições repetidas.
 
-### 1. `src/components/CompleteAttendanceDialog.tsx`
-- Renomear o label do textarea atual `Evolução do Atendimento` para **`Prontuário / Evolutiva Clínica`** (mantém o mesmo state `sessionNotes`, mantém obrigatório).
-- Atualizar o `placeholder` para reforçar que é o registro clínico oficial.
-- Dentro do `handleComplete`, **após** o `insert` em `attendance_reports`, fazer um `insert` adicional em `public.medical_records` com:
-  - `client_id`, `employee_id` do schedule
-  - `session_date` = data do schedule
-  - `session_type` = `attendanceType` (Consulta / Consulta Nutricional)
-  - `session_duration` = `durationMinutes`
-  - `progress_notes` = `sessionNotes`
-  - `attachments` = `attachmentsData`
-  - `status` = `'completed'`
-- Erro do insert em `medical_records` não pode bloquear a finalização (try/catch isolado com toast informativo) — `attendance_reports` continua sendo a fonte de verdade do agendamento.
+## 3. Limpeza de código
 
-### 2. `src/components/ClientDetailsView.tsx` (aba do paciente)
-- Trocar o label da `TabsTrigger value="history"`:
-  - `Atendimentos` → `Evolutiva`
-  - `Atend.` (mobile) → `Evol.`
-- Nenhuma mudança no `ServiceHistory` em si — ele já busca de `medical_records`, `attendance_reports`, `schedules` e `employee_reports`, então passará a mostrar a entrada criada no passo 1 automaticamente, ao lado das anteriores (anamnese continua na própria aba "Anamnese", e a evolutiva agrega tudo do histórico clínico).
+- Existem **13 arquivos `.js` soltos na raiz** (`auth.js`, `clients.js`, `financial.js`, `schedule.js`, `stock.js`, `ui.js`, etc.) que são resquício da versão antiga e não fazem parte do app React. Confundem manutenção e devem ser removidos ou arquivados.
+- **42 arquivos com `console.log`** ativos em produção — trocar por log condicional (`debugLog`).
+- Uso frequente de `any` nas telas maiores (Financeiro, Agenda, Relatórios), o que esconde erros que só aparecem em runtime.
 
-### 3. `src/pages/MedicalRecords.tsx` (opcional, leve)
-- Sem mudança estrutural — os prontuários criados pela agenda passarão a aparecer aqui também, pois vão para a mesma tabela `medical_records`.
+## 4. Qualidade e confiabilidade
 
-## O que NÃO muda
+- Só existe **1 arquivo de teste** (`example.test.ts`). Vale cobrir com testes as regras críticas: cálculo financeiro mensal, percentis dos testes neuro, permissões por papel e geração de PDF.
+- Não há tela de erro amigável global (error boundary) — hoje um erro de render pode deixar a tela em branco.
 
-- Schema do banco (tabelas, RLS, grants já permitem o insert pelo profissional autenticado).
-- Componentes neuro, anamnese, materiais, validação financeira.
-- Aba "Anamnese", "Receita", "Laudos", "Financeiro" da ficha do paciente.
-- Hooks `useMedicalRecords`, `useCreateMedicalRecord` (continuam sendo usados pela página Prontuário).
+## 5. Experiência do usuário
 
-## Risco
+- Padronizar estados de carregamento com *skeletons* (hoje varia entre spinner, texto e tela vazia).
+- Mensagens de erro do Supabase às vezes aparecem cruas para o usuário; traduzir para linguagem clara.
+- Acessibilidade: rótulos em ícones-botão e foco visível em formulários longos.
 
-- Duplicação de registro: o mesmo atendimento aparece em `attendance_reports` (fluxo financeiro/agenda) e em `medical_records` (fluxo clínico). Isso é intencional — `ServiceHistory` já tem deduplicação por `schedule_id`, então na visualização não vai duplicar.
+## Ordem sugerida de execução
 
-## Ordem de execução
+1. Segurança do banco (revogar EXECUTE, ativar proteção de senha, upgrade do Postgres).
+2. Limpeza dos `.js` legados e dos `console.log`.
+3. Quebra dos 5 arquivos maiores + carregamento sob demanda das abas pesadas.
+4. Virtualização das listas longas.
+5. Error boundary global e padronização de loading/erros.
+6. Testes das regras críticas.
 
-1. Editar `CompleteAttendanceDialog.tsx` (label + insert em `medical_records`).
-2. Editar `ClientDetailsView.tsx` (renomear aba).
-3. Smoke check: finalizar um atendimento de teste e verificar se aparece tanto em `/prontuarios` quanto na aba "Evolutiva" do paciente.
+Diga qual bloco você quer que eu faça primeiro (ou "todos") que eu monto o plano detalhado de execução.
