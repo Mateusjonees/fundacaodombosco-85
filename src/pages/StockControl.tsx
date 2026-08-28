@@ -568,6 +568,104 @@ export default function StockControl() {
       .sort((a, b) => (a.expected_return_date || '').localeCompare(b.expected_return_date || ''));
   }, [movements]);
 
+  // ---------- Alertas (mínimo, validade e empréstimo atrasado) ----------
+  const alerts = useMemo(() => {
+    const today = getTodayLocalISODate();
+    const limit = new Date();
+    limit.setDate(limit.getDate() + 30);
+    const limitIso = limit.toISOString().slice(0, 10);
+
+    const lowStock = items.filter((i) => (i.current_quantity ?? 0) <= (i.minimum_quantity ?? 0));
+    const expired = items.filter((i) => i.expiry_date && i.expiry_date < today);
+    const expiring = items.filter((i) => i.expiry_date && i.expiry_date >= today && i.expiry_date <= limitIso);
+    const overdueLoans = pendingLoans.filter((m) => m.overdue);
+    return { lowStock, expired, expiring, overdueLoans, total: lowStock.length + expired.length + expiring.length + overdueLoans.length };
+  }, [items, pendingLoans]);
+
+  // ---------- Relatório mensal de consumo ----------
+  const [reportMonth, setReportMonth] = useState(getTodayLocalISODate().slice(0, 7));
+  const [reportUnit, setReportUnit] = useState('all');
+
+  const monthlyReport = useMemo(() => {
+    const outs = movements.filter((m) => {
+      if (m.type !== 'out') return false;
+      if (!(m.withdrawal_date || m.date || '').startsWith(reportMonth)) return false;
+      if (reportUnit !== 'all' && (m.clinic_unit || 'todas') !== reportUnit) return false;
+      return true;
+    });
+
+    const group = (keyFn: (m: Movement) => string) => {
+      const map = new Map<string, { key: string; quantity: number; cost: number; count: number }>();
+      outs.forEach((m) => {
+        const key = keyFn(m) || '—';
+        const entry = map.get(key) || { key, quantity: 0, cost: 0, count: 0 };
+        entry.quantity += m.quantity || 0;
+        entry.cost += Number(m.total_cost || (m.unit_cost || 0) * (m.quantity || 0));
+        entry.count += 1;
+        map.set(key, entry);
+      });
+      return Array.from(map.values()).sort((a, b) => b.cost - a.cost);
+    };
+
+    const byItem = group((m) => itemName(m.stock_item_id));
+    const byCategory = group((m) => categoryLabel(items.find((i) => i.id === m.stock_item_id)?.category || 'outros'));
+    const byUnit = group((m) => clinicUnitLabel(m.clinic_unit));
+    const byPerson = group((m) => m.withdrawn_by_name || profileName(m.withdrawn_by_user_id));
+    const totalCost = outs.reduce((s, m) => s + Number(m.total_cost || (m.unit_cost || 0) * (m.quantity || 0)), 0);
+    const totalQty = outs.reduce((s, m) => s + (m.quantity || 0), 0);
+
+    return { outs, byItem, byCategory, byUnit, byPerson, totalCost, totalQty };
+  }, [movements, items, profiles, reportMonth, reportUnit]);
+
+  const monthLabel = (ym: string) => {
+    const [y, m] = ym.split('-');
+    return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  };
+
+  const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const exportReportPdf = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text('Relatório Mensal de Consumo - Estoque', 14, 15);
+    doc.setFontSize(9);
+    doc.text(`Período: ${monthLabel(reportMonth)} • Unidade: ${reportUnit === 'all' ? 'Todas' : clinicUnitLabel(reportUnit)}`, 14, 21);
+    doc.text(`Total consumido: ${monthlyReport.totalQty} itens • ${brl(monthlyReport.totalCost)}`, 14, 26);
+
+    let y = 32;
+    const section = (title: string, rows: Array<{ key: string; quantity: number; cost: number; count: number }>) => {
+      autoTable(doc, {
+        startY: y,
+        head: [[title, 'Qtd', 'Movim.', 'Valor']],
+        body: rows.map((r) => [r.key, String(r.quantity), String(r.count), brl(r.cost)]),
+        styles: { fontSize: 8 },
+      });
+      // @ts-expect-error lastAutoTable é adicionado pelo plugin
+      y = doc.lastAutoTable.finalY + 8;
+    };
+    section('Por item', monthlyReport.byItem);
+    section('Por categoria', monthlyReport.byCategory);
+    section('Por unidade', monthlyReport.byUnit);
+    section('Por responsável', monthlyReport.byPerson);
+    doc.save(`consumo-estoque-${reportMonth}.pdf`);
+  };
+
+  const exportReportCsv = () => {
+    const lines = [['Grupo', 'Descrição', 'Quantidade', 'Movimentações', 'Valor (R$)']];
+    const push = (grupo: string, rows: Array<{ key: string; quantity: number; cost: number; count: number }>) =>
+      rows.forEach((r) => lines.push([grupo, r.key, String(r.quantity), String(r.count), r.cost.toFixed(2)]));
+    push('Item', monthlyReport.byItem);
+    push('Categoria', monthlyReport.byCategory);
+    push('Unidade', monthlyReport.byUnit);
+    push('Responsável', monthlyReport.byPerson);
+    const csv = lines.map((l) => l.map((c) => `"${c.replace(/"/g, '""')}"`).join(';')).join('\n');
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `consumo-estoque-${reportMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
 
   const exportPdf = () => {
