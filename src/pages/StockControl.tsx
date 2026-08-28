@@ -999,7 +999,203 @@ export default function StockControl() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ALERTAS */}
+        <TabsContent value="alerts" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" /> Itens abaixo do mínimo ({alerts.lowStock.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Unidade</TableHead>
+                    <TableHead className="text-right">Atual</TableHead>
+                    <TableHead className="text-right">Mínimo</TableHead>
+                    <TableHead className="text-right">Repor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {alerts.lowStock.length === 0 && (
+                    <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Nenhum item abaixo do mínimo.</TableCell></TableRow>
+                  )}
+                  {alerts.lowStock.map((i) => (
+                    <TableRow key={i.id}>
+                      <TableCell className="font-medium">{i.name}</TableCell>
+                      <TableCell><Badge variant="outline">{clinicUnitLabel(i.clinic_unit)}</Badge></TableCell>
+                      <TableCell className="text-right">{i.current_quantity}</TableCell>
+                      <TableCell className="text-right">{i.minimum_quantity}</TableCell>
+                      <TableCell className="text-right font-medium text-destructive">
+                        {Math.max(0, (i.minimum_quantity || 0) - (i.current_quantity || 0))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" /> Validade ({alerts.expired.length} vencidos • {alerts.expiring.length} vencendo em 30 dias)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Unidade</TableHead>
+                    <TableHead className="text-right">Qtd</TableHead>
+                    <TableHead>Validade</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {alerts.expired.length + alerts.expiring.length === 0 && (
+                    <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Nenhum item com validade próxima.</TableCell></TableRow>
+                  )}
+                  {[...alerts.expired, ...alerts.expiring].map((i) => {
+                    const vencido = (i.expiry_date || '') < getTodayLocalISODate();
+                    return (
+                      <TableRow key={i.id}>
+                        <TableCell className="font-medium">{i.name}</TableCell>
+                        <TableCell><Badge variant="outline">{clinicUnitLabel(i.clinic_unit)}</Badge></TableCell>
+                        <TableCell className="text-right">{i.current_quantity}</TableCell>
+                        <TableCell>
+                          <Badge variant={vencido ? 'destructive' : 'secondary'}>
+                            {formatDateBR(i.expiry_date!)}{vencido ? ' • vencido' : ''}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4" /> Empréstimos atrasados ({alerts.overdueLoans.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead className="text-right">Qtd</TableHead>
+                    <TableHead>Com quem está</TableHead>
+                    <TableHead>Devolver até</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {alerts.overdueLoans.length === 0 && (
+                    <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Nenhum empréstimo atrasado.</TableCell></TableRow>
+                  )}
+                  {alerts.overdueLoans.map((m) => (
+                    <TableRow key={m.id}>
+                      <TableCell className="font-medium">{itemName(m.stock_item_id)}</TableCell>
+                      <TableCell className="text-right">{m.quantity}</TableCell>
+                      <TableCell>{m.withdrawn_by_name || profileName(m.withdrawn_by_user_id)}</TableCell>
+                      <TableCell>
+                        <Badge variant="destructive">{formatDateBR(m.expected_return_date!)}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* RELATÓRIO MENSAL DE CONSUMO */}
+        <TabsContent value="report" className="space-y-4">
+          <div className="flex flex-wrap gap-2 items-center">
+            <Input
+              type="month"
+              className="h-9 w-[180px]"
+              value={reportMonth}
+              onChange={(e) => setReportMonth(e.target.value)}
+            />
+            <Select value={reportUnit} onValueChange={setReportUnit}>
+              <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="Unidade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as unidades</SelectItem>
+                {CLINIC_UNITS.filter((u) => u.value !== 'todas').map((u) => (
+                  <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" className="h-9" onClick={exportReportPdf}>
+              <FileDown className="h-4 w-4 mr-2" /> PDF
+            </Button>
+            <Button variant="outline" className="h-9" onClick={exportReportCsv}>
+              <FileDown className="h-4 w-4 mr-2" /> CSV
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <Card><CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Movimentações de saída</p>
+              <p className="text-2xl font-semibold">{monthlyReport.outs.length}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Itens consumidos</p>
+              <p className="text-2xl font-semibold">{monthlyReport.totalQty}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Custo total</p>
+              <p className="text-2xl font-semibold">{brl(monthlyReport.totalCost)}</p>
+            </CardContent></Card>
+          </div>
+
+          {[
+            { title: 'Consumo por item', rows: monthlyReport.byItem },
+            { title: 'Consumo por categoria', rows: monthlyReport.byCategory },
+            { title: 'Consumo por unidade', rows: monthlyReport.byUnit },
+            { title: 'Consumo por responsável', rows: monthlyReport.byPerson },
+          ].map((block) => (
+            <Card key={block.title}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{block.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead className="text-right">Qtd</TableHead>
+                      <TableHead className="text-right">Movim.</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {block.rows.length === 0 && (
+                      <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Sem consumo no período.</TableCell></TableRow>
+                    )}
+                    {block.rows.map((r) => (
+                      <TableRow key={r.key}>
+                        <TableCell className="font-medium">{r.key}</TableCell>
+                        <TableCell className="text-right">{r.quantity}</TableCell>
+                        <TableCell className="text-right">{r.count}</TableCell>
+                        <TableCell className="text-right">{brl(r.cost)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
       </Tabs>
+
 
       {/* Dialog devolução */}
       <Dialog open={returnDialog} onOpenChange={setReturnDialog}>
