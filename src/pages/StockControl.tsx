@@ -1019,6 +1019,12 @@ export default function StockControl() {
               </div>
             </div>
             <div>
+              <Label>Validade (opcional)</Label>
+              <Input type="date" value={itemForm.expiry_date}
+                onChange={(e) => setItemForm({ ...itemForm, expiry_date: e.target.value })} />
+            </div>
+
+            <div>
               <Label>Descrição</Label>
               <Textarea rows={2} value={itemForm.description}
                 onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} />
