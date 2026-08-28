@@ -101,7 +101,9 @@ const emptyItem = {
   unit_cost: 0,
   supplier: '',
   location: '',
+  expiry_date: '',
 };
+
 
 export default function StockControl() {
   const { user } = useAuth();
