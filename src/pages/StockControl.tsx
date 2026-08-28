@@ -66,6 +66,7 @@ interface StockItem {
   unit_cost: number;
   supplier?: string | null;
   location?: string | null;
+  expiry_date?: string | null;
   is_active?: boolean | null;
 }
 
@@ -258,6 +259,7 @@ export default function StockControl() {
       unit_cost: item.unit_cost || 0,
       supplier: item.supplier || '',
       location: item.location || '',
+      expiry_date: item.expiry_date || '',
     });
     setItemDialog(true);
   };
@@ -267,7 +269,11 @@ export default function StockControl() {
       toast({ variant: 'destructive', title: 'Informe o nome do item' });
       return;
     }
-    const payload = { ...itemForm, name: itemForm.name.toUpperCase() };
+    const payload = {
+      ...itemForm,
+      name: itemForm.name.toUpperCase(),
+      expiry_date: itemForm.expiry_date || null,
+    };
     const { data, error } = editingId
       ? await supabase.from('stock_items').update(payload).eq('id', editingId).select('*').single()
       : await supabase.from('stock_items').insert([{ ...payload, created_by: user?.id }]).select('*').single();
