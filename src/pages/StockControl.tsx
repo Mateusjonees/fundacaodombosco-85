@@ -758,6 +758,11 @@ export default function StockControl() {
           <TabsTrigger value="loans">
             Empréstimos {pendingLoans.length > 0 && `(${pendingLoans.length})`}
           </TabsTrigger>
+          <TabsTrigger value="alerts" className={alerts.total > 0 ? 'text-destructive' : ''}>
+            Alertas {alerts.total > 0 && `(${alerts.total})`}
+          </TabsTrigger>
+          <TabsTrigger value="report">Relatório mensal</TabsTrigger>
+
         </TabsList>
 
         {/* ITENS */}
