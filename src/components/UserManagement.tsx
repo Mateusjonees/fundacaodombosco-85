@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { getEdgeFunctionError } from '@/utils/edgeError';
 import { usePermissions } from '@/hooks/usePermissions';
 import { UserPlus, Users, Edit, Trash2, Shield } from 'lucide-react';
 
@@ -166,7 +167,7 @@ export default function UserManagement() {
         toast({
           variant: "destructive",
           title: "Erro ao criar funcionário",
-          description: error.message || "Erro ao criar funcionário.",
+          description: await getEdgeFunctionError(error, "Erro ao criar funcionário."),
         });
         return;
       }
