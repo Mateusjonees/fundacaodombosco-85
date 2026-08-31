@@ -147,7 +147,7 @@ export const CreateEmployeeForm = ({ isOpen, onClose, onSuccess }: CreateEmploye
         toast({
           variant: "destructive",
           title: "Erro ao criar funcionário",
-          description: error.message || "Erro ao criar funcionário.",
+          description: await getEdgeFunctionError(error, "Erro ao criar funcionário."),
         });
         return;
       }
