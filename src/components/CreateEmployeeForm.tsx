@@ -12,6 +12,7 @@ import { useRolePermissions, ROLE_LABELS, EmployeeRole } from '@/hooks/useRolePe
 import { TempPasswordDialog } from './TempPasswordDialog';
 import { UserPlus, KeyRound } from 'lucide-react';
 import { requiresMedicalLicense } from '@/utils/professionalCredentials';
+import { getEdgeFunctionError } from '@/utils/edgeError';
 
 interface CreateEmployeeFormProps {
   isOpen: boolean;
