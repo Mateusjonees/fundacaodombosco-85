@@ -5,6 +5,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -20,128 +28,136 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({ error: 'Sessão não encontrada. Faça login novamente.' }, 401);
     }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
+
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({ error: 'Sessão inválida ou expirada. Faça login novamente.' }, 401);
     }
 
+    // Autorização: diretor pelo perfil OU admin na tabela de papéis
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('employee_role')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (!profile || profile.employee_role !== 'director') {
-      return new Response(
-        JSON.stringify({ error: 'Only directors can create users' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    let allowed = profile?.employee_role === 'director';
+    if (!allowed) {
+      const { data: roles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      allowed = !!roles?.some((r: { role: string }) => r.role === 'admin');
     }
 
-    const body = await req.json();
+    if (!allowed) {
+      return json({ error: 'Apenas diretores podem criar usuários.' }, 403);
+    }
+
+    const body = await req.json().catch(() => null);
+    if (!body) return json({ error: 'Dados inválidos na requisição.' }, 400);
     console.log('Request body:', { ...body, password: '***' });
-    
-    const { email, password, name, employee_role, phone, department, unit, units, document_cpf } = body;
+
+    const {
+      password, name, employee_role, phone, department, unit, units, document_cpf,
+      professional_license, professional_rqe,
+    } = body;
+    const email = String(body.email ?? '').trim().toLowerCase();
 
     if (!email || !password || !name || !employee_role) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: email, password, name, employee_role' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({ error: 'Preencha e-mail, senha, nome e cargo.' }, 400);
+    }
+    if (String(password).length < 6) {
+      return json({ error: 'A senha deve ter pelo menos 6 caracteres.' }, 400);
     }
 
-    // Check if email already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const emailExists = existingUsers?.users?.some(u => u.email?.toLowerCase() === email.toLowerCase());
-    if (emailExists) {
-      return new Response(
-        JSON.stringify({ error: 'Este e-mail já está cadastrado no sistema. Use outro e-mail.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
+    // Criação do usuário no Auth (a checagem de duplicidade é feita pelo próprio Auth)
     const { data: createdUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, employee_role, phone, department }
+      user_metadata: { name, employee_role, phone, department },
     });
 
-    if (createError) {
-      console.error('Error creating user:', createError.message);
-      const friendlyMsg = createError.message.includes('email')
-        ? 'Este e-mail já está cadastrado ou é inválido.'
-        : createError.message;
-      return new Response(
-        JSON.stringify({ error: friendlyMsg }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    if (createError || !createdUser?.user) {
+      const msg = createError?.message ?? 'Falha ao criar usuário.';
+      console.error('Error creating user:', msg);
+      const duplicated = /already|exists|registered|duplicate/i.test(msg);
+      return json(
+        { error: duplicated ? 'Este e-mail já está cadastrado no sistema.' : msg },
+        400
       );
     }
 
-    if (!createdUser.user) {
-      return new Response(
-        JSON.stringify({ error: 'Failed to create user' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const newUserId = createdUser.user.id;
+    console.log('User created:', newUserId);
+
+    const profileData = {
+      user_id: newUserId,
+      email,
+      name,
+      phone: phone || null,
+      department: department || null,
+      employee_role,
+      unit: unit || null,
+      units: units || null,
+      document_cpf: document_cpf || null,
+      professional_license: professional_license || null,
+      professional_rqe: professional_rqe || null,
+      is_active: true,
+      must_change_password: true,
+    };
+
+    // O trigger handle_new_user pode ainda não ter criado o perfil: aguarda e depois faz upsert
+    let profileError: string | null = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const { data: existing } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('user_id', newUserId)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabaseAdmin
+          .from('profiles')
+          .update(profileData)
+          .eq('user_id', newUserId);
+        profileError = error?.message ?? null;
+        if (!profileError) break;
+      } else if (attempt === 3) {
+        const { error } = await supabaseAdmin.from('profiles').insert(profileData);
+        profileError = error?.message ?? null;
+        if (!profileError) break;
+      }
+      await sleep(400);
     }
 
-    console.log('User created:', createdUser.user.id);
+    if (profileError) {
+      console.error('Error updating profile:', profileError);
+      await supabaseAdmin.auth.admin.deleteUser(newUserId);
+      return json({ error: `Falha ao salvar o perfil: ${profileError}` }, 500);
+    }
 
-    const { error: profileUpdateError } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        name,
-        phone: phone || null,
-        department: department || null,
-        employee_role,
-        unit: unit || null,
-        units: units || null,
-        document_cpf: document_cpf || null,
-        is_active: true,
-        must_change_password: true
-      })
-      .eq('user_id', createdUser.user.id);
-
-    if (profileUpdateError) {
-      console.error('Error updating profile:', profileUpdateError.message);
-      await supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
-      return new Response(
-        JSON.stringify({ error: `Failed to update profile: ${profileUpdateError.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Mantém user_roles em sincronia para diretores (acesso administrativo)
+    if (employee_role === 'director') {
+      await supabaseAdmin
+        .from('user_roles')
+        .upsert({ user_id: newUserId, role: 'admin' }, { onConflict: 'user_id,role' })
+        .then(({ error }) => error && console.log('Warn user_roles:', error.message));
     }
 
     console.log('Profile updated successfully');
 
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        user: {
-          id: createdUser.user.id,
-          email: createdUser.user.email,
-          name,
-          employee_role
-        }
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    return json({
+      success: true,
+      user: { id: newUserId, email: createdUser.user.email, name, employee_role },
+    });
   } catch (error) {
     console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return json({ error: (error as Error)?.message ?? 'Erro interno no servidor.' }, 500);
   }
 });
