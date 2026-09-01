@@ -61,7 +61,7 @@ if (!isPreviewHost && !isInIframe) {
         } catch (e) {
           console.warn('[Auto-update] erro ao limpar:', e);
         }
-        window.location.reload();
+        requestSafeReload('auto-update');
       })();
     } else if (!STORED_BUILD) {
       localStorage.setItem('app_build_version', CURRENT_BUILD);
