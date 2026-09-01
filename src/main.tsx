@@ -81,7 +81,7 @@ if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (reloadedAfterControllerChange) return;
     reloadedAfterControllerChange = true;
-    window.location.reload();
+    requestSafeReload('controllerchange');
   });
 
   const performHardHeal = async (reason: string) => {
