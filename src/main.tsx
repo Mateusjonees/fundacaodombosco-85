@@ -102,7 +102,7 @@ if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
     } catch (e) {
       console.warn('[SW heal] erro ao limpar caches:', e);
     }
-    window.location.reload();
+    requestSafeReload(`sw-heal:${reason}`);
   };
 
   // Watchdog principal: se em 12s o app não estiver utilizável, cura.
