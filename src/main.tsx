@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { requestSafeReload } from './utils/safeReload';
 
 // Marcador global de boot bem-sucedido. Quando o app realmente fica utilizável
 // (login renderizado OU dashboard renderizado), setamos window.__APP_READY__ = true.
