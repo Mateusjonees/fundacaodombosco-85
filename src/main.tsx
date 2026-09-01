@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { requestSafeReload } from './utils/safeReload';
 
 // Marcador global de boot bem-sucedido. Quando o app realmente fica utilizável
 // (login renderizado OU dashboard renderizado), setamos window.__APP_READY__ = true.
@@ -61,7 +62,7 @@ if (!isPreviewHost && !isInIframe) {
         } catch (e) {
           console.warn('[Auto-update] erro ao limpar:', e);
         }
-        window.location.reload();
+        requestSafeReload('auto-update');
       })();
     } else if (!STORED_BUILD) {
       localStorage.setItem('app_build_version', CURRENT_BUILD);
@@ -80,7 +81,7 @@ if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (reloadedAfterControllerChange) return;
     reloadedAfterControllerChange = true;
-    window.location.reload();
+    requestSafeReload('controllerchange');
   });
 
   const performHardHeal = async (reason: string) => {
@@ -101,7 +102,7 @@ if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
     } catch (e) {
       console.warn('[SW heal] erro ao limpar caches:', e);
     }
-    window.location.reload();
+    requestSafeReload(`sw-heal:${reason}`);
   };
 
   // Watchdog principal: se em 12s o app não estiver utilizável, cura.
