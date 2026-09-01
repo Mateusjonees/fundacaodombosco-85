@@ -1,4 +1,5 @@
 // Utilitário para controle de cache e atualização automática
+import { requestSafeReload } from './safeReload';
 
 const APP_VERSION_KEY = 'app_version';
 const BUILD_TIMESTAMP = import.meta.env.VITE_BUILD_TIMESTAMP || Date.now().toString();
@@ -51,11 +52,11 @@ export const clearAppCache = async (): Promise<void> => {
       console.log('[Cache] Service Workers removidos');
     }
 
-    // Força reload sem cache
-    window.location.reload();
+    // Força reload sem cache (só quando o usuário não estiver digitando)
+    requestSafeReload('clear-cache');
   } catch (error) {
     console.error('[Cache] Erro ao limpar cache:', error);
-    window.location.reload();
+    requestSafeReload('clear-cache-error');
   }
 };
 
