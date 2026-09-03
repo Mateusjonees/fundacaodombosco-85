@@ -184,7 +184,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
           className="mt-4 flex items-center gap-3 rounded-xl border border-white/15 bg-white/5 backdrop-blur-sm px-4 py-3 hover:bg-white/10 transition-colors group"
         >
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/80 text-white">
-            <MonitorDown className="h-4.5 w-4.5 h-5 w-5" />
+            <MonitorDown className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0 text-left">
             <p className="text-xs font-semibold text-white">Baixar app para Windows</p>
