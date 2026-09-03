@@ -6,6 +6,8 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Build desktop (Electron) usa caminhos relativos por causa do file://
+  base: process.env.ELECTRON_BUILD ? './' : '/',
   define: {
     'import.meta.env.VITE_BUILD_TIMESTAMP': JSON.stringify(Date.now().toString()),
   },
