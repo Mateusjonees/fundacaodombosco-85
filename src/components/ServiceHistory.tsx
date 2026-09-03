@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { offlineDB } from '@/utils/offlineDB';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -109,8 +110,19 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
     loadServiceHistory();
   }, [clientId]);
 
+  const historyCacheKey = `serviceHistory_${clientId}`;
+
   const loadServiceHistory = async () => {
     setLoading(true);
+
+    // Offline: usar snapshot local do histórico
+    if (!navigator.onLine) {
+      const cached = await offlineDB.get<any>('metadata', historyCacheKey).catch(() => undefined);
+      setServiceRecords(cached?.records || []);
+      setLoading(false);
+      return;
+    }
+
     try {
       const records: ServiceRecord[] = [];
 
@@ -367,13 +379,20 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
       // Ordenar todos os registros por data (mais recente primeiro)
       clinicalRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setServiceRecords(clinicalRecords);
+      // Guarda snapshot para consulta offline
+      await offlineDB.put('metadata', { key: historyCacheKey, records: clinicalRecords }).catch(() => {});
     } catch (error) {
       console.error('Error loading service history:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível carregar o histórico de serviços."
-      });
+      const cached = await offlineDB.get<any>('metadata', historyCacheKey).catch(() => undefined);
+      if (cached?.records?.length) {
+        setServiceRecords(cached.records);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível carregar o histórico de serviços."
+        });
+      }
     } finally {
       setLoading(false);
     }
