@@ -84,7 +84,7 @@ export const offlineDB = {
     });
   },
 
-  async get<T>(storeName: StoreName, key: string): Promise<T | undefined> {
+  async get<T>(storeName: StoreName, key: IDBValidKey): Promise<T | undefined> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readonly');
@@ -118,7 +118,7 @@ export const offlineDB = {
     });
   },
 
-  async delete(storeName: StoreName, key: string): Promise<void> {
+  async delete(storeName: StoreName, key: IDBValidKey): Promise<void> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
