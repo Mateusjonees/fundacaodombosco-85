@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History, CheckCircle, Info } from 'lucide-react';
+import { offlineInsert, offlineInsertMany, offlineUpdate, offlineUpsert, isOffline } from '@/utils/offlineWrite';
 import { getTodayLocalISODate, calculateAgeBR, formatDateBR } from '@/lib/utils';
 import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
@@ -701,20 +702,16 @@ export default function CompleteAttendanceDialog({
       const attendanceType = isNutritionist ? 'Consulta Nutricional' : 'Consulta';
 
       // Atualizar schedule
-      const { error: scheduleError } = await supabase.from('schedules').update({
+      await offlineUpdate('schedules', schedule.id, {
         status: scheduleStatus,
         session_notes: sessionNotes,
         materials_used: materialsUsed,
         completed_at: now,
         completed_by: user.id
-      }).eq('id', schedule.id);
+      });
 
-      if (scheduleError) throw scheduleError;
-
-      // Criar attendance_report
-      const { data: attendanceReport } = await supabase
-        .from('attendance_reports')
-        .insert({
+      // Criar attendance_report (funciona offline: fica na fila de sincronização)
+      const attendanceReport = await offlineInsert<{ id: string }>('attendance_reports', {
           schedule_id: schedule.id,
           client_id: schedule.client_id,
           employee_id: schedule.employee_id,
@@ -735,13 +732,11 @@ export default function CompleteAttendanceDialog({
           validated_at: isAtendimentoFloresta ? now : null,
           validated_by: isAtendimentoFloresta ? user.id : null,
           validated_by_name: isAtendimentoFloresta ? completedByName : null
-        })
-        .select('id')
-        .maybeSingle();
+        });
 
       // Criar entrada no prontuário (medical_records) — espelha a evolutiva
       try {
-        await supabase.from('medical_records').insert({
+        await offlineInsert('medical_records', {
           client_id: schedule.client_id,
           employee_id: schedule.employee_id,
           session_date: schedule.start_time?.slice(0, 10) || getTodayLocalISODate(),
@@ -1581,11 +1576,11 @@ export default function CompleteAttendanceDialog({
 
         if (testsToSave.length > 0) {
           console.log('[Neuro] Salvando', testsToSave.length, 'testes:', testsToSave.map(t => t.test_code));
-          const { error: neuroError } = await supabase.from('neuro_test_results').insert(testsToSave);
-          if (neuroError) {
-            console.error('[Neuro] Erro ao salvar testes:', neuroError);
-          } else {
+          try {
+            await offlineInsertMany('neuro_test_results', testsToSave);
             console.log('[Neuro] Testes salvos com sucesso');
+          } catch (neuroError) {
+            console.error('[Neuro] Erro ao salvar testes:', neuroError);
           }
         } else {
           console.log('[Neuro] Nenhum teste para salvar. selectedTests:', selectedTests);
@@ -1593,7 +1588,7 @@ export default function CompleteAttendanceDialog({
       }
 
       // Upsert employee_report
-      await supabase.from('employee_reports').upsert({
+      await offlineUpsert('employee_reports', {
         employee_id: schedule.employee_id,
         client_id: schedule.client_id,
         schedule_id: schedule.id,
@@ -1607,12 +1602,10 @@ export default function CompleteAttendanceDialog({
         validated_at: isAtendimentoFloresta ? now : null,
         validated_by: isAtendimentoFloresta ? user.id : null,
         validated_by_name: isAtendimentoFloresta ? completedByName : null
-      }, {
-        onConflict: 'schedule_id'
-      });
+      }, 'schedule_id');
 
       // Se for Atendimento Floresta, processar automaticamente com valores do agendamento
-      if (isAtendimentoFloresta && attendanceReport?.id) {
+      if (isAtendimentoFloresta && attendanceReport?.id && !isOffline()) {
         // Buscar valores financeiros definidos pelo coordenador no agendamento
         const { data: scheduleData } = await supabase
           .from('schedules')
@@ -1635,20 +1628,24 @@ export default function CompleteAttendanceDialog({
       }
 
       // Atualizar cliente
-      await supabase.from('clients').update({
+      await offlineUpdate('clients', schedule.client_id, {
         last_session_date: getTodayLocalISODate(),
         last_session_type: 'Consulta',
         last_session_notes: sessionNotes,
         updated_at: now
-      }).eq('id', schedule.client_id);
+      });
 
       // Sucesso!
       setLoading(false);
       toast({
-        title: isAtendimentoFloresta ? "Atendimento Finalizado!" : "Atendimento Enviado!",
-        description: isAtendimentoFloresta 
-          ? "Atendimento concluído e registrado no histórico do paciente." 
-          : "Atendimento enviado para revisão do coordenador."
+        title: isOffline()
+          ? "Salvo offline"
+          : (isAtendimentoFloresta ? "Atendimento Finalizado!" : "Atendimento Enviado!"),
+        description: isOffline()
+          ? "Sem conexão: a evolução foi salva no dispositivo e será enviada automaticamente quando a internet voltar."
+          : (isAtendimentoFloresta
+            ? "Atendimento concluído e registrado no histórico do paciente."
+            : "Atendimento enviado para revisão do coordenador.")
       });
 
       onClose();
