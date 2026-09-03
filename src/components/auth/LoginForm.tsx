@@ -181,23 +181,23 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
         <a
           href={appWindowsAsset.url}
           download="FundacaoDomBosco-Windows-x64.zip"
-          className="mt-4 flex items-center gap-3 rounded-xl border border-white/15 bg-white/5 backdrop-blur-sm px-4 py-3 hover:bg-white/10 transition-colors group"
+          className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm hover:bg-accent/50 transition-colors group"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/80 text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <MonitorDown className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0 text-left">
-            <p className="text-xs font-semibold text-white">Baixar app para Windows</p>
-            <p className="text-[11px] text-white/50">Versão desktop · .zip (160 MB)</p>
+            <p className="text-xs font-semibold text-foreground">Baixar app para Windows</p>
+            <p className="text-[11px] text-muted-foreground">Versão desktop · .zip (160 MB)</p>
           </div>
-          <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white/70 transition-colors" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
         </a>
 
         {/* Install App Link */}
         <div className="text-center mt-4">
           <a
             href="/install"
-            className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" />
@@ -210,14 +210,14 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
         <div className="text-center mt-2">
           <a
             href="/limpar-cache"
-            className="block text-[11px] text-white/50 hover:text-white/80 transition-colors"
+            className="block text-[11px] text-muted-foreground hover:text-foreground transition-colors"
             title="Use se o sistema travar em 'Carregando...'"
           >
             Aplicativo instalado e não entra? Atualizar sistema
           </a>
         </div>
 
-        <p className="text-center text-xs text-white/30 mt-2">
+        <p className="text-center text-xs text-muted-foreground/70 mt-2">
           Fundação Dom Bosco · Clínica
         </p>
         </div>
