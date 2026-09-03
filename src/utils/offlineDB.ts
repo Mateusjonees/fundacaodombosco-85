@@ -4,13 +4,14 @@
  */
 
 const DB_NAME = 'clinica_offline';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Stores disponíveis
 const STORES = {
   clients: 'clients',
   schedules: 'schedules',
   medicalRecords: 'medical_records',
+  profiles: 'profiles',
   dashboardStats: 'dashboard_stats',
   syncQueue: 'sync_queue',
   metadata: 'metadata',
@@ -39,6 +40,9 @@ const openDB = (): Promise<IDBDatabase> => {
       }
       if (!db.objectStoreNames.contains(STORES.medicalRecords)) {
         db.createObjectStore(STORES.medicalRecords, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORES.profiles)) {
+        db.createObjectStore(STORES.profiles, { keyPath: 'user_id' });
       }
       if (!db.objectStoreNames.contains(STORES.dashboardStats)) {
         db.createObjectStore(STORES.dashboardStats, { keyPath: 'key' });
@@ -84,7 +88,7 @@ export const offlineDB = {
     });
   },
 
-  async get<T>(storeName: StoreName, key: string): Promise<T | undefined> {
+  async get<T>(storeName: StoreName, key: IDBValidKey): Promise<T | undefined> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readonly');
@@ -118,7 +122,7 @@ export const offlineDB = {
     });
   },
 
-  async delete(storeName: StoreName, key: string): Promise<void> {
+  async delete(storeName: StoreName, key: IDBValidKey): Promise<void> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');

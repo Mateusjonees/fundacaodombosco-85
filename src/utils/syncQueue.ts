@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SyncOperation {
   id?: number;
   table: string;
-  operation: 'insert' | 'update' | 'delete';
+  operation: 'insert' | 'update' | 'delete' | 'upsert';
   data: any;
   key?: string; // ID do registro para update/delete
   status: 'pending' | 'syncing' | 'failed' | 'done';
@@ -23,7 +23,7 @@ export interface SyncOperation {
  */
 export const addToSyncQueue = async (
   table: string,
-  operation: 'insert' | 'update' | 'delete',
+  operation: 'insert' | 'update' | 'delete' | 'upsert',
   data: any,
   key?: string
 ): Promise<void> => {
@@ -70,6 +70,14 @@ const executeSyncOperation = async (op: SyncOperation): Promise<boolean> => {
       case 'update': {
         if (!op.key) throw new Error('Key required for update');
         const { error } = await supabase.from(op.table as any).update(op.data).eq('id', op.key);
+        if (error) throw error;
+        break;
+      }
+      case 'upsert': {
+        const { row, onConflict } = op.data || {};
+        const { error } = await supabase
+          .from(op.table as any)
+          .upsert(row, onConflict ? { onConflict } : undefined);
         if (error) throw error;
         break;
       }
@@ -129,7 +137,7 @@ export const processSyncQueue = async (): Promise<{ synced: number; failed: numb
     if (success) {
       // Remove da fila após sucesso
       if (op.id !== undefined) {
-        await offlineDB.delete(STORES.syncQueue, String(op.id));
+        await offlineDB.delete(STORES.syncQueue, op.id);
       }
       synced++;
     } else {
@@ -149,7 +157,7 @@ export const clearCompletedOperations = async (): Promise<void> => {
   const completed = all.filter(op => op.status === 'done');
   for (const op of completed) {
     if (op.id !== undefined) {
-      await offlineDB.delete(STORES.syncQueue, String(op.id));
+      await offlineDB.delete(STORES.syncQueue, op.id);
     }
   }
 };
