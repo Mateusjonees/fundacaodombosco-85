@@ -4,13 +4,14 @@
  */
 
 const DB_NAME = 'clinica_offline';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Stores disponíveis
 const STORES = {
   clients: 'clients',
   schedules: 'schedules',
   medicalRecords: 'medical_records',
+  profiles: 'profiles',
   dashboardStats: 'dashboard_stats',
   syncQueue: 'sync_queue',
   metadata: 'metadata',
@@ -39,6 +40,9 @@ const openDB = (): Promise<IDBDatabase> => {
       }
       if (!db.objectStoreNames.contains(STORES.medicalRecords)) {
         db.createObjectStore(STORES.medicalRecords, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORES.profiles)) {
+        db.createObjectStore(STORES.profiles, { keyPath: 'user_id' });
       }
       if (!db.objectStoreNames.contains(STORES.dashboardStats)) {
         db.createObjectStore(STORES.dashboardStats, { keyPath: 'key' });

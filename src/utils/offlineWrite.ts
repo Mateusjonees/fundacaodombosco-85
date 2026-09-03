@@ -103,3 +103,25 @@ export const offlineUpsert = async (
   }
   await addToSyncQueue(table, 'upsert', { row: data, onConflict });
 };
+
+/**
+ * Busca perfil (nome/e-mail/unidades) com cache offline por user_id.
+ */
+export const getProfileCached = async (userId: string): Promise<any | null> => {
+  if (!userId) return null;
+
+  if (!isOffline()) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_id, name, email, unit, units, employee_role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (data) {
+      await offlineDB.put(STORES.profiles, data).catch(() => {});
+      return data;
+    }
+  }
+
+  const cached = await offlineDB.get<any>(STORES.profiles, userId).catch(() => undefined);
+  return cached || null;
+};

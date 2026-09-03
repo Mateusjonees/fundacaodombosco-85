@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History, CheckCircle, Info } from 'lucide-react';
-import { offlineInsert, offlineInsertMany, offlineUpdate, offlineUpsert, isOffline } from '@/utils/offlineWrite';
+import { offlineInsert, offlineInsertMany, offlineUpdate, offlineUpsert, isOffline, getProfileCached } from '@/utils/offlineWrite';
 import { getTodayLocalISODate, calculateAgeBR, formatDateBR } from '@/lib/utils';
 import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
@@ -650,11 +650,7 @@ export default function CompleteAttendanceDialog({
       const isNeuroUnit = clientUnit === 'floresta' || isNeuroSchedule;
 
       // Buscar profissional (inclui unidades para auto-validação)
-      const { data: professionalProfile } = await supabase
-        .from('profiles')
-        .select('name, email, unit, units, employee_role')
-        .eq('user_id', schedule.employee_id)
-        .maybeSingle();
+      const professionalProfile = await getProfileCached(schedule.employee_id);
 
       // Auto-validar se o paciente OU o profissional pertence à unidade atendimento_floresta
       const professionalUnits: string[] = [
@@ -671,11 +667,7 @@ export default function CompleteAttendanceDialog({
 
 
       // Buscar usuário que está concluindo
-      const { data: completedByProfile } = await supabase
-        .from('profiles')
-        .select('name, email')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const completedByProfile = await getProfileCached(user.id);
 
       const completedByName = completedByProfile?.name || completedByProfile?.email || user.email || 'Usuário';
 
