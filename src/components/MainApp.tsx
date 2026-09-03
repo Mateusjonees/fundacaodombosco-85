@@ -1,6 +1,9 @@
 import { lazy, Suspense, useState, memo, useMemo, useCallback } from 'react';
 import { AIAssistant } from '@/components/AIAssistant';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// No app desktop (Electron) o conteúdo é carregado via file://, onde só o HashRouter funciona.
+const Router = typeof window !== 'undefined' && window.location.protocol === 'file:' ? HashRouter : BrowserRouter;
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Button } from '@/components/ui/button';
