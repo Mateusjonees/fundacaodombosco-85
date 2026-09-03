@@ -217,7 +217,7 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
           </a>
         </div>
 
-        <p className="text-center text-xs text-white/30 mt-2">
+        <p className="text-center text-xs text-muted-foreground/70 mt-2">
           Fundação Dom Bosco · Clínica
         </p>
         </div>
