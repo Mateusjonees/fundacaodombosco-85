@@ -193,33 +193,6 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
           <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
         </a>
 
-        {/* Install App Link */}
-        <div className="text-center mt-4">
-          <a
-            href="/install"
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" />
-            </svg>
-            Instalar o aplicativo
-          </a>
-        </div>
-
-        {/* Auto-recover link */}
-        <div className="text-center mt-2">
-          <a
-            href="/limpar-cache"
-            className="block text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-            title="Use se o sistema travar em 'Carregando...'"
-          >
-            Aplicativo instalado e não entra? Atualizar sistema
-          </a>
-        </div>
-
-        <p className="text-center text-xs text-muted-foreground/70 mt-2">
-          Fundação Dom Bosco · Clínica
-        </p>
         </div>
       </div>
     </div>
