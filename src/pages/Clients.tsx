@@ -327,8 +327,12 @@ export default function Patients() {
       setIsDialogOpen(false);
       resetForm();
       refreshClients();
-    } catch (error) {
-      toast({ variant: "destructive", title: "Erro", description: "Não foi possível cadastrar o paciente." });
+    } catch (error: any) {
+      // Mostra o motivo real (ex.: permissão negada pelas regras de segurança)
+      const msg = error?.message?.includes('row-level security')
+        ? 'Você não tem permissão para cadastrar pacientes nesta unidade.'
+        : error?.message || 'Não foi possível cadastrar o paciente.';
+      toast({ variant: "destructive", title: "Erro ao cadastrar", description: msg });
     } finally { setIsSaving(false); }
   }, [isSaving, newClient, user?.id, toast, resetForm, refreshClients]);
 
