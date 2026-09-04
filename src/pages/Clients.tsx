@@ -346,8 +346,11 @@ export default function Patients() {
       setEditingClient(null);
       resetForm();
       refreshClients();
-    } catch (error) {
-      toast({ variant: "destructive", title: "Erro", description: "Não foi possível atualizar o paciente." });
+    } catch (error: any) {
+      const msg = error?.message?.includes('row-level security')
+        ? 'Você não tem permissão para editar este paciente.'
+        : error?.message || 'Não foi possível atualizar o paciente.';
+      toast({ variant: "destructive", title: "Erro ao atualizar", description: msg });
     }
   }, [editingClient, newClient, toast, resetForm, refreshClients]);
 
