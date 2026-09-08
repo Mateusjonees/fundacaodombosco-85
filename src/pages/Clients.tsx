@@ -354,9 +354,13 @@ export default function Patients() {
   const handleUpdateClient = useCallback(async () => {
     if (!editingClient) return;
     try {
-      const { error } = await supabase.from("clients").update(newClient).eq("id", editingClient.id);
-      if (error) throw error;
-      toast({ title: "Paciente atualizado", description: "Dados atualizados com sucesso!" });
+      await offlineUpdate("clients", editingClient.id, newClient);
+      toast({
+        title: isOffline() ? "Alterações salvas localmente" : "Paciente atualizado",
+        description: isOffline()
+          ? "Sem internet: as alterações serão enviadas quando a conexão voltar."
+          : "Dados atualizados com sucesso!",
+      });
       setIsDialogOpen(false);
       setEditingClient(null);
       resetForm();
