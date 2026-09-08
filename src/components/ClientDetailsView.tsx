@@ -502,16 +502,13 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
     setLoading(true);
     try {
-      const { error } = await supabase.
-      from('client_notes').
-      delete().
-      eq('id', noteToDelete.id);
-
-      if (error) throw error;
+      await offlineDelete('client_notes', noteToDelete.id);
 
       toast({
         title: "Sucesso",
-        description: "Anamnese excluída com sucesso!"
+        description: isOffline()
+          ? "Anamnese excluída localmente — será sincronizada."
+          : "Anamnese excluída com sucesso!"
       });
 
       setNoteToDelete(null);
