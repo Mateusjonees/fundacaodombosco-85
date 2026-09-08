@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { isOffline, offlineInsert, offlineUpdate } from "@/utils/offlineWrite";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { useCustomPermissions } from "@/hooks/useCustomPermissions";
