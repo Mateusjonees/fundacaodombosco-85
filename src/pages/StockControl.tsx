@@ -687,6 +687,56 @@ export default function StockControl() {
     URL.revokeObjectURL(url);
   };
 
+  // ---------- Relatório de itens com estoque baixo ----------
+  const lowStockRows = () =>
+    items
+      .filter(isLowStock)
+      .sort((a, b) => (a.category || '').localeCompare(b.category || '') || a.name.localeCompare(b.name))
+      .map((i) => ({
+        name: i.name,
+        category: categoryLabel(i.category || undefined),
+        unit: clinicUnitLabel(i.clinic_unit),
+        current: i.current_quantity ?? 0,
+        threshold: alertThreshold(i),
+        replace: Math.max(0, alertThreshold(i) - (i.current_quantity ?? 0)),
+        cost: Math.max(0, alertThreshold(i) - (i.current_quantity ?? 0)) * (i.unit_cost || 0),
+        supplier: i.supplier || '—',
+      }));
+
+  const exportLowStockPdf = () => {
+    const rows = lowStockRows();
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(14);
+    doc.text('Relatório de Itens com Estoque Baixo', 14, 15);
+    doc.setFontSize(9);
+    doc.text(`Emitido em ${formatDateBR(getTodayLocalISODate())} • ${rows.length} item(ns)`, 14, 21);
+    doc.text(`Custo estimado de reposição: ${brl(rows.reduce((s, r) => s + r.cost, 0))}`, 14, 26);
+    autoTable(doc, {
+      startY: 31,
+      head: [['Item', 'Categoria', 'Unidade', 'Atual', 'Avisar em', 'Repor', 'Custo rep.', 'Fornecedor']],
+      body: rows.map((r) => [
+        r.name, r.category, r.unit, String(r.current), String(r.threshold), String(r.replace), brl(r.cost), r.supplier,
+      ]),
+      styles: { fontSize: 8 },
+    });
+    doc.save(`itens-estoque-baixo-${getTodayLocalISODate()}.pdf`);
+  };
+
+  const exportLowStockCsv = () => {
+    const rows = lowStockRows();
+    const lines = [['Item', 'Categoria', 'Unidade', 'Atual', 'Avisar em', 'Repor', 'Custo reposição (R$)', 'Fornecedor']];
+    rows.forEach((r) =>
+      lines.push([r.name, r.category, r.unit, String(r.current), String(r.threshold), String(r.replace), r.cost.toFixed(2), r.supplier]),
+    );
+    const csv = lines.map((l) => l.map((c) => `"${c.replace(/"/g, '""')}"`).join(';')).join('\n');
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `itens-estoque-baixo-${getTodayLocalISODate()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
 
   const exportPdf = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
