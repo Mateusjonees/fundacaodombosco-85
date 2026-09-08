@@ -359,6 +359,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadNotes = async () => {
     try {
+      // Sem conexão: usa o cache local
+      if (isOffline()) {
+        setNotes(await getCachedClientNotes(client.id));
+        return;
+      }
+
       const { data: notesData, error } = await supabase.
       from('client_notes').
       select('id, note_text, note_type, created_at, created_by, service_type').
@@ -376,15 +382,20 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
         const notesWithProfiles = notesData.map((note) => ({
           ...note,
+          client_id: client.id,
           profiles: profiles?.find((p) => p.user_id === note.created_by) || undefined
         }));
 
         setNotes(notesWithProfiles);
+        // Guarda para uso offline
+        await offlineDB.putMany(STORES.clientNotes, notesWithProfiles).catch(() => {});
       } else {
         setNotes([]);
       }
     } catch (error) {
       console.error('Error loading notes:', error);
+      const cached = await getCachedClientNotes(client.id);
+      if (cached.length) setNotes(cached);
     }
   };
 
