@@ -127,6 +127,8 @@ export const CreateScheduleDialog = ({
   }, [form.client_id, clients]);
 
   const checkConflict = async (employeeId: string, startTime: string, endTime: string, excludeId?: string) => {
+    // Sem internet não é possível verificar conflitos no servidor
+    if (isOffline()) return false;
     const { data } = await supabase
       .from('schedules')
       .select('id, start_time, end_time')
