@@ -60,6 +60,8 @@ import ClientLaudoManager from './ClientLaudoManager';
 import { PatientReportGenerator } from './PatientReportGenerator';
 import { ClientEditTab } from './ClientEditTab';
 import PatientNeuroTestHistory from './PatientNeuroTestHistory';
+import { isOffline, getCachedClientNotes, offlineInsert, offlineDelete } from '@/utils/offlineWrite';
+import { offlineDB, STORES } from '@/utils/offlineDB';
 
 interface Client {
   id: string;
@@ -359,6 +361,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const loadNotes = async () => {
     try {
+      // Sem conexão: usa o cache local
+      if (isOffline()) {
+        setNotes(await getCachedClientNotes(client.id));
+        return;
+      }
+
       const { data: notesData, error } = await supabase.
       from('client_notes').
       select('id, note_text, note_type, created_at, created_by, service_type').
@@ -376,15 +384,20 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
         const notesWithProfiles = notesData.map((note) => ({
           ...note,
+          client_id: client.id,
           profiles: profiles?.find((p) => p.user_id === note.created_by) || undefined
         }));
 
         setNotes(notesWithProfiles);
+        // Guarda para uso offline
+        await offlineDB.putMany(STORES.clientNotes, notesWithProfiles).catch(() => {});
       } else {
         setNotes([]);
       }
     } catch (error) {
       console.error('Error loading notes:', error);
+      const cached = await getCachedClientNotes(client.id);
+      if (cached.length) setNotes(cached);
     }
   };
 
@@ -453,9 +466,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
     setLoading(true);
     try {
-      const { error } = await supabase.
-      from('client_notes').
-      insert({
+      await offlineInsert('client_notes', {
         client_id: client.id,
         note_text: newNote.trim(),
         created_by: user?.id,
@@ -463,11 +474,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
         service_type: noteServiceType
       });
 
-      if (error) throw error;
-
       toast({
         title: "Sucesso",
-        description: "Nota adicionada com sucesso!"
+        description: isOffline()
+          ? "Nota salva localmente — será sincronizada."
+          : "Nota adicionada com sucesso!"
       });
 
       setNewNote('');
@@ -491,16 +502,13 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
     setLoading(true);
     try {
-      const { error } = await supabase.
-      from('client_notes').
-      delete().
-      eq('id', noteToDelete.id);
-
-      if (error) throw error;
+      await offlineDelete('client_notes', noteToDelete.id);
 
       toast({
         title: "Sucesso",
-        description: "Anamnese excluída com sucesso!"
+        description: isOffline()
+          ? "Anamnese excluída localmente — será sincronizada."
+          : "Anamnese excluída com sucesso!"
       });
 
       setNoteToDelete(null);
