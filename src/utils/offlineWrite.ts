@@ -15,6 +15,7 @@ const TABLE_STORE: Record<string, StoreName> = {
   clients: STORES.clients,
   schedules: STORES.schedules,
   medical_records: STORES.medicalRecords,
+  client_notes: STORES.clientNotes,
 };
 
 const cachePut = async (table: string, data: any) => {
