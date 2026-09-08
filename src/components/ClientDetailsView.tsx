@@ -466,9 +466,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
     setLoading(true);
     try {
-      const { error } = await supabase.
-      from('client_notes').
-      insert({
+      await offlineInsert('client_notes', {
         client_id: client.id,
         note_text: newNote.trim(),
         created_by: user?.id,
@@ -476,11 +474,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
         service_type: noteServiceType
       });
 
-      if (error) throw error;
-
       toast({
         title: "Sucesso",
-        description: "Nota adicionada com sucesso!"
+        description: isOffline()
+          ? "Nota salva localmente — será sincronizada."
+          : "Nota adicionada com sucesso!"
       });
 
       setNewNote('');
