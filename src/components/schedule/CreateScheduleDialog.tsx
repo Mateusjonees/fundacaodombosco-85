@@ -10,6 +10,7 @@ import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocompl
 import { ProfessionalCommandAutocomplete } from '@/components/ProfessionalCommandAutocomplete';
 import { Plus, Mail, MailCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { isOffline, offlineInsert, offlineUpdate } from '@/utils/offlineWrite';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
