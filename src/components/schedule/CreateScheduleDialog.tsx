@@ -183,9 +183,13 @@ export const CreateScheduleDialog = ({
           toast({ variant: 'destructive', title: 'Conflito', description: 'O profissional já possui um agendamento neste horário.' });
           return;
         }
-        const { error } = await supabase.from('schedules').update(data).eq('id', editingSchedule.id);
-        if (error) throw error;
-        toast({ title: 'Sucesso', description: 'Agendamento atualizado!' });
+        await offlineUpdate('schedules', editingSchedule.id, data);
+        toast({
+          title: isOffline() ? 'Salvo localmente' : 'Sucesso',
+          description: isOffline()
+            ? 'Sem internet: a alteração será enviada quando a conexão voltar.'
+            : 'Agendamento atualizado!',
+        });
       } else {
         const count = form.sessionCount || 1;
         const items = [];
