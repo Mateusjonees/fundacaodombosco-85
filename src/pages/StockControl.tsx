@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -35,6 +36,7 @@ const CATEGORIES = [
   { value: 'mobiliario', label: 'Mobiliário' },
   { value: 'copa_cozinha', label: 'Copa e Cozinha' },
   { value: 'higiene', label: 'Higiene' },
+  { value: 'administrativo', label: 'Administrativo' },
   { value: 'outros', label: 'Outros' },
 ];
 
@@ -68,7 +70,20 @@ interface StockItem {
   location?: string | null;
   expiry_date?: string | null;
   is_active?: boolean | null;
+  alert_enabled?: boolean | null;
+  alert_quantity?: number | null;
 }
+
+// Nível em que o item passa a ser considerado baixo
+const alertThreshold = (i: { minimum_quantity?: number | null; alert_quantity?: number | null }) =>
+  i.alert_quantity ?? i.minimum_quantity ?? 0;
+
+const isLowStock = (i: {
+  current_quantity?: number | null;
+  minimum_quantity?: number | null;
+  alert_quantity?: number | null;
+  alert_enabled?: boolean | null;
+}) => (i.alert_enabled ?? true) && (i.current_quantity ?? 0) <= alertThreshold(i);
 
 interface Movement {
   id: string;
@@ -103,6 +118,8 @@ const emptyItem = {
   supplier: '',
   location: '',
   expiry_date: '',
+  alert_enabled: true,
+  alert_quantity: '' as string,
 };
 
 
@@ -234,7 +251,7 @@ export default function StockControl() {
     );
     return {
       total: items.length,
-      low: items.filter((i) => (i.current_quantity ?? 0) <= (i.minimum_quantity ?? 0)).length,
+      low: items.filter(isLowStock).length,
       withdrawalsMonth: outs.length,
       value: items.reduce((s, i) => s + (i.current_quantity || 0) * (i.unit_cost || 0), 0),
     };
@@ -260,6 +277,8 @@ export default function StockControl() {
       supplier: item.supplier || '',
       location: item.location || '',
       expiry_date: item.expiry_date || '',
+      alert_enabled: item.alert_enabled ?? true,
+      alert_quantity: item.alert_quantity != null ? String(item.alert_quantity) : '',
     });
     setItemDialog(true);
   };
@@ -273,6 +292,7 @@ export default function StockControl() {
       ...itemForm,
       name: itemForm.name.toUpperCase(),
       expiry_date: itemForm.expiry_date || null,
+      alert_quantity: itemForm.alert_quantity === '' ? null : Number(itemForm.alert_quantity),
     };
     const { data, error } = editingId
       ? await supabase.from('stock_items').update(payload).eq('id', editingId).select('*').single()
@@ -575,7 +595,7 @@ export default function StockControl() {
     limit.setDate(limit.getDate() + 30);
     const limitIso = limit.toISOString().slice(0, 10);
 
-    const lowStock = items.filter((i) => (i.current_quantity ?? 0) <= (i.minimum_quantity ?? 0));
+    const lowStock = items.filter(isLowStock);
     const expired = items.filter((i) => i.expiry_date && i.expiry_date < today);
     const expiring = items.filter((i) => i.expiry_date && i.expiry_date >= today && i.expiry_date <= limitIso);
     const overdueLoans = pendingLoans.filter((m) => m.overdue);
@@ -663,6 +683,56 @@ export default function StockControl() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `consumo-estoque-${reportMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ---------- Relatório de itens com estoque baixo ----------
+  const lowStockRows = () =>
+    items
+      .filter(isLowStock)
+      .sort((a, b) => (a.category || '').localeCompare(b.category || '') || a.name.localeCompare(b.name))
+      .map((i) => ({
+        name: i.name,
+        category: categoryLabel(i.category || undefined),
+        unit: clinicUnitLabel(i.clinic_unit),
+        current: i.current_quantity ?? 0,
+        threshold: alertThreshold(i),
+        replace: Math.max(0, alertThreshold(i) - (i.current_quantity ?? 0)),
+        cost: Math.max(0, alertThreshold(i) - (i.current_quantity ?? 0)) * (i.unit_cost || 0),
+        supplier: i.supplier || '—',
+      }));
+
+  const exportLowStockPdf = () => {
+    const rows = lowStockRows();
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(14);
+    doc.text('Relatório de Itens com Estoque Baixo', 14, 15);
+    doc.setFontSize(9);
+    doc.text(`Emitido em ${formatDateBR(getTodayLocalISODate())} • ${rows.length} item(ns)`, 14, 21);
+    doc.text(`Custo estimado de reposição: ${brl(rows.reduce((s, r) => s + r.cost, 0))}`, 14, 26);
+    autoTable(doc, {
+      startY: 31,
+      head: [['Item', 'Categoria', 'Unidade', 'Atual', 'Avisar em', 'Repor', 'Custo rep.', 'Fornecedor']],
+      body: rows.map((r) => [
+        r.name, r.category, r.unit, String(r.current), String(r.threshold), String(r.replace), brl(r.cost), r.supplier,
+      ]),
+      styles: { fontSize: 8 },
+    });
+    doc.save(`itens-estoque-baixo-${getTodayLocalISODate()}.pdf`);
+  };
+
+  const exportLowStockCsv = () => {
+    const rows = lowStockRows();
+    const lines = [['Item', 'Categoria', 'Unidade', 'Atual', 'Avisar em', 'Repor', 'Custo reposição (R$)', 'Fornecedor']];
+    rows.forEach((r) =>
+      lines.push([r.name, r.category, r.unit, String(r.current), String(r.threshold), String(r.replace), r.cost.toFixed(2), r.supplier]),
+    );
+    const csv = lines.map((l) => l.map((c) => `"${c.replace(/"/g, '""')}"`).join(';')).join('\n');
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `itens-estoque-baixo-${getTodayLocalISODate()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -824,7 +894,7 @@ export default function StockControl() {
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum item encontrado.</TableCell></TableRow>
                   )}
                   {filteredItems.map((item) => {
-                    const low = (item.current_quantity ?? 0) <= (item.minimum_quantity ?? 0);
+                    const low = isLowStock(item);
                     return (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
@@ -1008,34 +1078,44 @@ export default function StockControl() {
         {/* ALERTAS */}
         <TabsContent value="alerts" className="space-y-4">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 flex-wrap">
               <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" /> Itens abaixo do mínimo ({alerts.lowStock.length})
+                <AlertTriangle className="h-4 w-4 text-destructive" /> Itens com estoque baixo ({alerts.lowStock.length})
               </CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={exportLowStockPdf}>
+                  <FileDown className="h-4 w-4 mr-2" /> Relatório PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportLowStockCsv}>
+                  <FileDown className="h-4 w-4 mr-2" /> CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item</TableHead>
+                    <TableHead>Categoria</TableHead>
                     <TableHead>Unidade</TableHead>
                     <TableHead className="text-right">Atual</TableHead>
-                    <TableHead className="text-right">Mínimo</TableHead>
+                    <TableHead className="text-right">Avisar em</TableHead>
                     <TableHead className="text-right">Repor</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {alerts.lowStock.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Nenhum item abaixo do mínimo.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Nenhum item com estoque baixo.</TableCell></TableRow>
                   )}
                   {alerts.lowStock.map((i) => (
                     <TableRow key={i.id}>
                       <TableCell className="font-medium">{i.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{categoryLabel(i.category)}</TableCell>
                       <TableCell><Badge variant="outline">{clinicUnitLabel(i.clinic_unit)}</Badge></TableCell>
                       <TableCell className="text-right">{i.current_quantity}</TableCell>
-                      <TableCell className="text-right">{i.minimum_quantity}</TableCell>
+                      <TableCell className="text-right">{alertThreshold(i)}</TableCell>
                       <TableCell className="text-right font-medium text-destructive">
-                        {Math.max(0, (i.minimum_quantity || 0) - (i.current_quantity || 0))}
+                        {Math.max(0, alertThreshold(i) - (i.current_quantity || 0))}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1329,6 +1409,33 @@ export default function StockControl() {
               <Label>Validade (opcional)</Label>
               <Input type="date" value={itemForm.expiry_date}
                 onChange={(e) => setItemForm({ ...itemForm, expiry_date: e.target.value })} />
+            </div>
+
+            {/* Aviso de estoque baixo */}
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm">Avisar quando o produto estiver baixo</Label>
+                  <p className="text-xs text-muted-foreground">Mostra o item na aba Alertas quando a quantidade chegar ao nível abaixo.</p>
+                </div>
+                <Switch
+                  checked={itemForm.alert_enabled}
+                  onCheckedChange={(v) => setItemForm({ ...itemForm, alert_enabled: v })}
+                />
+              </div>
+              {itemForm.alert_enabled && (
+                <div>
+                  <Label>Avisar quando restar (quantidade)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder={`Padrão: mínimo (${itemForm.minimum_quantity})`}
+                    value={itemForm.alert_quantity}
+                    onChange={(e) => setItemForm({ ...itemForm, alert_quantity: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Deixe vazio para usar o estoque mínimo.</p>
+                </div>
+              )}
             </div>
 
             <div>
