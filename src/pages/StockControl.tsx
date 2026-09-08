@@ -70,7 +70,20 @@ interface StockItem {
   location?: string | null;
   expiry_date?: string | null;
   is_active?: boolean | null;
+  alert_enabled?: boolean | null;
+  alert_quantity?: number | null;
 }
+
+// Nível em que o item passa a ser considerado baixo
+const alertThreshold = (i: { minimum_quantity?: number | null; alert_quantity?: number | null }) =>
+  i.alert_quantity ?? i.minimum_quantity ?? 0;
+
+const isLowStock = (i: {
+  current_quantity?: number | null;
+  minimum_quantity?: number | null;
+  alert_quantity?: number | null;
+  alert_enabled?: boolean | null;
+}) => (i.alert_enabled ?? true) && (i.current_quantity ?? 0) <= alertThreshold(i);
 
 interface Movement {
   id: string;
