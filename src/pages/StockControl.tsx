@@ -251,7 +251,7 @@ export default function StockControl() {
     );
     return {
       total: items.length,
-      low: items.filter((i) => (i.current_quantity ?? 0) <= (i.minimum_quantity ?? 0)).length,
+      low: items.filter(isLowStock).length,
       withdrawalsMonth: outs.length,
       value: items.reduce((s, i) => s + (i.current_quantity || 0) * (i.unit_cost || 0), 0),
     };
@@ -595,7 +595,7 @@ export default function StockControl() {
     limit.setDate(limit.getDate() + 30);
     const limitIso = limit.toISOString().slice(0, 10);
 
-    const lowStock = items.filter((i) => (i.current_quantity ?? 0) <= (i.minimum_quantity ?? 0));
+    const lowStock = items.filter(isLowStock);
     const expired = items.filter((i) => i.expiry_date && i.expiry_date < today);
     const expiring = items.filter((i) => i.expiry_date && i.expiry_date >= today && i.expiry_date <= limitIso);
     const overdueLoans = pendingLoans.filter((m) => m.overdue);
@@ -844,7 +844,7 @@ export default function StockControl() {
                     <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum item encontrado.</TableCell></TableRow>
                   )}
                   {filteredItems.map((item) => {
-                    const low = (item.current_quantity ?? 0) <= (item.minimum_quantity ?? 0);
+                    const low = isLowStock(item);
                     return (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
@@ -1053,9 +1053,9 @@ export default function StockControl() {
                       <TableCell className="font-medium">{i.name}</TableCell>
                       <TableCell><Badge variant="outline">{clinicUnitLabel(i.clinic_unit)}</Badge></TableCell>
                       <TableCell className="text-right">{i.current_quantity}</TableCell>
-                      <TableCell className="text-right">{i.minimum_quantity}</TableCell>
+                      <TableCell className="text-right">{alertThreshold(i)}</TableCell>
                       <TableCell className="text-right font-medium text-destructive">
-                        {Math.max(0, (i.minimum_quantity || 0) - (i.current_quantity || 0))}
+                        {Math.max(0, alertThreshold(i) - (i.current_quantity || 0))}
                       </TableCell>
                     </TableRow>
                   ))}
