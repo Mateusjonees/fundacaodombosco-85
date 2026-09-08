@@ -1055,11 +1055,12 @@ export default function StockControl() {
                 </TableHeader>
                 <TableBody>
                   {alerts.lowStock.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Nenhum item abaixo do mínimo.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Nenhum item com estoque baixo.</TableCell></TableRow>
                   )}
                   {alerts.lowStock.map((i) => (
                     <TableRow key={i.id}>
                       <TableCell className="font-medium">{i.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{categoryLabel(i.category)}</TableCell>
                       <TableCell><Badge variant="outline">{clinicUnitLabel(i.clinic_unit)}</Badge></TableCell>
                       <TableCell className="text-right">{i.current_quantity}</TableCell>
                       <TableCell className="text-right">{alertThreshold(i)}</TableCell>
