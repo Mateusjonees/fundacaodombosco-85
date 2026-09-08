@@ -105,6 +105,8 @@ const emptyItem = {
   supplier: '',
   location: '',
   expiry_date: '',
+  alert_enabled: true,
+  alert_quantity: '' as string,
 };
 
 
