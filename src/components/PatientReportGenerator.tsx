@@ -80,8 +80,42 @@ export function PatientReportGenerator({ client, isOpen, onClose }: PatientRepor
     }
   }, [isOpen, client?.id]);
 
+  // Guarda os dados do relatório para permitir gerar documentos sem internet
+  useEffect(() => {
+    if (!isOpen || !client?.id || loading || isOffline()) return;
+    saveReportSnapshot(`patient_report_${client.id}`, {
+      attendanceRecords, employeeReports, medicalRecords, neuroTestResults,
+      paymentRecords, prescriptions, clientNotes, scheduleHistory, laudos,
+    });
+  }, [isOpen, client?.id, loading, attendanceRecords, employeeReports, medicalRecords,
+      neuroTestResults, paymentRecords, prescriptions, clientNotes, scheduleHistory, laudos]);
+
   const loadAttendanceData = async () => {
     setLoading(true);
+
+    // Sem conexão: usa o último conjunto de dados salvo no aparelho
+    if (isOffline()) {
+      const snap = await getReportSnapshot<any>(`patient_report_${client.id}`);
+      if (snap) {
+        setAttendanceRecords(snap.attendanceRecords || []);
+        setEmployeeReports(snap.employeeReports || []);
+        setMedicalRecords(snap.medicalRecords || []);
+        setNeuroTestResults(snap.neuroTestResults || []);
+        setPaymentRecords(snap.paymentRecords || []);
+        setPrescriptions(snap.prescriptions || []);
+        setClientNotes(snap.clientNotes || []);
+        setScheduleHistory(snap.scheduleHistory || []);
+        setLaudos(snap.laudos || []);
+      } else {
+        toast({
+          title: "Sem conexão",
+          description: "Este paciente ainda não tem dados salvos no aparelho para gerar o documento offline.",
+        });
+      }
+      setLoading(false);
+      return;
+    }
+
     try {
       // Carregar attendance reports (atendimentos concluídos com todas as informações)
       const { data: attendanceData, error: attendanceError } = await supabase
