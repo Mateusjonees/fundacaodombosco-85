@@ -204,14 +204,22 @@ export const CreateScheduleDialog = ({
           toast({ variant: 'destructive', title: 'Conflito', description: `Conflito na sessão ${conflict.idx + 1} (${format(new Date(conflict.st), 'dd/MM/yyyy HH:mm', { locale: ptBR })}).` });
           return;
         }
-        const { data: inserted, error } = await supabase.from('schedules').insert(items).select('id, start_time, client_id, employee_id');
-        if (error) throw error;
-        toast({ title: 'Sucesso', description: count > 1 ? `${count} sessões criadas!` : 'Agendamento criado!' });
+        const inserted: any[] = [];
+        for (const item of items) {
+          const row = await offlineInsert<any>('schedules', item);
+          if (row) inserted.push(row);
+        }
+        toast({
+          title: isOffline() ? 'Salvo localmente' : 'Sucesso',
+          description: isOffline()
+            ? 'Sem internet: o agendamento será enviado quando a conexão voltar.'
+            : count > 1 ? `${count} sessões criadas!` : 'Agendamento criado!',
+        });
 
         const client = clients.find((c: any) => c.id === form.client_id);
         const firstInserted = inserted?.[0];
 
-        if (inserted?.length) {
+        if (inserted?.length && !isOffline()) {
           const notificationRows = inserted.map((schedule: any) => ({
             schedule_id: schedule.id,
             employee_id: form.employee_id,
