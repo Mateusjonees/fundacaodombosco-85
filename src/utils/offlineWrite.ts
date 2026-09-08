@@ -126,3 +126,39 @@ export const getProfileCached = async (userId: string): Promise<any | null> => {
   const cached = await offlineDB.get<any>(STORES.profiles, userId).catch(() => undefined);
   return cached || null;
 };
+
+/**
+ * Delete por id com fallback offline (remove do cache e enfileira).
+ */
+export const offlineDelete = async (table: string, id: string): Promise<void> => {
+  const store = TABLE_STORE[table];
+  if (!isOffline()) {
+    const { error } = await supabase.from(table as any).delete().eq('id', id);
+    if (error) throw error;
+    if (store) await offlineDB.delete(store, id).catch(() => {});
+    return;
+  }
+  if (store) await offlineDB.delete(store, id).catch(() => {});
+  await addToSyncQueue(table, 'delete', null, id);
+};
+
+/**
+ * Guarda um snapshot de dados usado para gerar documentos offline.
+ */
+export const saveReportSnapshot = async (key: string, data: any): Promise<void> => {
+  await offlineDB.put(STORES.reportSnapshots, { key, data, saved_at: new Date().toISOString() }).catch(() => {});
+};
+
+/** Recupera um snapshot salvo para geração de documento offline. */
+export const getReportSnapshot = async <T = any>(key: string): Promise<T | null> => {
+  const found = await offlineDB.get<any>(STORES.reportSnapshots, key).catch(() => undefined);
+  return (found?.data as T) ?? null;
+};
+
+/** Lê notas/anamneses do cache local de um paciente. */
+export const getCachedClientNotes = async (clientId: string): Promise<any[]> => {
+  const all = await offlineDB.getAll<any>(STORES.clientNotes).catch(() => [] as any[]);
+  return all
+    .filter((n) => n.client_id === clientId)
+    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+};
