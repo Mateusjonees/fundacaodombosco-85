@@ -1331,6 +1331,33 @@ export default function StockControl() {
                 onChange={(e) => setItemForm({ ...itemForm, expiry_date: e.target.value })} />
             </div>
 
+            {/* Aviso de estoque baixo */}
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm">Avisar quando o produto estiver baixo</Label>
+                  <p className="text-xs text-muted-foreground">Mostra o item na aba Alertas quando a quantidade chegar ao nível abaixo.</p>
+                </div>
+                <Switch
+                  checked={itemForm.alert_enabled}
+                  onCheckedChange={(v) => setItemForm({ ...itemForm, alert_enabled: v })}
+                />
+              </div>
+              {itemForm.alert_enabled && (
+                <div>
+                  <Label>Avisar quando restar (quantidade)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder={`Padrão: mínimo (${itemForm.minimum_quantity})`}
+                    value={itemForm.alert_quantity}
+                    onChange={(e) => setItemForm({ ...itemForm, alert_quantity: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Deixe vazio para usar o estoque mínimo.</p>
+                </div>
+              )}
+            </div>
+
             <div>
               <Label>Descrição</Label>
               <Textarea rows={2} value={itemForm.description}
