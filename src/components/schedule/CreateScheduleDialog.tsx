@@ -259,7 +259,7 @@ export const CreateScheduleDialog = ({
 
 
         // Send email in background
-        if (form.sendConfirmationEmail && selectedClientEmail && inserted) {
+        if (form.sendConfirmationEmail && selectedClientEmail && inserted.length && !isOffline()) {
           (async () => {
             try {
               const client = clients.find((c: any) => c.id === form.client_id);
