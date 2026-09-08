@@ -35,6 +35,7 @@ const CATEGORIES = [
   { value: 'mobiliario', label: 'Mobiliário' },
   { value: 'copa_cozinha', label: 'Copa e Cozinha' },
   { value: 'higiene', label: 'Higiene' },
+  { value: 'administrativo', label: 'Administrativo' },
   { value: 'outros', label: 'Outros' },
 ];
 
