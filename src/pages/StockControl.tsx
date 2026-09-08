@@ -1028,19 +1028,28 @@ export default function StockControl() {
         {/* ALERTAS */}
         <TabsContent value="alerts" className="space-y-4">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 flex-wrap">
               <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" /> Itens abaixo do mínimo ({alerts.lowStock.length})
+                <AlertTriangle className="h-4 w-4 text-destructive" /> Itens com estoque baixo ({alerts.lowStock.length})
               </CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={exportLowStockPdf}>
+                  <FileDown className="h-4 w-4 mr-2" /> Relatório PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportLowStockCsv}>
+                  <FileDown className="h-4 w-4 mr-2" /> CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item</TableHead>
+                    <TableHead>Categoria</TableHead>
                     <TableHead>Unidade</TableHead>
                     <TableHead className="text-right">Atual</TableHead>
-                    <TableHead className="text-right">Mínimo</TableHead>
+                    <TableHead className="text-right">Avisar em</TableHead>
                     <TableHead className="text-right">Repor</TableHead>
                   </TableRow>
                 </TableHeader>
