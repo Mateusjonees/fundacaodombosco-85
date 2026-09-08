@@ -3060,6 +3060,8 @@ export type Database = {
       }
       stock_items: {
         Row: {
+          alert_enabled: boolean
+          alert_quantity: number | null
           barcode: string | null
           category: string | null
           clinic_unit: string
@@ -3080,6 +3082,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alert_enabled?: boolean
+          alert_quantity?: number | null
           barcode?: string | null
           category?: string | null
           clinic_unit?: string
@@ -3100,6 +3104,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alert_enabled?: boolean
+          alert_quantity?: number | null
           barcode?: string | null
           category?: string | null
           clinic_unit?: string
