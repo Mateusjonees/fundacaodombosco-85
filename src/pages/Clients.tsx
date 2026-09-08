@@ -306,24 +306,38 @@ export default function Patients() {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const normalizedName = newClient.name.trim().toLowerCase();
-      const { data: duplicatesByName } = await supabase.from("clients").select("id, name, cpf").ilike("name", normalizedName);
-      let duplicatesByCpf: any[] = [];
-      if (newClient.cpf && newClient.cpf.trim().length >= 11) {
-        const { data } = await supabase.from("clients").select("id, name, cpf").eq("cpf", newClient.cpf.trim());
-        duplicatesByCpf = data || [];
-      }
-      const allDuplicates = [...(duplicatesByName || []), ...duplicatesByCpf];
-      const uniqueDuplicates = Array.from(new Map(allDuplicates.map(d => [d.id, d])).values());
-      if (uniqueDuplicates.length > 0) {
-        const names = uniqueDuplicates.map(d => d.name).join(", ");
-        if (!window.confirm(`⚠️ Possível paciente duplicado encontrado!\n\nPacientes similares: ${names}\n\nDeseja cadastrar mesmo assim?`)) {
-          setIsSaving(false); return;
+      const offline = isOffline();
+      // Checagem de duplicidade só é possível com internet
+      if (!offline) {
+        const normalizedName = newClient.name.trim().toLowerCase();
+        const { data: duplicatesByName } = await supabase.from("clients").select("id, name, cpf").ilike("name", normalizedName);
+        let duplicatesByCpf: any[] = [];
+        if (newClient.cpf && newClient.cpf.trim().length >= 11) {
+          const { data } = await supabase.from("clients").select("id, name, cpf").eq("cpf", newClient.cpf.trim());
+          duplicatesByCpf = data || [];
+        }
+        const allDuplicates = [...(duplicatesByName || []), ...duplicatesByCpf];
+        const uniqueDuplicates = Array.from(new Map(allDuplicates.map(d => [d.id, d])).values());
+        if (uniqueDuplicates.length > 0) {
+          const names = uniqueDuplicates.map(d => d.name).join(", ");
+          if (!window.confirm(`⚠️ Possível paciente duplicado encontrado!\n\nPacientes similares: ${names}\n\nDeseja cadastrar mesmo assim?`)) {
+            setIsSaving(false); return;
+          }
         }
       }
-      const { error } = await supabase.from("clients").insert({ ...newClient, name: newClient.name.trim(), cpf: newClient.cpf?.trim() || null, created_by: user?.id });
-      if (error) throw error;
-      toast({ title: "Paciente cadastrado", description: "Paciente cadastrado com sucesso!" });
+      await offlineInsert("clients", {
+        ...newClient,
+        name: newClient.name.trim(),
+        cpf: newClient.cpf?.trim() || null,
+        created_by: user?.id,
+        ...(offline ? { is_active: true } : {}),
+      });
+      toast({
+        title: offline ? "Paciente salvo localmente" : "Paciente cadastrado",
+        description: offline
+          ? "Sem internet: o cadastro será enviado automaticamente quando a conexão voltar."
+          : "Paciente cadastrado com sucesso!",
+      });
       setIsDialogOpen(false);
       resetForm();
       refreshClients();
