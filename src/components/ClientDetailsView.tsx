@@ -60,6 +60,8 @@ import ClientLaudoManager from './ClientLaudoManager';
 import { PatientReportGenerator } from './PatientReportGenerator';
 import { ClientEditTab } from './ClientEditTab';
 import PatientNeuroTestHistory from './PatientNeuroTestHistory';
+import { isOffline, getCachedClientNotes, offlineInsert, offlineDelete } from '@/utils/offlineWrite';
+import { offlineDB, STORES } from '@/utils/offlineDB';
 
 interface Client {
   id: string;
