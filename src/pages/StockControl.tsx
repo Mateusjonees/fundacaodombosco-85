@@ -264,6 +264,8 @@ export default function StockControl() {
       supplier: item.supplier || '',
       location: item.location || '',
       expiry_date: item.expiry_date || '',
+      alert_enabled: item.alert_enabled ?? true,
+      alert_quantity: item.alert_quantity != null ? String(item.alert_quantity) : '',
     });
     setItemDialog(true);
   };
@@ -277,6 +279,7 @@ export default function StockControl() {
       ...itemForm,
       name: itemForm.name.toUpperCase(),
       expiry_date: itemForm.expiry_date || null,
+      alert_quantity: itemForm.alert_quantity === '' ? null : Number(itemForm.alert_quantity),
     };
     const { data, error } = editingId
       ? await supabase.from('stock_items').update(payload).eq('id', editingId).select('*').single()
