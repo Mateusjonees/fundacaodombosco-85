@@ -116,6 +116,12 @@ export default function AddAnamnesisDialog({
     }
     setPrefillApplied(false);
     (async () => {
+      // Offline: usa o cache local das anamneses
+      if (isOffline()) {
+        const cached = await getCachedClientNotes(clientId);
+        setPreviousNote((cached.find((n) => n.note_type === 'anamnesis') as ClientNote) || null);
+        return;
+      }
       const { data } = await supabase
         .from('client_notes')
         .select('id, note_text, note_type, service_type, created_at')
