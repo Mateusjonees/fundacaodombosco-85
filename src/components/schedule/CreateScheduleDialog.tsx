@@ -10,6 +10,7 @@ import { PatientCommandAutocomplete } from '@/components/PatientCommandAutocompl
 import { ProfessionalCommandAutocomplete } from '@/components/ProfessionalCommandAutocomplete';
 import { Plus, Mail, MailCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { isOffline, offlineInsert, offlineUpdate } from '@/utils/offlineWrite';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -127,6 +128,8 @@ export const CreateScheduleDialog = ({
   }, [form.client_id, clients]);
 
   const checkConflict = async (employeeId: string, startTime: string, endTime: string, excludeId?: string) => {
+    // Sem internet não é possível verificar conflitos no servidor
+    if (isOffline()) return false;
     const { data } = await supabase
       .from('schedules')
       .select('id, start_time, end_time')
@@ -180,9 +183,13 @@ export const CreateScheduleDialog = ({
           toast({ variant: 'destructive', title: 'Conflito', description: 'O profissional já possui um agendamento neste horário.' });
           return;
         }
-        const { error } = await supabase.from('schedules').update(data).eq('id', editingSchedule.id);
-        if (error) throw error;
-        toast({ title: 'Sucesso', description: 'Agendamento atualizado!' });
+        await offlineUpdate('schedules', editingSchedule.id, data);
+        toast({
+          title: isOffline() ? 'Salvo localmente' : 'Sucesso',
+          description: isOffline()
+            ? 'Sem internet: a alteração será enviada quando a conexão voltar.'
+            : 'Agendamento atualizado!',
+        });
       } else {
         const count = form.sessionCount || 1;
         const items = [];
@@ -197,14 +204,22 @@ export const CreateScheduleDialog = ({
           toast({ variant: 'destructive', title: 'Conflito', description: `Conflito na sessão ${conflict.idx + 1} (${format(new Date(conflict.st), 'dd/MM/yyyy HH:mm', { locale: ptBR })}).` });
           return;
         }
-        const { data: inserted, error } = await supabase.from('schedules').insert(items).select('id, start_time, client_id, employee_id');
-        if (error) throw error;
-        toast({ title: 'Sucesso', description: count > 1 ? `${count} sessões criadas!` : 'Agendamento criado!' });
+        const inserted: any[] = [];
+        for (const item of items) {
+          const row = await offlineInsert<any>('schedules', item);
+          if (row) inserted.push(row);
+        }
+        toast({
+          title: isOffline() ? 'Salvo localmente' : 'Sucesso',
+          description: isOffline()
+            ? 'Sem internet: o agendamento será enviado quando a conexão voltar.'
+            : count > 1 ? `${count} sessões criadas!` : 'Agendamento criado!',
+        });
 
         const client = clients.find((c: any) => c.id === form.client_id);
         const firstInserted = inserted?.[0];
 
-        if (inserted?.length) {
+        if (inserted?.length && !isOffline()) {
           const notificationRows = inserted.map((schedule: any) => ({
             schedule_id: schedule.id,
             employee_id: form.employee_id,
@@ -244,7 +259,7 @@ export const CreateScheduleDialog = ({
 
 
         // Send email in background
-        if (form.sendConfirmationEmail && selectedClientEmail && inserted) {
+        if (form.sendConfirmationEmail && selectedClientEmail && inserted.length && !isOffline()) {
           (async () => {
             try {
               const client = clients.find((c: any) => c.id === form.client_id);
