@@ -4,13 +4,15 @@
  */
 
 const DB_NAME = 'clinica_offline';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 // Stores disponíveis
 const STORES = {
   clients: 'clients',
   schedules: 'schedules',
   medicalRecords: 'medical_records',
+  clientNotes: 'client_notes',
+  reportSnapshots: 'report_snapshots',
   profiles: 'profiles',
   dashboardStats: 'dashboard_stats',
   syncQueue: 'sync_queue',
@@ -41,6 +43,15 @@ const openDB = (): Promise<IDBDatabase> => {
       if (!db.objectStoreNames.contains(STORES.medicalRecords)) {
         db.createObjectStore(STORES.medicalRecords, { keyPath: 'id' });
       }
+      // Notas/anamneses do paciente
+      if (!db.objectStoreNames.contains(STORES.clientNotes)) {
+        db.createObjectStore(STORES.clientNotes, { keyPath: 'id' });
+      }
+      // Snapshots usados para gerar documentos offline
+      if (!db.objectStoreNames.contains(STORES.reportSnapshots)) {
+        db.createObjectStore(STORES.reportSnapshots, { keyPath: 'key' });
+      }
+
       if (!db.objectStoreNames.contains(STORES.profiles)) {
         db.createObjectStore(STORES.profiles, { keyPath: 'user_id' });
       }
