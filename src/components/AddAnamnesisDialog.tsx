@@ -196,40 +196,37 @@ export default function AddAnamnesisDialog({
 
       const noteText = sections.join('\n\n');
 
-      if (editingNote) {
-        // Update existing note
-        const { error } = await supabase
-          .from('client_notes')
-          .update({ 
-            note_text: noteText, 
-            service_type: serviceType,
-            updated_at: new Date().toISOString() 
-          })
-          .eq('id', editingNote.id);
+      const offline = isOffline();
 
-        if (error) throw error;
+      if (editingNote) {
+        // Atualiza a anamnese (offline salva local e enfileira)
+        await offlineUpdate('client_notes', editingNote.id, {
+          note_text: noteText,
+          service_type: serviceType,
+          updated_at: new Date().toISOString(),
+        });
 
         toast({
           title: "Sucesso",
-          description: "Anamnese atualizada com sucesso!",
+          description: offline
+            ? "Anamnese atualizada localmente — será sincronizada."
+            : "Anamnese atualizada com sucesso!",
         });
       } else {
-        // Create new note
-        const { error } = await supabase
-          .from('client_notes')
-          .insert({
-            client_id: clientId,
-            note_text: noteText,
-            note_type: 'anamnesis',
-            service_type: serviceType,
-            created_by: user?.id
-          });
-
-        if (error) throw error;
+        // Cria nova anamnese (offline salva local e enfileira)
+        await offlineInsert('client_notes', {
+          client_id: clientId,
+          note_text: noteText,
+          note_type: 'anamnesis',
+          service_type: serviceType,
+          created_by: user?.id,
+        });
 
         toast({
           title: "Sucesso",
-          description: "Anamnese registrada com sucesso!",
+          description: offline
+            ? "Anamnese salva localmente — será sincronizada."
+            : "Anamnese registrada com sucesso!",
         });
       }
 
