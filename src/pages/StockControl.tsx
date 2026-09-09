@@ -1551,11 +1551,27 @@ export default function StockControl() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
+                <Label>Unidade de origem</Label>
+                <Select value={withdrawForm.clinic_unit} onValueChange={(v) => setWithdrawForm({ ...withdrawForm, clinic_unit: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CLINIC_UNITS.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>
+                        {u.value === 'todas' ? 'Estoque geral' : u.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label>Destino / setor</Label>
                 <Input placeholder="Ex.: Sala 3 - Madre" value={withdrawForm.destination}
                   onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })} />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
+
                 <Label>Previsão de devolução</Label>
                 <Input type="date" value={withdrawForm.expected_return_date}
                   onChange={(e) => setWithdrawForm({ ...withdrawForm, expected_return_date: e.target.value })} />
