@@ -946,9 +946,19 @@ export default function StockControl() {
                         <TableCell className="text-sm">{categoryLabel(item.category)}</TableCell>
                         <TableCell className="text-sm">
                           <Badge variant="outline">{clinicUnitLabel(item.clinic_unit)}</Badge>
+                          {(unitBalances.get(item.id)?.length ?? 0) > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {unitBalances.get(item.id)!.map((b) => (
+                                <span key={b.unitValue} className="text-[11px] text-muted-foreground">
+                                  {b.label}: <strong className="text-foreground">{b.quantity}</strong>
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm">{item.location || '—'}</TableCell>
                         <TableCell className="text-right">{item.current_quantity} {item.unit}</TableCell>
+
                         <TableCell className="text-right">{item.minimum_quantity}</TableCell>
                         <TableCell>
                           {low ? (
