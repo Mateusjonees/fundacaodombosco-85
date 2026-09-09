@@ -169,7 +169,10 @@ export default function StockControl() {
     date: getTodayLocalISODate(),
     supplier: '',
     reason: '',
+    // Quanto dessa entrada vai para cada unidade da clínica
+    allocation: { madre: '', floresta: '', atendimento_floresta: '', todas: '' } as Record<string, string>,
   });
+
 
   // Filtros do histórico
   const [histType, setHistType] = useState('all');
