@@ -151,6 +151,8 @@ export default function StockControl() {
     withdrawn_by_user_id: '',
     withdrawn_by_name: '',
     withdrawal_date: getTodayLocalISODate(),
+    clinic_unit: 'todas',
+
     destination: '',
     expected_return_date: '',
     reason: '',
@@ -169,7 +171,10 @@ export default function StockControl() {
     date: getTodayLocalISODate(),
     supplier: '',
     reason: '',
+    // Quanto dessa entrada vai para cada unidade da clínica
+    allocation: { madre: '', floresta: '', atendimento_floresta: '', todas: '' } as Record<string, string>,
   });
+
 
   // Filtros do histórico
   const [histType, setHistType] = useState('all');
@@ -257,6 +262,32 @@ export default function StockControl() {
     };
   }, [items, movements]);
 
+  // Saldo de cada item por unidade (entradas menos saídas registradas por unidade)
+  const unitBalances = useMemo(() => {
+    const map = new Map<string, Map<string, number>>();
+    movements.forEach((m) => {
+      const unitValue = m.clinic_unit || 'todas';
+      const byUnit = map.get(m.stock_item_id) || new Map<string, number>();
+      const delta = m.type === 'in' ? m.quantity : -m.quantity;
+      byUnit.set(unitValue, (byUnit.get(unitValue) || 0) + delta);
+      map.set(m.stock_item_id, byUnit);
+    });
+    const result = new Map<string, Array<{ unitValue: string; label: string; quantity: number }>>();
+    map.forEach((byUnit, itemId) => {
+      const list = Array.from(byUnit.entries())
+        .filter(([, qty]) => qty !== 0)
+        .map(([unitValue, quantity]) => ({
+          unitValue,
+          label: unitValue === 'todas' ? 'Geral' : clinicUnitLabel(unitValue),
+          quantity,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+      result.set(itemId, list);
+    });
+    return result;
+  }, [movements]);
+
+
   const openNewItem = () => {
     setEditingId(null);
     setItemForm({ ...emptyItem });
@@ -333,6 +364,8 @@ export default function StockControl() {
       withdrawn_by_user_id: user?.id || '',
       withdrawn_by_name: profiles.find((p) => p.user_id === user?.id)?.name || '',
       withdrawal_date: getTodayLocalISODate(),
+      clinic_unit: item.clinic_unit || 'todas',
+
       destination: item.location || '',
       expected_return_date: '',
       reason: '',
@@ -374,7 +407,7 @@ export default function StockControl() {
         withdrawal_date: withdrawForm.withdrawal_date,
         withdrawn_by_user_id: withdrawForm.withdrawn_by_user_id || null,
         withdrawn_by_name: personName,
-        clinic_unit: targetItem.clinic_unit || 'todas',
+        clinic_unit: withdrawForm.clinic_unit || targetItem.clinic_unit || 'todas',
         destination: withdrawForm.destination || null,
         expected_return_date: withdrawForm.expected_return_date || null,
         reason: withdrawForm.reason || 'Retirada de material',
@@ -503,9 +536,16 @@ export default function StockControl() {
       date: getTodayLocalISODate(),
       supplier: item.supplier || '',
       reason: '',
+      allocation: { madre: '', floresta: '', atendimento_floresta: '', todas: '' },
     });
     setEntryDialog(true);
   };
+
+  // Soma do que foi distribuído entre as unidades nesta entrada
+  const allocationTotal = useMemo(
+    () => Object.values(entryForm.allocation).reduce((s, v) => s + (Number(v) || 0), 0),
+    [entryForm.allocation],
+  );
 
   const confirmEntry = async () => {
     if (!targetItem) return;
@@ -514,23 +554,49 @@ export default function StockControl() {
       toast({ variant: 'destructive', title: 'Quantidade inválida' });
       return;
     }
+
+    // Distribuição por unidade: se nada for informado, tudo vai para a unidade do item
+    const parts = Object.entries(entryForm.allocation)
+      .map(([unitValue, v]) => ({ unitValue, qty: Number(v) || 0 }))
+      .filter((p) => p.qty > 0);
+
+    if (parts.length > 0 && allocationTotal !== qty) {
+      toast({
+        variant: 'destructive',
+        title: 'Distribuição diferente da quantidade',
+        description: `Você distribuiu ${allocationTotal} de ${qty}. Ajuste os valores por unidade.`,
+      });
+      return;
+    }
+
+    const entries = parts.length > 0
+      ? parts
+      : [{ unitValue: targetItem.clinic_unit || 'todas', qty }];
+
     const previous = targetItem.current_quantity || 0;
-    const { data, error } = await supabase.from('stock_movements').insert([
-      {
+    let running = previous;
+    const rows = entries.map((p) => {
+      const before = running;
+      running += p.qty;
+      return {
         stock_item_id: targetItem.id,
         type: 'in',
-        quantity: qty,
+        quantity: p.qty,
         unit_cost: entryForm.unit_cost || 0,
-        total_cost: (entryForm.unit_cost || 0) * qty,
+        total_cost: (entryForm.unit_cost || 0) * p.qty,
         date: entryForm.date,
-        clinic_unit: targetItem.clinic_unit || 'todas',
-        reason: entryForm.reason || 'Entrada de material',
-        previous_quantity: previous,
-        new_quantity: previous + qty,
+        clinic_unit: p.unitValue,
+        destination: clinicUnitLabel(p.unitValue),
+        to_location: clinicUnitLabel(p.unitValue),
+        reason: entryForm.reason || `Entrada de material — ${clinicUnitLabel(p.unitValue)}`,
+        previous_quantity: before,
+        new_quantity: running,
         created_by: user?.id,
         moved_by: user?.id,
-      },
-    ]).select('*').single();
+      };
+    });
+
+    const { data, error } = await supabase.from('stock_movements').insert(rows).select('*');
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao registrar entrada', description: error.message });
       return;
@@ -545,7 +611,7 @@ export default function StockControl() {
       })
       .eq('id', targetItem.id);
 
-    setMovements((prev) => [data as Movement, ...prev]);
+    setMovements((prev) => [...((data || []) as Movement[]).slice().reverse(), ...prev]);
     setItems((prev) =>
       prev.map((i) =>
         i.id === targetItem.id
@@ -558,9 +624,13 @@ export default function StockControl() {
           : i,
       ),
     );
-    toast({ title: 'Entrada registrada' });
+    toast({
+      title: 'Entrada registrada',
+      description: entries.map((p) => `${p.qty} → ${clinicUnitLabel(p.unitValue)}`).join(' · '),
+    });
     setEntryDialog(false);
   };
+
 
 
   // ---------- Histórico ----------
@@ -906,9 +976,19 @@ export default function StockControl() {
                         <TableCell className="text-sm">{categoryLabel(item.category)}</TableCell>
                         <TableCell className="text-sm">
                           <Badge variant="outline">{clinicUnitLabel(item.clinic_unit)}</Badge>
+                          {(unitBalances.get(item.id)?.length ?? 0) > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {unitBalances.get(item.id)!.map((b) => (
+                                <span key={b.unitValue} className="text-[11px] text-muted-foreground">
+                                  {b.label}: <strong className="text-foreground">{b.quantity}</strong>
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm">{item.location || '—'}</TableCell>
                         <TableCell className="text-right">{item.current_quantity} {item.unit}</TableCell>
+
                         <TableCell className="text-right">{item.minimum_quantity}</TableCell>
                         <TableCell>
                           {low ? (
@@ -1511,11 +1591,27 @@ export default function StockControl() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
+                <Label>Unidade de origem</Label>
+                <Select value={withdrawForm.clinic_unit} onValueChange={(v) => setWithdrawForm({ ...withdrawForm, clinic_unit: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CLINIC_UNITS.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>
+                        {u.value === 'todas' ? 'Estoque geral' : u.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label>Destino / setor</Label>
                 <Input placeholder="Ex.: Sala 3 - Madre" value={withdrawForm.destination}
                   onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })} />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
+
                 <Label>Previsão de devolução</Label>
                 <Input type="date" value={withdrawForm.expected_return_date}
                   onChange={(e) => setWithdrawForm({ ...withdrawForm, expected_return_date: e.target.value })} />
@@ -1582,11 +1678,58 @@ export default function StockControl() {
                   onChange={(e) => setEntryForm({ ...entryForm, supplier: e.target.value })} />
               </div>
             </div>
+            {/* Distribuição da entrada entre as unidades */}
+            <div className="rounded-md border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Enviar para quais unidades?</Label>
+                <span className={`text-xs ${allocationTotal > 0 && allocationTotal !== Number(entryForm.quantity) ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {allocationTotal} de {entryForm.quantity}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {CLINIC_UNITS.filter((u) => u.value !== 'todas').map((u) => (
+                  <div key={u.value}>
+                    <Label className="text-xs text-muted-foreground">{u.label}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      value={entryForm.allocation[u.value] ?? ''}
+                      onChange={(e) =>
+                        setEntryForm({
+                          ...entryForm,
+                          allocation: { ...entryForm.allocation, [u.value]: e.target.value },
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+                <div>
+                  <Label className="text-xs text-muted-foreground">Estoque geral</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={entryForm.allocation.todas ?? ''}
+                    onChange={(e) =>
+                      setEntryForm({
+                        ...entryForm,
+                        allocation: { ...entryForm.allocation, todas: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco para lançar tudo na unidade do item. Cada unidade vê a sua parte no saldo por unidade.
+              </p>
+            </div>
             <div>
               <Label>Observação</Label>
               <Textarea rows={2} value={entryForm.reason}
                 onChange={(e) => setEntryForm({ ...entryForm, reason: e.target.value })} />
             </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEntryDialog(false)}>Cancelar</Button>
