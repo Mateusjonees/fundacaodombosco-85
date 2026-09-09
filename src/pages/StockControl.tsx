@@ -336,6 +336,8 @@ export default function StockControl() {
       withdrawn_by_user_id: user?.id || '',
       withdrawn_by_name: profiles.find((p) => p.user_id === user?.id)?.name || '',
       withdrawal_date: getTodayLocalISODate(),
+      clinic_unit: item.clinic_unit || 'todas',
+
       destination: item.location || '',
       expected_return_date: '',
       reason: '',
