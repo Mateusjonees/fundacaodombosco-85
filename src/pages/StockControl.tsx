@@ -506,9 +506,16 @@ export default function StockControl() {
       date: getTodayLocalISODate(),
       supplier: item.supplier || '',
       reason: '',
+      allocation: { madre: '', floresta: '', atendimento_floresta: '', todas: '' },
     });
     setEntryDialog(true);
   };
+
+  // Soma do que foi distribuído entre as unidades nesta entrada
+  const allocationTotal = useMemo(
+    () => Object.values(entryForm.allocation).reduce((s, v) => s + (Number(v) || 0), 0),
+    [entryForm.allocation],
+  );
 
   const confirmEntry = async () => {
     if (!targetItem) return;
@@ -517,23 +524,49 @@ export default function StockControl() {
       toast({ variant: 'destructive', title: 'Quantidade inválida' });
       return;
     }
+
+    // Distribuição por unidade: se nada for informado, tudo vai para a unidade do item
+    const parts = Object.entries(entryForm.allocation)
+      .map(([unitValue, v]) => ({ unitValue, qty: Number(v) || 0 }))
+      .filter((p) => p.qty > 0);
+
+    if (parts.length > 0 && allocationTotal !== qty) {
+      toast({
+        variant: 'destructive',
+        title: 'Distribuição diferente da quantidade',
+        description: `Você distribuiu ${allocationTotal} de ${qty}. Ajuste os valores por unidade.`,
+      });
+      return;
+    }
+
+    const entries = parts.length > 0
+      ? parts
+      : [{ unitValue: targetItem.clinic_unit || 'todas', qty }];
+
     const previous = targetItem.current_quantity || 0;
-    const { data, error } = await supabase.from('stock_movements').insert([
-      {
+    let running = previous;
+    const rows = entries.map((p) => {
+      const before = running;
+      running += p.qty;
+      return {
         stock_item_id: targetItem.id,
         type: 'in',
-        quantity: qty,
+        quantity: p.qty,
         unit_cost: entryForm.unit_cost || 0,
-        total_cost: (entryForm.unit_cost || 0) * qty,
+        total_cost: (entryForm.unit_cost || 0) * p.qty,
         date: entryForm.date,
-        clinic_unit: targetItem.clinic_unit || 'todas',
-        reason: entryForm.reason || 'Entrada de material',
-        previous_quantity: previous,
-        new_quantity: previous + qty,
+        clinic_unit: p.unitValue,
+        destination: clinicUnitLabel(p.unitValue),
+        to_location: clinicUnitLabel(p.unitValue),
+        reason: entryForm.reason || `Entrada de material — ${clinicUnitLabel(p.unitValue)}`,
+        previous_quantity: before,
+        new_quantity: running,
         created_by: user?.id,
         moved_by: user?.id,
-      },
-    ]).select('*').single();
+      };
+    });
+
+    const { data, error } = await supabase.from('stock_movements').insert(rows).select('*');
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao registrar entrada', description: error.message });
       return;
@@ -548,7 +581,7 @@ export default function StockControl() {
       })
       .eq('id', targetItem.id);
 
-    setMovements((prev) => [data as Movement, ...prev]);
+    setMovements((prev) => [...((data || []) as Movement[]).slice().reverse(), ...prev]);
     setItems((prev) =>
       prev.map((i) =>
         i.id === targetItem.id
@@ -561,9 +594,13 @@ export default function StockControl() {
           : i,
       ),
     );
-    toast({ title: 'Entrada registrada' });
+    toast({
+      title: 'Entrada registrada',
+      description: entries.map((p) => `${p.qty} → ${clinicUnitLabel(p.unitValue)}`).join(' · '),
+    });
     setEntryDialog(false);
   };
+
 
 
   // ---------- Histórico ----------
