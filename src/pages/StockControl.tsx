@@ -260,6 +260,32 @@ export default function StockControl() {
     };
   }, [items, movements]);
 
+  // Saldo de cada item por unidade (entradas menos saídas registradas por unidade)
+  const unitBalances = useMemo(() => {
+    const map = new Map<string, Map<string, number>>();
+    movements.forEach((m) => {
+      const unitValue = m.clinic_unit || 'todas';
+      const byUnit = map.get(m.stock_item_id) || new Map<string, number>();
+      const delta = m.type === 'in' ? m.quantity : -m.quantity;
+      byUnit.set(unitValue, (byUnit.get(unitValue) || 0) + delta);
+      map.set(m.stock_item_id, byUnit);
+    });
+    const result = new Map<string, Array<{ unitValue: string; label: string; quantity: number }>>();
+    map.forEach((byUnit, itemId) => {
+      const list = Array.from(byUnit.entries())
+        .filter(([, qty]) => qty !== 0)
+        .map(([unitValue, quantity]) => ({
+          unitValue,
+          label: unitValue === 'todas' ? 'Geral' : clinicUnitLabel(unitValue),
+          quantity,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+      result.set(itemId, list);
+    });
+    return result;
+  }, [movements]);
+
+
   const openNewItem = () => {
     setEditingId(null);
     setItemForm({ ...emptyItem });
