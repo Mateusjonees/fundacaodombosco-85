@@ -1622,11 +1622,58 @@ export default function StockControl() {
                   onChange={(e) => setEntryForm({ ...entryForm, supplier: e.target.value })} />
               </div>
             </div>
+            {/* Distribuição da entrada entre as unidades */}
+            <div className="rounded-md border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Enviar para quais unidades?</Label>
+                <span className={`text-xs ${allocationTotal > 0 && allocationTotal !== Number(entryForm.quantity) ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {allocationTotal} de {entryForm.quantity}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {CLINIC_UNITS.filter((u) => u.value !== 'todas').map((u) => (
+                  <div key={u.value}>
+                    <Label className="text-xs text-muted-foreground">{u.label}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      value={entryForm.allocation[u.value] ?? ''}
+                      onChange={(e) =>
+                        setEntryForm({
+                          ...entryForm,
+                          allocation: { ...entryForm.allocation, [u.value]: e.target.value },
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+                <div>
+                  <Label className="text-xs text-muted-foreground">Estoque geral</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={entryForm.allocation.todas ?? ''}
+                    onChange={(e) =>
+                      setEntryForm({
+                        ...entryForm,
+                        allocation: { ...entryForm.allocation, todas: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco para lançar tudo na unidade do item. Cada unidade vê a sua parte no saldo por unidade.
+              </p>
+            </div>
             <div>
               <Label>Observação</Label>
               <Textarea rows={2} value={entryForm.reason}
                 onChange={(e) => setEntryForm({ ...entryForm, reason: e.target.value })} />
             </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEntryDialog(false)}>Cancelar</Button>
