@@ -151,6 +151,8 @@ export default function StockControl() {
     withdrawn_by_user_id: '',
     withdrawn_by_name: '',
     withdrawal_date: getTodayLocalISODate(),
+    clinic_unit: 'todas',
+
     destination: '',
     expected_return_date: '',
     reason: '',
