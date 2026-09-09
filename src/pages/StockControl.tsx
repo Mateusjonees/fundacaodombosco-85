@@ -377,7 +377,7 @@ export default function StockControl() {
         withdrawal_date: withdrawForm.withdrawal_date,
         withdrawn_by_user_id: withdrawForm.withdrawn_by_user_id || null,
         withdrawn_by_name: personName,
-        clinic_unit: targetItem.clinic_unit || 'todas',
+        clinic_unit: withdrawForm.clinic_unit || targetItem.clinic_unit || 'todas',
         destination: withdrawForm.destination || null,
         expected_return_date: withdrawForm.expected_return_date || null,
         reason: withdrawForm.reason || 'Retirada de material',
