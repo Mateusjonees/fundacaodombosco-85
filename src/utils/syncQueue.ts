@@ -27,6 +27,43 @@ export const addToSyncQueue = async (
   data: any,
   key?: string
 ): Promise<void> => {
+  const naturalKey = data?.row?.schedule_id ?? data?.schedule_id;
+  if (naturalKey && ['attendance_reports', 'medical_records', 'employee_reports'].includes(table)) {
+    const queued = await offlineDB.getAll<SyncOperation>(STORES.syncQueue);
+    const existing = queued.find(candidate => {
+      const candidateKey = candidate.data?.row?.schedule_id ?? candidate.data?.schedule_id;
+      return candidate.table === table
+        && candidateKey === naturalKey
+        && ['pending', 'failed'].includes(candidate.status);
+    });
+
+    if (existing?.id !== undefined) {
+      const existingRow = existing.data?.row;
+      const nextData = operation === 'upsert'
+        ? {
+            ...data,
+            row: {
+              ...data.row,
+              id: existingRow?.id ?? data.row?.id,
+            },
+          }
+        : {
+            ...data,
+            id: existing.data?.id ?? data?.id,
+          };
+      await offlineDB.put(STORES.syncQueue, {
+        ...existing,
+        operation,
+        data: nextData,
+        key,
+        status: 'pending',
+        error: undefined,
+        retries: 0,
+      });
+      return;
+    }
+  }
+
   const op: SyncOperation = {
     table,
     operation,
@@ -39,6 +76,8 @@ export const addToSyncQueue = async (
   await offlineDB.put(STORES.syncQueue, op);
   console.log('[SyncQueue] Operação adicionada:', operation, table);
 };
+
+let syncPromise: Promise<{ synced: number; failed: number }> | null = null;
 
 /**
  * Retorna todas as operações pendentes
@@ -104,7 +143,7 @@ const executeSyncOperation = async (op: SyncOperation): Promise<boolean> => {
  * Processa toda a fila de sincronização
  * Retorna { synced, failed }
  */
-export const processSyncQueue = async (): Promise<{ synced: number; failed: number }> => {
+const runSyncQueue = async (): Promise<{ synced: number; failed: number }> => {
   const pending = await getPendingOperations();
   
   if (pending.length === 0) {
@@ -147,6 +186,14 @@ export const processSyncQueue = async (): Promise<{ synced: number; failed: numb
 
   console.log(`[SyncQueue] Resultado: ${synced} sincronizados, ${failed} falharam`);
   return { synced, failed };
+};
+
+export const processSyncQueue = async (): Promise<{ synced: number; failed: number }> => {
+  if (syncPromise) return syncPromise;
+  syncPromise = runSyncQueue().finally(() => {
+    syncPromise = null;
+  });
+  return syncPromise;
 };
 
 /**
