@@ -90,19 +90,31 @@ export const offlineUpdate = async (table: string, id: string, updates: Record<s
 /**
  * Upsert com fallback offline.
  */
-export const offlineUpsert = async (
+export const offlineUpsert = async <T = any>(
   table: string,
   data: Record<string, any>,
   onConflict?: string
-): Promise<void> => {
+): Promise<T> => {
   if (!isOffline()) {
-    const { error } = await supabase
+    const { data: upserted, error } = await supabase
       .from(table as any)
-      .upsert(data as any, onConflict ? { onConflict } : undefined);
+      .upsert(data as any, onConflict ? { onConflict } : undefined)
+      .select()
+      .maybeSingle();
     if (error) throw error;
-    return;
+    await cachePut(table, upserted);
+    return upserted as T;
   }
-  await addToSyncQueue(table, 'upsert', { row: data, onConflict });
+
+  const payload = { ...data, id: data.id ?? crypto.randomUUID() };
+  const local = {
+    ...payload,
+    _offline: true,
+    created_at: data.created_at ?? new Date().toISOString(),
+  };
+  await cachePut(table, local);
+  await addToSyncQueue(table, 'upsert', { row: payload, onConflict });
+  return local as T;
 };
 
 /**

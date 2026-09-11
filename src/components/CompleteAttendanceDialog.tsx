@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -158,6 +158,7 @@ export default function CompleteAttendanceDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const isCompletingRef = useRef(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [sessionNotes, setSessionNotes] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState<SelectedMaterial[]>([]);
@@ -595,6 +596,8 @@ export default function CompleteAttendanceDialog({
   const handleCancelamentoResultsChange = useCallback((results: CancelamentoResults | null) => { setCancelamentoResults(results); }, []);
 
   const handleComplete = async () => {
+    if (isCompletingRef.current) return;
+
     if (!schedule || !user) {
       toast({
         variant: "destructive",
@@ -643,6 +646,7 @@ export default function CompleteAttendanceDialog({
       }
     }
 
+    isCompletingRef.current = true;
     setLoading(true);
     try {
       const isNutritionist = professionalRole === 'nutritionist';
@@ -703,7 +707,7 @@ export default function CompleteAttendanceDialog({
       });
 
       // Criar attendance_report (funciona offline: fica na fila de sincronização)
-      const attendanceReport = await offlineInsert<{ id: string }>('attendance_reports', {
+      const attendanceReport = await offlineUpsert<{ id: string }>('attendance_reports', {
           schedule_id: schedule.id,
           client_id: schedule.client_id,
           employee_id: schedule.employee_id,
@@ -724,11 +728,12 @@ export default function CompleteAttendanceDialog({
           validated_at: isAtendimentoFloresta ? now : null,
           validated_by: isAtendimentoFloresta ? user.id : null,
           validated_by_name: isAtendimentoFloresta ? completedByName : null
-        });
+        }, 'schedule_id');
 
       // Criar entrada no prontuário (medical_records) — espelha a evolutiva
       try {
-        await offlineInsert('medical_records', {
+        await offlineUpsert('medical_records', {
+          schedule_id: schedule.id,
           client_id: schedule.client_id,
           employee_id: schedule.employee_id,
           session_date: schedule.start_time?.slice(0, 10) || getTodayLocalISODate(),
@@ -737,7 +742,7 @@ export default function CompleteAttendanceDialog({
           progress_notes: sessionNotes,
           attachments: attachmentsData,
           status: 'completed',
-        });
+        }, 'schedule_id');
       } catch (mrErr) {
         console.warn('[CompleteAttendance] Falha ao espelhar no prontuário:', mrErr);
       }
@@ -1629,6 +1634,7 @@ export default function CompleteAttendanceDialog({
 
       // Sucesso!
       setLoading(false);
+      isCompletingRef.current = false;
       toast({
         title: isOffline()
           ? "Salvo offline"
@@ -1648,6 +1654,7 @@ export default function CompleteAttendanceDialog({
     } catch (error: any) {
       console.error('Erro ao completar atendimento:', error);
       setLoading(false);
+      isCompletingRef.current = false;
       toast({
         variant: "destructive",
         title: "Erro ao Salvar",
