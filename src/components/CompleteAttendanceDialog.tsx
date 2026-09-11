@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Loader2, Brain, Maximize2, Minimize2, Plus, ClipboardList, History, CheckCircle, Info } from 'lucide-react';
-import { offlineInsert, offlineInsertMany, offlineUpdate, offlineUpsert, isOffline, getProfileCached } from '@/utils/offlineWrite';
+import { offlineInsertMany, offlineUpdate, offlineUpsert, isOffline, getProfileCached } from '@/utils/offlineWrite';
 import { getTodayLocalISODate, calculateAgeBR, formatDateBR } from '@/lib/utils';
 import { epToPercentile } from '@/utils/neuroPercentile';
 import AttendanceMaterialSelector from './AttendanceMaterialSelector';
