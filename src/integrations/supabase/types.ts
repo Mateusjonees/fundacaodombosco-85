@@ -1996,6 +1996,7 @@ export type Database = {
           medications: Json | null
           next_appointment_notes: string | null
           progress_notes: string
+          schedule_id: string | null
           session_date: string
           session_duration: number | null
           session_type: string
@@ -2014,6 +2015,7 @@ export type Database = {
           medications?: Json | null
           next_appointment_notes?: string | null
           progress_notes: string
+          schedule_id?: string | null
           session_date: string
           session_duration?: number | null
           session_type: string
@@ -2032,6 +2034,7 @@ export type Database = {
           medications?: Json | null
           next_appointment_notes?: string | null
           progress_notes?: string
+          schedule_id?: string | null
           session_date?: string
           session_duration?: number | null
           session_type?: string
