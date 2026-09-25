@@ -21,6 +21,11 @@ export const getAttachmentFileName = (filePath: string, fallbackName: string) =>
 
 export const canPreviewAttachment = (filePath: string) => VIEWABLE_EXTENSIONS.has(getFileExtension(filePath));
 
+export const isStorageAttachmentPath = (value?: string | null) => {
+  if (!value || !value.includes('/')) return false;
+  return Boolean(getFileExtension(value));
+};
+
 export const downloadBlob = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
