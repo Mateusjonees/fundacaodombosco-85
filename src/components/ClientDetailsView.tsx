@@ -62,6 +62,7 @@ import { ClientEditTab } from './ClientEditTab';
 import PatientNeuroTestHistory from './PatientNeuroTestHistory';
 import { isOffline, getCachedClientNotes, offlineInsert, offlineDelete } from '@/utils/offlineWrite';
 import { offlineDB, STORES } from '@/utils/offlineDB';
+import { canPreviewAttachment, downloadBlob, getAttachmentFileName } from '@/utils/fileAttachments';
 
 interface Client {
   id: string;
@@ -315,14 +316,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
       if (error) throw error;
 
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `laudo_${client.name}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadBlob(data, getAttachmentFileName(laudoInfo.file_path, `laudo_${client.name}`));
 
       toast({
         title: "Sucesso",
@@ -340,6 +334,12 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
   const handleViewLaudo = async () => {
     if (!laudoInfo?.file_path) return;
+
+    if (!canPreviewAttachment(laudoInfo.file_path)) {
+      await handleDownloadLaudo();
+      toast({ title: 'Arquivo baixado', description: 'Este formato deve ser aberto no programa instalado no aparelho.' });
+      return;
+    }
 
     try {
       const { data, error } = await supabase.storage.
@@ -942,7 +942,10 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
       const { error: uploadError } = await supabase.storage.
       from('user-documents').
-      upload(filePath, selectedFile);
+      upload(filePath, selectedFile, {
+        contentType: selectedFile.type || undefined,
+        upsert: false
+      });
 
       if (uploadError) throw uploadError;
 
@@ -987,14 +990,7 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
 
       if (error) throw error;
 
-      const url = URL.createObjectURL(data);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = doc.document_name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      downloadBlob(data, doc.document_name || getAttachmentFileName(doc.file_path, 'documento'));
 
       toast({
         title: "Download concluído",
@@ -1011,6 +1007,11 @@ export default function ClientDetailsView({ client, onEdit, onBack, onRefresh, o
   };
 
   const handleViewDocument = async (doc: ClientDocument) => {
+    if (!canPreviewAttachment(doc.file_path)) {
+      await handleDownloadDocument(doc);
+      toast({ title: 'Arquivo baixado', description: 'Este formato deve ser aberto no programa instalado no aparelho.' });
+      return;
+    }
     try {
       const { data, error } = await supabase.storage.
       from('user-documents').
