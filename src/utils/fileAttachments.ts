@@ -21,7 +21,7 @@ export const getAttachmentFileName = (filePath: string, fallbackName: string) =>
 
 export const canPreviewAttachment = (filePath: string) => VIEWABLE_EXTENSIONS.has(getFileExtension(filePath));
 
-export const isStorageAttachmentPath = (value?: string | null) => {
+export const isStorageAttachmentPath = (value?: string | null): value is string => {
   if (!value || !value.includes('/')) return false;
   return Boolean(getFileExtension(value));
 };
