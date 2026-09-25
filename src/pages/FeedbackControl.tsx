@@ -436,7 +436,10 @@ export default function FeedbackControl() {
       // Upload do arquivo
       const { error: uploadError } = await supabase.storage
         .from('laudos')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          contentType: file.type || undefined,
+          upsert: false,
+        });
 
       if (uploadError) throw uploadError;
 

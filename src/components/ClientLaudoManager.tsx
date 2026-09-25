@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { printBlankLaudoPdf, printLaudoPdf, downloadLaudoPdf } from '@/utils/prescriptionPdf';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
 import { formatProfessionalCredentials } from '@/utils/professionalCredentials';
+import { canPreviewAttachment, downloadBlob, getAttachmentFileName } from '@/utils/fileAttachments';
 interface Client {
   id: string;
   name: string;
@@ -109,14 +110,7 @@ export default function ClientLaudoManager({
         error
       } = await supabase.storage.from('laudos').download(laudo.file_path);
       if (error) throw error;
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `laudo_${client.name}_${laudo.laudo_date}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadBlob(data, getAttachmentFileName(laudo.file_path, `laudo_${client.name}_${laudo.laudo_date}`));
     } catch (error) {
       console.error('Error downloading laudo:', error);
       toast({
@@ -128,6 +122,11 @@ export default function ClientLaudoManager({
   };
   const handleViewFile = async (laudo: Laudo) => {
     if (!laudo.file_path) return;
+    if (!canPreviewAttachment(laudo.file_path)) {
+      await handleDownload(laudo);
+      toast({ title: 'Arquivo baixado', description: 'Este formato deve ser aberto no programa instalado no aparelho.' });
+      return;
+    }
     try {
       const {
         data,
@@ -215,7 +214,10 @@ export default function ClientLaudoManager({
         filePath = `${client.id}/${fileName}`;
         const {
           error: uploadError
-        } = await supabase.storage.from('laudos').upload(filePath, selectedFile);
+        } = await supabase.storage.from('laudos').upload(filePath, selectedFile, {
+          contentType: selectedFile.type || undefined,
+          upsert: false,
+        });
         if (uploadError) throw uploadError;
       }
 

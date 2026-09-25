@@ -10,6 +10,9 @@ import AddPrescriptionDialog from './AddPrescriptionDialog';
 import { downloadPrescriptionPdf, printPrescriptionPdf, printBlankPrescriptionPdf } from '@/utils/prescriptionPdf';
 import { formatDateBR } from '@/lib/utils';
 import { formatProfessionalCredentials } from '@/utils/professionalCredentials';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { canPreviewAttachment, downloadBlob, getAttachmentFileName, isStorageAttachmentPath } from '@/utils/fileAttachments';
 interface Client {
   id: string;
   name: string;
@@ -29,6 +32,7 @@ export default function PrescriptionManager({
     isLoading
   } = usePrescriptions(client.id);
   const deletePrescription = useDeletePrescription();
+  const { toast } = useToast();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -46,6 +50,29 @@ export default function PrescriptionManager({
   const handlePrint = async (prescription: Prescription) => {
     const professionalName = prescription.employee?.name || 'Profissional';
     await printPrescriptionPdf(prescription, client, professionalName, formatProfessionalCredentials(prescription.employee));
+  };
+  const handleAttachment = async (prescription: Prescription, action: 'view' | 'download') => {
+    const filePath = prescription.diagnosis;
+    if (!isStorageAttachmentPath(filePath)) return;
+
+    try {
+      if (action === 'view' && canPreviewAttachment(filePath)) {
+        const { data, error } = await supabase.storage.from('prescriptions').createSignedUrl(filePath, 3600);
+        if (error) throw error;
+        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      const { data, error } = await supabase.storage.from('prescriptions').download(filePath);
+      if (error) throw error;
+      downloadBlob(data, getAttachmentFileName(filePath, `receita_${client.name}_${prescription.prescription_date}`));
+      if (action === 'view') {
+        toast({ title: 'Arquivo baixado', description: 'Este formato deve ser aberto no programa instalado no aparelho.' });
+      }
+    } catch (error) {
+      console.error('Erro ao abrir anexo da receita:', error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível abrir o arquivo anexado.' });
+    }
   };
   const handleDeleteClick = (prescription: Prescription) => {
     setPrescriptionToDelete(prescription);
@@ -139,9 +166,10 @@ export default function PrescriptionManager({
                         <span className="font-medium">Medicamentos: </span>
                         {prescription.medications.map((m: Medication) => m.name).join(', ')}
                       </p>
-                      {prescription.diagnosis && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                      {prescription.diagnosis && !isStorageAttachmentPath(prescription.diagnosis) && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                           {prescription.diagnosis}
                         </p>}
+                      {isStorageAttachmentPath(prescription.diagnosis) && <Badge variant="outline" className="mt-1">Arquivo anexado</Badge>}
                     </div>
                   </div>
 
@@ -157,6 +185,9 @@ export default function PrescriptionManager({
                     <Button variant="ghost" size="sm" onClick={() => handlePrint(prescription)}>
                       <Printer className="h-4 w-4" />
                     </Button>
+                    {isStorageAttachmentPath(prescription.diagnosis) && <Button variant="ghost" size="sm" onClick={() => handleAttachment(prescription, 'view')} title="Abrir arquivo original">
+                        <FileText className="h-4 w-4" />
+                      </Button>}
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteClick(prescription)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -201,9 +232,18 @@ export default function PrescriptionManager({
                 </Badge>
               </div>
 
-              {selectedPrescription.diagnosis && <div>
+              {selectedPrescription.diagnosis && !isStorageAttachmentPath(selectedPrescription.diagnosis) && <div>
                   <h4 className="font-medium text-sm mb-1">Diagnóstico/Indicação</h4>
                   <p className="text-sm text-muted-foreground">{selectedPrescription.diagnosis}</p>
+                </div>}
+
+              {isStorageAttachmentPath(selectedPrescription.diagnosis) && <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleAttachment(selectedPrescription, 'view')}>
+                    <Eye className="h-4 w-4 mr-1" /> Abrir anexo
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleAttachment(selectedPrescription, 'download')}>
+                    <Download className="h-4 w-4 mr-1" /> Baixar original
+                  </Button>
                 </div>}
 
               <div>

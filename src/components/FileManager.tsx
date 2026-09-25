@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { downloadBlob } from '@/utils/fileAttachments';
 import { 
   Upload, 
   Download, 
@@ -181,7 +182,10 @@ export default function FileManager() {
       // Upload file to storage
       const { data: storageData, error: storageError } = await supabase.storage
         .from(bucket)
-        .upload(filePath, uploadData.file);
+        .upload(filePath, uploadData.file, {
+          contentType: uploadData.file.type || undefined,
+          upsert: false,
+        });
 
       if (storageError) throw storageError;
 
@@ -267,15 +271,7 @@ export default function FileManager() {
 
       if (error) throw error;
 
-      // Create download link
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.file_name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadBlob(data, file.file_name);
 
       toast({
         title: "Download Iniciado",
