@@ -67,7 +67,10 @@ export default function AddPrescriptionDialog({ open, onOpenChange, clientId, de
 
     const { error } = await supabase.storage
       .from('prescriptions')
-      .upload(fileName, file);
+      .upload(fileName, file, {
+        contentType: file.type || undefined,
+        upsert: false,
+      });
 
     if (error) {
       console.error('Error uploading file:', error);
