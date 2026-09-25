@@ -4,6 +4,7 @@ import prescriptionTimbrado from '@/assets/prescription-timbrado-full.jpg';
 import fundacaoLogo from '@/assets/fundacao-dom-bosco-saude-logo.png';
 import { formatDateBR, formatNowBR } from '@/lib/utils';
 import { printPdfDoc } from '@/utils/printPdf';
+import { isStorageAttachmentPath } from '@/utils/fileAttachments';
 
 interface Client {
   name: string;
@@ -222,7 +223,7 @@ export const generatePrescriptionPdf = async (
     // Original format with structured medications
     
     // Diagnosis - only if provided
-    if (prescription.diagnosis && prescription.diagnosis.trim() && !prescription.diagnosis.startsWith('prescriptions/')) {
+    if (prescription.diagnosis && prescription.diagnosis.trim() && !isStorageAttachmentPath(prescription.diagnosis)) {
       yPosition += 8;
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 102, 153);
