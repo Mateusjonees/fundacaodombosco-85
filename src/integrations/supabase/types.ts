@@ -3248,6 +3248,62 @@ export type Database = {
           },
         ]
       }
+      stock_user_access: {
+        Row: {
+          access_level: string
+          allowed_units: string[]
+          created_at: string
+          granted_by: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_level?: string
+          allowed_units?: string[]
+          created_at?: string
+          granted_by?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_level?: string
+          allowed_units?: string[]
+          created_at?: string
+          granted_by?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_user_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "stock_user_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "stock_user_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "stock_user_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           description: string | null
@@ -3797,6 +3853,7 @@ export type Database = {
       }
       can_access_financial: { Args: never; Returns: boolean }
       can_access_reports: { Args: never; Returns: boolean }
+      can_access_stock_unit: { Args: { target_unit: string }; Returns: boolean }
       can_configure_reports: { Args: never; Returns: boolean }
       can_manage_employees: { Args: never; Returns: boolean }
       can_manage_stock: { Args: never; Returns: boolean }
