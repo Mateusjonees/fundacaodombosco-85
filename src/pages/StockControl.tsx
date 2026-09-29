@@ -13,12 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
 import { generateStockAuthorizationPdf } from '@/utils/stockAuthorizationPdf';
+import { StockAccessManager, STOCK_UNITS } from '@/components/StockAccessManager';
+import { useStockAccess } from '@/hooks/useStockAccess';
 import {
   Package2, Plus, AlertTriangle, ArrowDownToLine, ArrowUpFromLine,
-  Search, FileDown, Pencil, Boxes, CalendarDays, Trash2, Undo2, Clock,
+  Search, FileDown, Pencil, Boxes, CalendarDays, Trash2, Undo2, Clock, Lock,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -43,9 +44,7 @@ const CATEGORIES = [
 // Unidades da clínica (estoque separado por unidade)
 const CLINIC_UNITS = [
   { value: 'todas', label: 'Todas as unidades' },
-  { value: 'madre', label: 'MADRE' },
-  { value: 'floresta', label: 'Floresta' },
-  { value: 'atendimento_floresta', label: 'Atendimento Floresta' },
+  ...STOCK_UNITS,
 ];
 
 const clinicUnitLabel = (value?: string | null) =>
@@ -126,7 +125,7 @@ const emptyItem = {
 export default function StockControl() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { canManageStock, userRole, loading: roleLoading } = useRolePermissions();
+  const { canManage, canView, isDirector, loading: accessLoading } = useStockAccess();
 
   const [items, setItems] = useState<StockItem[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
@@ -152,7 +151,8 @@ export default function StockControl() {
     withdrawn_by_name: '',
     withdrawal_date: getTodayLocalISODate(),
     clinic_unit: 'todas',
-
+    is_transfer: false,
+    destination_unit: 'madre',
     destination: '',
     expected_return_date: '',
     reason: '',
@@ -172,7 +172,7 @@ export default function StockControl() {
     supplier: '',
     reason: '',
     // Quanto dessa entrada vai para cada unidade da clínica
-    allocation: { madre: '', floresta: '', atendimento_floresta: '', todas: '' } as Record<string, string>,
+    allocation: { madre: '', madre_escola: '', floresta: '', atendimento_floresta: '', todas: '' } as Record<string, string>,
   });
 
 
@@ -182,9 +182,7 @@ export default function StockControl() {
   const [histTo, setHistTo] = useState('');
   const [histPerson, setHistPerson] = useState('all');
 
-  const canManage = canManageStock();
-  // Nutricionista tem acesso somente leitura (materiais de cozinha e consumo)
-  const isViewerOnly = !canManage && userRole === 'nutritionist';
+  const isViewerOnly = canView && !canManage;
 
   useEffect(() => {
     loadAll();
@@ -365,7 +363,8 @@ export default function StockControl() {
       withdrawn_by_name: profiles.find((p) => p.user_id === user?.id)?.name || '',
       withdrawal_date: getTodayLocalISODate(),
       clinic_unit: item.clinic_unit || 'todas',
-
+      is_transfer: false,
+      destination_unit: item.clinic_unit === 'todas' ? 'madre' : item.clinic_unit || 'madre',
       destination: item.location || '',
       expected_return_date: '',
       reason: '',
@@ -386,6 +385,21 @@ export default function StockControl() {
       toast({ variant: 'destructive', title: 'Quantidade maior que o disponível' });
       return;
     }
+    const sourceBalance = unitBalances
+      .get(targetItem.id)
+      ?.find((balance) => balance.unitValue === withdrawForm.clinic_unit)?.quantity;
+    if (withdrawForm.is_transfer && sourceBalance != null && qty > sourceBalance) {
+      toast({
+        variant: 'destructive',
+        title: 'Quantidade maior que o saldo da unidade de origem',
+        description: `Disponível em ${clinicUnitLabel(withdrawForm.clinic_unit)}: ${sourceBalance}`,
+      });
+      return;
+    }
+    if (withdrawForm.is_transfer && withdrawForm.clinic_unit === withdrawForm.destination_unit) {
+      toast({ variant: 'destructive', title: 'Escolha uma unidade de destino diferente da origem' });
+      return;
+    }
     const personName =
       withdrawForm.withdrawn_by_name.trim().toUpperCase() ||
       profiles.find((p) => p.user_id === withdrawForm.withdrawn_by_user_id)?.name ||
@@ -396,7 +410,8 @@ export default function StockControl() {
     }
 
     const previous = targetItem.current_quantity || 0;
-    const { data, error } = await supabase.from('stock_movements').insert([
+    const destinationLabel = clinicUnitLabel(withdrawForm.destination_unit);
+    const movementRows = [
       {
         stock_item_id: targetItem.id,
         type: 'out',
@@ -408,31 +423,58 @@ export default function StockControl() {
         withdrawn_by_user_id: withdrawForm.withdrawn_by_user_id || null,
         withdrawn_by_name: personName,
         clinic_unit: withdrawForm.clinic_unit || targetItem.clinic_unit || 'todas',
-        destination: withdrawForm.destination || null,
-        expected_return_date: withdrawForm.expected_return_date || null,
-        reason: withdrawForm.reason || 'Retirada de material',
+        destination: [destinationLabel, withdrawForm.destination.trim()]
+          .filter(Boolean)
+          .join(' — '),
+        expected_return_date: withdrawForm.is_transfer ? null : withdrawForm.expected_return_date || null,
+        reason: withdrawForm.reason || (withdrawForm.is_transfer ? `Transferência para ${destinationLabel}` : 'Retirada de material'),
         previous_quantity: previous,
         new_quantity: Math.max(0, previous - qty),
         created_by: user?.id,
         moved_by: user?.id,
       },
-    ]).select('*').single();
+      ...(withdrawForm.is_transfer ? [{
+        stock_item_id: targetItem.id,
+        type: 'in',
+        quantity: qty,
+        unit_cost: targetItem.unit_cost || 0,
+        total_cost: (targetItem.unit_cost || 0) * qty,
+        date: withdrawForm.withdrawal_date,
+        clinic_unit: withdrawForm.destination_unit,
+        destination: destinationLabel,
+        reason: `Recebimento de transferência de ${clinicUnitLabel(withdrawForm.clinic_unit)}`,
+        previous_quantity: Math.max(0, previous - qty),
+        new_quantity: previous,
+        created_by: user?.id,
+        moved_by: user?.id,
+      }] : []),
+    ];
+
+    const { data, error } = await supabase.from('stock_movements').insert(movementRows).select('*');
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao registrar retirada', description: error.message });
       return;
     }
 
-    const newQty = Math.max(0, previous - qty);
-    await supabase.from('stock_items').update({ current_quantity: newQty }).eq('id', targetItem.id);
+    const newQty = withdrawForm.is_transfer ? previous : Math.max(0, previous - qty);
+    if (!withdrawForm.is_transfer) {
+      await supabase.from('stock_items').update({ current_quantity: newQty }).eq('id', targetItem.id);
+    }
 
-    setMovements((prev) => [data as Movement, ...prev]);
+    const savedMovements = (data || []) as Movement[];
+    setMovements((prev) => [...savedMovements.slice().reverse(), ...prev]);
     setItems((prev) => prev.map((i) => (i.id === targetItem.id ? { ...i, current_quantity: newQty } : i)));
-    toast({ title: 'Retirada registrada', description: `${qty}x ${targetItem.name} para ${personName}` });
+    toast({
+      title: withdrawForm.is_transfer ? 'Transferência registrada' : 'Retirada registrada',
+      description: withdrawForm.is_transfer
+        ? `${qty}x ${targetItem.name} → ${destinationLabel}`
+        : `${qty}x ${targetItem.name} para ${personName}`,
+    });
     setWithdrawDialog(false);
 
-    if (withdrawForm.generate_term) {
-      await printAuthorization(data as Movement, targetItem);
+    if (!withdrawForm.is_transfer && withdrawForm.generate_term && savedMovements[0]) {
+      await printAuthorization(savedMovements[0], targetItem);
     }
   };
 
@@ -536,7 +578,7 @@ export default function StockControl() {
       date: getTodayLocalISODate(),
       supplier: item.supplier || '',
       reason: '',
-      allocation: { madre: '', floresta: '', atendimento_floresta: '', todas: '' },
+      allocation: { madre: '', madre_escola: '', floresta: '', atendimento_floresta: '', todas: '' },
     });
     setEntryDialog(true);
   };
@@ -832,8 +874,24 @@ export default function StockControl() {
     doc.save('estoque-movimentacoes.pdf');
   };
 
-  if (roleLoading) {
+  if (accessLoading) {
     return <div className="p-6 text-muted-foreground">Carregando...</div>;
+  }
+
+  if (accessLoading) {
+    return <div className="flex min-h-[320px] items-center justify-center text-muted-foreground">Carregando estoque...</div>;
+  }
+
+  if (!canView) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center p-6">
+        <div className="max-w-sm text-center">
+          <Lock className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <h1 className="font-semibold">Acesso ao estoque não liberado</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Solicite à diretoria a liberação para consulta ou gestão.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -902,6 +960,7 @@ export default function StockControl() {
             Alertas {alerts.total > 0 && `(${alerts.total})`}
           </TabsTrigger>
           <TabsTrigger value="report">Relatório mensal</TabsTrigger>
+          {isDirector && <TabsTrigger value="access">Acessos</TabsTrigger>}
 
         </TabsList>
 
@@ -1031,6 +1090,12 @@ export default function StockControl() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isDirector && (
+          <TabsContent value="access">
+            <StockAccessManager />
+          </TabsContent>
+        )}
 
         {/* HISTÓRICO */}
         <TabsContent value="history" className="space-y-4">
@@ -1543,6 +1608,16 @@ export default function StockControl() {
             <p className="text-sm text-muted-foreground">
               {targetItem?.name} — disponível: {targetItem?.current_quantity} {targetItem?.unit}
             </p>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label>Transferir entre unidades</Label>
+                <p className="text-xs text-muted-foreground">O saldo sai da origem e aparece na unidade de destino.</p>
+              </div>
+              <Switch
+                checked={withdrawForm.is_transfer}
+                onCheckedChange={(checked) => setWithdrawForm({ ...withdrawForm, is_transfer: checked })}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Quantidade *</Label>
@@ -1604,17 +1679,30 @@ export default function StockControl() {
                 </Select>
               </div>
               <div>
-                <Label>Destino / setor</Label>
-                <Input placeholder="Ex.: Sala 3 - Madre" value={withdrawForm.destination}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })} />
+                <Label>{withdrawForm.is_transfer ? 'Unidade de destino' : 'Enviar para a unidade'}</Label>
+                <Select value={withdrawForm.destination_unit} onValueChange={(v) => setWithdrawForm({ ...withdrawForm, destination_unit: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STOCK_UNITS.map((unit) => <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+            <div>
+              <Label>Setor / sala de destino (opcional)</Label>
+              <Input placeholder="Ex.: Secretaria ou Sala 3" value={withdrawForm.destination}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
 
-                <Label>Previsão de devolução</Label>
-                <Input type="date" value={withdrawForm.expected_return_date}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, expected_return_date: e.target.value })} />
+                {!withdrawForm.is_transfer && (
+                  <>
+                    <Label>Previsão de devolução</Label>
+                    <Input type="date" value={withdrawForm.expected_return_date}
+                      onChange={(e) => setWithdrawForm({ ...withdrawForm, expected_return_date: e.target.value })} />
+                  </>
+                )}
               </div>
             </div>
             <div>
@@ -1622,7 +1710,7 @@ export default function StockControl() {
               <Textarea rows={2} value={withdrawForm.reason}
                 onChange={(e) => setWithdrawForm({ ...withdrawForm, reason: e.target.value })} />
             </div>
-            <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
+            {!withdrawForm.is_transfer && <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
               <input
                 type="checkbox"
                 className="mt-1"
@@ -1635,7 +1723,7 @@ export default function StockControl() {
                   Documento com logo da Fundação para impressão e assinatura do responsável.
                 </span>
               </span>
-            </label>
+            </label>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWithdrawDialog(false)}>Cancelar</Button>

@@ -15,6 +15,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTheme } from 'next-themes';
+import { useStockAccess } from '@/hooks/useStockAccess';
 
 const iconMapping: Record<string, LucideIcon> = {
   Home, UserPlus, Users, Calendar, ClipboardList, UserCheck, FolderOpen,
@@ -75,7 +76,7 @@ const categoryAccents: Record<string, { icon: string; activeBg: string; activeTe
 };
 
 // Dynamic menu items based on role permissions
-const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
+const getMenuItemsForRole = (permissions: any, customPermissions: any, canViewStock: boolean) => {
   const items = [];
 
   items.push({ id: 'dashboard', title: 'Painel', url: '/', icon: 'Home', category: null, order_index: 0 });
@@ -117,7 +118,7 @@ const getMenuItemsForRole = (permissions: any, customPermissions: any) => {
     items.push({ id: 'contracts', title: 'Contratos', url: '/contracts', icon: 'FolderOpen', category: 'FINANCEIRO', order_index: 10 });
   }
 
-  if (permissions.canManageStock() || customPermissions.hasPermission('view_stock')) {
+  if (canViewStock) {
     items.push({ id: 'stock', title: 'Estoque', url: '/stock', icon: 'Package', category: 'ESTOQUE', order_index: 11 });
   }
 
@@ -236,17 +237,18 @@ export function AppSidebar() {
   const { toast } = useToast();
   const permissions = useRolePermissions();
   const customPermissions = useCustomPermissions();
+  const stockAccess = useStockAccess();
   const currentPath = location.pathname;
   const [navigationItems, setNavigationItems] = useState<MenuItem[]>([]);
   const isNeuroCoordinator = ['coordinator_floresta', 'coordinator_atendimento_floresta'].includes(permissions.userRole || '');
   const { data: neuroStats } = useNeuroStats(isNeuroCoordinator);
 
   useEffect(() => {
-    if (!permissions.loading && !customPermissions.loading) {
-      const items = getMenuItemsForRole(permissions, customPermissions);
+    if (!permissions.loading && !customPermissions.loading && !stockAccess.loading) {
+      const items = getMenuItemsForRole(permissions, customPermissions, stockAccess.canView);
       setNavigationItems(items);
     }
-  }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions]);
+  }, [permissions.loading, permissions.userRole, customPermissions.loading, customPermissions.permissions, stockAccess.loading, stockAccess.canView]);
 
   useEffect(() => {
     if (isMobile) setOpenMobile(false);
