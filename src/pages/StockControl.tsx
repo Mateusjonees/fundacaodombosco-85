@@ -16,9 +16,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
 import { generateStockAuthorizationPdf } from '@/utils/stockAuthorizationPdf';
+import { StockAccessManager, STOCK_UNITS } from '@/components/StockAccessManager';
+import { useStockAccess } from '@/hooks/useStockAccess';
 import {
   Package2, Plus, AlertTriangle, ArrowDownToLine, ArrowUpFromLine,
-  Search, FileDown, Pencil, Boxes, CalendarDays, Trash2, Undo2, Clock,
+  Search, FileDown, Pencil, Boxes, CalendarDays, Trash2, Undo2, Clock, Lock,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -43,9 +45,7 @@ const CATEGORIES = [
 // Unidades da clínica (estoque separado por unidade)
 const CLINIC_UNITS = [
   { value: 'todas', label: 'Todas as unidades' },
-  { value: 'madre', label: 'MADRE' },
-  { value: 'floresta', label: 'Floresta' },
-  { value: 'atendimento_floresta', label: 'Atendimento Floresta' },
+  ...STOCK_UNITS,
 ];
 
 const clinicUnitLabel = (value?: string | null) =>
@@ -126,7 +126,7 @@ const emptyItem = {
 export default function StockControl() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { canManageStock, userRole, loading: roleLoading } = useRolePermissions();
+  const { canManage, canView, isDirector, loading: accessLoading } = useStockAccess();
 
   const [items, setItems] = useState<StockItem[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
@@ -152,7 +152,7 @@ export default function StockControl() {
     withdrawn_by_name: '',
     withdrawal_date: getTodayLocalISODate(),
     clinic_unit: 'todas',
-
+    destination_unit: 'madre',
     destination: '',
     expected_return_date: '',
     reason: '',
@@ -172,7 +172,7 @@ export default function StockControl() {
     supplier: '',
     reason: '',
     // Quanto dessa entrada vai para cada unidade da clínica
-    allocation: { madre: '', floresta: '', atendimento_floresta: '', todas: '' } as Record<string, string>,
+    allocation: { madre: '', madre_escola: '', floresta: '', atendimento_floresta: '', todas: '' } as Record<string, string>,
   });
 
 
@@ -182,9 +182,7 @@ export default function StockControl() {
   const [histTo, setHistTo] = useState('');
   const [histPerson, setHistPerson] = useState('all');
 
-  const canManage = canManageStock();
-  // Nutricionista tem acesso somente leitura (materiais de cozinha e consumo)
-  const isViewerOnly = !canManage && userRole === 'nutritionist';
+  const isViewerOnly = canView && !canManage;
 
   useEffect(() => {
     loadAll();
@@ -365,7 +363,7 @@ export default function StockControl() {
       withdrawn_by_name: profiles.find((p) => p.user_id === user?.id)?.name || '',
       withdrawal_date: getTodayLocalISODate(),
       clinic_unit: item.clinic_unit || 'todas',
-
+      destination_unit: item.clinic_unit === 'todas' ? 'madre' : item.clinic_unit || 'madre',
       destination: item.location || '',
       expected_return_date: '',
       reason: '',
@@ -408,7 +406,9 @@ export default function StockControl() {
         withdrawn_by_user_id: withdrawForm.withdrawn_by_user_id || null,
         withdrawn_by_name: personName,
         clinic_unit: withdrawForm.clinic_unit || targetItem.clinic_unit || 'todas',
-        destination: withdrawForm.destination || null,
+        destination: [clinicUnitLabel(withdrawForm.destination_unit), withdrawForm.destination.trim()]
+          .filter(Boolean)
+          .join(' — '),
         expected_return_date: withdrawForm.expected_return_date || null,
         reason: withdrawForm.reason || 'Retirada de material',
         previous_quantity: previous,
@@ -836,6 +836,22 @@ export default function StockControl() {
     return <div className="p-6 text-muted-foreground">Carregando...</div>;
   }
 
+  if (accessLoading) {
+    return <div className="flex min-h-[320px] items-center justify-center text-muted-foreground">Carregando estoque...</div>;
+  }
+
+  if (!canView) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center p-6">
+        <div className="max-w-sm text-center">
+          <Lock className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <h1 className="font-semibold">Acesso ao estoque não liberado</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Solicite à diretoria a liberação para consulta ou gestão.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Cabeçalho */}
@@ -902,6 +918,7 @@ export default function StockControl() {
             Alertas {alerts.total > 0 && `(${alerts.total})`}
           </TabsTrigger>
           <TabsTrigger value="report">Relatório mensal</TabsTrigger>
+          {isDirector && <TabsTrigger value="access">Acessos</TabsTrigger>}
 
         </TabsList>
 
@@ -1031,6 +1048,12 @@ export default function StockControl() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isDirector && (
+          <TabsContent value="access">
+            <StockAccessManager />
+          </TabsContent>
+        )}
 
         {/* HISTÓRICO */}
         <TabsContent value="history" className="space-y-4">
@@ -1604,10 +1627,19 @@ export default function StockControl() {
                 </Select>
               </div>
               <div>
-                <Label>Destino / setor</Label>
-                <Input placeholder="Ex.: Sala 3 - Madre" value={withdrawForm.destination}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })} />
+                <Label>Enviar para a unidade</Label>
+                <Select value={withdrawForm.destination_unit} onValueChange={(v) => setWithdrawForm({ ...withdrawForm, destination_unit: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STOCK_UNITS.map((unit) => <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+            <div>
+              <Label>Setor / sala de destino (opcional)</Label>
+              <Input placeholder="Ex.: Secretaria ou Sala 3" value={withdrawForm.destination}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

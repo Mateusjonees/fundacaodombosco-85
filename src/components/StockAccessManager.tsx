@@ -200,7 +200,7 @@ export const StockAccessManager = () => {
                             size="sm"
                             variant="ghost"
                             disabled={savingUserId === profile.user_id}
-                            onClick={() => saveAccess(profile, level, [STOCK_UNITS[0].value])}
+                            onClick={() => saveAccess(profile, level, ['madre'])}
                           >
                             Restringir
                           </Button>

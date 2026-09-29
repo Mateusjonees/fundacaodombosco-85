@@ -110,9 +110,8 @@ export const useRolePermissions = () => {
     return isGodMode();
   };
 
-  const canManageStock = (): boolean => {
-    return isGodMode() || hasAnyRole(ROLE_GROUPS.STOCK_MANAGERS);
-  };
+  // Use useStockAccess for stock authorization; kept for legacy call sites.
+  const canManageStock = (): boolean => isGodMode() || hasRole('estoquista');
 
   const canViewAllSchedules = (): boolean => {
     return isGodMode() || hasAnyRole(ROLE_GROUPS.ALL_ADMIN_VIEW_CLIENTS_AND_EMPLOYEES);
