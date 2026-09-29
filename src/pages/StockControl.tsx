@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { formatDateBR, getTodayLocalISODate } from '@/lib/utils';
 import { generateStockAuthorizationPdf } from '@/utils/stockAuthorizationPdf';
 import { StockAccessManager, STOCK_UNITS } from '@/components/StockAccessManager';
@@ -536,7 +535,7 @@ export default function StockControl() {
       date: getTodayLocalISODate(),
       supplier: item.supplier || '',
       reason: '',
-      allocation: { madre: '', floresta: '', atendimento_floresta: '', todas: '' },
+      allocation: { madre: '', madre_escola: '', floresta: '', atendimento_floresta: '', todas: '' },
     });
     setEntryDialog(true);
   };
@@ -832,7 +831,7 @@ export default function StockControl() {
     doc.save('estoque-movimentacoes.pdf');
   };
 
-  if (roleLoading) {
+  if (accessLoading) {
     return <div className="p-6 text-muted-foreground">Carregando...</div>;
   }
 
