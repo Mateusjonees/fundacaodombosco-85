@@ -4,6 +4,12 @@
 
 Sistema completo de gestão desenvolvido especificamente para a Fundação Dom Bosco.
 
+## Módulos principais
+
+- Gestão clínica, pacientes, agenda e documentos
+- Estoque por unidade, com distribuição de entradas, alertas e acessos individuais administrados pela diretoria
+- Financeiro, equipe, relatórios e comunicação interna
+
 ## Como editar este código?
 
 Existem várias maneiras de editar sua aplicação.
