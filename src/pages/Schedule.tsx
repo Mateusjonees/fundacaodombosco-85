@@ -278,6 +278,13 @@ export default function SchedulePage() {
     getStatusBadge,
   }), [employees, userProfile, isAdmin, canCancelSchedules, canDeleteSchedules, handleEditSchedule, handleRedirect, refetchSchedules, getStatusBadge]);
 
+  const handleAttendanceComplete = useCallback(async () => {
+    setCompleteDialogOpen(false);
+    setSelectedScheduleForAction(null);
+    await queryClient.invalidateQueries({ queryKey: ['schedules'] });
+    await refetchSchedules();
+  }, [queryClient, refetchSchedules]);
+
   const isTodaySelected = isToday(selectedDate);
 
   return (
@@ -486,7 +493,7 @@ export default function SchedulePage() {
           schedule={selectedScheduleForAction}
           isOpen={completeDialogOpen}
           onClose={() => setCompleteDialogOpen(false)}
-          onComplete={refetchSchedules}
+          onComplete={handleAttendanceComplete}
         />
 
         <CancelAppointmentDialog
