@@ -146,7 +146,7 @@ interface CompleteAttendanceDialogProps {
   schedule: Schedule | null;
   isOpen: boolean;
   onClose: () => void;
-  onComplete: () => void;
+  onComplete: () => void | Promise<void>;
 }
 
 export default function CompleteAttendanceDialog({
@@ -1584,22 +1584,27 @@ export default function CompleteAttendanceDialog({
         }
       }
 
-      // Upsert employee_report
-      await offlineUpsert('employee_reports', {
-        employee_id: schedule.employee_id,
-        client_id: schedule.client_id,
-        schedule_id: schedule.id,
-        session_date: getTodayLocalISODate(),
-        session_type: 'Consulta',
-        session_duration: durationMinutes,
-        professional_notes: sessionNotes,
-        completed_by: user.id,
-        completed_by_name: completedByName,
-        validation_status: validationStatus,
-        validated_at: isAtendimentoFloresta ? now : null,
-        validated_by: isAtendimentoFloresta ? user.id : null,
-        validated_by_name: isAtendimentoFloresta ? completedByName : null
-      }, 'schedule_id');
+      // O relatório profissional complementa a evolução; uma falha aqui não
+      // deve transformar um atendimento já salvo em erro para o profissional.
+      try {
+        await offlineUpsert('employee_reports', {
+          employee_id: schedule.employee_id,
+          client_id: schedule.client_id,
+          schedule_id: schedule.id,
+          session_date: getTodayLocalISODate(),
+          session_type: 'Consulta',
+          session_duration: durationMinutes,
+          professional_notes: sessionNotes,
+          completed_by: user.id,
+          completed_by_name: completedByName,
+          validation_status: validationStatus,
+          validated_at: isAtendimentoFloresta ? now : null,
+          validated_by: isAtendimentoFloresta ? user.id : null,
+          validated_by_name: isAtendimentoFloresta ? completedByName : null
+        }, 'schedule_id');
+      } catch (employeeReportError) {
+        console.warn('[CompleteAttendance] Falha no relatório complementar:', employeeReportError);
+      }
 
       // Se for Atendimento Floresta, processar automaticamente com valores do agendamento
       if (isAtendimentoFloresta && attendanceReport?.id && !isOffline()) {
@@ -1614,7 +1619,7 @@ export default function CompleteAttendanceDialog({
         const foundAmount = scheduleData?.foundation_amount ?? 0;
         const totalAmount = profAmount + foundAmount;
 
-        await supabase.rpc('validate_attendance_report', {
+        const { error: validationError } = await supabase.rpc('validate_attendance_report', {
           p_attendance_report_id: attendanceReport.id,
           p_action: 'validate',
           p_professional_amount: profAmount,
@@ -1622,15 +1627,23 @@ export default function CompleteAttendanceDialog({
           p_total_amount: totalAmount,
           p_payment_method: 'dinheiro'
         });
+        if (validationError) {
+          console.warn('[CompleteAttendance] Falha na validação automática:', validationError);
+        }
       }
 
-      // Atualizar cliente
-      await offlineUpdate('clients', schedule.client_id, {
-        last_session_date: getTodayLocalISODate(),
-        last_session_type: 'Consulta',
-        last_session_notes: sessionNotes,
-        updated_at: now
-      });
+      // Este resumo é complementar e pode ser bloqueado para profissionais por
+      // segurança. A evolução e o estado da agenda já foram persistidos acima.
+      try {
+        await offlineUpdate('clients', schedule.client_id, {
+          last_session_date: getTodayLocalISODate(),
+          last_session_type: 'Consulta',
+          last_session_notes: sessionNotes,
+          updated_at: now
+        });
+      } catch (clientUpdateError) {
+        console.warn('[CompleteAttendance] Falha ao atualizar resumo do paciente:', clientUpdateError);
+      }
 
       // Sucesso!
       setLoading(false);
@@ -1647,9 +1660,7 @@ export default function CompleteAttendanceDialog({
       });
 
       onClose();
-      setTimeout(() => {
-        onComplete();
-      }, 300);
+      await onComplete();
 
     } catch (error: any) {
       console.error('Erro ao completar atendimento:', error);

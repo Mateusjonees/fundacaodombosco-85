@@ -6,3 +6,4 @@
 - [x] Criar níveis de acesso por funcionário e unidade.
 - [x] Aplicar as mesmas regras de acesso no banco e na tela.
 - [x] Validar tipos e compilação.
+- [x] Corrigir falso erro e atualização da agenda após concluir atendimento.
