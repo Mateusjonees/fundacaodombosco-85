@@ -181,7 +181,8 @@
 @layer components {
   /* ======= Login ======= */
   .login-container {
-    @apply flex justify-center items-center min-h-screen w-full fixed top-0 left-0 z-50 overflow-y-auto;
+    @apply relative z-50 flex min-h-screen w-full items-center justify-center overflow-y-auto;
+    min-height: 100dvh;
     background: hsl(var(--login-bg-mid));
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
@@ -205,7 +206,7 @@
   }
 
   .login-form .form-group input {
-    @apply w-full px-3 py-2.5 border rounded-md text-sm transition-colors;
+    @apply w-full px-3 py-2.5 border rounded-md text-base sm:text-sm transition-colors;
     background: hsl(var(--input));
     border-color: hsl(var(--login-input-border));
   }
@@ -368,15 +369,3 @@
   }
 }
 
-/* Hide browser credential/autofill icons inside inputs */
-input::-webkit-credentials-auto-fill-button,
-input::-webkit-textfield-decoration-container {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
-input::-ms-reveal,
-input::-ms-clear {
-  display: none !important;
-}

@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
-import { ArrowRight, MonitorDown } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, MonitorDown } from 'lucide-react';
 import appWindowsAsset from '@/assets/app-windows.zip.asset.json';
 
 interface LoginFormProps {
@@ -18,7 +18,13 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handleTogglePassword = () => {
+    setShowPassword((current) => !current);
+    requestAnimationFrame(() => passwordInputRef.current?.focus({ preventScroll: true }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +92,6 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
               width="224"
               height="224"
               className="relative h-32 w-auto object-contain drop-shadow-2xl" 
-              fetchPriority="high"
             />
           </div>
         </div>
@@ -110,12 +115,18 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
               <Input 
                 id="email" 
                 type="email" 
+                 name="email"
+                 autoComplete="username"
+                 autoCapitalize="none"
+                 autoCorrect="off"
+                 spellCheck={false}
+                 inputMode="email"
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
                 required 
                 disabled={isLoading} 
                 placeholder="seu@email.com"
-                className="h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
+                 className="h-12 rounded-xl border-input bg-muted/50 text-base focus:bg-card"
               />
             </div>
 
@@ -126,31 +137,31 @@ export const LoginForm = ({ onSuccess, onSwitchToSignUp }: LoginFormProps) => {
               <div className="relative">
                 <Input 
                   id="password" 
+                 ref={passwordInputRef}
+                 name="password"
                   type={showPassword ? 'text' : 'password'} 
+                 autoComplete="current-password"
+                 autoCapitalize="none"
+                 autoCorrect="off"
+                 spellCheck={false}
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
                   required 
                   disabled={isLoading} 
                   placeholder="••••••••"
-                  className="pr-10 h-12 rounded-xl border-input bg-muted/50 focus:bg-card"
+                 className="pr-12 h-12 rounded-xl border-input bg-muted/50 text-base focus:bg-card"
                 />
-                <button
+                 <Button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-                  tabIndex={-1}
+                   variant="ghost"
+                   size="icon"
+                   onPointerDown={(event) => event.preventDefault()}
+                   onClick={handleTogglePassword}
+                   className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 touch-manipulation text-muted-foreground hover:text-foreground"
                   aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 >
-                  {showPassword ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" />
-                    </svg>
-                  )}
-                </button>
+                   {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                 </Button>
               </div>
             </div>
 
