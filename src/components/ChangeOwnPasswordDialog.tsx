@@ -91,18 +91,25 @@ export const ChangeOwnPasswordDialog = ({ isOpen, onSuccess, userName }: ChangeO
             <div className="relative">
               <Input
                 id="new-password"
+                name="newPassword"
                 type={showNewPassword ? "text" : "password"}
+                autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Digite sua nova senha (mínimo 6 caracteres)"
-                className="pr-10"
+                className="pr-12 text-base sm:text-sm"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onPointerDown={(event) => event.preventDefault()}
                 onClick={() => setShowNewPassword(!showNewPassword)}
+                aria-label={showNewPassword ? 'Ocultar nova senha' : 'Mostrar nova senha'}
               >
                 {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
@@ -117,18 +124,25 @@ export const ChangeOwnPasswordDialog = ({ isOpen, onSuccess, userName }: ChangeO
             <div className="relative">
               <Input
                 id="confirm-password"
+                name="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirme sua nova senha"
-                className="pr-10"
+                className="pr-12 text-base sm:text-sm"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onPointerDown={(event) => event.preventDefault()}
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'}
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>

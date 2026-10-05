@@ -133,18 +133,26 @@ export const ChangePasswordDialog = ({
             <div className="relative">
               <Input
                 id="newPassword"
+                name="newPassword"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Digite a nova senha (mínimo 6 caracteres)"
                 required
+                className="pr-12 text-base sm:text-sm"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onPointerDown={(event) => event.preventDefault()}
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>

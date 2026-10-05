@@ -7,3 +7,5 @@
 - [x] Aplicar as mesmas regras de acesso no banco e na tela.
 - [x] Validar tipos e compilação.
 - [x] Corrigir falso erro e atualização da agenda após concluir atendimento.
+- [x] Corrigir digitação, seleção e visualização de senhas em celulares.
+- [x] Revisar e corrigir os erros visíveis registrados na tela de login.
