@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { offlineDB } from '@/utils/offlineDB';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import { dedupeClinicalGroups, toBrasiliaISODate } from '@/utils/clinicalRecords';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -468,13 +470,10 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  // Datas sempre em Brasília; datas puras (YYYY-MM-DD) não voltam um dia
+  const formatDate = (dateString: string) => formatDateBR(dateString);
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR');
-  };
+  const formatDateTime = (dateString: string) => formatDateTimeBR(dateString);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
