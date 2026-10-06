@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { offlineDB } from '@/utils/offlineDB';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import { dedupeClinicalGroups, toBrasiliaISODate } from '@/utils/clinicalRecords';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -180,6 +182,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
       from('medical_records').
       select(`
           id,
+          schedule_id,
           session_date,
           session_type,
           progress_notes,
@@ -222,6 +225,7 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             patient_response: record.symptoms || '',
             created_at: record.session_date,
             source: 'medical_record',
+            schedule_id: record.schedule_id,
             employee_id: record.employee_id
           });
         });
@@ -369,15 +373,25 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
             amount_charged: report.materials_cost || 0,
             created_at: report.session_date,
             source: 'session_report',
+            schedule_id: report.schedule_id,
             employee_id: report.employee_id
           });
         });
       }
 
-      // Ocultar agendamentos sem evolutiva — mostrar apenas prontuários/atendimentos clínicos
-      const clinicalRecords = records.filter((r) => r.source !== 'schedule');
-      // Ordenar todos os registros por data (mais recente primeiro)
-      clinicalRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      // Ocultar agendamentos sem evolutiva e mostrar cada evolução uma única vez
+      const sourcePriority = ['attendance_report', 'medical_record', 'session_report'];
+      const groupedRecords = sourcePriority.map((source) => records.filter((r) => r.source === source));
+      const clinicalRecords = dedupeClinicalGroups(groupedRecords, (_group, r: ServiceRecord) => ({
+        schedule_id: r.schedule_id,
+        date: r.date,
+        text: r.detailed_notes,
+      })).flat();
+      // Ordenar todos os registros pela data em Brasília (mais recente primeiro)
+      clinicalRecords.sort((a, b) =>
+        (toBrasiliaISODate(b.date) || '').localeCompare(toBrasiliaISODate(a.date) || '') ||
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
       setServiceRecords(clinicalRecords);
       // Guarda snapshot para consulta offline
       await offlineDB.put('metadata', { key: historyCacheKey, records: clinicalRecords }).catch(() => {});
@@ -456,13 +470,10 @@ export default function ServiceHistory({ clientId }: ServiceHistoryProps) {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  // Datas sempre em Brasília; datas puras (YYYY-MM-DD) não voltam um dia
+  const formatDate = (dateString: string) => formatDateBR(dateString);
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR');
-  };
+  const formatDateTime = (dateString: string) => formatDateTimeBR(dateString);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
