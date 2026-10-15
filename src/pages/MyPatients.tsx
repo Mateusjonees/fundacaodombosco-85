@@ -854,35 +854,50 @@ const MyPatients: React.FC = () => {
                   if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) a--;
                   return a;
                 })() : null;
-                const unitMap: Record<string, { color: string; label: string }> = {
-                  madre: { color: 'bg-blue-500', label: 'Madre' },
-                  floresta: { color: 'bg-emerald-500', label: 'Floresta' },
-                  atendimento_floresta: { color: 'bg-teal-500', label: 'Atend.' },
-                };
-                const unit = unitMap[client.unit || ''] || { color: 'bg-muted-foreground', label: 'N/A' };
+                const unitStyle = getUnitStyle(client.unit);
+                const UnitIcon = unitStyle.Icon;
 
                 return (
-                  <Card key={client.id} className="group border hover:shadow-md transition-shadow">
-                    <div className={`h-1 ${unit.color}`} />
-                    <CardContent className="p-4 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div className="min-w-0">
-                          <h4 className="font-semibold text-sm uppercase truncate">{client.name}</h4>
-                          {age !== null && <p className="text-xs text-muted-foreground">{age} anos</p>}
+                  <Card
+                    key={client.id}
+                    className="group relative overflow-hidden border shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                    onClick={() => { setPatientModalClientId(client.id); setPatientModalOpen(true); }}
+                  >
+                    {/* Barra de cor da unidade */}
+                    <div className={`h-1 bg-gradient-to-r ${unitStyle.gradient}`} />
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <UserAvatar name={client.name} size="md" />
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <h4 className="font-bold text-sm uppercase truncate tracking-wide leading-tight">{client.name}</h4>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium ${unitStyle.bgLight} ${unitStyle.textColor} border ${unitStyle.borderColor}`}>
+                              <UnitIcon className="h-3 w-3" />
+                              {unitStyle.label}
+                            </span>
+                            {age !== null && (
+                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${
+                                age < 18
+                                  ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {age} anos{age < 18 ? ' · Menor' : ''}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <Badge variant="outline" className="text-[10px] shrink-0">{unit.label}</Badge>
                       </div>
                       {(client.phone || client.responsible_phone) && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Phone className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <Phone className="h-3 w-3 shrink-0" />
                           <span className="truncate">{client.phone || client.responsible_phone}</span>
                         </div>
                       )}
-                      <div className="flex gap-2 pt-2 border-t">
-                        <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => { setPatientModalClientId(client.id); setPatientModalOpen(true); }}>
+                      <div className="flex gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+                        <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={() => { setPatientModalClientId(client.id); setPatientModalOpen(true); }}>
                           <Eye className="h-3.5 w-3.5 mr-1" /> Ver
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => openScheduleForClient(client.id)} title="Agendar atendimento">
+                        <Button size="sm" className="flex-1 h-8 text-xs gap-1" onClick={() => openScheduleForClient(client.id)} title="Agendar atendimento">
                           <CalendarIcon className="h-3.5 w-3.5" /> Agendar
                         </Button>
                       </div>
