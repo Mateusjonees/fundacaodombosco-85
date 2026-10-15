@@ -9,6 +9,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
+import { MarkAbsenceDialog } from '@/components/MarkAbsenceDialog';
+import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
+import { CreateScheduleDialog } from '@/components/schedule/CreateScheduleDialog';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useEmployees } from '@/hooks/useEmployees';
 import PersonalTaskDialog, { TaskData } from '@/components/PersonalTaskDialog';
 import PersonalEventDialog, { EventData } from '@/components/PersonalEventDialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,7 +24,7 @@ import {
   Heart, Search, Calendar as CalendarIcon, Phone, User, Clock,
   AlertCircle, ChevronLeft, ChevronRight, CheckCircle, Eye,
   CalendarCheck, TrendingUp, Activity, Plus, ListTodo, CalendarDays,
-  MoreHorizontal, Pencil, Trash2, CheckSquare, Circle
+  MoreHorizontal, Pencil, Trash2, CheckSquare, Circle, UserX, XCircle
 } from 'lucide-react';
 import {
   format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
