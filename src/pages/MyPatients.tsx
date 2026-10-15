@@ -22,10 +22,12 @@ import { StatsCard } from '@/components/ui/stats-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Heart, Search, Calendar as CalendarIcon, Phone, User, Clock,
-  AlertCircle, ChevronLeft, ChevronRight, CheckCircle, Eye,
+  AlertCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle, Eye,
   CalendarCheck, TrendingUp, Activity, Plus, ListTodo, CalendarDays,
   MoreHorizontal, Pencil, Trash2, CheckSquare, Circle, UserX, XCircle
 } from 'lucide-react';
+import { UserAvatar } from '@/components/UserAvatar';
+import { getUnitStyle } from '@/utils/unitUtils';
 import {
   format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   isSameDay, addMonths, subMonths, addWeeks, subWeeks, eachDayOfInterval,
@@ -46,7 +48,7 @@ interface Client {
 interface Schedule {
   id: string; client_id: string; employee_id: string;
   start_time: string; end_time: string; title: string;
-  status: string; notes?: string; clients?: { name: string };
+  status: string; notes?: string; clients?: { name: string; unit?: string };
 }
 
 interface ProfessionalTask {
@@ -172,7 +174,7 @@ const MyPatients: React.FC = () => {
       // Agenda própria: todos os agendamentos em que o usuário é o profissional
       const { data, error } = await supabase
         .from('schedules')
-        .select('id, client_id, employee_id, start_time, end_time, title, status, notes, clients(name)')
+        .select('id, client_id, employee_id, start_time, end_time, title, status, notes, clients(name, unit)')
         .eq('employee_id', user.id)
         .gte('start_time', rangeStart.toISOString())
         .lte('start_time', rangeEnd.toISOString())
@@ -388,21 +390,25 @@ const MyPatients: React.FC = () => {
   // Schedule event pill for calendar — com ações: concluir, falta, cancelar
   const SchedulePill = ({ schedule, compact }: { schedule: Schedule; compact?: boolean }) => {
     const isPending = ['scheduled', 'confirmed'].includes(schedule.status);
+    const unitStyle = getUnitStyle(schedule.clients?.unit);
+    const UnitIcon = unitStyle.Icon;
+    const patientName = schedule.clients?.name || schedule.title;
 
     const pill = (
       <button
         onClick={(e) => { e.stopPropagation(); }}
-        className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
-          schedule.status === 'completed' ? 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 line-through opacity-60'
-          : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50'
+        className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-lg px-2 py-1.5 text-[11px] leading-tight border-l-[3px] shadow-sm transition-all hover:shadow ${
+          schedule.status === 'completed' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 opacity-70'
+          : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50 line-through'
           : 'bg-blue-500/10 border-blue-500 text-foreground cursor-pointer hover:bg-blue-500/20'
         }`}
       >
-        <div className="flex items-center gap-1 min-w-0">
-          <span className="font-semibold shrink-0">{format(new Date(schedule.start_time), 'HH:mm')}</span>
-          {!compact && <span className="truncate min-w-0">- {schedule.clients?.name || schedule.title}</span>}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-bold shrink-0 tabular-nums">{format(new Date(schedule.start_time), 'HH:mm')}</span>
+          {!compact && <span className="truncate min-w-0 font-medium">{patientName}</span>}
+          {isPending && <ChevronDown className="h-3 w-3 ml-auto shrink-0 opacity-50" />}
         </div>
-        {compact && <div className="truncate font-medium min-w-0">{schedule.clients?.name || schedule.title}</div>}
+        {compact && <div className="truncate font-medium min-w-0">{patientName}</div>}
       </button>
     );
 
@@ -414,15 +420,22 @@ const MyPatients: React.FC = () => {
         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
           {pill}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
+        <DropdownMenuContent align="start" className="w-56">
+          <div className="px-2 py-1.5 border-b mb-1">
+            <p className="text-xs font-semibold truncate">{patientName}</p>
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <UnitIcon className={`h-3 w-3 ${unitStyle.textColor}`} />
+              {unitStyle.label} · {format(new Date(schedule.start_time), "dd/MM 'às' HH:mm")}
+            </p>
+          </div>
           <DropdownMenuItem onClick={() => setCompleteSchedule(schedule)}>
-            <CheckCircle className="h-3.5 w-3.5 mr-2 text-green-600" /> Concluir atendimento
+            <CheckCircle className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Concluir atendimento
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setAbsenceSchedule(schedule)}>
             <UserX className="h-3.5 w-3.5 mr-2 text-orange-600" /> Registrar falta
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive" onClick={() => setCancelSchedule(schedule)}>
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setCancelSchedule(schedule)}>
             <XCircle className="h-3.5 w-3.5 mr-2" /> Cancelar agendamento
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -854,35 +867,50 @@ const MyPatients: React.FC = () => {
                   if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) a--;
                   return a;
                 })() : null;
-                const unitMap: Record<string, { color: string; label: string }> = {
-                  madre: { color: 'bg-blue-500', label: 'Madre' },
-                  floresta: { color: 'bg-emerald-500', label: 'Floresta' },
-                  atendimento_floresta: { color: 'bg-teal-500', label: 'Atend.' },
-                };
-                const unit = unitMap[client.unit || ''] || { color: 'bg-muted-foreground', label: 'N/A' };
+                const unitStyle = getUnitStyle(client.unit);
+                const UnitIcon = unitStyle.Icon;
 
                 return (
-                  <Card key={client.id} className="group border hover:shadow-md transition-shadow">
-                    <div className={`h-1 ${unit.color}`} />
-                    <CardContent className="p-4 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div className="min-w-0">
-                          <h4 className="font-semibold text-sm uppercase truncate">{client.name}</h4>
-                          {age !== null && <p className="text-xs text-muted-foreground">{age} anos</p>}
+                  <Card
+                    key={client.id}
+                    className="group relative overflow-hidden border shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                    onClick={() => { setPatientModalClientId(client.id); setPatientModalOpen(true); }}
+                  >
+                    {/* Barra de cor da unidade */}
+                    <div className={`h-1 bg-gradient-to-r ${unitStyle.gradient}`} />
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <UserAvatar name={client.name} size="md" />
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <h4 className="font-bold text-sm uppercase truncate tracking-wide leading-tight">{client.name}</h4>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium ${unitStyle.bgLight} ${unitStyle.textColor} border ${unitStyle.borderColor}`}>
+                              <UnitIcon className="h-3 w-3" />
+                              {unitStyle.label}
+                            </span>
+                            {age !== null && (
+                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${
+                                age < 18
+                                  ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {age} anos{age < 18 ? ' · Menor' : ''}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <Badge variant="outline" className="text-[10px] shrink-0">{unit.label}</Badge>
                       </div>
                       {(client.phone || client.responsible_phone) && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Phone className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <Phone className="h-3 w-3 shrink-0" />
                           <span className="truncate">{client.phone || client.responsible_phone}</span>
                         </div>
                       )}
-                      <div className="flex gap-2 pt-2 border-t">
-                        <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => { setPatientModalClientId(client.id); setPatientModalOpen(true); }}>
+                      <div className="flex gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+                        <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={() => { setPatientModalClientId(client.id); setPatientModalOpen(true); }}>
                           <Eye className="h-3.5 w-3.5 mr-1" /> Ver
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => openScheduleForClient(client.id)} title="Agendar atendimento">
+                        <Button size="sm" className="flex-1 h-8 text-xs gap-1" onClick={() => openScheduleForClient(client.id)} title="Agendar atendimento">
                           <CalendarIcon className="h-3.5 w-3.5" /> Agendar
                         </Button>
                       </div>
