@@ -882,8 +882,8 @@ const MyPatients: React.FC = () => {
                         <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => { setPatientModalClientId(client.id); setPatientModalOpen(true); }}>
                           <Eye className="h-3.5 w-3.5 mr-1" /> Ver
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => window.location.href = `/schedule?client=${client.id}`}>
-                          <CalendarIcon className="h-3.5 w-3.5" />
+                        <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => openScheduleForClient(client.id)} title="Agendar atendimento">
+                          <CalendarIcon className="h-3.5 w-3.5" /> Agendar
                         </Button>
                       </div>
                     </CardContent>
@@ -901,6 +901,30 @@ const MyPatients: React.FC = () => {
         isOpen={!!completeSchedule}
         onClose={() => setCompleteSchedule(null)}
         onComplete={() => { setCompleteSchedule(null); loadAll(); }}
+      />
+      <MarkAbsenceDialog
+        schedule={absenceSchedule}
+        isOpen={!!absenceSchedule}
+        onClose={() => setAbsenceSchedule(null)}
+        onConfirm={handleMarkAbsence}
+      />
+      <CancelAppointmentDialog
+        schedule={cancelSchedule}
+        isOpen={!!cancelSchedule}
+        onClose={() => setCancelSchedule(null)}
+        onCancel={handleCancelAppointment}
+      />
+      <CreateScheduleDialog
+        isOpen={scheduleDialogOpen}
+        onOpenChange={(open) => { setScheduleDialogOpen(open); if (!open) setScheduleClientId(null); }}
+        editingSchedule={null}
+        userProfile={userProfile}
+        isAdmin={false}
+        employees={employees}
+        clients={clients}
+        initialClientId={scheduleClientId}
+        onSuccess={() => { setScheduleDialogOpen(false); setScheduleClientId(null); loadAll(); }}
+        onReset={() => setScheduleClientId(null)}
       />
       <PersonalTaskDialog
         open={taskDialogOpen}
