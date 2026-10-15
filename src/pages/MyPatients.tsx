@@ -385,23 +385,50 @@ const MyPatients: React.FC = () => {
 
   // ======= RENDER =======
 
-  // Schedule event pill for calendar
-  const SchedulePill = ({ schedule, compact }: { schedule: Schedule; compact?: boolean }) => (
-    <button
-      onClick={(e) => { e.stopPropagation(); if (['scheduled', 'confirmed'].includes(schedule.status)) setCompleteSchedule(schedule); }}
-      className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
-        schedule.status === 'completed' ? 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 line-through opacity-60'
-        : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50'
-        : 'bg-blue-500/10 border-blue-500 text-foreground cursor-pointer hover:bg-blue-500/20'
-      }`}
-    >
-      <div className="flex items-center gap-1 min-w-0">
-        <span className="font-semibold shrink-0">{format(new Date(schedule.start_time), 'HH:mm')}</span>
-        {!compact && <span className="truncate min-w-0">- {schedule.clients?.name || schedule.title}</span>}
-      </div>
-      {compact && <div className="truncate font-medium min-w-0">{schedule.clients?.name || schedule.title}</div>}
-    </button>
-  );
+  // Schedule event pill for calendar — com ações: concluir, falta, cancelar
+  const SchedulePill = ({ schedule, compact }: { schedule: Schedule; compact?: boolean }) => {
+    const isPending = ['scheduled', 'confirmed'].includes(schedule.status);
+
+    const pill = (
+      <button
+        onClick={(e) => { e.stopPropagation(); if (isPending) setCompleteSchedule(schedule); }}
+        className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
+          schedule.status === 'completed' ? 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 line-through opacity-60'
+          : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50'
+          : 'bg-blue-500/10 border-blue-500 text-foreground cursor-pointer hover:bg-blue-500/20'
+        }`}
+      >
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="font-semibold shrink-0">{format(new Date(schedule.start_time), 'HH:mm')}</span>
+          {!compact && <span className="truncate min-w-0">- {schedule.clients?.name || schedule.title}</span>}
+        </div>
+        {compact && <div className="truncate font-medium min-w-0">{schedule.clients?.name || schedule.title}</div>}
+      </button>
+    );
+
+    // Atendimentos pendentes ganham menu de ações (falta, cancelar)
+    if (!isPending) return pill;
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          {pill}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuItem onClick={() => setCompleteSchedule(schedule)}>
+            <CheckCircle className="h-3.5 w-3.5 mr-2 text-green-600" /> Concluir atendimento
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setAbsenceSchedule(schedule)}>
+            <UserX className="h-3.5 w-3.5 mr-2 text-orange-600" /> Registrar falta
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-destructive" onClick={() => setCancelSchedule(schedule)}>
+            <XCircle className="h-3.5 w-3.5 mr-2" /> Cancelar agendamento
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   // Task pill
   const TaskPill = ({ task, compact }: { task: ProfessionalTask; compact?: boolean }) => (
