@@ -82,8 +82,16 @@ const MyPatients: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [activeTab, setActiveTab] = useState<ActiveTab>('calendar');
   const [completeSchedule, setCompleteSchedule] = useState<Schedule | null>(null);
+  const [absenceSchedule, setAbsenceSchedule] = useState<Schedule | null>(null);
+  const [cancelSchedule, setCancelSchedule] = useState<Schedule | null>(null);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [scheduleClientId, setScheduleClientId] = useState<string | null>(null);
   const [patientModalClientId, setPatientModalClientId] = useState<string | null>(null);
   const [patientModalOpen, setPatientModalOpen] = useState(false);
+
+  // Perfil e equipe para o diálogo de agendamento
+  const { data: userProfile } = useUserProfile(user?.id);
+  const { data: employees = [] } = useEmployees(userProfile);
 
   // Dialog states
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
