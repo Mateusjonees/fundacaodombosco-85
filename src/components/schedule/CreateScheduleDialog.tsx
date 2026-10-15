@@ -118,7 +118,7 @@ export const CreateScheduleDialog = ({
         foundation_amount: '',
       });
     }
-  }, [editingSchedule, isOpen]);
+  }, [editingSchedule, isOpen, initialClientId]);
 
   // Fetch client email
   useEffect(() => {
