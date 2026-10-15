@@ -388,21 +388,25 @@ const MyPatients: React.FC = () => {
   // Schedule event pill for calendar — com ações: concluir, falta, cancelar
   const SchedulePill = ({ schedule, compact }: { schedule: Schedule; compact?: boolean }) => {
     const isPending = ['scheduled', 'confirmed'].includes(schedule.status);
+    const unitStyle = getUnitStyle(schedule.clients?.unit);
+    const UnitIcon = unitStyle.Icon;
+    const patientName = schedule.clients?.name || schedule.title;
 
     const pill = (
       <button
         onClick={(e) => { e.stopPropagation(); }}
-        className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
-          schedule.status === 'completed' ? 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 line-through opacity-60'
-          : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50'
+        className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-lg px-2 py-1.5 text-[11px] leading-tight border-l-[3px] shadow-sm transition-all hover:shadow ${
+          schedule.status === 'completed' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 opacity-70'
+          : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50 line-through'
           : 'bg-blue-500/10 border-blue-500 text-foreground cursor-pointer hover:bg-blue-500/20'
         }`}
       >
-        <div className="flex items-center gap-1 min-w-0">
-          <span className="font-semibold shrink-0">{format(new Date(schedule.start_time), 'HH:mm')}</span>
-          {!compact && <span className="truncate min-w-0">- {schedule.clients?.name || schedule.title}</span>}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-bold shrink-0 tabular-nums">{format(new Date(schedule.start_time), 'HH:mm')}</span>
+          {!compact && <span className="truncate min-w-0 font-medium">{patientName}</span>}
+          {isPending && <ChevronDown className="h-3 w-3 ml-auto shrink-0 opacity-50" />}
         </div>
-        {compact && <div className="truncate font-medium min-w-0">{schedule.clients?.name || schedule.title}</div>}
+        {compact && <div className="truncate font-medium min-w-0">{patientName}</div>}
       </button>
     );
 
@@ -414,15 +418,22 @@ const MyPatients: React.FC = () => {
         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
           {pill}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
+        <DropdownMenuContent align="start" className="w-56">
+          <div className="px-2 py-1.5 border-b mb-1">
+            <p className="text-xs font-semibold truncate">{patientName}</p>
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <UnitIcon className={`h-3 w-3 ${unitStyle.textColor}`} />
+              {unitStyle.label} · {format(new Date(schedule.start_time), "dd/MM 'às' HH:mm")}
+            </p>
+          </div>
           <DropdownMenuItem onClick={() => setCompleteSchedule(schedule)}>
-            <CheckCircle className="h-3.5 w-3.5 mr-2 text-green-600" /> Concluir atendimento
+            <CheckCircle className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Concluir atendimento
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setAbsenceSchedule(schedule)}>
             <UserX className="h-3.5 w-3.5 mr-2 text-orange-600" /> Registrar falta
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive" onClick={() => setCancelSchedule(schedule)}>
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setCancelSchedule(schedule)}>
             <XCircle className="h-3.5 w-3.5 mr-2" /> Cancelar agendamento
           </DropdownMenuItem>
         </DropdownMenuContent>
