@@ -22,10 +22,12 @@ import { StatsCard } from '@/components/ui/stats-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Heart, Search, Calendar as CalendarIcon, Phone, User, Clock,
-  AlertCircle, ChevronLeft, ChevronRight, CheckCircle, Eye,
+  AlertCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle, Eye,
   CalendarCheck, TrendingUp, Activity, Plus, ListTodo, CalendarDays,
   MoreHorizontal, Pencil, Trash2, CheckSquare, Circle, UserX, XCircle
 } from 'lucide-react';
+import { UserAvatar } from '@/components/UserAvatar';
+import { getUnitStyle } from '@/utils/unitUtils';
 import {
   format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   isSameDay, addMonths, subMonths, addWeeks, subWeeks, eachDayOfInterval,
@@ -46,7 +48,7 @@ interface Client {
 interface Schedule {
   id: string; client_id: string; employee_id: string;
   start_time: string; end_time: string; title: string;
-  status: string; notes?: string; clients?: { name: string };
+  status: string; notes?: string; clients?: { name: string; unit?: string };
 }
 
 interface ProfessionalTask {
@@ -172,7 +174,7 @@ const MyPatients: React.FC = () => {
       // Agenda própria: todos os agendamentos em que o usuário é o profissional
       const { data, error } = await supabase
         .from('schedules')
-        .select('id, client_id, employee_id, start_time, end_time, title, status, notes, clients(name)')
+        .select('id, client_id, employee_id, start_time, end_time, title, status, notes, clients(name, unit)')
         .eq('employee_id', user.id)
         .gte('start_time', rangeStart.toISOString())
         .lte('start_time', rangeEnd.toISOString())
