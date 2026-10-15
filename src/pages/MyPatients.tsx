@@ -269,6 +269,52 @@ const MyPatients: React.FC = () => {
     loadTasks();
   };
 
+  // Registra falta (justificada ou não) do paciente no agendamento
+  const handleMarkAbsence = async (scheduleId: string, justified: boolean, reason: string) => {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    const label = justified ? 'FALTA JUSTIFICADA' : 'FALTA NÃO JUSTIFICADA';
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ status: 'cancelled', notes: `[${label}] ${reason}` })
+        .eq('id', scheduleId);
+      if (error) throw error;
+
+      if (schedule?.client_id) {
+        await supabase.from('absence_records').insert({
+          client_id: schedule.client_id,
+          schedule_id: scheduleId,
+          absence_date: format(new Date(schedule.start_time), 'yyyy-MM-dd'),
+          notes: `${label}: ${reason}`,
+        });
+      }
+
+      toast({ title: 'Falta registrada', description: label });
+      loadAll();
+    } catch {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao registrar falta.' });
+    }
+  };
+
+  // Cancela um agendamento com motivo
+  const handleCancelAppointment = async (scheduleId: string, reason?: string, category?: string) => {
+    try {
+      const note = category ? `[${category}] ${reason || 'Cancelado'}` : (reason ? `Cancelado: ${reason}` : 'Cancelado');
+      const { error } = await supabase.from('schedules').update({ status: 'cancelled', notes: note }).eq('id', scheduleId);
+      if (error) throw error;
+      toast({ title: 'Sucesso', description: 'Agendamento cancelado!' });
+      loadAll();
+    } catch {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao cancelar.' });
+    }
+  };
+
+  // Abre o agendamento já com o paciente selecionado
+  const openScheduleForClient = (clientId: string) => {
+    setScheduleClientId(clientId);
+    setScheduleDialogOpen(true);
+  };
+
   // Navigation
   const navigatePeriod = (dir: 'prev' | 'next') => {
     if (viewMode === 'day') setSelectedDate(d => dir === 'prev' ? subDays(d, 1) : addDays(d, 1));
