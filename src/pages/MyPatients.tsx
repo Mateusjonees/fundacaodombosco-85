@@ -9,6 +9,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import CompleteAttendanceDialog from '@/components/CompleteAttendanceDialog';
+import { MarkAbsenceDialog } from '@/components/MarkAbsenceDialog';
+import { CancelAppointmentDialog } from '@/components/CancelAppointmentDialog';
+import { CreateScheduleDialog } from '@/components/schedule/CreateScheduleDialog';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useEmployees } from '@/hooks/useEmployees';
 import PersonalTaskDialog, { TaskData } from '@/components/PersonalTaskDialog';
 import PersonalEventDialog, { EventData } from '@/components/PersonalEventDialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,7 +24,7 @@ import {
   Heart, Search, Calendar as CalendarIcon, Phone, User, Clock,
   AlertCircle, ChevronLeft, ChevronRight, CheckCircle, Eye,
   CalendarCheck, TrendingUp, Activity, Plus, ListTodo, CalendarDays,
-  MoreHorizontal, Pencil, Trash2, CheckSquare, Circle
+  MoreHorizontal, Pencil, Trash2, CheckSquare, Circle, UserX, XCircle
 } from 'lucide-react';
 import {
   format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
@@ -77,8 +82,16 @@ const MyPatients: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [activeTab, setActiveTab] = useState<ActiveTab>('calendar');
   const [completeSchedule, setCompleteSchedule] = useState<Schedule | null>(null);
+  const [absenceSchedule, setAbsenceSchedule] = useState<Schedule | null>(null);
+  const [cancelSchedule, setCancelSchedule] = useState<Schedule | null>(null);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [scheduleClientId, setScheduleClientId] = useState<string | null>(null);
   const [patientModalClientId, setPatientModalClientId] = useState<string | null>(null);
   const [patientModalOpen, setPatientModalOpen] = useState(false);
+
+  // Perfil e equipe para o diálogo de agendamento
+  const { data: userProfile } = useUserProfile(user?.id);
+  const { data: employees = [] } = useEmployees(userProfile);
 
   // Dialog states
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
@@ -256,6 +269,52 @@ const MyPatients: React.FC = () => {
     loadTasks();
   };
 
+  // Registra falta (justificada ou não) do paciente no agendamento
+  const handleMarkAbsence = async (scheduleId: string, justified: boolean, reason: string) => {
+    const schedule = schedules.find(s => s.id === scheduleId);
+    const label = justified ? 'FALTA JUSTIFICADA' : 'FALTA NÃO JUSTIFICADA';
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .update({ status: 'cancelled', notes: `[${label}] ${reason}` })
+        .eq('id', scheduleId);
+      if (error) throw error;
+
+      if (schedule?.client_id) {
+        await supabase.from('absence_records').insert({
+          client_id: schedule.client_id,
+          schedule_id: scheduleId,
+          absence_date: format(new Date(schedule.start_time), 'yyyy-MM-dd'),
+          notes: `${label}: ${reason}`,
+        });
+      }
+
+      toast({ title: 'Falta registrada', description: label });
+      loadAll();
+    } catch {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao registrar falta.' });
+    }
+  };
+
+  // Cancela um agendamento com motivo
+  const handleCancelAppointment = async (scheduleId: string, reason?: string, category?: string) => {
+    try {
+      const note = category ? `[${category}] ${reason || 'Cancelado'}` : (reason ? `Cancelado: ${reason}` : 'Cancelado');
+      const { error } = await supabase.from('schedules').update({ status: 'cancelled', notes: note }).eq('id', scheduleId);
+      if (error) throw error;
+      toast({ title: 'Sucesso', description: 'Agendamento cancelado!' });
+      loadAll();
+    } catch {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao cancelar.' });
+    }
+  };
+
+  // Abre o agendamento já com o paciente selecionado
+  const openScheduleForClient = (clientId: string) => {
+    setScheduleClientId(clientId);
+    setScheduleDialogOpen(true);
+  };
+
   // Navigation
   const navigatePeriod = (dir: 'prev' | 'next') => {
     if (viewMode === 'day') setSelectedDate(d => dir === 'prev' ? subDays(d, 1) : addDays(d, 1));
@@ -326,23 +385,50 @@ const MyPatients: React.FC = () => {
 
   // ======= RENDER =======
 
-  // Schedule event pill for calendar
-  const SchedulePill = ({ schedule, compact }: { schedule: Schedule; compact?: boolean }) => (
-    <button
-      onClick={(e) => { e.stopPropagation(); if (['scheduled', 'confirmed'].includes(schedule.status)) setCompleteSchedule(schedule); }}
-      className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
-        schedule.status === 'completed' ? 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 line-through opacity-60'
-        : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50'
-        : 'bg-blue-500/10 border-blue-500 text-foreground cursor-pointer hover:bg-blue-500/20'
-      }`}
-    >
-      <div className="flex items-center gap-1 min-w-0">
-        <span className="font-semibold shrink-0">{format(new Date(schedule.start_time), 'HH:mm')}</span>
-        {!compact && <span className="truncate min-w-0">- {schedule.clients?.name || schedule.title}</span>}
-      </div>
-      {compact && <div className="truncate font-medium min-w-0">{schedule.clients?.name || schedule.title}</div>}
-    </button>
-  );
+  // Schedule event pill for calendar — com ações: concluir, falta, cancelar
+  const SchedulePill = ({ schedule, compact }: { schedule: Schedule; compact?: boolean }) => {
+    const isPending = ['scheduled', 'confirmed'].includes(schedule.status);
+
+    const pill = (
+      <button
+        onClick={(e) => { e.stopPropagation(); }}
+        className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
+          schedule.status === 'completed' ? 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 line-through opacity-60'
+          : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50'
+          : 'bg-blue-500/10 border-blue-500 text-foreground cursor-pointer hover:bg-blue-500/20'
+        }`}
+      >
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="font-semibold shrink-0">{format(new Date(schedule.start_time), 'HH:mm')}</span>
+          {!compact && <span className="truncate min-w-0">- {schedule.clients?.name || schedule.title}</span>}
+        </div>
+        {compact && <div className="truncate font-medium min-w-0">{schedule.clients?.name || schedule.title}</div>}
+      </button>
+    );
+
+    // Atendimentos pendentes ganham menu de ações (falta, cancelar)
+    if (!isPending) return pill;
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          {pill}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuItem onClick={() => setCompleteSchedule(schedule)}>
+            <CheckCircle className="h-3.5 w-3.5 mr-2 text-green-600" /> Concluir atendimento
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setAbsenceSchedule(schedule)}>
+            <UserX className="h-3.5 w-3.5 mr-2 text-orange-600" /> Registrar falta
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-destructive" onClick={() => setCancelSchedule(schedule)}>
+            <XCircle className="h-3.5 w-3.5 mr-2" /> Cancelar agendamento
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   // Task pill
   const TaskPill = ({ task, compact }: { task: ProfessionalTask; compact?: boolean }) => (
@@ -796,8 +882,8 @@ const MyPatients: React.FC = () => {
                         <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => { setPatientModalClientId(client.id); setPatientModalOpen(true); }}>
                           <Eye className="h-3.5 w-3.5 mr-1" /> Ver
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => window.location.href = `/schedule?client=${client.id}`}>
-                          <CalendarIcon className="h-3.5 w-3.5" />
+                        <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => openScheduleForClient(client.id)} title="Agendar atendimento">
+                          <CalendarIcon className="h-3.5 w-3.5" /> Agendar
                         </Button>
                       </div>
                     </CardContent>
@@ -815,6 +901,30 @@ const MyPatients: React.FC = () => {
         isOpen={!!completeSchedule}
         onClose={() => setCompleteSchedule(null)}
         onComplete={() => { setCompleteSchedule(null); loadAll(); }}
+      />
+      <MarkAbsenceDialog
+        schedule={absenceSchedule}
+        isOpen={!!absenceSchedule}
+        onClose={() => setAbsenceSchedule(null)}
+        onConfirm={handleMarkAbsence}
+      />
+      <CancelAppointmentDialog
+        schedule={cancelSchedule}
+        isOpen={!!cancelSchedule}
+        onClose={() => setCancelSchedule(null)}
+        onCancel={handleCancelAppointment}
+      />
+      <CreateScheduleDialog
+        isOpen={scheduleDialogOpen}
+        onOpenChange={(open) => { setScheduleDialogOpen(open); if (!open) setScheduleClientId(null); }}
+        editingSchedule={null}
+        userProfile={userProfile}
+        isAdmin={false}
+        employees={employees}
+        clients={clients}
+        initialClientId={scheduleClientId}
+        onSuccess={() => { setScheduleDialogOpen(false); setScheduleClientId(null); loadAll(); }}
+        onReset={() => setScheduleClientId(null)}
       />
       <PersonalTaskDialog
         open={taskDialogOpen}

@@ -45,6 +45,7 @@ interface Props {
   clients: any[];
   onSuccess: () => void;
   onReset: () => void;
+  initialClientId?: string | null;
 }
 
 export const CreateScheduleDialog = ({
@@ -57,6 +58,7 @@ export const CreateScheduleDialog = ({
   clients,
   onSuccess,
   onReset,
+  initialClientId,
 }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -101,7 +103,8 @@ export const CreateScheduleDialog = ({
       });
     } else {
       setForm({
-        client_id: '',
+        // Paciente pré-selecionado quando o diálogo abre a partir da ficha do paciente
+        client_id: initialClientId || '',
         employee_id: !isAdmin ? (userProfile?.user_id || '') : '',
         title: 'Consulta',
         start_time: '',
@@ -115,7 +118,7 @@ export const CreateScheduleDialog = ({
         foundation_amount: '',
       });
     }
-  }, [editingSchedule, isOpen]);
+  }, [editingSchedule, isOpen, initialClientId]);
 
   // Fetch client email
   useEffect(() => {
