@@ -391,7 +391,7 @@ const MyPatients: React.FC = () => {
 
     const pill = (
       <button
-        onClick={(e) => { e.stopPropagation(); if (isPending) setCompleteSchedule(schedule); }}
+        onClick={(e) => { e.stopPropagation(); }}
         className={`block w-full min-w-0 max-w-full overflow-hidden text-left rounded-md px-2 py-1 text-[11px] leading-tight border-l-[3px] transition-all hover:opacity-80 ${
           schedule.status === 'completed' ? 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 line-through opacity-60'
           : schedule.status === 'cancelled' ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 opacity-50'
