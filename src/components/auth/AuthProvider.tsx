@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuditService } from '@/services/auditService';
@@ -72,15 +72,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [isOfflineSession, setIsOfflineSession] = useState(false);
   const { preloadCriticalData } = useAppPreload();
+  // Referências estáveis: evitam que renovação de token (ou voltar para a aba)
+  // troque o objeto `user` e faça todas as telas recarregarem/perderem conteúdo.
+  const userRef = useRef<User | null>(null);
+  const hydratedUserIdRef = useRef<string | null>(null);
 
-  const syncAuthState = (nextSession: Session | null, offline = false) => {
+  const syncAuthState = (nextSession: Session | null, offline = false, forceUserUpdate = false) => {
     setSession(nextSession);
-    setUser(nextSession?.user ?? null);
     setIsOfflineSession(offline);
 
+    const nextUser = nextSession?.user ?? null;
+    // Só troca o usuário quando realmente muda de pessoa (login/logout) ou dados do usuário foram editados
+    if (forceUserUpdate || userRef.current?.id !== nextUser?.id) {
+      userRef.current = nextUser;
+      setUser(nextUser);
+    }
+
     if (!nextSession) {
+      hydratedUserIdRef.current = null;
       setMustChangePassword(false);
     }
+  };
+
+  /** Carrega perfil apenas uma vez por usuário logado (não a cada renovação de token). */
+  const hydrateOnce = (activeSession: Session, options: { logLogin?: boolean } = {}) => {
+    if (hydratedUserIdRef.current === activeSession.user.id) return;
+    hydratedUserIdRef.current = activeSession.user.id;
+    void hydrateSessionProfile(activeSession, options);
   };
 
   const hydrateSessionProfile = async (
