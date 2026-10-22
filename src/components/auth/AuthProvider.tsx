@@ -176,12 +176,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, nextSession) => {
-        syncAuthState(nextSession, false);
+        syncAuthState(nextSession, false, event === 'USER_UPDATED');
 
-        // IMPORTANTE: nunca await dentro do onAuthStateChange
+        // IMPORTANTE: nunca await dentro do onAuthStateChange.
+        // O Supabase dispara SIGNED_IN também ao voltar para a aba; hydrateOnce ignora repetições.
         if (event === 'SIGNED_IN' && nextSession?.user) {
           window.setTimeout(() => {
-            void hydrateSessionProfile(nextSession, { logLogin: true });
+            hydrateOnce(nextSession, { logLogin: true });
           }, 0);
         }
 
@@ -211,7 +212,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       syncAuthState(session, false);
 
       if (session?.user) {
-        void hydrateSessionProfile(session);
+        hydrateOnce(session);
       }
 
       if (isMounted) {
