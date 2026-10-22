@@ -32,56 +32,36 @@ if (isPreviewHost || isInIframe) {
   });
 }
 
-// AUTO-HEAL agressivo: detecta SW preso/desatualizado E "boot parcial"
-// (React montou mas app não ficou utilizável em X segundos) e força limpeza total.
-// AUTO-UPDATE silencioso por versão de build.
-// Cada build tem um VITE_BUILD_TIMESTAMP único. Se o cliente tiver uma versão
-// diferente da última conhecida, limpa SW + caches automaticamente uma vez.
-// Isso resolve usuários "presos" em versão antiga do PWA sem ação manual.
-if (!isPreviewHost && !isInIframe) {
-  try {
-    const CURRENT_BUILD = (import.meta as any).env?.VITE_BUILD_TIMESTAMP || 'dev';
-    const STORED_BUILD = localStorage.getItem('app_build_version');
-    const AUTO_UPDATE_FLAG = 'auto_update_done';
-
-    if (STORED_BUILD && STORED_BUILD !== CURRENT_BUILD && !sessionStorage.getItem(AUTO_UPDATE_FLAG)) {
-      sessionStorage.setItem(AUTO_UPDATE_FLAG, '1');
-      console.warn('[Auto-update] Nova versão detectada, limpando caches...', { STORED_BUILD, CURRENT_BUILD });
-      localStorage.setItem('app_build_version', CURRENT_BUILD);
-
-      (async () => {
-        try {
-          if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((r) => r.unregister()));
-          }
-          if ('caches' in window) {
-            const names = await caches.keys();
-            await Promise.all(names.map((n) => caches.delete(n)));
-          }
-        } catch (e) {
-          console.warn('[Auto-update] erro ao limpar:', e);
-        }
-        requestSafeReload('auto-update');
-      })();
-    } else if (!STORED_BUILD) {
-      localStorage.setItem('app_build_version', CURRENT_BUILD);
-    }
-  } catch (e) {
-    console.warn('[Auto-update] erro:', e);
-  }
+// Versão de build: apenas registra. Quem abre o app já está rodando o código novo,
+// então NÃO recarregamos a página (recarregar fazia a tela piscar e perder conteúdo).
+try {
+  const CURRENT_BUILD = (import.meta as any).env?.VITE_BUILD_TIMESTAMP || 'dev';
+  localStorage.setItem('app_build_version', CURRENT_BUILD);
+  localStorage.setItem('app_version', CURRENT_BUILD);
+} catch {
+  /* noop */
 }
+
+/** Avisa a interface que existe uma versão nova; o usuário decide quando atualizar. */
+const announceUpdate = (reason: string) => {
+  console.info(`[Update] nova versão disponível (${reason})`);
+  window.dispatchEvent(new CustomEvent('app:update-available'));
+};
+
+// Arquivo de tela antigo não encontrado (após publicação nova): avisa em vez de recarregar sozinho.
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  announceUpdate('preload-error');
+});
 
 if (!isPreviewHost && !isInIframe && 'serviceWorker' in navigator) {
   const HEAL_FLAG = 'sw_heal_v3';
   const APP_BOOT_TIMEOUT_MS = 12000;
+  // Se a página já era controlada por um SW, a troca de controle significa versão nova.
+  const hadControllerAtStart = !!navigator.serviceWorker.controller;
 
-  // Quando um novo SW assume o controle, recarrega UMA vez.
-  let reloadedAfterControllerChange = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloadedAfterControllerChange) return;
-    reloadedAfterControllerChange = true;
-    requestSafeReload('controllerchange');
+    if (hadControllerAtStart) announceUpdate('controllerchange');
   });
 
   const performHardHeal = async (reason: string) => {

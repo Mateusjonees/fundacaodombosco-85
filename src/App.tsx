@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
 import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
 import { supabase } from "@/integrations/supabase/client";
-import { checkForUpdates } from "@/utils/cacheControl";
+import { UpdateAvailablePrompt } from "@/components/UpdateAvailablePrompt";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 
 
@@ -168,17 +168,14 @@ const AppContent = () => {
 };
 
 const App = () => {
-  // Verifica se há nova versão ao iniciar
-  useEffect(() => {
-    checkForUpdates();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          {/* Aviso de versão nova: nunca recarrega sozinho para não perder conteúdo */}
+          <UpdateAvailablePrompt />
           <AuthProvider>
             <NotificationProvider>
               <AppContent />
